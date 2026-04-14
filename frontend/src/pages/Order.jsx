@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Plus, Minus, Trash2, ShoppingCart, MapPin, ArrowRight, CheckCircle2, Info, Loader2, Sparkles, Navigation, CreditCard, Wallet, PackageOpen } from "lucide-react";
+import { Plus, Minus, Trash2, ShoppingCart, MapPin, ArrowRight, CheckCircle2, Info, Loader2, Sparkles, Navigation, CreditCard, Wallet, PackageOpen, User, Phone } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "../hooks/use-toast";
 
