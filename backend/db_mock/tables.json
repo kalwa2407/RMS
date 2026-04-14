@@ -1,0 +1,310 @@
+[
+    {
+        "_id": "e79b0684-d9d8-403e-bf39-621f13e62481",
+        "table_number": 1,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424245"
+    },
+    {
+        "_id": "107d8f7d-8dd7-4acf-9953-6d60489726c9",
+        "table_number": 2,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424267"
+    },
+    {
+        "_id": "e024c64f-87cb-4b92-b4d7-1179870e7cb2",
+        "table_number": 3,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424278"
+    },
+    {
+        "_id": "c1bbeaec-475b-47a4-bcd0-0262921b1653",
+        "table_number": 4,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424288"
+    },
+    {
+        "_id": "9adaeaf2-28f0-428e-95c5-cbf263d984a5",
+        "table_number": 5,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424297"
+    },
+    {
+        "_id": "9180a998-7796-45c5-b700-06a18fb50bfd",
+        "table_number": 6,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424307"
+    },
+    {
+        "_id": "b67f18c4-c4bc-415f-af60-63f7d34982af",
+        "table_number": 7,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424315"
+    },
+    {
+        "_id": "9c711cc4-9d79-4678-9f92-574804fa0a3f",
+        "table_number": 8,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424324"
+    },
+    {
+        "_id": "6c39bf95-a9a0-4589-8a19-9d07c7f274f5",
+        "table_number": 9,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424332"
+    },
+    {
+        "_id": "ef2e8a80-389a-4601-a54b-4d9a3fcbbd78",
+        "table_number": 10,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424340"
+    },
+    {
+        "_id": "45fde8c3-f7f1-445f-a95d-1b0dc3dc5c27",
+        "table_number": 11,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424349"
+    },
+    {
+        "_id": "7e8f43ad-ddbb-4914-b64e-18daebb59196",
+        "table_number": 12,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424357"
+    },
+    {
+        "_id": "88d846a0-a657-495d-8a00-57e23b009979",
+        "table_number": 13,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424365"
+    },
+    {
+        "_id": "2d703e09-7b15-44b0-8e73-19c1dfd7a3df",
+        "table_number": 14,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424373"
+    },
+    {
+        "_id": "05a808b1-28d5-4eee-9a7f-525aa75fbe1b",
+        "table_number": 15,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424382"
+    },
+    {
+        "_id": "12d3c286-1ee7-416f-bd0b-63a9507e4eed",
+        "table_number": 16,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424390"
+    },
+    {
+        "_id": "95e24a5e-7444-4b08-bf78-0adc737effbf",
+        "table_number": 17,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424399"
+    },
+    {
+        "_id": "24bfa0e4-591d-4b7f-8860-f327f1536ba7",
+        "table_number": 18,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424407"
+    },
+    {
+        "_id": "3a8bc246-a331-4c86-a9a2-233efdf1e0a2",
+        "table_number": 19,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424415"
+    },
+    {
+        "_id": "fed8876b-c8d6-4162-a7b1-814cb5375958",
+        "table_number": 20,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424423"
+    },
+    {
+        "_id": "513661f7-d63b-4705-97ff-d4d982cb43ff",
+        "table_number": 21,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424432"
+    },
+    {
+        "_id": "21e12f8b-03d5-4f9f-8390-b9c480b324b2",
+        "table_number": 22,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424440"
+    },
+    {
+        "_id": "7063798b-f2db-4e12-866e-c03ee1817a60",
+        "table_number": 23,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424448"
+    },
+    {
+        "_id": "d3c91818-79b1-448c-b81f-b9f460526233",
+        "table_number": 24,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424462"
+    },
+    {
+        "_id": "b624f4a7-42ef-4569-81c5-15b18e969d70",
+        "table_number": 25,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424471"
+    },
+    {
+        "_id": "24728068-f3e9-483c-a60b-f31966d4bf9e",
+        "table_number": 26,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424480"
+    },
+    {
+        "_id": "9adfb8cf-ead9-475e-8ac1-45a7bd987432",
+        "table_number": 27,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424488"
+    },
+    {
+        "_id": "3b273b80-4e82-4214-88ee-33a836584431",
+        "table_number": 28,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424497"
+    },
+    {
+        "_id": "78fdb3f1-e1df-48ac-82fb-b2281e1ea7cb",
+        "table_number": 29,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424505"
+    },
+    {
+        "_id": "cae8bd09-8438-48dc-a9c6-3db7cad2083c",
+        "table_number": 30,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424513"
+    },
+    {
+        "_id": "6b7eeddf-9b9d-490f-92ba-54b8750f0c70",
+        "table_number": 31,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424521"
+    },
+    {
+        "_id": "623cfe63-5c40-4bd0-a125-6b04d50f19b7",
+        "table_number": 32,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424529"
+    },
+    {
+        "_id": "1f2c89ea-0324-44e6-8439-53a1ffaaea0b",
+        "table_number": 33,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424538"
+    },
+    {
+        "_id": "2d0116dd-66a3-4312-9a1f-1c079b736edf",
+        "table_number": 34,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424546"
+    },
+    {
+        "_id": "14a52dbe-aef7-4ac4-9a90-41059532a798",
+        "table_number": 35,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424554"
+    },
+    {
+        "_id": "09260aba-ba60-48fc-adc8-04d596f0205c",
+        "table_number": 36,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424563"
+    },
+    {
+        "_id": "7a8e7eb2-37f7-4ecc-aa35-d0cca382dd19",
+        "table_number": 37,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424571"
+    },
+    {
+        "_id": "d6a7aee6-aebc-4d27-80a2-46078cc6eac4",
+        "table_number": 38,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424579"
+    },
+    {
+        "_id": "b575f11a-83fb-4716-9c19-da8bc6cbf119",
+        "table_number": 39,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424587"
+    },
+    {
+        "_id": "ccf75fbd-17d8-496d-8733-e9b6204eb036",
+        "table_number": 40,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424598"
+    },
+    {
+        "_id": "6a059d87-a530-4935-91ab-b97c01324700",
+        "table_number": 41,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424606"
+    },
+    {
+        "_id": "dd613937-1b50-436a-8d41-3870971b87d6",
+        "table_number": 42,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424615"
+    },
+    {
+        "_id": "0e35c7be-1df5-4c5d-9560-5e26033ddc44",
+        "table_number": 43,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424624"
+    },
+    {
+        "_id": "429e59fe-84b6-45ae-9872-a1b6565c6831",
+        "table_number": 44,
+        "capacity": 4,
+        "status": "free",
+        "created_at": "2026-04-13T18:03:17.424632"
+    }
+]

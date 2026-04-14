@@ -1,0 +1,138 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=El+Messiri:wght@400;500;600;700&family=Aref+Ruqaa:wght@400;700&family=Outfit:wght@200;300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 33% 4%;
+    --foreground: 0 0% 98%;
+    --card: 220 33% 8%;
+    --card-foreground: 0 0% 98%;
+    --popover: 220 33% 4%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 47 95% 45%;
+    --primary-foreground: 220 33% 4%;
+    --secondary: 220 33% 12%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 220 33% 12%;
+    --muted-foreground: 220 10% 70%;
+    --accent: 47 95% 45%;
+    --accent-foreground: 220 33% 4%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 33% 15%;
+    --input: 220 33% 12%;
+    --ring: 47 95% 45%;
+    --radius: 1.5rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    cursor: default;
+  }
+
+  body {
+    @apply bg-[#050b10] text-foreground antialiased selection:bg-[#EAB308]/30 overflow-x-hidden;
+    font-family: 'El Messiri', 'Outfit', sans-serif;
+    font-feature-settings: 'kern' 1, 'liga' 1;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: 'Cinzel Decorative', 'El Messiri', serif;
+    @apply tracking-tight;
+  }
+
+}
+
+@layer components {
+  .glass-premium {
+    @apply bg-white/[0.03] backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.8)];
+  }
+
+  .font-arabic {
+    font-family: 'Aref Ruqaa', 'El Messiri', serif;
+  }
+
+  .font-imperial {
+    font-family: 'El Messiri', serif;
+    font-weight: 600;
+  }
+  
+  .glass-dark {
+    @apply bg-black/40 backdrop-blur-xl border border-white/5;
+  }
+
+  .floating-nav {
+    @apply fixed top-8 left-1/2 -translate-x-1/2 z-50 px-8 py-4 rounded-full glass-premium transition-all duration-500 max-w-[95%] w-fit;
+  }
+
+  .golden-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-[#FDE047] via-[#EAB308] to-[#CA8A04];
+  }
+
+  .magnetic-button {
+    @apply relative overflow-hidden transition-all duration-500 active:scale-95 hover:shadow-[0_0_30px_-5px_rgba(234,179,8,0.4)];
+  }
+
+  .persian-pattern-overlay {
+    background-image: url("https://www.transparenttextures.com/patterns/black-orchid.png");
+    opacity: 0.15;
+    mix-blend-mode: overlay;
+  }
+
+  .brutal-card {
+    @apply relative overflow-hidden bg-card border border-white/5 transition-all duration-700 hover:border-primary/30;
+  }
+
+  .hero-mask {
+    mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+  }
+}
+
+/* Custom Scrollbar - Minimal & Elegant */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050b10;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 100px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #EAB308;
+}
+
+/* Animations */
+@keyframes float {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(2deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.text-stroke-white {
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.1);
+}
+
+.parallax-bg {
+  transform: translateZ(-10px) scale(2);
+  z-index: -1;
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+}

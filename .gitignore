@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+/.pnp
+.pnp.js
+
+# Production builds
+/build
+dist/
+
+# Environment files
+*.env
+*.env.*
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Testing
+/coverage
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+
+# System files
+.DS_Store
+*.pem
+
+# IDE
+.idea/
+.vscode/
+
+# Mock database (regenerated on startup)
+backend/db_mock/
+
+# Generated invoices
+backend/static/invoices/
+
+# Archive files
+*.zip
+*.tar.gz
+*.pack

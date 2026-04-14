@@ -1,0 +1,67 @@
+[
+    {
+        "name": "Chicken Biryani",
+        "category": "Main Course",
+        "description": "Aromatic basmati rice with tender chicken",
+        "price": 350.0,
+        "popular": true,
+        "veg": false,
+        "spicy_level": 2,
+        "preparation_time": 25,
+        "available": true,
+        "_id": "70ca8bc2-7ce4-482b-bcb7-4e5aa07fdb7c",
+        "created_at": "2026-04-13T18:03:17.422375"
+    },
+    {
+        "name": "Paneer Tikka",
+        "category": "Starters",
+        "description": "Grilled cottage cheese with spices",
+        "price": 280.0,
+        "popular": true,
+        "veg": true,
+        "spicy_level": 1,
+        "preparation_time": 15,
+        "available": true,
+        "_id": "26e36899-455c-47f5-9b83-a27e3c892738",
+        "created_at": "2026-04-13T18:03:17.422397"
+    },
+    {
+        "name": "Mutton Kebab",
+        "category": "Starters",
+        "description": "Juicy minced mutton kebabs",
+        "price": 420.0,
+        "popular": false,
+        "veg": false,
+        "spicy_level": 2,
+        "preparation_time": 20,
+        "available": true,
+        "_id": "16d50b0b-0cf4-4d4a-9f6d-ca39f94bd74d",
+        "created_at": "2026-04-13T18:03:17.422407"
+    },
+    {
+        "name": "Dal Makhani",
+        "category": "Main Course",
+        "description": "Creamy black lentils",
+        "price": 220.0,
+        "popular": true,
+        "veg": true,
+        "spicy_level": 0,
+        "preparation_time": 15,
+        "available": true,
+        "_id": "1bd21d70-98d9-428c-a87e-e7de510ad1c9",
+        "created_at": "2026-04-13T18:03:17.422421"
+    },
+    {
+        "name": "Butter Naan",
+        "category": "Breads",
+        "description": "Soft buttered flatbread",
+        "price": 60.0,
+        "popular": true,
+        "veg": true,
+        "spicy_level": 0,
+        "preparation_time": 10,
+        "available": true,
+        "_id": "8755abf6-a71c-44a3-ad0b-916d3ab5d77d",
+        "created_at": "2026-04-13T18:03:17.422430"
+    }
+]

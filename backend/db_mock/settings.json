@@ -1,0 +1,22 @@
+[
+    {
+        "key": "contact_address",
+        "value": "Upper Ground Floor, Renaissance Business Wellesley Road, Camp Area, Pune",
+        "_id": "71335726-4981-49bd-a028-8e5980114946"
+    },
+    {
+        "key": "contact_phone",
+        "value": "+91 91756 23047",
+        "_id": "1fe41249-d218-474f-9212-c5cc081279cf"
+    },
+    {
+        "key": "contact_email",
+        "value": "info@tasteofhindustan.com",
+        "_id": "3edc6a2d-16dc-4c86-a182-c5688d8f619b"
+    },
+    {
+        "key": "opening_hours",
+        "value": "11:00 AM - 11:00 PM",
+        "_id": "49a5822c-72c2-42dd-a1a0-e8b60c975d6e"
+    }
+]
