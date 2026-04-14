@@ -111,13 +111,29 @@ const TableOrder = () => {
     const pollStatus = async () => {
       try {
         const res = await fetch(`${API_BASE}/api/table/session/${session.session_id}/status`);
+        
+        if (!res.ok) {
+          // Session no longer exists (404) — reset to welcome screen
+          localStorage.removeItem(`table_${tableNumber}_session`);
+          setSession(null);
+          setSessionLocked(false);
+          setShowStatusPage(false);
+          setShowNameModal(true);
+          return;
+        }
+        
         const data = await res.json();
         setSession(data);
         
-        // Check if session is closed
+        // Check if session is closed by admin (billing completed)
         if (data.status === "closed") {
           localStorage.removeItem(`table_${tableNumber}_session`);
+          setSession(null);
           setSessionLocked(false);
+          setShowStatusPage(false);
+          setCart([]);
+          setShowNameModal(true);
+          return;
         }
         
         // Check latest order status

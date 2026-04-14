@@ -418,7 +418,13 @@ async def start_table_session(data: TableSessionCreate, manager: BaseDataManager
             break
             
     if existing:
-        return {"session": existing, "message": "Session already exists"}
+        # If the same customer name, resume the existing session
+        if existing.get("customer_name", "").lower() == data.customer_name.lower():
+            return {"session": existing, "message": "Session already exists"}
+        
+        # Different customer — auto-close the stale old session
+        logger.info(f"Auto-closing stale session {existing.get('session_id')} for table {data.table_number} (was: {existing.get('customer_name')}, new: {data.customer_name})")
+        await manager.update_table_session(existing["session_id"], {"status": "closed"})
     
     now = datetime.utcnow()
     session_id = generate_session_id()
