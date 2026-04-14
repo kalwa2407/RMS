@@ -104,13 +104,12 @@ const Order = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (cart.length === 0) return toast({ title: "Your plate is empty", variant: "destructive" });
-    if (distance === null) return toast({ title: "Location required", description: "We need your location to calculate royal delivery fees.", variant: "destructive" });
 
     const subtotal = calculateSubtotal();
     if (subtotal < 250) return toast({ title: "Minimum order value: ₹250", variant: "destructive" });
 
     setIsPlacingOrder(true);
-    const deliveryFee = distance <= 10 ? 0 : 40;
+    const deliveryFee = distance !== null && distance <= 10 ? 0 : 40;
     const taxRate = 0.05;
     const taxes = subtotal * taxRate;
     const total = subtotal + deliveryFee + taxes;
@@ -119,7 +118,7 @@ const Order = () => {
       customer_name: customerInfo.name,
       phone: customerInfo.phone,
       address: customerInfo.address,
-      distance_km: distance,
+      distance_km: distance || 0,
       payment_method: customerInfo.paymentMethod,
       items: cart.map((i) => ({
         item_id: String(i._id),
@@ -363,14 +362,19 @@ const Order = () => {
 
                       <div className="p-6 glass-premium rounded-3xl border-white/5 text-center">
                          {!distance ? (
-                            <button type="button" onClick={getUserLocation} className="flex items-center justify-center space-x-3 w-full text-primary hover:text-white transition-all group">
-                               {loadingLocation ? <Loader2 className="animate-spin" /> : <MapPin size={16} className="group-hover:scale-125 transition-transform" />}
-                               <span className="text-[10px] font-black uppercase tracking-[0.3em]">{loadingLocation ? 'Locating...' : 'Detect Dispatch Zone'}</span>
-                            </button>
+                           <div className="space-y-3">
+                             <button type="button" onClick={getUserLocation} className="flex items-center justify-center space-x-3 w-full text-primary hover:text-white transition-all group">
+                                {loadingLocation ? <Loader2 className="animate-spin" /> : <MapPin size={16} className="group-hover:scale-125 transition-transform" />}
+                                <span className="text-[10px] font-black uppercase tracking-[0.3em]">{loadingLocation ? 'Locating...' : 'Detect Dispatch Zone'}</span>
+                             </button>
+                             <button type="button" onClick={() => { setDistance(15); toast({ title: 'Standard delivery applied', description: '₹40 delivery fee added.' }); }} className="text-[9px] font-bold text-gray-500 hover:text-primary uppercase tracking-widest transition-colors">
+                                Skip · Use Standard Delivery (₹40)
+                             </button>
+                           </div>
                          ) : (
                             <div className="flex items-center justify-center space-x-3 text-green-500">
                                <CheckCircle2 size={16} />
-                               <span className="text-[10px] font-black uppercase tracking-[0.3em]">{distance} KM DETECTED</span>
+                               <span className="text-[10px] font-black uppercase tracking-[0.3em]">{distance} KM · {distance <= 10 ? 'FREE DELIVERY' : '₹40 DELIVERY'}</span>
                             </div>
                          )}
                       </div>
@@ -396,7 +400,7 @@ const Order = () => {
 
                       <button
                         type="submit"
-                        disabled={!distance || isPlacingOrder}
+                        disabled={isPlacingOrder}
                         className="w-full magnetic-button bg-primary text-black py-6 rounded-[2rem] font-black uppercase tracking-[0.4em] text-[12px] shadow-2xl shadow-primary/20 disabled:opacity-20 transition-all flex items-center justify-center space-x-4"
                       >
                         {isPlacingOrder ? <Loader2 className="animate-spin" /> : (
