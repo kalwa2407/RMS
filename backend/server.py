@@ -1597,8 +1597,14 @@ async def admin_get_period_report(
     daily_breakdown = {}
     
     for order in orders:
-        order_dict = order.to_dict()
-        order_date = order.created_at.strftime("%Y-%m-%d")
+        # Parse created_at for date grouping
+        created_at_val = order.get("created_at")
+        if isinstance(created_at_val, str):
+            created_dt = datetime.fromisoformat(created_at_val)
+        else:
+            created_dt = created_at_val
+        
+        order_date = created_dt.strftime("%Y-%m-%d")
         
         if order_date not in daily_breakdown:
             daily_breakdown[order_date] = {
@@ -1613,20 +1619,23 @@ async def admin_get_period_report(
         daily_breakdown[order_date]["orders"] += 1
         
         # Track order type
-        order_type = order_dict.get("order_type", "takeaway")
-        if order_type == "dine_in" or order_type == "dine-in":
+        order_type = order.get("order_type", "takeaway").lower()
+        if "dine" in order_type:
             daily_breakdown[order_date]["dine_in"] += 1
         elif order_type == "delivery":
             daily_breakdown[order_date]["delivery"] += 1
         else:
             daily_breakdown[order_date]["takeaway"] += 1
         
-        if order.status in ["delivered", "completed", "ready"]:
-            total_sales += order.total
-            daily_breakdown[order_date]["revenue"] += order.total
+        status = order.get("status", "")
+        total = order.get("total", 0)
+        
+        if status in ["delivered", "completed", "ready"]:
+            total_sales += total
+            daily_breakdown[order_date]["revenue"] += total
             
             # Track items
-            for item in order.items or []:
+            for item in order.get("items", []):
                 item_name = item.get("name", "Unknown")
                 if item_name not in item_sales:
                     item_sales[item_name] = {"name": item_name, "quantity": 0, "revenue": 0.0}
