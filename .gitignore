@@ -42,3 +42,10 @@ backend/static/invoices/
 *.zip
 *.tar.gz
 *.pack
+
+# Large test files
+test.mp4
+
+# Local Firebase credentials
+firebase_credentials.json
+backend/firebase_credentials.json

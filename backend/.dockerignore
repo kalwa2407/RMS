@@ -1,0 +1,9 @@
+__pycache__
+*.pyc
+.env
+db_mock/
+firebase_credentials.json
+static/uploads/*
+!static/uploads/.gitkeep
+static/invoices/*
+!static/invoices/.gitkeep

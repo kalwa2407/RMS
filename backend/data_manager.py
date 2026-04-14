@@ -132,13 +132,15 @@ class BaseDataManager(ABC):
         pass
 
 def get_data_manager() -> BaseDataManager:
-    db_mode = os.environ.get("DB_MODE", "POSTGRES")
+    db_mode = os.environ.get("DB_MODE", "FIREBASE")
     
     if db_mode == "MOCK_FIREBASE":
         from mock_firebase import MockFirebaseManager
         return MockFirebaseManager()
+    elif db_mode == "FIREBASE":
+        from firebase_manager import FirebaseManager
+        return FirebaseManager()
     else:
-        # For now, default to Postgres if implemented, or we can add it later
-        # For this refactor, we are focusing on Mock Firebase
-        from postgres_manager import PostgresManager
-        return PostgresManager()
+        # Fallback to MockFirebase if postgres isn't actually ready
+        from mock_firebase import MockFirebaseManager
+        return MockFirebaseManager()
