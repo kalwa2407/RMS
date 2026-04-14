@@ -39,7 +39,7 @@ const OrderTracking = () => {
   const fetchOrder = async (id, silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/orders/${id}`);
+      const res = await fetch(`${(process.env.REACT_APP_BACKEND_URL || "")}/api/orders/${id}`);
       if (!res.ok) throw new Error("Order not found");
       const data = await res.json();
       if (lastStatus && lastStatus !== data.status && !silent) {

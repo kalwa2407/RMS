@@ -3,7 +3,7 @@ import { Check, X, Clock, Package, Truck, Home, Printer, Eye, Bell, Trash2 } fro
 import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
 
-const API_BASE = process.env.REACT_APP_BACKEND_URL;
+const API_BASE = (process.env.REACT_APP_BACKEND_URL || "");
 
 const OrdersManagement = () => {
   const { toast } = useToast();

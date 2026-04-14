@@ -33,7 +33,7 @@ const ChatBot = () => {
     setIsLoading(true);
 
     try {
-      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+      const BACKEND_URL = (process.env.REACT_APP_BACKEND_URL || "");
       const response = await fetch(`${BACKEND_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -3,7 +3,7 @@ import { useSearchParams, Link } from "react-router-dom";
 import { Plus, Minus, Trash2, ShoppingCart, Check, UtensilsCrossed, Clock, ChefHat, X, Globe, RefreshCw, Lock } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
 
-const API_BASE = process.env.REACT_APP_BACKEND_URL;
+const API_BASE = (process.env.REACT_APP_BACKEND_URL || "");
 const MAX_TABLES = 44;
 
 const TableOrder = () => {

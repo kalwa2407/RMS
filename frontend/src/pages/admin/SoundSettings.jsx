@@ -3,7 +3,7 @@ import { Upload, Volume2, Check, ShoppingBag, UtensilsCrossed } from "lucide-rea
 import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
 
-const API_BASE = process.env.REACT_APP_BACKEND_URL;
+const API_BASE = (process.env.REACT_APP_BACKEND_URL || "");
 
 const SoundSettings = () => {
   const { toast } = useToast();

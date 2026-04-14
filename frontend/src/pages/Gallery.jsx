@@ -13,7 +13,7 @@ const Gallery = () => {
   useEffect(() => {
     const fetchGallery = async () => {
       try {
-        const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/gallery`);
+        const res = await fetch(`${(process.env.REACT_APP_BACKEND_URL || "")}/api/gallery`);
         const data = await res.json();
         setGallery(data.length > 0 ? data : generateMockGallery());
         setLoading(false);

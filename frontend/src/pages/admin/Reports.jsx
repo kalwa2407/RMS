@@ -23,7 +23,7 @@ const Reports = () => {
   });
   const [activeTab, setActiveTab] = useState("daily");
 
-  const API_BASE = process.env.REACT_APP_BACKEND_URL;
+  const API_BASE = (process.env.REACT_APP_BACKEND_URL || "");
   const token = localStorage.getItem("admin_token");
 
   const fetchDailyReport = useCallback(async () => {

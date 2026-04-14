@@ -10,7 +10,7 @@ const Reviews = () => {
   useEffect(() => {
     const fetchReviews = async () => {
       try {
-        const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/reviews`);
+        const res = await fetch(`${(process.env.REACT_APP_BACKEND_URL || "")}/api/reviews`);
         const data = await res.json();
         setReviews(Array.isArray(data) ? data : []);
       } catch (err) {

@@ -13,7 +13,7 @@ const TableManagement = () => {
   const [bulkCreate, setBulkCreate] = useState({ count: 10, capacity: 4 });
   const printRef = useRef();
 
-  const API_BASE = process.env.REACT_APP_BACKEND_URL;
+  const API_BASE = (process.env.REACT_APP_BACKEND_URL || "");
   const token = localStorage.getItem("admin_token");
 
   const fetchTables = useCallback(async () => {

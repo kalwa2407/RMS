@@ -68,7 +68,7 @@ const Order = () => {
   useEffect(() => {
     const fetchMenu = async () => {
       try {
-        const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/menu`);
+        const res = await fetch(`${(process.env.REACT_APP_BACKEND_URL || "")}/api/menu`);
         const data = await res.json();
         setMenu(data);
       } catch (err) {
@@ -140,7 +140,7 @@ const Order = () => {
     };
 
     try {
-      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/orders`, {
+      const res = await fetch(`${(process.env.REACT_APP_BACKEND_URL || "")}/api/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderData),

@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 
-const API_BASE = process.env.REACT_APP_BACKEND_URL;
+const API_BASE = (process.env.REACT_APP_BACKEND_URL || "");
 
 const Inventory = () => {
   const { toast } = useToast();

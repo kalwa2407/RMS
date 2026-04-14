@@ -191,7 +191,7 @@ const Contact = () => {
               <img 
                  src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=1200"
                  alt="Pune Map Location"
-                 className="w-full h-full object-cover grayscale-[0.8] scale-110 group-hover:scale-100 transition-all duration-[3s]"
+                 className="w-full h-full object-cover grayscale-[0.8] scale-110 group-hover:scale-100 transition-all duration-3000"
               />
               <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center p-10">
                  <div className="w-20 h-20 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-6 animate-pulse">

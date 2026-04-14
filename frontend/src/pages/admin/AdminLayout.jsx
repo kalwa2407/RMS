@@ -20,7 +20,7 @@ import {
 const AdminLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const API_BASE = process.env.REACT_APP_BACKEND_URL;
+  const API_BASE = (process.env.REACT_APP_BACKEND_URL || "");
 
   useEffect(() => {
     const token = localStorage.getItem("admin_token");

@@ -3,7 +3,7 @@ import { Award, Users, Heart, Clock, Utensils, ShieldCheck, Sparkles, History, M
 import { motion, useScroll, useTransform, useInView, AnimatePresence } from "framer-motion";
 import axios from "axios";
 
-const API_URL = process.env.REACT_APP_BACKEND_URL;
+const API_URL = (process.env.REACT_APP_BACKEND_URL || "");
 
 const About = () => {
   const [galleryImages, setGalleryImages] = useState([]);
@@ -71,7 +71,7 @@ const About = () => {
                  <img
                    src="https://images.unsplash.com/photo-1572471553554-bc9917e51ed3"
                    alt="The Imperial Kitchen"
-                   className="w-full h-full object-cover grayscale-[0.5] group-hover:grayscale-0 transition-all duration-[2s] scale-110 group-hover:scale-100"
+                   className="w-full h-full object-cover grayscale-[0.5] group-hover:grayscale-0 transition-all duration-2000 scale-110 group-hover:scale-100"
                  />
                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent p-12 flex flex-col justify-end">
                     <p className="text-primary text-[10px] font-black uppercase tracking-[0.5em] mb-4">Established 1978</p>

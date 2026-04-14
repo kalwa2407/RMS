@@ -4,7 +4,7 @@ import { MapPin, Phone, Mail, Clock, Instagram, Facebook, Twitter, ShieldCheck, 
 import axios from 'axios';
 import { motion } from 'framer-motion';
 
-const API_BASE = process.env.REACT_APP_BACKEND_URL;
+const API_BASE = (process.env.REACT_APP_BACKEND_URL || "");
 
 const Footer = () => {
   const [contactInfo, setContactInfo] = useState({

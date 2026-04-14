@@ -8,7 +8,7 @@ const KitchenView = () => {
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(new Date());
 
-  const API_BASE = process.env.REACT_APP_BACKEND_URL;
+  const API_BASE = (process.env.REACT_APP_BACKEND_URL || "");
   const token = localStorage.getItem("admin_token");
 
   const fetchKitchenOrders = useCallback(async () => {
