@@ -29,9 +29,24 @@ load_dotenv(ROOT_DIR / '.env')
 # Create the main app
 app = FastAPI()
 
+ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://rms.tasteofhindustan.com",
+    "https://tasteofhindustan.com",
+    # Allow all Vercel preview deployments
+    "https://rms-kalwa2407.vercel.app",
+]
+# Allow any *.vercel.app origin at runtime
+import re
+
+class DynamicCORSMiddleware:
+    pass
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

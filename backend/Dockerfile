@@ -19,5 +19,5 @@ COPY . .
 # Expose port 8080 (Cloud Run requirement)
 EXPOSE 8080
 
-# Run the FastAPI server using uvicorn workers
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1"]
+# Run the FastAPI server - use $PORT env variable (required by Cloud Run)
+CMD ["sh", "-c", "uvicorn server:app --host 0.0.0.0 --port ${PORT:-8080} --workers 1"]
