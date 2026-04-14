@@ -40,12 +40,12 @@ const Gallery = () => {
     : gallery.filter(img => (img.category || "Ambience") === filter);
 
   return (
-    <div className="min-h-screen bg-[#050b10] pt-32 pb-32 selection:bg-primary/30 relative">
+    <div className="min-h-screen bg-[#050b10] pt-28 md:pt-32 pb-16 md:pb-32 selection:bg-primary/30 relative">
       <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-primary/10 to-transparent pointer-events-none" />
       
       <div className="max-w-7xl mx-auto px-4 relative z-10">
         {/* Header Section */}
-        <div className="text-center mb-24">
+        <div className="text-center mb-12 md:mb-24">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -58,7 +58,7 @@ const Gallery = () => {
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-6xl md:text-8xl font-display font-black text-white mb-8"
+            className="text-4xl sm:text-6xl md:text-8xl font-display font-black text-white mb-4 md:mb-8"
           >
             The <span className="golden-text">Royal</span> Capture
           </motion.h1>
@@ -66,21 +66,21 @@ const Gallery = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="text-lg text-gray-400 max-w-2xl mx-auto font-light leading-relaxed"
+            className="text-sm md:text-lg text-gray-400 max-w-2xl mx-auto font-light leading-relaxed px-2"
           >
             A curated visual journey through the soul of Persian Darbar. From architectural grandeur to culinary artistry.
           </motion.p>
         </div>
 
         {/* Liquid Filtering */}
-        <div className="flex flex-wrap justify-center gap-4 mb-20">
+        <div className="flex flex-wrap justify-center gap-2 md:gap-4 mb-10 md:mb-20">
           {categories.map((cat) => (
             <motion.button
               key={cat}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setFilter(cat)}
-              className={`px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-500 border ${
+              className={`px-4 md:px-8 py-2.5 md:py-3 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-500 border ${
                 filter === cat 
                   ? 'bg-primary text-black border-primary shadow-[0_0_20px_rgba(234,179,8,0.3)]' 
                   : 'glass-premium text-gray-400 border-white/5 hover:text-white hover:border-white/20'
@@ -94,7 +94,7 @@ const Gallery = () => {
         {/* Gallery Masonry */}
         <motion.div 
            layout
-           className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8"
+           className="columns-1 sm:columns-2 lg:columns-3 gap-4 md:gap-8 space-y-4 md:space-y-8"
         >
           <AnimatePresence mode="popLayout">
             {filteredGallery.map((image) => (
@@ -106,7 +106,7 @@ const Gallery = () => {
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                 onClick={() => setSelectedImage(image)}
-                className="relative group rounded-[2rem] overflow-hidden brutal-card cursor-pointer"
+                className="relative group rounded-xl md:rounded-[2rem] overflow-hidden brutal-card cursor-pointer"
               >
                 <img
                   src={image.url}

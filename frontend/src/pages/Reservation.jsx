@@ -111,13 +111,13 @@ const Reservation = () => {
   }, {});
 
   return (
-    <div className="min-h-screen bg-[#050b10] pt-40 pb-32 relative selection:bg-primary/30 scroll-smooth">
+    <div className="min-h-screen bg-[#050b10] pt-28 md:pt-40 pb-16 md:pb-32 relative selection:bg-primary/30 scroll-smooth">
       {/* Dynamic Background */}
       <div className="absolute top-0 right-0 w-[60%] h-[60%] bg-primary/5 blur-[150px] rounded-full pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[40%] h-[40%] bg-white/[0.02] blur-[150px] rounded-full pointer-events-none" />
 
       <div className="max-w-5xl mx-auto px-4 relative z-10">
-        <header className="text-center mb-20">
+        <header className="text-center mb-12 md:mb-20">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -130,7 +130,7 @@ const Reservation = () => {
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-6xl md:text-8xl font-display font-black text-white mb-8"
+            className="text-4xl sm:text-6xl md:text-8xl font-display font-black text-white mb-6 md:mb-8"
           >
             Reserve Your <span className="golden-text">Place</span>
           </motion.h1>
@@ -156,7 +156,7 @@ const Reservation = () => {
           </div>
         </header>
 
-        <div className="glass-premium rounded-[4rem] p-12 md:p-20 border border-white/5 relative overflow-hidden backdrop-blur-3xl shadow-2xl">
+        <div className="glass-premium rounded-2xl md:rounded-[4rem] p-6 md:p-12 lg:p-20 border border-white/5 relative overflow-hidden backdrop-blur-3xl shadow-2xl">
           <div className="absolute top-0 left-0 w-full h-1 bg-white/[0.03]" />
           
           <AnimatePresence mode="wait">
@@ -170,7 +170,7 @@ const Reservation = () => {
                 className="space-y-12"
               >
                 <div className="space-y-4">
-                  <h2 className="text-4xl font-display font-bold text-white">First, tell us who you are</h2>
+                  <h2 className="text-2xl md:text-4xl font-display font-bold text-white">First, tell us who you are</h2>
                   <p className="text-gray-500 font-light">Enter your contact details so our heralds can confirm your seat.</p>
                 </div>
 
@@ -205,7 +205,7 @@ const Reservation = () => {
                 <button
                   disabled={!formData.name || !formData.phone}
                   onClick={nextStep}
-                  className="w-full magnetic-button bg-primary text-black py-6 rounded-3xl font-black uppercase tracking-[0.3em] text-xs flex items-center justify-center space-x-4 disabled:opacity-20 transition-all"
+                  className="w-full magnetic-button bg-primary text-black py-4 md:py-6 rounded-2xl md:rounded-3xl font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-[10px] md:text-xs flex items-center justify-center space-x-4 disabled:opacity-20 transition-all"
                 >
                   <span>Continue Selection</span>
                   <ChevronRight size={18} />
@@ -223,7 +223,7 @@ const Reservation = () => {
                 className="space-y-12"
               >
                 <div className="space-y-4">
-                  <h2 className="text-4xl font-display font-bold text-white">Choose your time</h2>
+                  <h2 className="text-2xl md:text-4xl font-display font-bold text-white">Choose your time</h2>
                   <p className="text-gray-500 font-light">Select the date and party size for your royal banquet.</p>
                 </div>
 
@@ -270,8 +270,8 @@ const Reservation = () => {
                   </div>
                 </div>
 
-                <div className="flex gap-6">
-                  <button onClick={prevStep} className="w-1/3 glass-premium text-white py-6 rounded-3xl font-black uppercase tracking-widest text-[10px]">Back</button>
+                <div className="flex gap-4 md:gap-6">
+                  <button onClick={prevStep} className="w-1/3 glass-premium text-white py-4 md:py-6 rounded-2xl md:rounded-3xl font-black uppercase tracking-widest text-[10px]">Back</button>
                   <button 
                     disabled={!formData.date || !formData.time}
                     onClick={nextStep} 
@@ -294,7 +294,7 @@ const Reservation = () => {
                 className="space-y-12"
               >
                 <div className="space-y-4">
-                  <h2 className="text-4xl font-display font-bold text-white">Select your setting</h2>
+                  <h2 className="text-2xl md:text-4xl font-display font-bold text-white">Select your setting</h2>
                   <p className="text-gray-500 font-light">Pick a specific table from our royal mapped zones.</p>
                 </div>
 
@@ -340,8 +340,8 @@ const Reservation = () => {
                    )}
                 </div>
 
-                <div className="flex gap-6">
-                  <button onClick={prevStep} className="w-1/3 glass-premium text-white py-6 rounded-3xl font-black uppercase tracking-widest text-[10px]">Back</button>
+                <div className="flex gap-4 md:gap-6">
+                  <button onClick={prevStep} className="w-1/3 glass-premium text-white py-4 md:py-6 rounded-2xl md:rounded-3xl font-black uppercase tracking-widest text-[10px]">Back</button>
                   <button 
                     disabled={!selectedTable}
                     onClick={nextStep} 
@@ -364,11 +364,11 @@ const Reservation = () => {
                 className="space-y-12"
               >
                 <div className="space-y-4">
-                  <h2 className="text-4xl font-display font-bold text-white">Final Confirmation</h2>
+                  <h2 className="text-2xl md:text-4xl font-display font-bold text-white">Final Confirmation</h2>
                   <p className="text-gray-500 font-light">Review your royal banquet details before final seal.</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 glass-premium rounded-[3rem] p-10 border-white/5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 glass-premium rounded-2xl md:rounded-[3rem] p-6 md:p-10 border-white/5">
                    <div className="space-y-6">
                       <div className="flex items-center space-x-6">
                          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
@@ -425,8 +425,8 @@ const Reservation = () => {
                   />
                 </div>
 
-                <div className="flex gap-6">
-                  <button onClick={prevStep} className="w-1/3 glass-premium text-white py-6 rounded-3xl font-black uppercase tracking-widest text-[10px]">Back</button>
+                <div className="flex gap-4 md:gap-6">
+                  <button onClick={prevStep} className="w-1/3 glass-premium text-white py-4 md:py-6 rounded-2xl md:rounded-3xl font-black uppercase tracking-widest text-[10px]">Back</button>
                   <button 
                     onClick={handleSubmit} 
                     disabled={loading}

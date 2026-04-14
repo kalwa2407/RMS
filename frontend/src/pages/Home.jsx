@@ -36,7 +36,7 @@ const Home = () => {
     <div ref={containerRef} className="relative bg-[#050b10] overflow-x-hidden selection:bg-primary/30">
 
       {/* ───────── 1. CINEMATIC HERO ───────── */}
-      <section className="relative h-[110vh] flex items-center justify-center overflow-hidden">
+      <section className="relative h-[100vh] md:h-[110vh] flex items-center justify-center overflow-hidden">
 
         {/* BG Video Layer */}
         <motion.div style={{ y: videoY, opacity: heroOp }} className="absolute inset-0 z-0">
@@ -114,10 +114,10 @@ const Home = () => {
             className="mb-6 leading-[1.05] tracking-tight"
             style={CINZEL}
           >
-            <span className="block text-5xl md:text-7xl lg:text-[6rem] text-white drop-shadow-[0_2px_30px_rgba(255,255,255,0.15)]">
+            <span className="block text-3xl sm:text-5xl md:text-7xl lg:text-[6rem] text-white drop-shadow-[0_2px_30px_rgba(255,255,255,0.15)]">
               Where Art Meets
             </span>
-            <span className="block text-5xl md:text-7xl lg:text-[6rem] golden-text drop-shadow-[0_0_40px_rgba(234,179,8,0.25)] italic">
+            <span className="block text-3xl sm:text-5xl md:text-7xl lg:text-[6rem] golden-text drop-shadow-[0_0_40px_rgba(234,179,8,0.25)] italic">
               The Palate.
             </span>
           </motion.h1>
@@ -180,9 +180,9 @@ const Home = () => {
       {/* ───────── 2. BENTO GRID FEATURES ───────── */}
       <section className="py-32 relative px-4">
         <div className="max-w-7xl mx-auto">
-          <ScrollReveal className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-4 h-auto md:h-[600px]">
+          <ScrollReveal className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-4 h-auto">
             {/* Main bento */}
-            <div className="md:col-span-2 md:row-span-2 brutal-card rounded-[2.5rem] p-10 flex flex-col justify-end group">
+            <div className="md:col-span-2 md:row-span-2 brutal-card rounded-2xl md:rounded-[2.5rem] p-6 md:p-10 flex flex-col justify-end group min-h-[280px] md:min-h-0">
               <div className="absolute inset-0 z-0 overflow-hidden rounded-[2.5rem]">
                 <img
                   src="/luxury_persian_restaurant_interior_1776082050142.png"
@@ -202,14 +202,14 @@ const Home = () => {
             </div>
 
             {/* Award */}
-            <div className="md:col-span-1 brutal-card rounded-[2.5rem] p-8 glass-premium flex flex-col justify-center items-center text-center">
+            <div className="md:col-span-1 brutal-card rounded-2xl md:rounded-[2.5rem] p-6 md:p-8 glass-premium flex flex-col justify-center items-center text-center">
               <Award className="text-primary h-10 w-10 mb-4" />
               <h3 className="text-xl text-white mb-1" style={CINZEL}>Crafted with Precision</h3>
               <p className="text-xs text-gray-500" style={MESSIRI}>Every dish is a balance of fire, spice, and mastery.</p>
             </div>
 
             {/* Delivery */}
-            <div className="md:col-span-1 brutal-card rounded-[2.5rem] p-8 bg-primary group flex flex-col justify-center items-center text-center">
+            <div className="md:col-span-1 brutal-card rounded-2xl md:rounded-[2.5rem] p-6 md:p-8 bg-primary group flex flex-col justify-center items-center text-center">
               <div className="relative">
                 <Zap className="text-black h-10 w-10 group-hover:scale-125 transition-transform duration-500" />
                 <div className="absolute inset-0 bg-white/20 blur-xl animate-ping" />
@@ -219,7 +219,7 @@ const Home = () => {
             </div>
 
             {/* Hours */}
-            <div className="md:col-span-2 brutal-card rounded-[2.5rem] p-8 glass-premium flex items-center space-x-6">
+            <div className="md:col-span-2 brutal-card rounded-2xl md:rounded-[2.5rem] p-6 md:p-8 glass-premium flex items-center space-x-4 md:space-x-6">
               <div className="w-16 h-16 rounded-full border border-primary/30 flex items-center justify-center shrink-0 relative overflow-hidden group">
                 <Clock className="text-primary h-7 w-7 relative z-10" />
                 <div className="absolute inset-0 bg-primary/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
@@ -238,10 +238,10 @@ const Home = () => {
         <div className="absolute top-0 right-0 w-[45%] h-[45%] bg-primary/5 blur-[120px] rounded-full pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4">
 
-          <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 md:mb-20 gap-6 md:gap-8">
             <ScrollReveal direction="left">
               <p className="text-primary font-semibold uppercase tracking-[0.5em] text-[10px] mb-4" style={MESSIRI}>A curated expression of royal flavors</p>
-              <h2 className="text-5xl md:text-7xl text-white leading-none" style={CINZEL}>
+              <h2 className="text-3xl sm:text-5xl md:text-7xl text-white leading-none" style={CINZEL}>
                 The <span className="text-stroke-white text-transparent">Hindustan</span><br/>Collection
               </h2>
             </ScrollReveal>
@@ -257,11 +257,11 @@ const Home = () => {
             </ScrollReveal>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-10">
             {signatureDishes.map((dish, i) => (
               <ScrollReveal key={dish.id} delay={i * 0.15}>
                 <div className="group relative">
-                  <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] brutal-card mb-6">
+                  <div className="relative aspect-[4/3] sm:aspect-[4/5] overflow-hidden rounded-2xl md:rounded-[2.5rem] brutal-card mb-4 md:mb-6">
                     <img
                       src={i === 0 ? "/signature_persian_kabab_platter_1776082069527.png" : dish.image}
                       alt={dish.name}
@@ -305,12 +305,12 @@ const Home = () => {
           <ScrollReveal>
             {/* Arabic accent */}
             <p className="text-primary/50 text-3xl mb-6" style={RUQAA}>تذوق طعم الهند</p>
-            <h2 className="text-5xl md:text-7xl text-white mb-12 leading-tight" style={CINZEL}>
+            <h2 className="text-3xl sm:text-5xl md:text-7xl text-white mb-8 md:mb-12 leading-tight" style={CINZEL}>
               An experience remembered <br /><span className="golden-text">long after the last bite.</span>
             </h2>
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
               <Link to="/reservation">
-                <button className="magnetic-button bg-primary text-black px-14 py-6 rounded-full font-bold uppercase tracking-[0.3em] text-[12px] shadow-2xl shadow-primary/20" style={MESSIRI}>
+                <button className="magnetic-button bg-primary text-black px-8 md:px-14 py-4 md:py-6 rounded-full font-bold uppercase tracking-[0.2em] md:tracking-[0.3em] text-[10px] md:text-[12px] shadow-2xl shadow-primary/20" style={MESSIRI}>
                   Secure Your Private Table
                 </button>
               </Link>

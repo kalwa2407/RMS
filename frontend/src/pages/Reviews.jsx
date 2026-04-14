@@ -29,14 +29,14 @@ const Reviews = () => {
   const displayedReviews = reviews.slice(0, displayCount);
 
   return (
-    <div className="min-h-screen bg-[#050b10] pt-40 pb-32 relative selection:bg-primary/30">
+    <div className="min-h-screen bg-[#050b10] pt-28 md:pt-40 pb-16 md:pb-32 relative selection:bg-primary/30">
       {/* Cinematic Backgrounds */}
       <div className="absolute top-0 right-[-10%] w-[60%] h-[60%] bg-primary/5 blur-[150px] rounded-full pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-white/[0.02] blur-[150px] rounded-full pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 relative z-10">
         {/* Header Section */}
-        <header className="text-center mb-32">
+        <header className="text-center mb-16 md:mb-32">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -49,7 +49,7 @@ const Reviews = () => {
           <motion.h1 
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-7xl md:text-9xl font-display font-black text-white mb-12 leading-tight"
+            className="text-4xl sm:text-5xl md:text-9xl font-display font-black text-white mb-6 md:mb-12 leading-tight"
           >
             Patron <span className="golden-text italic">Reflections</span>
           </motion.h1>
@@ -81,12 +81,12 @@ const Reviews = () => {
              <div className="w-12 h-12 border border-primary/20 border-t-primary rounded-full animate-spin" />
           </div>
         ) : (
-          <div className="columns-1 md:columns-2 lg:columns-3 gap-8">
+          <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 md:gap-8">
             <AnimatePresence>
               {displayedReviews.map((review, i) => (
                 <ScrollReveal key={review._id} delay={i * 0.05}>
-                  <div className="break-inside-avoid mb-8 group">
-                    <div className="glass-premium rounded-[3rem] p-10 border border-white/5 relative overflow-hidden group-hover:scale-[1.02] transition-all duration-700">
+                  <div className="break-inside-avoid mb-4 md:mb-8 group">
+                    <div className="glass-premium rounded-2xl md:rounded-[3rem] p-6 md:p-10 border border-white/5 relative overflow-hidden group-hover:scale-[1.02] transition-all duration-700">
                       <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
                          <Quote size={80} strokeWidth={1} />
                       </div>
@@ -112,7 +112,7 @@ const Reviews = () => {
                         ))}
                       </div>
 
-                      <p className="text-gray-400 font-light italic leading-relaxed text-lg mb-8">
+                      <p className="text-gray-400 font-light italic leading-relaxed text-sm md:text-lg mb-6 md:mb-8">
                         "{review.text}"
                       </p>
 

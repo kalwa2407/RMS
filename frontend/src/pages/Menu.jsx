@@ -35,18 +35,18 @@ const Menu = () => {
   });
 
   return (
-    <div className="min-h-screen bg-[#050b10] pt-40 pb-32 relative selection:bg-primary/30">
+    <div className="min-h-screen bg-[#050b10] pt-28 md:pt-40 pb-16 md:pb-32 relative selection:bg-primary/30">
       {/* Decorative Aura */}
       <div className="absolute top-0 right-[-10%] w-[60%] h-[60%] bg-primary/5 blur-[150px] rounded-full pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-white/[0.02] blur-[150px] rounded-full pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 relative z-10">
         {/* Header Section */}
-        <header className="text-center mb-24 relative">
+        <header className="text-center mb-10 md:mb-24 relative">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="inline-flex items-center space-x-3 glass-premium rounded-full px-6 py-2 mb-8 border-white/5"
+            className="inline-flex items-center space-x-3 glass-premium rounded-full px-4 md:px-6 py-2 mb-6 md:mb-8 border-white/5"
           >
             <Sparkles className="text-primary w-4 h-4" />
             <span className="text-primary text-[10px] font-black uppercase tracking-[0.4em]">Gastronomic Artistry</span>
@@ -55,7 +55,7 @@ const Menu = () => {
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-7xl md:text-8xl font-display font-black text-white mb-8"
+            className="text-4xl sm:text-5xl md:text-8xl font-display font-black text-white mb-4 md:mb-8"
           >
             Our <span className="golden-text">Collections</span>
           </motion.h1>
@@ -64,20 +64,20 @@ const Menu = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="text-gray-400 font-light text-xl max-w-2xl mx-auto leading-relaxed italic border-white/10"
+            className="text-gray-400 font-light text-sm md:text-xl max-w-2xl mx-auto leading-relaxed italic border-white/10 px-2"
           >
             "A masterfully curated anthology of Persian flavors, where every spice tells a thousand-year-old tale of royalty."
           </motion.p>
         </header>
 
         {/* Search & Filter Bar */}
-        <div className="mb-20 flex flex-col md:flex-row gap-8 items-center justify-between glass-premium rounded-[3rem] p-4 border-white/5 focus-within:border-primary/30 transition-all duration-500">
+        <div className="mb-10 md:mb-20 flex flex-col md:flex-row gap-4 md:gap-8 items-center justify-between glass-premium rounded-2xl md:rounded-[3rem] p-3 md:p-4 border-white/5 focus-within:border-primary/30 transition-all duration-500">
           <div className="flex flex-wrap justify-center md:justify-start gap-2 h-max">
             {menuCategories.map((category) => (
               <button
                 key={category}
                 onClick={() => setSelectedCategory(category)}
-                className={`px-8 py-3.5 text-[10px] font-black uppercase tracking-widest rounded-full transition-all duration-500 border relative overflow-hidden group ${
+                className={`px-4 md:px-8 py-2.5 md:py-3.5 text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-full transition-all duration-500 border relative overflow-hidden group ${
                   selectedCategory === category
                     ? "bg-primary border-primary text-black shadow-[0_0_25px_rgba(234,179,8,0.3)]"
                     : "bg-white/[0.02] border-white/5 text-gray-500 hover:text-white hover:border-white/20"
@@ -117,7 +117,7 @@ const Menu = () => {
         ) : (
           <motion.div 
             layout
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-12"
           >
             <AnimatePresence mode="popLayout">
               {filteredItems.map((item, index) => (
@@ -130,8 +130,8 @@ const Menu = () => {
                   transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                   className="group"
                 >
-                  <div className="brutal-card rounded-[3rem] p-4 h-full flex flex-col group hover:bg-white/[0.02] transition-all duration-700">
-                    <div className="relative aspect-square overflow-hidden rounded-[2.5rem] mb-8">
+                  <div className="brutal-card rounded-2xl md:rounded-[3rem] p-3 md:p-4 h-full flex flex-col group hover:bg-white/[0.02] transition-all duration-700">
+                    <div className="relative aspect-[4/3] sm:aspect-square overflow-hidden rounded-xl md:rounded-[2.5rem] mb-4 md:mb-8">
                       <motion.img
                         whileHover={{ scale: 1.1 }}
                         transition={{ duration: 1 }}
@@ -146,7 +146,7 @@ const Menu = () => {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                       
                       <div className="absolute top-6 right-6 flex flex-col space-y-3">
-                        <div className="glass-premium border-white/20 text-white px-5 py-2.5 rounded-full text-lg font-black italic shadow-2xl">
+                         <div className="glass-premium border-white/20 text-white px-3 md:px-5 py-1.5 md:py-2.5 rounded-full text-sm md:text-lg font-black italic shadow-2xl">
                           ₹{item.price}
                         </div>
                       </div>
@@ -166,16 +166,16 @@ const Menu = () => {
                       </div>
                     </div>
 
-                    <div className="px-6 pb-6 flex-1 flex flex-col">
-                      <h3 className="text-3xl font-display font-black text-white mb-4 group-hover:text-primary transition-colors">
+                    <div className="px-3 md:px-6 pb-4 md:pb-6 flex-1 flex flex-col">
+                      <h3 className="text-xl md:text-3xl font-display font-black text-white mb-2 md:mb-4 group-hover:text-primary transition-colors">
                         {item.name}
                       </h3>
-                      <p className="text-gray-500 text-sm font-light leading-relaxed mb-10 flex-1">
+                      <p className="text-gray-500 text-xs md:text-sm font-light leading-relaxed mb-4 md:mb-10 flex-1">
                         {item.description}
                       </p>
 
                       <Link to="/order" className="mt-auto">
-                        <button className="w-full magnetic-button bg-primary text-black py-4.5 rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-[11px] shadow-xl shadow-primary/10 hover:bg-white transition-all group-hover:scale-[1.02]">
+                        <button className="w-full magnetic-button bg-primary text-black py-3 md:py-4.5 rounded-xl md:rounded-[1.5rem] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] text-[10px] md:text-[11px] shadow-xl shadow-primary/10 hover:bg-white transition-all group-hover:scale-[1.02]">
                           Order Now
                         </button>
                       </Link>

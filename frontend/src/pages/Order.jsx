@@ -165,13 +165,13 @@ const Order = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#050b10] pt-40 pb-32 relative selection:bg-primary/30">
+    <div className="min-h-screen bg-[#050b10] pt-28 md:pt-40 pb-16 md:pb-32 relative selection:bg-primary/30">
       {/* Dynamic Background Effects */}
       <div className="absolute top-0 right-[-10%] w-[60%] h-[60%] bg-primary/5 blur-[150px] rounded-full pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-white/[0.02] blur-[150px] rounded-full pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 relative z-10">
-        <header className="text-center mb-24 relative">
+        <header className="text-center mb-12 md:mb-24 relative">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -184,7 +184,7 @@ const Order = () => {
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-7xl md:text-8xl font-display font-black text-white mb-8"
+            className="text-4xl sm:text-5xl md:text-8xl font-display font-black text-white mb-4 md:mb-8"
           >
             Express <span className="golden-text">Gourmet</span>
           </motion.h1>
@@ -193,13 +193,13 @@ const Order = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="text-gray-400 font-light text-xl max-w-2xl mx-auto leading-relaxed italic"
+            className="text-gray-400 font-light text-sm md:text-xl max-w-2xl mx-auto leading-relaxed italic"
           >
             "The finest Hindustani flavors, swift as a desert wind, delivered to your sanctuary."
           </motion.p>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 items-start">
           {/* MENU SELECTION */}
           <div className="lg:col-span-8 space-y-12">
             <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
@@ -207,7 +207,7 @@ const Order = () => {
                 <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}
-                  className={`px-8 py-3.5 text-[10px] font-black uppercase tracking-widest rounded-full transition-all duration-500 border relative overflow-hidden group ${
+                  className={`px-4 md:px-8 py-2.5 md:py-3.5 text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-full transition-all duration-500 border relative overflow-hidden group ${
                     selectedCategory === category
                       ? "bg-primary border-primary text-black"
                       : "bg-white/[0.02] border-white/5 text-gray-500 hover:text-white"
@@ -218,7 +218,7 @@ const Order = () => {
               ))}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-8">
               <AnimatePresence mode="popLayout">
                 {filteredItems.map((item, idx) => (
                   <motion.div
@@ -226,9 +226,9 @@ const Order = () => {
                     layout
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="brutal-card rounded-[2.5rem] p-4 group"
+                    className="brutal-card rounded-2xl md:rounded-[2.5rem] p-3 md:p-4 group"
                   >
-                    <div className="relative aspect-video overflow-hidden rounded-[2rem] mb-6">
+                    <div className="relative aspect-[4/3] md:aspect-video overflow-hidden rounded-xl md:rounded-[2rem] mb-4 md:mb-6">
                       <img
                         src={item.image}
                         alt={item.name}
@@ -240,7 +240,7 @@ const Order = () => {
                       </div>
                     </div>
                     <div className="px-4 pb-4">
-                      <h3 className="text-2xl font-display font-bold text-white mb-2 group-hover:text-primary transition-colors">{item.name}</h3>
+                      <h3 className="text-lg md:text-2xl font-display font-bold text-white mb-1 md:mb-2 group-hover:text-primary transition-colors">{item.name}</h3>
                       <p className="text-gray-500 text-xs font-light line-clamp-2 mb-6 italic">{item.description}</p>
                       <button
                         onClick={() => addToCart(item)}
@@ -257,8 +257,8 @@ const Order = () => {
           </div>
 
           {/* CHECKOUT CART */}
-          <div className="lg:col-span-4 sticky top-44">
-            <div className="glass-premium rounded-[3rem] border border-white/5 overflow-hidden shadow-2xl">
+          <div className="lg:col-span-4 lg:sticky lg:top-44">
+            <div className="glass-premium rounded-2xl md:rounded-[3rem] border border-white/5 overflow-hidden shadow-2xl">
               <div className="bg-primary p-8 flex justify-between items-center text-black">
                 <div className="flex items-center space-x-4">
                   <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-primary">
