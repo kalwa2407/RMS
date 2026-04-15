@@ -8,7 +8,7 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        display:  ["'Cinzel Decorative'", 'serif'],
+        display:  ["'Playfair Display'", 'serif'],
         imperial: ["'El Messiri'", 'sans-serif'],
         arabic:   ["'Aref Ruqaa'", 'serif'],
         sans:     ["'El Messiri'", "'Outfit'", 'sans-serif'],

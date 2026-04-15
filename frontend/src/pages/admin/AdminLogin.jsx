@@ -70,11 +70,11 @@ const AdminLogin = () => {
 
         <div className="text-center mb-10">
           <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 overflow-hidden relative mx-auto mb-6">
-             <span className="text-primary font-black text-3xl tracking-tight" style={{ fontFamily: "'Cinzel Decorative', serif" }}>TH</span>
+             <span className="text-primary font-black text-3xl tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>TH</span>
           </div>
           <h1
             className="text-4xl text-white mb-2"
-            style={{ fontFamily: "'Cinzel Decorative', serif" }}
+            style={{ fontFamily: "'Playfair Display', serif" }}
           >
             Admin Panel
           </h1>

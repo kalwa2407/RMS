@@ -51,11 +51,11 @@ const Navbar = () => {
               <motion.div whileHover={{ rotate: 8, scale: 1.05 }} className="relative">
                 <div className="absolute inset-0 bg-primary/30 blur-xl rounded-full scale-0 group-hover:scale-150 transition-transform duration-500" />
                 <div className="w-10 h-10 md:w-11 md:h-11 bg-primary rounded-2xl flex items-center justify-center border border-primary/50 overflow-hidden relative">
-                  <span className="text-black font-black text-lg tracking-tight" style={{ fontFamily: "'Cinzel Decorative', serif" }}>TH</span>
+                  <span className="text-black font-black text-lg tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>TH</span>
                 </div>
               </motion.div>
               <div className="hidden lg:flex flex-col leading-none gap-0.5">
-                <span className="font-black tracking-[0.15em] text-white text-[15px] uppercase" style={{ fontFamily: "'Cinzel Decorative', serif" }}>TASTE OF</span>
+                <span className="font-black tracking-[0.15em] text-white text-[15px] uppercase" style={{ fontFamily: "'Playfair Display', serif" }}>TASTE OF</span>
                 <span className="font-bold tracking-[0.5em] text-primary text-[8px] uppercase" style={{ fontFamily: "'El Messiri', serif" }}>ذوق الهند · Hindustan</span>
               </div>
             </Link>

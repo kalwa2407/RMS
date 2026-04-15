@@ -270,7 +270,7 @@ const TableOrder = () => {
           <div className="w-20 h-20 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/20 overflow-hidden relative mx-auto mb-6">
              <Lock className="h-8 w-8 text-orange-500" />
           </div>
-          <h1 className="text-3xl text-white mb-4" style={{ fontFamily: "'Cinzel Decorative', serif" }}>Table In Use</h1>
+          <h1 className="text-3xl text-white mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>Table In Use</h1>
           <p className="text-gray-400 mb-4 tracking-wide font-light">Table {tableNumber} is currently reserved by <span className="text-primary font-bold">{session.customer_name}</span>.</p>
           <p className="text-gray-500 text-xs mb-8 uppercase tracking-widest">Please wait until the current experience is completed.</p>
           <button
@@ -296,9 +296,9 @@ const TableOrder = () => {
         <div className="bg-white/[0.03] backdrop-blur-xl border border-white/5 rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl relative z-10">
           <div className="text-center mb-10">
             <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 overflow-hidden relative mx-auto mb-6">
-               <span className="text-primary font-black text-3xl tracking-tight" style={{ fontFamily: "'Cinzel Decorative', serif" }}>TH</span>
+               <span className="text-primary font-black text-3xl tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>TH</span>
             </div>
-            <h1 className="text-4xl text-white mb-2" style={{ fontFamily: "'Cinzel Decorative', serif" }}>Taste of Hindustan</h1>
+            <h1 className="text-4xl text-white mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>Taste of Hindustan</h1>
             <p className="text-primary text-[10px] uppercase tracking-[0.3em] font-bold mb-1" style={{ fontFamily: "'El Messiri', serif" }}>Welcome</p>
             <p className="text-gray-500 text-xs italic">Table {tableNumber}</p>
           </div>
@@ -339,7 +339,7 @@ const TableOrder = () => {
           <div className="max-w-6xl mx-auto px-4 flex justify-between items-center">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center border border-primary/50 overflow-hidden relative">
-                 <span className="text-black font-black text-xs" style={{ fontFamily: "'Cinzel Decorative', serif" }}>TH</span>
+                 <span className="text-black font-black text-xs" style={{ fontFamily: "'Playfair Display', serif" }}>TH</span>
               </div>
               <div>
                 <h1 className="text-lg font-bold text-primary">Table {tableNumber}</h1>
@@ -440,7 +440,7 @@ const TableOrder = () => {
         <div className="max-w-6xl mx-auto px-4 flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center border border-primary/50 overflow-hidden relative">
-               <span className="text-black font-black text-xs" style={{ fontFamily: "'Cinzel Decorative', serif" }}>TH</span>
+               <span className="text-black font-black text-xs" style={{ fontFamily: "'Playfair Display', serif" }}>TH</span>
             </div>
             <div>
               <h1 className="text-lg font-bold text-primary">Table {tableNumber}</h1>

@@ -83,10 +83,10 @@ const AdminLayout = () => {
         <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
           <div className="flex items-center space-x-4">
             <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20 overflow-hidden relative">
-               <span className="text-primary font-black text-xl tracking-tight" style={{ fontFamily: "'Cinzel Decorative', serif" }}>TH</span>
+               <span className="text-primary font-black text-xl tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>TH</span>
             </div>
             <div>
-              <h1 className="text-xl text-white" style={{ fontFamily: "'Cinzel Decorative', serif" }}>Admin Panel</h1>
+              <h1 className="text-xl text-white" style={{ fontFamily: "'Playfair Display', serif" }}>Admin Panel</h1>
               <p className="text-[10px] text-gray-500 uppercase tracking-widest" style={{ fontFamily: "'El Messiri', serif" }}>Taste of Hindustan Management</p>
             </div>
           </div>

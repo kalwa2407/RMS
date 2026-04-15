@@ -7,7 +7,7 @@ import { menuItems } from '../mockData';
 /* ─────────────────────────────────────────────────────────
    Shared font helpers
 ───────────────────────────────────────────────────────── */
-const CINZEL  = { fontFamily: "'Cinzel Decorative', serif" };
+const CINZEL  = { fontFamily: "'Playfair Display', serif" };
 const MESSIRI = { fontFamily: "'El Messiri', serif" };
 const RUQAA   = { fontFamily: "'Aref Ruqaa', serif" };
 

@@ -150,7 +150,7 @@ const Dashboard = () => {
       <div className="mb-10">
         <h2
           className="text-3xl text-white mb-2"
-          style={{ fontFamily: "'Cinzel Decorative', serif" }}
+          style={{ fontFamily: "'Playfair Display', serif" }}
         >
           Dashboard
         </h2>
@@ -172,7 +172,7 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              <h3 className="text-3xl font-bold text-white mb-1" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+              <h3 className="text-3xl font-bold text-white mb-1" style={{ fontFamily: "'Playfair Display', serif" }}>
                 {card.value}
               </h3>
               <p className="text-primary text-[11px] uppercase tracking-widest font-bold" style={{ fontFamily: "'El Messiri', serif" }}>{card.title}</p>
@@ -186,7 +186,7 @@ const Dashboard = () => {
       <div className="mt-8 bg-white/[0.03] backdrop-blur-xl border border-white/5 rounded-[2rem] p-8">
         <h3
           className="text-xl text-white mb-6"
-          style={{ fontFamily: "'Cinzel Decorative', serif" }}
+          style={{ fontFamily: "'Playfair Display', serif" }}
         >
           Quick Actions
         </h3>
