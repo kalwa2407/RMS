@@ -16,6 +16,7 @@ import {
   UtensilsCrossed,
   Package,
 } from "lucide-react";
+import logoImg from "../../assets/logo.png";
 
 const AdminLayout = () => {
   const navigate = useNavigate();
@@ -82,13 +83,11 @@ const AdminLayout = () => {
       <div className="bg-[#1a4855] border-b-2 border-[#EAB308] sticky top-0 z-50 py-4">
         <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-[#EAB308] rounded-lg flex items-center justify-center">
-               <span className="text-[#0f2933] font-black text-xl" style={{ fontFamily: "'Playfair Display', serif" }}>PD</span>
-            </div>
-            <div>
-              <h1 className="text-xl text-white" style={{ fontFamily: "'Playfair Display', serif" }}>Admin Panel</h1>
-              <p className="text-[10px] text-[#EAB308] uppercase tracking-widest">Persian Darbar Management</p>
-            </div>
+            <img
+              src={logoImg}
+              alt="Persian Darbar"
+              className="h-14 md:h-16 w-auto object-contain drop-shadow"
+            />
           </div>
 
           <button

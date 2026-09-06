@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { LogIn } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
+import logoImg from "../../assets/logo.png";
 
 const API_BASE = (process.env.REACT_APP_BACKEND_URL || "");
 
@@ -69,8 +70,12 @@ const AdminLogin = () => {
       <div className="max-w-md w-full relative z-10">
 
         <div className="text-center mb-10">
-          <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 overflow-hidden relative mx-auto mb-6">
-             <span className="text-primary font-black text-3xl tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>PD</span>
+          <div className="flex justify-center mb-6">
+            <img
+              src={logoImg}
+              alt="Persian Darbar"
+              className="h-36 md:h-40 w-auto object-contain drop-shadow-xl"
+            />
           </div>
           <h1
             className="text-4xl text-white mb-2"

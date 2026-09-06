@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Phone, Mail, Clock } from 'lucide-react';
 import axios from 'axios';
+import logoImg from '../assets/logo.png';
 
 const API_BASE = (process.env.REACT_APP_BACKEND_URL || "");
 
@@ -35,14 +36,12 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
           {/* About */}
           <div>
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="w-12 h-12 bg-[#EAB308] rounded-lg flex items-center justify-center">
-                <span className="text-[#0f2933] font-bold text-xl" style={{ fontFamily: 'Playfair Display, serif' }}>PD</span>
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>Persian Darbar</h3>
-                <p className="text-[#EAB308] text-xs">Original Since 1978</p>
-              </div>
+            <div className="mb-4">
+              <img
+                src={logoImg}
+                alt="Persian Darbar"
+                className="h-18 md:h-20 w-auto object-contain drop-shadow"
+              />
             </div>
             <p className="text-sm leading-relaxed text-gray-300">
               Experience the Royal Persian Taste in Pune. Where tradition meets taste with authentic cuisine and flavorful delicacies.

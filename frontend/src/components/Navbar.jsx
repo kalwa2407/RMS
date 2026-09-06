@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, User } from 'lucide-react';
+import logoImg from '../assets/logo.png';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -22,15 +23,13 @@ const Navbar = () => {
   return (
     <nav className="bg-[#184956] border-b-2 border-[#EAB308] fixed w-full top-0 z-50 shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
-          <Link to="/" className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-[#EAB308] rounded-lg flex items-center justify-center">
-              <span className="text-[#0f2933] font-bold text-lg" style={{ fontFamily: 'Playfair Display, serif' }}>PD</span>
-            </div>
-            <div className="hidden sm:flex flex-col leading-none">
-              <span className="text-white font-bold text-lg tracking-wide" style={{ fontFamily: 'Playfair Display, serif' }}>Persian Darbar</span>
-              <span className="text-[#EAB308] text-[10px] font-medium tracking-widest uppercase">Original Since 1978</span>
-            </div>
+        <div className="flex justify-between items-center h-20 md:h-24">
+          <Link to="/" className="flex items-center py-2">
+            <img
+              src={logoImg}
+              alt="Persian Darbar"
+              className="h-16 md:h-20 w-auto object-contain drop-shadow-md transition-transform hover:scale-105"
+            />
           </Link>
 
           <div className="hidden lg:flex items-center space-x-6">
