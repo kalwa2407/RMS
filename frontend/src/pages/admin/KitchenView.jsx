@@ -92,7 +92,7 @@ const KitchenView = () => {
         </div>
         <button
           onClick={fetchKitchenOrders}
-          className="flex items-center space-x-2 bg-white/[0.03] px-4 py-2 rounded-lg text-primary hover:bg-[#254a58] transition"
+          className="flex items-center space-x-2 bg-[#1a4855] px-4 py-2 rounded-lg text-primary hover:bg-[#254a58] transition"
         >
           <RefreshCw className="h-4 w-4" />
           <span>Refresh</span>
@@ -101,7 +101,7 @@ const KitchenView = () => {
 
       {/* Orders Grid */}
       {orders.length === 0 ? (
-        <div className="bg-white/[0.03] rounded-xl p-12 text-center">
+        <div className="bg-[#1a4855] rounded-xl p-12 text-center">
           <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
           <h2 className="text-xl text-white mb-2">All Caught Up!</h2>
           <p className="text-gray-400">No pending orders in the kitchen</p>
@@ -111,7 +111,7 @@ const KitchenView = () => {
           {orders.map((order) => (
             <div
               key={order.order_id}
-              className={`bg-white/[0.03] rounded-xl p-5 border-2 ${
+              className={`bg-[#1a4855] rounded-xl p-5 border-2 ${
                 order.status === "accepted"
                   ? "border-yellow-500"
                   : "border-orange-500"
@@ -154,7 +154,7 @@ const KitchenView = () => {
               </div>
 
               {/* Items */}
-              <div className="bg-[#050b10] rounded-lg p-3 mb-4">
+              <div className="bg-[#0f2933] rounded-lg p-3 mb-4">
                 <h4 className="text-white font-bold mb-2">Items:</h4>
                 <ul className="space-y-2">
                   {order.items.map((item, idx) => (

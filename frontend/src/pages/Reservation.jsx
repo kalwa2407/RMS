@@ -112,17 +112,17 @@ const Reservation = () => {
   }, {});
 
   return (
-    <div className="min-h-screen bg-[#050b10] pt-28 md:pt-40 pb-16 md:pb-32 relative selection:bg-primary/30 scroll-smooth">
+    <div className="min-h-screen bg-gradient-to-b from-[#184956] to-[#0f2933] pt-28 md:pt-40 pb-16 md:pb-32 relative selection:bg-primary/30 scroll-smooth">
       {/* Dynamic Background */}
       <div className="absolute top-0 right-0 w-[60%] h-[60%] bg-primary/5 blur-[150px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[40%] h-[40%] bg-white/[0.02] blur-[150px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[40%] h-[40%] bg-[#1a4855] blur-[150px] rounded-full pointer-events-none" />
 
       <div className="max-w-5xl mx-auto px-4 relative z-10">
         <header className="text-center mb-12 md:mb-20">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="inline-flex items-center space-x-2 glass-premium rounded-full px-5 py-2 mb-8 border-white/5"
+            className="inline-flex items-center space-x-2 bg-[#1a4855] border border-[#EAB308]/20 rounded-full px-5 py-2 mb-8 border-[#EAB308]/20"
           >
             <Sparkles className="text-primary w-4 h-4" />
             <span className="text-primary text-[10px] font-black uppercase tracking-[0.4em]">The Concierge Experience</span>
@@ -131,9 +131,9 @@ const Reservation = () => {
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-4xl sm:text-6xl md:text-8xl font-display font-black text-white mb-6 md:mb-8"
+            className="text-4xl sm:text-6xl md:text-8xl font-black text-white mb-6 md:mb-8"
           >
-            Reserve Your <span className="golden-text">Place</span>
+            Reserve Your <span className="text-[#EAB308]">Place</span>
           </motion.h1>
           
           {/* Progress Timeline */}
@@ -144,7 +144,7 @@ const Reservation = () => {
                   className={`w-10 h-10 rounded-full flex items-center justify-center text-[10px] font-black tracking-widest transition-all duration-500 border ${
                     step >= num 
                       ? 'bg-primary border-primary text-black shadow-[0_0_15px_rgba(234,179,8,0.4)]' 
-                      : 'glass-premium border-white/10 text-gray-500'
+                      : 'bg-[#1a4855] border border-[#EAB308]/20 border-[#EAB308]/20 text-gray-500'
                   }`}
                 >
                   {step > num ? <Check size={14} /> : num}
@@ -157,8 +157,8 @@ const Reservation = () => {
           </div>
         </header>
 
-        <div className="glass-premium rounded-2xl md:rounded-[4rem] p-6 md:p-12 lg:p-20 border border-white/5 relative overflow-hidden backdrop-blur-3xl shadow-2xl">
-          <div className="absolute top-0 left-0 w-full h-1 bg-white/[0.03]" />
+        <div className="bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl md:rounded-[4rem] p-6 md:p-12 lg:p-20 border border-[#EAB308]/20 relative overflow-hidden shadow-2xl">
+          <div className="absolute top-0 left-0 w-full h-1 bg-[#1a4855]" />
           
           <AnimatePresence mode="wait">
             {/* Step 1: Basics (Name & Contact) */}
@@ -171,7 +171,7 @@ const Reservation = () => {
                 className="space-y-12"
               >
                 <div className="space-y-4">
-                  <h2 className="text-2xl md:text-4xl font-display font-bold text-white">First, tell us who you are</h2>
+                  <h2 className="text-2xl md:text-4xl font-bold text-white">First, tell us who you are</h2>
                   <p className="text-gray-500 font-light">Enter your contact details so our heralds can confirm your seat.</p>
                 </div>
 
@@ -185,7 +185,7 @@ const Reservation = () => {
                       value={formData.name}
                       onChange={(e) => handleChange("name", e.target.value)}
                       placeholder="HOW MAY WE ADDRESS YOU?"
-                      className="w-full bg-white/[0.02] border border-white/10 rounded-3xl px-8 py-5 text-sm font-bold tracking-widest text-white focus:border-primary/50 transition-all outline-none"
+                      className="w-full bg-[#1a4855] border border-[#EAB308]/20 rounded-3xl px-8 py-5 text-sm font-bold tracking-widest text-white focus:border-primary/50 transition-all outline-none"
                     />
                   </div>
                   <div className="space-y-4">
@@ -198,7 +198,7 @@ const Reservation = () => {
                       value={formData.phone}
                       onChange={(e) => handleChange("phone", e.target.value)}
                       placeholder="+91 MOBILE NUMBER"
-                      className="w-full bg-white/[0.02] border border-white/10 rounded-3xl px-8 py-5 text-sm font-bold tracking-widest text-white focus:border-primary/50 transition-all outline-none"
+                      className="w-full bg-[#1a4855] border border-[#EAB308]/20 rounded-3xl px-8 py-5 text-sm font-bold tracking-widest text-white focus:border-primary/50 transition-all outline-none"
                     />
                   </div>
                 </div>
@@ -206,7 +206,7 @@ const Reservation = () => {
                 <button
                   disabled={!formData.name || !formData.phone}
                   onClick={nextStep}
-                  className="w-full magnetic-button bg-primary text-black py-4 md:py-6 rounded-2xl md:rounded-3xl font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-[10px] md:text-xs flex items-center justify-center space-x-4 disabled:opacity-20 transition-all"
+                  className="w-full bg-primary text-black py-4 md:py-6 rounded-2xl md:rounded-3xl font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-[10px] md:text-xs flex items-center justify-center space-x-4 disabled:opacity-20 transition-all"
                 >
                   <span>Continue Selection</span>
                   <ChevronRight size={18} />
@@ -224,7 +224,7 @@ const Reservation = () => {
                 className="space-y-12"
               >
                 <div className="space-y-4">
-                  <h2 className="text-2xl md:text-4xl font-display font-bold text-white">Choose your time</h2>
+                  <h2 className="text-2xl md:text-4xl font-bold text-white">Choose your time</h2>
                   <p className="text-gray-500 font-light">Select the date and party size for your royal banquet.</p>
                 </div>
 
@@ -239,7 +239,7 @@ const Reservation = () => {
                       min={new Date().toISOString().split("T")[0]}
                       value={formData.date}
                       onChange={(e) => handleChange("date", e.target.value)}
-                      className="w-full bg-white/[0.02] border border-white/10 rounded-3xl px-8 py-5 text-sm font-bold tracking-widest text-white focus:border-primary/50 transition-all outline-none invert-calendar"
+                      className="w-full bg-[#1a4855] border border-[#EAB308]/20 rounded-3xl px-8 py-5 text-sm font-bold tracking-widest text-white focus:border-primary/50 transition-all outline-none invert-calendar"
                     />
                   </div>
                   <div className="space-y-4">
@@ -250,10 +250,10 @@ const Reservation = () => {
                     <select
                       value={formData.time}
                       onChange={(e) => handleChange("time", e.target.value)}
-                      className="w-full bg-white/[0.02] border border-white/10 rounded-3xl px-8 py-5 text-sm font-bold tracking-widest text-white focus:border-primary/50 transition-all outline-none appearance-none"
+                      className="w-full bg-[#1a4855] border border-[#EAB308]/20 rounded-3xl px-8 py-5 text-sm font-bold tracking-widest text-white focus:border-primary/50 transition-all outline-none appearance-none"
                     >
-                      <option value="" className="bg-[#050b10]">SELECT SLOT</option>
-                      {timeSlots.map(s => <option key={s} value={s} className="bg-[#050b10]">{s}</option>)}
+                      <option value="" className="bg-gradient-to-b from-[#184956] to-[#0f2933]">SELECT SLOT</option>
+                      {timeSlots.map(s => <option key={s} value={s} className="bg-gradient-to-b from-[#184956] to-[#0f2933]">{s}</option>)}
                     </select>
                   </div>
                   <div className="space-y-4">
@@ -264,15 +264,15 @@ const Reservation = () => {
                     <select
                       value={formData.guests}
                       onChange={(e) => handleChange("guests", e.target.value)}
-                      className="w-full bg-white/[0.02] border border-white/10 rounded-3xl px-8 py-5 text-sm font-bold tracking-widest text-white focus:border-primary/50 transition-all outline-none appearance-none"
+                      className="w-full bg-[#1a4855] border border-[#EAB308]/20 rounded-3xl px-8 py-5 text-sm font-bold tracking-widest text-white focus:border-primary/50 transition-all outline-none appearance-none"
                     >
-                      {[1,2,3,4,5,6,8,10,12].map(n => <option key={n} value={n} className="bg-[#050b10]">{n} GUESTS</option>)}
+                      {[1,2,3,4,5,6,8,10,12].map(n => <option key={n} value={n} className="bg-gradient-to-b from-[#184956] to-[#0f2933]">{n} GUESTS</option>)}
                     </select>
                   </div>
                 </div>
 
                 <div className="flex gap-4 md:gap-6">
-                  <button onClick={prevStep} className="w-1/3 glass-premium text-white py-4 md:py-6 rounded-2xl md:rounded-3xl font-black uppercase tracking-widest text-[10px]">Back</button>
+                  <button onClick={prevStep} className="w-1/3 bg-[#1a4855] border border-[#EAB308]/20 text-white py-4 md:py-6 rounded-2xl md:rounded-3xl font-black uppercase tracking-widest text-[10px]">Back</button>
                   <button 
                     disabled={!formData.date || !formData.time}
                     onClick={nextStep} 
@@ -295,7 +295,7 @@ const Reservation = () => {
                 className="space-y-12"
               >
                 <div className="space-y-4">
-                  <h2 className="text-2xl md:text-4xl font-display font-bold text-white">Select your setting</h2>
+                  <h2 className="text-2xl md:text-4xl font-bold text-white">Select your setting</h2>
                   <p className="text-gray-500 font-light">Pick a specific table from our royal mapped zones.</p>
                 </div>
 
@@ -303,9 +303,9 @@ const Reservation = () => {
                    {Object.entries(groupedTables).map(([zone, zoneTables]) => (
                      <div key={zone} className="space-y-6">
                         <div className="flex items-center space-x-4">
-                           <div className="h-[1px] flex-1 bg-white/5" />
+                           <div className="h-[1px] flex-1 bg-[#1a4855]" />
                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.5em]">{zone}</span>
-                           <div className="h-[1px] flex-1 bg-white/5" />
+                           <div className="h-[1px] flex-1 bg-[#1a4855]" />
                         </div>
                         <div className="flex flex-wrap gap-4 justify-center">
                            {zoneTables.map((t) => (
@@ -316,7 +316,7 @@ const Reservation = () => {
                                 className={`w-16 h-16 rounded-2xl flex flex-col items-center justify-center border-2 transition-all duration-500 relative ${
                                   selectedTable === t.table_number 
                                     ? "bg-primary border-primary text-black shadow-lg shadow-primary/20"
-                                    : "glass-premium border-white/5 text-gray-500 hover:border-primary/50"
+                                    : "bg-[#1a4855] border border-[#EAB308]/20 border-[#EAB308]/20 text-gray-500 hover:border-primary/50"
                                 }`}
                               >
                                 <span className="text-sm font-black italic">{t.table_number}</span>
@@ -333,16 +333,16 @@ const Reservation = () => {
                    ))}
 
                    {availableTables.length === 0 && (
-                      <div className="py-12 text-center glass-premium rounded-[3rem] border-white/5">
+                      <div className="py-12 text-center bg-[#1a4855] border border-[#EAB308]/20 rounded-xl border-[#EAB308]/20">
                         <Info className="mx-auto text-primary/30 mb-4" size={40} />
-                        <h3 className="text-xl font-display font-bold text-white">No available tables</h3>
+                        <h3 className="text-xl font-bold text-white">No available tables</h3>
                         <p className="text-gray-500 text-sm mt-2">Try a different time or reduced party size.</p>
                       </div>
                    )}
                 </div>
 
                 <div className="flex gap-4 md:gap-6">
-                  <button onClick={prevStep} className="w-1/3 glass-premium text-white py-4 md:py-6 rounded-2xl md:rounded-3xl font-black uppercase tracking-widest text-[10px]">Back</button>
+                  <button onClick={prevStep} className="w-1/3 bg-[#1a4855] border border-[#EAB308]/20 text-white py-4 md:py-6 rounded-2xl md:rounded-3xl font-black uppercase tracking-widest text-[10px]">Back</button>
                   <button 
                     disabled={!selectedTable}
                     onClick={nextStep} 
@@ -365,11 +365,11 @@ const Reservation = () => {
                 className="space-y-12"
               >
                 <div className="space-y-4">
-                  <h2 className="text-2xl md:text-4xl font-display font-bold text-white">Final Confirmation</h2>
+                  <h2 className="text-2xl md:text-4xl font-bold text-white">Final Confirmation</h2>
                   <p className="text-gray-500 font-light">Review your royal banquet details before final seal.</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 glass-premium rounded-2xl md:rounded-[3rem] p-6 md:p-10 border-white/5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl md:rounded-xl p-6 md:p-10 border-[#EAB308]/20">
                    <div className="space-y-6">
                       <div className="flex items-center space-x-6">
                          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
@@ -377,7 +377,7 @@ const Reservation = () => {
                          </div>
                          <div>
                             <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Date & Time</p>
-                            <p className="text-xl font-display font-bold text-white">{formData.date} at {formData.time}</p>
+                            <p className="text-xl font-bold text-white">{formData.date} at {formData.time}</p>
                          </div>
                       </div>
                       <div className="flex items-center space-x-6">
@@ -386,7 +386,7 @@ const Reservation = () => {
                          </div>
                          <div>
                             <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Party Size</p>
-                            <p className="text-xl font-display font-bold text-white">{formData.guests} Guests</p>
+                            <p className="text-xl font-bold text-white">{formData.guests} Guests</p>
                          </div>
                       </div>
                    </div>
@@ -397,7 +397,7 @@ const Reservation = () => {
                          </div>
                          <div>
                             <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Ambience/Table</p>
-                            <p className="text-xl font-display font-bold text-white">Table {selectedTable}</p>
+                            <p className="text-xl font-bold text-white">Table {selectedTable}</p>
                          </div>
                       </div>
                       <div className="flex items-center space-x-6">
@@ -406,7 +406,7 @@ const Reservation = () => {
                          </div>
                          <div>
                             <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Reserved For</p>
-                            <p className="text-xl font-display font-bold text-white">{formData.name}</p>
+                            <p className="text-xl font-bold text-white">{formData.name}</p>
                          </div>
                       </div>
                    </div>
@@ -421,13 +421,13 @@ const Reservation = () => {
                     value={formData.specialRequests}
                     onChange={(e) => handleChange("specialRequests", e.target.value)}
                     placeholder="ANNIVERSARY? DIETARY NEEDS? PREFERRED CANDLES?"
-                    className="w-full bg-white/[0.02] border border-white/10 rounded-[2rem] px-8 py-6 text-sm font-bold tracking-widest text-white focus:border-primary/50 transition-all outline-none resize-none"
+                    className="w-full bg-[#1a4855] border border-[#EAB308]/20 rounded-xl px-8 py-6 text-sm font-bold tracking-widest text-white focus:border-primary/50 transition-all outline-none resize-none"
                     rows={3}
                   />
                 </div>
 
                 <div className="flex gap-4 md:gap-6">
-                  <button onClick={prevStep} className="w-1/3 glass-premium text-white py-4 md:py-6 rounded-2xl md:rounded-3xl font-black uppercase tracking-widest text-[10px]">Back</button>
+                  <button onClick={prevStep} className="w-1/3 bg-[#1a4855] border border-[#EAB308]/20 text-white py-4 md:py-6 rounded-2xl md:rounded-3xl font-black uppercase tracking-widest text-[10px]">Back</button>
                   <button 
                     onClick={handleSubmit} 
                     disabled={loading}
@@ -460,7 +460,7 @@ const Reservation = () => {
                 </div>
 
                 <div className="space-y-6">
-                  <h2 className="text-5xl font-display font-black text-white">It is Sealed.</h2>
+                  <h2 className="text-5xl font-black text-white">It is Sealed.</h2>
                   <p className="text-gray-400 text-lg font-light leading-relaxed max-w-sm mx-auto">
                     Your royal table is being prepared. Our chefs have been notified of your arrival.
                   </p>
@@ -468,7 +468,7 @@ const Reservation = () => {
 
                 <div className="pt-8 flex flex-col items-center space-y-6">
                    <Link to="/" className="w-full">
-                      <button className="w-full bg-white/[0.03] border border-white/10 text-white py-5 rounded-[2rem] font-black uppercase tracking-[0.3em] text-[10px] hover:bg-white hover:text-black transition-all">
+                      <button className="w-full bg-[#1a4855] border border-[#EAB308]/20 text-white py-5 rounded-xl font-black uppercase tracking-[0.3em] text-[10px] hover:bg-white hover:text-black transition-all">
                         Return To Court
                       </button>
                    </Link>

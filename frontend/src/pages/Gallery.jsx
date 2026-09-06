@@ -40,7 +40,7 @@ const Gallery = () => {
     : gallery.filter(img => (img.category || "Ambience") === filter);
 
   return (
-    <div className="min-h-screen bg-[#050b10] pt-28 md:pt-32 pb-16 md:pb-32 selection:bg-primary/30 relative">
+    <div className="min-h-screen bg-gradient-to-b from-[#184956] to-[#0f2933] pt-28 md:pt-32 pb-16 md:pb-32 selection:bg-primary/30 relative">
       <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-primary/10 to-transparent pointer-events-none" />
       
       <div className="max-w-7xl mx-auto px-4 relative z-10">
@@ -49,7 +49,7 @@ const Gallery = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="inline-flex items-center space-x-2 glass-premium rounded-full px-5 py-1.5 mb-6 border-white/5"
+            className="inline-flex items-center space-x-2 bg-[#1a4855] border border-[#EAB308]/20 rounded-full px-5 py-1.5 mb-6 border-[#EAB308]/20"
           >
             <Camera className="text-primary w-4 h-4" />
             <span className="text-primary text-[10px] font-black uppercase tracking-[0.4em]">Visual Heritage</span>
@@ -58,9 +58,9 @@ const Gallery = () => {
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-4xl sm:text-6xl md:text-8xl font-display font-black text-white mb-4 md:mb-8"
+            className="text-4xl sm:text-6xl md:text-8xl font-black text-white mb-4 md:mb-8"
           >
-            The <span className="golden-text">Royal</span> Capture
+            The <span className="text-[#EAB308]">Royal</span> Capture
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0 }}
@@ -83,7 +83,7 @@ const Gallery = () => {
               className={`px-4 md:px-8 py-2.5 md:py-3 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-500 border ${
                 filter === cat 
                   ? 'bg-primary text-black border-primary shadow-[0_0_20px_rgba(234,179,8,0.3)]' 
-                  : 'glass-premium text-gray-400 border-white/5 hover:text-white hover:border-white/20'
+                  : 'bg-[#1a4855] border border-[#EAB308]/20 text-gray-400 border-[#EAB308]/20 hover:text-white hover:border-white/20'
               }`}
             >
               {cat}
@@ -106,7 +106,7 @@ const Gallery = () => {
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                 onClick={() => setSelectedImage(image)}
-                className="relative group rounded-xl md:rounded-[2rem] overflow-hidden brutal-card cursor-pointer"
+                className="relative group rounded-xl md:rounded-xl overflow-hidden bg-[#1a4855] border border-[#EAB308]/20 rounded-xl cursor-pointer"
               >
                 <img
                   src={image.url}
@@ -120,7 +120,7 @@ const Gallery = () => {
                        <Sparkles size={12} />
                        <span>{image.category || "Premium"}</span>
                     </div>
-                    <h3 className="text-2xl font-display font-bold text-white mb-2">{image.caption}</h3>
+                    <h3 className="text-2xl font-bold text-white mb-2">{image.caption}</h3>
                     <div className="flex items-center text-white/50 space-x-2">
                        <Maximize2 size={16} />
                        <span className="text-[10px] uppercase font-bold tracking-widest">Enlarge View</span>
@@ -146,7 +146,7 @@ const Gallery = () => {
             <motion.button
               whileHover={{ rotate: 90, scale: 1.1 }}
               onClick={() => setSelectedImage(null)}
-              className="absolute top-8 right-8 text-white/50 hover:text-primary transition-all p-3 glass-premium rounded-full"
+              className="absolute top-8 right-8 text-white/50 hover:text-primary transition-all p-3 bg-[#1a4855] border border-[#EAB308]/20 rounded-full"
             >
               <X size={32} />
             </motion.button>
@@ -167,7 +167,7 @@ const Gallery = () => {
                 <div className="text-primary text-xs font-black uppercase tracking-[0.5em] mb-4">
                   {selectedImage.category || "Featured Selection"}
                 </div>
-                <h2 className="text-4xl md:text-5xl font-display font-black text-white mb-4">
+                <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
                   {selectedImage.caption}
                 </h2>
                 <div className="w-12 h-[2px] bg-primary mx-auto" />

@@ -29,10 +29,10 @@ const Reviews = () => {
   const displayedReviews = reviews.slice(0, displayCount);
 
   return (
-    <div className="min-h-screen bg-[#050b10] pt-28 md:pt-40 pb-16 md:pb-32 relative selection:bg-primary/30">
+    <div className="min-h-screen bg-gradient-to-b from-[#184956] to-[#0f2933] pt-28 md:pt-40 pb-16 md:pb-32 relative selection:bg-primary/30">
       {/* Cinematic Backgrounds */}
       <div className="absolute top-0 right-[-10%] w-[60%] h-[60%] bg-primary/5 blur-[150px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-white/[0.02] blur-[150px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-[#1a4855] blur-[150px] rounded-full pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 relative z-10">
         {/* Header Section */}
@@ -40,7 +40,7 @@ const Reviews = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="inline-flex items-center space-x-3 glass-premium rounded-full px-6 py-2 mb-10 border-white/5"
+            className="inline-flex items-center space-x-3 bg-[#1a4855] border border-[#EAB308]/20 rounded-full px-6 py-2 mb-10 border-[#EAB308]/20"
           >
             <Sparkles className="text-primary w-4 h-4" />
             <span className="text-primary text-[10px] font-black uppercase tracking-[0.4em]">The Imperial Voice</span>
@@ -49,9 +49,9 @@ const Reviews = () => {
           <motion.h1 
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-4xl sm:text-5xl md:text-9xl font-display font-black text-white mb-6 md:mb-12 leading-tight"
+            className="text-4xl sm:text-5xl md:text-9xl font-black text-white mb-6 md:mb-12 leading-tight"
           >
-            Patron <span className="golden-text italic">Reflections</span>
+            Patron <span className="text-[#EAB308] italic">Reflections</span>
           </motion.h1>
 
           <motion.div 
@@ -59,7 +59,7 @@ const Reviews = () => {
             animate={{ opacity: 1 }}
             className="flex flex-col items-center space-y-6"
           >
-             <div className="flex items-center space-x-4 bg-white/[0.02] border border-white/5 rounded-3xl p-6 backdrop-blur-3xl">
+             <div className="flex items-center space-x-4 bg-[#1a4855] border border-[#EAB308]/20 rounded-3xl p-6">
                 <div className="flex">
                   {[...Array(5)].map((_, i) => (
                     <Star
@@ -69,7 +69,7 @@ const Reviews = () => {
                   ))}
                 </div>
                 <div className="h-8 w-px bg-white/10 mx-2" />
-                <span className="text-3xl font-display font-black text-white italic">{averageRating}</span>
+                <span className="text-3xl font-black text-white italic">{averageRating}</span>
                 <span className="text-gray-600 text-[10px] font-black uppercase tracking-widest pt-2">Global Score</span>
              </div>
              <p className="text-gray-500 font-light italic">Over {reviews.length.toLocaleString()}+ Verified Culinary Commendations</p>
@@ -86,7 +86,7 @@ const Reviews = () => {
               {displayedReviews.map((review, i) => (
                 <ScrollReveal key={review._id} delay={i * 0.05}>
                   <div className="break-inside-avoid mb-4 md:mb-8 group">
-                    <div className="glass-premium rounded-2xl md:rounded-[3rem] p-6 md:p-10 border border-white/5 relative overflow-hidden group-hover:scale-[1.02] transition-all duration-700">
+                    <div className="bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl md:rounded-xl p-6 md:p-10 border border-[#EAB308]/20 relative overflow-hidden group-hover:scale-[1.02] transition-all duration-700">
                       <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
                          <Quote size={80} strokeWidth={1} />
                       </div>
@@ -96,7 +96,7 @@ const Reviews = () => {
                             <User size={18} />
                          </div>
                          <div>
-                            <h3 className="text-white font-display font-bold italic">{review.name}</h3>
+                            <h3 className="text-white font-bold italic">{review.name}</h3>
                             <p className="text-[9px] text-gray-600 font-black uppercase tracking-widest">
                                {new Date(review.date).toLocaleDateString()} • Verified Dine
                             </p>
@@ -116,7 +116,7 @@ const Reviews = () => {
                         "{review.text}"
                       </p>
 
-                      <div className="pt-6 border-t border-white/5 flex items-center justify-between">
+                      <div className="pt-6 border-t border-[#EAB308]/20 flex items-center justify-between">
                          <span className="text-primary text-[9px] font-black uppercase tracking-widest">Imperial Patron</span>
                          <Sparkles className="text-primary/20" size={14} />
                       </div>
@@ -133,7 +133,7 @@ const Reviews = () => {
           <div className="mt-20 text-center">
             <button
                onClick={() => setDisplayCount(prev => prev + 12)}
-               className="magnetic-button bg-primary text-black px-12 py-6 rounded-full font-black uppercase tracking-[0.3em] text-[10px] shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center space-x-4 mx-auto"
+               className="bg-primary text-black px-12 py-6 rounded-full font-black uppercase tracking-[0.3em] text-[10px] shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center space-x-4 mx-auto"
             >
               <ArrowDown size={14} />
               <span>Unveil More Reflections</span>

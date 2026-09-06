@@ -77,24 +77,23 @@ const AdminLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#050b10]">
+    <div className="min-h-screen bg-[#0f2933]">
       {/* Header */}
-      <div className="bg-white/[0.03] backdrop-blur-xl border-b border-white/5 sticky top-0 z-50 py-4">
+      <div className="bg-[#1a4855] border-b-2 border-[#EAB308] sticky top-0 z-50 py-4">
         <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20 overflow-hidden relative">
-               <span className="text-primary font-black text-xl tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>TH</span>
+            <div className="w-12 h-12 bg-[#EAB308] rounded-lg flex items-center justify-center">
+               <span className="text-[#0f2933] font-black text-xl" style={{ fontFamily: "'Playfair Display', serif" }}>PD</span>
             </div>
             <div>
               <h1 className="text-xl text-white" style={{ fontFamily: "'Playfair Display', serif" }}>Admin Panel</h1>
-              <p className="text-[10px] text-gray-500 uppercase tracking-widest" style={{ fontFamily: "'El Messiri', serif" }}>Taste of Hindustan Management</p>
+              <p className="text-[10px] text-[#EAB308] uppercase tracking-widest">Persian Darbar Management</p>
             </div>
           </div>
 
           <button
             onClick={handleLogout}
-            className="flex items-center space-x-2 bg-white/[0.05] border border-white/10 px-5 py-2.5 rounded-2xl text-gray-400 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/30 transition-all text-[11px] uppercase tracking-widest font-bold"
-            style={{ fontFamily: "'El Messiri', serif" }}
+            className="flex items-center space-x-2 bg-[#0f2933] border border-[#EAB308]/30 px-5 py-2.5 rounded-lg text-gray-300 hover:bg-red-900/30 hover:text-red-400 hover:border-red-500/30 transition-all text-sm font-bold"
           >
             <LogOut className="h-3.5 w-3.5" />
             <span>Logout</span>
@@ -106,7 +105,7 @@ const AdminLayout = () => {
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           {/* Sidebar */}
-          <div className="bg-white/[0.02] backdrop-blur-xl border border-white/5 p-4 rounded-[2rem] sticky top-24 self-start">
+          <div className="bg-[#1a4855] border border-[#EAB308]/20 p-4 rounded-xl sticky top-24 self-start">
             <nav className="space-y-1">
               {menuItems.map((item) => {
                 const Icon = item.icon;
@@ -114,12 +113,11 @@ const AdminLayout = () => {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all text-[13px] ${
+                    className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all text-sm ${
                       isActive(item.path)
-                        ? "bg-primary text-black font-bold"
-                        : "text-gray-400 hover:text-white hover:bg-white/[0.05]"
+                        ? "bg-[#EAB308] text-black font-bold"
+                        : "text-gray-300 hover:text-white hover:bg-[#0f2933]"
                     }`}
-                    style={{ fontFamily: "'El Messiri', serif" }}
                   >
                     <Icon className="h-4 w-4" />
                     <span>{item.name}</span>

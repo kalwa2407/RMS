@@ -87,7 +87,7 @@ const ReviewsManagement = () => {
         {reviews.map((review) => (
           <div
             key={review._id}
-            className="bg-white/[0.03] border border-white/5 rounded-2xl p-6 hover:border-primary/20 transition-all duration-300"
+            className="bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl p-6 hover:border-primary/20 transition-all duration-300"
           >
             {/* HEADER */}
             <div className="flex justify-between items-start mb-3">

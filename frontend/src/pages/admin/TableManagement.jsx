@@ -160,7 +160,7 @@ const TableManagement = () => {
           </div>
         </div>
         <div className="flex space-x-2">
-          <button onClick={() => setShowBulkModal(true)} className="bg-white/[0.03] px-4 py-2 rounded-lg text-primary hover:bg-[#254a58]">Bulk Create</button>
+          <button onClick={() => setShowBulkModal(true)} className="bg-[#1a4855] px-4 py-2 rounded-lg text-primary hover:bg-[#254a58]">Bulk Create</button>
           <button onClick={() => { setNewTable({ table_number: tables.length + 1, capacity: 4 }); setShowAddModal(true); }}
             className="flex items-center space-x-2 bg-primary px-4 py-2 rounded-lg text-black font-bold hover:bg-white">
             <Plus className="h-4 w-4" /><span>Add Table</span>
@@ -170,15 +170,15 @@ const TableManagement = () => {
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4 mb-6">
-        <div className="bg-white/[0.03] rounded-xl p-4 text-center"><p className="text-gray-400 text-sm">Total</p><p className="text-3xl font-bold text-white">{stats.total}</p></div>
-        <div className="bg-white/[0.03] rounded-xl p-4 text-center"><p className="text-gray-400 text-sm">Free</p><p className="text-3xl font-bold text-green-500">{stats.free}</p></div>
-        <div className="bg-white/[0.03] rounded-xl p-4 text-center"><p className="text-gray-400 text-sm">Occupied</p><p className="text-3xl font-bold text-red-500">{stats.occupied}</p></div>
-        <div className="bg-white/[0.03] rounded-xl p-4 text-center"><p className="text-gray-400 text-sm">Reserved</p><p className="text-3xl font-bold text-yellow-500">{stats.reserved}</p></div>
+        <div className="bg-[#1a4855] rounded-xl p-4 text-center"><p className="text-gray-400 text-sm">Total</p><p className="text-3xl font-bold text-white">{stats.total}</p></div>
+        <div className="bg-[#1a4855] rounded-xl p-4 text-center"><p className="text-gray-400 text-sm">Free</p><p className="text-3xl font-bold text-green-500">{stats.free}</p></div>
+        <div className="bg-[#1a4855] rounded-xl p-4 text-center"><p className="text-gray-400 text-sm">Occupied</p><p className="text-3xl font-bold text-red-500">{stats.occupied}</p></div>
+        <div className="bg-[#1a4855] rounded-xl p-4 text-center"><p className="text-gray-400 text-sm">Reserved</p><p className="text-3xl font-bold text-yellow-500">{stats.reserved}</p></div>
       </div>
 
       {/* Tables Grid */}
       {tables.length === 0 ? (
-        <div className="bg-white/[0.03] rounded-xl p-12 text-center">
+        <div className="bg-[#1a4855] rounded-xl p-12 text-center">
           <Grid3X3 className="h-16 w-16 text-gray-500 mx-auto mb-4" />
           <h2 className="text-xl text-white mb-2">No Tables Yet</h2>
           <button onClick={() => setShowBulkModal(true)} className="bg-primary text-black px-6 py-2 rounded-lg font-bold">Create Tables</button>
@@ -186,7 +186,7 @@ const TableManagement = () => {
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {tables.map((table) => (
-            <div key={table.table_number} className={`bg-white/[0.03] rounded-xl p-4 border-2 ${table.status === "occupied" ? "border-red-500" : table.status === "reserved" ? "border-yellow-500" : "border-green-500/30"}`}>
+            <div key={table.table_number} className={`bg-[#1a4855] rounded-xl p-4 border-2 ${table.status === "occupied" ? "border-red-500" : table.status === "reserved" ? "border-yellow-500" : "border-green-500/30"}`}>
               <div className="flex justify-between items-start mb-3">
                 <span className="text-2xl font-bold text-white">T{table.table_number}</span>
                 <span className={`w-3 h-3 rounded-full ${getStatusColor(table.status)}`}></span>
@@ -194,7 +194,7 @@ const TableManagement = () => {
               <div className="flex items-center text-gray-400 text-sm mb-3"><Users className="h-4 w-4 mr-1" /><span>{table.capacity} seats</span></div>
 
               {table.current_order && (
-                <div className="bg-[#050b10] rounded-lg p-2 mb-3">
+                <div className="bg-[#0f2933] rounded-lg p-2 mb-3">
                   <div className="flex items-center justify-between text-primary text-sm">
                     <div className="flex items-center"><Receipt className="h-3 w-3 mr-1" /><span>{table.current_order.order_id}</span></div>
                     <button onClick={() => fetchTicket(table.current_order.order_id)} className="bg-primary text-black px-2 py-1 rounded text-xs font-bold flex items-center">
@@ -252,11 +252,11 @@ const TableManagement = () => {
       {/* Add Table Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-white/[0.03] rounded-xl p-6 w-full max-w-md">
+          <div className="bg-[#1a4855] rounded-xl p-6 w-full max-w-md">
             <h2 className="text-xl font-bold text-primary mb-4">Add New Table</h2>
             <div className="space-y-4">
-              <div><label className="text-gray-300 text-sm">Table Number</label><input type="number" value={newTable.table_number} onChange={(e) => setNewTable({ ...newTable, table_number: parseInt(e.target.value) })} className="w-full bg-[#050b10] text-white px-4 py-2 rounded-lg mt-1" /></div>
-              <div><label className="text-gray-300 text-sm">Capacity</label><input type="number" value={newTable.capacity} onChange={(e) => setNewTable({ ...newTable, capacity: parseInt(e.target.value) })} className="w-full bg-[#050b10] text-white px-4 py-2 rounded-lg mt-1" /></div>
+              <div><label className="text-gray-300 text-sm">Table Number</label><input type="number" value={newTable.table_number} onChange={(e) => setNewTable({ ...newTable, table_number: parseInt(e.target.value) })} className="w-full bg-[#0f2933] text-white px-4 py-2 rounded-lg mt-1" /></div>
+              <div><label className="text-gray-300 text-sm">Capacity</label><input type="number" value={newTable.capacity} onChange={(e) => setNewTable({ ...newTable, capacity: parseInt(e.target.value) })} className="w-full bg-[#0f2933] text-white px-4 py-2 rounded-lg mt-1" /></div>
             </div>
             <div className="flex space-x-3 mt-6">
               <button onClick={() => setShowAddModal(false)} className="flex-1 bg-gray-600 text-white py-2 rounded-lg">Cancel</button>
@@ -269,11 +269,11 @@ const TableManagement = () => {
       {/* Bulk Create Modal */}
       {showBulkModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-white/[0.03] rounded-xl p-6 w-full max-w-md">
+          <div className="bg-[#1a4855] rounded-xl p-6 w-full max-w-md">
             <h2 className="text-xl font-bold text-primary mb-4">Bulk Create Tables</h2>
             <div className="space-y-4">
-              <div><label className="text-gray-300 text-sm">Number of Tables</label><input type="number" value={bulkCreate.count} onChange={(e) => setBulkCreate({ ...bulkCreate, count: parseInt(e.target.value) })} className="w-full bg-[#050b10] text-white px-4 py-2 rounded-lg mt-1" /></div>
-              <div><label className="text-gray-300 text-sm">Capacity per Table</label><input type="number" value={bulkCreate.capacity} onChange={(e) => setBulkCreate({ ...bulkCreate, capacity: parseInt(e.target.value) })} className="w-full bg-[#050b10] text-white px-4 py-2 rounded-lg mt-1" /></div>
+              <div><label className="text-gray-300 text-sm">Number of Tables</label><input type="number" value={bulkCreate.count} onChange={(e) => setBulkCreate({ ...bulkCreate, count: parseInt(e.target.value) })} className="w-full bg-[#0f2933] text-white px-4 py-2 rounded-lg mt-1" /></div>
+              <div><label className="text-gray-300 text-sm">Capacity per Table</label><input type="number" value={bulkCreate.capacity} onChange={(e) => setBulkCreate({ ...bulkCreate, capacity: parseInt(e.target.value) })} className="w-full bg-[#0f2933] text-white px-4 py-2 rounded-lg mt-1" /></div>
             </div>
             <div className="flex space-x-3 mt-6">
               <button onClick={() => setShowBulkModal(false)} className="flex-1 bg-gray-600 text-white py-2 rounded-lg">Cancel</button>

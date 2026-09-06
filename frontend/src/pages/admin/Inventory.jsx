@@ -195,7 +195,7 @@ const Inventory = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white/[0.03] rounded-xl p-4">
+        <div className="bg-[#1a4855] rounded-xl p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm">Total Items</p>
@@ -205,7 +205,7 @@ const Inventory = () => {
           </div>
         </div>
 
-        <div className="bg-white/[0.03] rounded-xl p-4">
+        <div className="bg-[#1a4855] rounded-xl p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm">Low Stock</p>
@@ -215,7 +215,7 @@ const Inventory = () => {
           </div>
         </div>
 
-        <div className="bg-white/[0.03] rounded-xl p-4">
+        <div className="bg-[#1a4855] rounded-xl p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm">Out of Stock</p>
@@ -225,7 +225,7 @@ const Inventory = () => {
           </div>
         </div>
 
-        <div className="bg-white/[0.03] rounded-xl p-4">
+        <div className="bg-[#1a4855] rounded-xl p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm">Total Value</p>
@@ -262,7 +262,7 @@ const Inventory = () => {
             placeholder="Search inventory..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white/[0.03] text-white pl-10 pr-4 py-2 rounded-lg border border-white/5 focus:border-primary/50 outline-none"
+            className="w-full bg-[#1a4855] text-white pl-10 pr-4 py-2 rounded-lg border border-[#EAB308]/20 focus:border-primary/50 outline-none"
           />
         </div>
         <div className="flex items-center space-x-2">
@@ -270,7 +270,7 @@ const Inventory = () => {
           <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
-            className="bg-white/[0.03] text-white px-4 py-2 rounded-lg border border-white/5 focus:border-primary/50 outline-none"
+            className="bg-[#1a4855] text-white px-4 py-2 rounded-lg border border-[#EAB308]/20 focus:border-primary/50 outline-none"
           >
             {categories.map((cat) => (
               <option key={cat} value={cat}>{cat}</option>
@@ -280,9 +280,9 @@ const Inventory = () => {
       </div>
 
       {/* Inventory Table */}
-      <div className="bg-white/[0.03] rounded-xl overflow-hidden">
+      <div className="bg-[#1a4855] rounded-xl overflow-hidden">
         <table className="w-full">
-          <thead className="bg-[#050b10]">
+          <thead className="bg-[#0f2933]">
             <tr>
               <th className="text-left py-4 px-4 text-primary font-bold">Item</th>
               <th className="text-left py-4 px-4 text-primary font-bold">Category</th>
@@ -302,13 +302,13 @@ const Inventory = () => {
               </tr>
             ) : (
               filteredInventory.map((item) => (
-                <tr key={item._id} className="border-t border-white/5 hover:bg-[#050b10]/50">
+                <tr key={item._id} className="border-t border-[#EAB308]/20 hover:bg-[#0f2933]/50">
                   <td className="py-3 px-4">
                     <p className="text-white font-medium">{item.name}</p>
                     <p className="text-gray-400 text-xs">{item.supplier || "No supplier"}</p>
                   </td>
                   <td className="py-3 px-4">
-                    <span className="bg-[#050b10] text-gray-300 px-2 py-1 rounded text-sm">
+                    <span className="bg-[#0f2933] text-gray-300 px-2 py-1 rounded text-sm">
                       {item.category}
                     </span>
                   </td>
@@ -380,7 +380,7 @@ const Inventory = () => {
       {/* Add Item Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-white/[0.03] rounded-xl p-6 w-full max-w-md">
+          <div className="bg-[#1a4855] rounded-xl p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-primary">Add Inventory Item</h2>
               <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-white">
@@ -395,7 +395,7 @@ const Inventory = () => {
                   type="text"
                   value={newItem.name}
                   onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-                  className="w-full bg-[#050b10] text-white px-4 py-2 rounded-lg border border-white/5 focus:border-primary/50 outline-none"
+                  className="w-full bg-[#0f2933] text-white px-4 py-2 rounded-lg border border-[#EAB308]/20 focus:border-primary/50 outline-none"
                 />
               </div>
 
@@ -405,7 +405,7 @@ const Inventory = () => {
                   <select
                     value={newItem.category}
                     onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
-                    className="w-full bg-[#050b10] text-white px-4 py-2 rounded-lg border border-white/5 focus:border-primary/50 outline-none"
+                    className="w-full bg-[#0f2933] text-white px-4 py-2 rounded-lg border border-[#EAB308]/20 focus:border-primary/50 outline-none"
                   >
                     {categories.filter(c => c !== "All").map((cat) => (
                       <option key={cat} value={cat}>{cat}</option>
@@ -417,7 +417,7 @@ const Inventory = () => {
                   <select
                     value={newItem.unit}
                     onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })}
-                    className="w-full bg-[#050b10] text-white px-4 py-2 rounded-lg border border-white/5 focus:border-primary/50 outline-none"
+                    className="w-full bg-[#0f2933] text-white px-4 py-2 rounded-lg border border-[#EAB308]/20 focus:border-primary/50 outline-none"
                   >
                     {units.map((u) => (
                       <option key={u} value={u}>{u}</option>
@@ -433,7 +433,7 @@ const Inventory = () => {
                     type="number"
                     value={newItem.current_stock}
                     onChange={(e) => setNewItem({ ...newItem, current_stock: Number(e.target.value) })}
-                    className="w-full bg-[#050b10] text-white px-4 py-2 rounded-lg border border-white/5 focus:border-primary/50 outline-none"
+                    className="w-full bg-[#0f2933] text-white px-4 py-2 rounded-lg border border-[#EAB308]/20 focus:border-primary/50 outline-none"
                   />
                 </div>
                 <div>
@@ -442,7 +442,7 @@ const Inventory = () => {
                     type="number"
                     value={newItem.min_stock}
                     onChange={(e) => setNewItem({ ...newItem, min_stock: Number(e.target.value) })}
-                    className="w-full bg-[#050b10] text-white px-4 py-2 rounded-lg border border-white/5 focus:border-primary/50 outline-none"
+                    className="w-full bg-[#0f2933] text-white px-4 py-2 rounded-lg border border-[#EAB308]/20 focus:border-primary/50 outline-none"
                   />
                 </div>
               </div>
@@ -454,7 +454,7 @@ const Inventory = () => {
                     type="number"
                     value={newItem.cost_per_unit}
                     onChange={(e) => setNewItem({ ...newItem, cost_per_unit: Number(e.target.value) })}
-                    className="w-full bg-[#050b10] text-white px-4 py-2 rounded-lg border border-white/5 focus:border-primary/50 outline-none"
+                    className="w-full bg-[#0f2933] text-white px-4 py-2 rounded-lg border border-[#EAB308]/20 focus:border-primary/50 outline-none"
                   />
                 </div>
                 <div>
@@ -463,7 +463,7 @@ const Inventory = () => {
                     type="text"
                     value={newItem.supplier}
                     onChange={(e) => setNewItem({ ...newItem, supplier: e.target.value })}
-                    className="w-full bg-[#050b10] text-white px-4 py-2 rounded-lg border border-white/5 focus:border-primary/50 outline-none"
+                    className="w-full bg-[#0f2933] text-white px-4 py-2 rounded-lg border border-[#EAB308]/20 focus:border-primary/50 outline-none"
                   />
                 </div>
               </div>
@@ -482,7 +482,7 @@ const Inventory = () => {
       {/* History Modal */}
       {showHistoryModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-white/[0.03] rounded-xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto">
+          <div className="bg-[#1a4855] rounded-xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-primary">
                 Stock History: {selectedItem?.name}
@@ -497,7 +497,7 @@ const Inventory = () => {
             ) : (
               <div className="space-y-2">
                 {stockHistory.map((entry, idx) => (
-                  <div key={idx} className="bg-[#050b10] rounded-lg p-3 flex justify-between items-center">
+                  <div key={idx} className="bg-[#0f2933] rounded-lg p-3 flex justify-between items-center">
                     <div>
                       <p className="text-white text-sm">{entry.reason}</p>
                       <p className="text-gray-400 text-xs">

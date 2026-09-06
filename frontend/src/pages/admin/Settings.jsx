@@ -183,7 +183,7 @@ const Settings = () => {
       </div>
 
       {/* CONTACT INFO */}
-      <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-6">
+      <div className="bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl p-6">
         <h3 className="text-2xl font-bold text-primary mb-4 flex items-center">
           <MapPin className="h-6 w-6 mr-2" />
           Contact Information
@@ -202,7 +202,7 @@ const Settings = () => {
               onChange={(e) =>
                 setContactInfo({ ...contactInfo, address: e.target.value })
               }
-              className="w-full px-4 py-3 bg-[#050b10] border border-white/5 rounded-lg text-white"
+              className="w-full px-4 py-3 bg-[#0f2933] border border-[#EAB308]/20 rounded-lg text-white"
             />
           </div>
 
@@ -219,7 +219,7 @@ const Settings = () => {
                 onChange={(e) =>
                   setContactInfo({ ...contactInfo, phone: e.target.value })
                 }
-                className="w-full px-4 py-3 bg-[#050b10] border border-white/5 rounded-lg text-white"
+                className="w-full px-4 py-3 bg-[#0f2933] border border-[#EAB308]/20 rounded-lg text-white"
               />
             </div>
 
@@ -235,7 +235,7 @@ const Settings = () => {
                 onChange={(e) =>
                   setContactInfo({ ...contactInfo, email: e.target.value })
                 }
-                className="w-full px-4 py-3 bg-[#050b10] border border-white/5 rounded-lg text-white"
+                className="w-full px-4 py-3 bg-[#0f2933] border border-[#EAB308]/20 rounded-lg text-white"
               />
             </div>
           </div>
@@ -252,7 +252,7 @@ const Settings = () => {
       </div>
 
       {/* PASSWORD CHANGE */}
-      <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-6">
+      <div className="bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl p-6">
         <h3 className="text-2xl font-bold text-primary mb-4 flex items-center">
           <Key className="h-6 w-6 mr-2" />
           Change Password
@@ -273,7 +273,7 @@ const Settings = () => {
                   old_password: e.target.value
                 })
               }
-              className="w-full px-4 py-3 bg-[#050b10] border border-white/5 rounded-lg text-white"
+              className="w-full px-4 py-3 bg-[#0f2933] border border-[#EAB308]/20 rounded-lg text-white"
             />
           </div>
 
@@ -291,7 +291,7 @@ const Settings = () => {
                   new_password: e.target.value
                 })
               }
-              className="w-full px-4 py-3 bg-[#050b10] border border-white/5 rounded-lg text-white"
+              className="w-full px-4 py-3 bg-[#0f2933] border border-[#EAB308]/20 rounded-lg text-white"
             />
           </div>
 
@@ -309,7 +309,7 @@ const Settings = () => {
                   confirm_password: e.target.value
                 })
               }
-              className="w-full px-4 py-3 bg-[#050b10] border border-white/5 rounded-lg text-white"
+              className="w-full px-4 py-3 bg-[#0f2933] border border-[#EAB308]/20 rounded-lg text-white"
             />
           </div>
 
@@ -325,7 +325,7 @@ const Settings = () => {
       </div>
 
       {/* UPI QR */}
-      <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-6">
+      <div className="bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl p-6">
         <h3 className="text-2xl font-bold text-primary mb-4">
           UPI QR Code URL
         </h3>
@@ -339,7 +339,7 @@ const Settings = () => {
               value={upiQRCode}
               onChange={(e) => setUpiQRCode(e.target.value)}
               placeholder="https://example.com/upi.png"
-              className="w-full px-4 py-3 bg-[#050b10] border border-white/5 rounded-lg text-white"
+              className="w-full px-4 py-3 bg-[#0f2933] border border-[#EAB308]/20 rounded-lg text-white"
             />
           </div>
 

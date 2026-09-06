@@ -49,3 +49,6 @@ test.mp4
 # Local Firebase credentials
 firebase_credentials.json
 backend/firebase_credentials.json
+
+# UI inspiration reference folder (not part of project)
+TAKE_UI_INSPR/

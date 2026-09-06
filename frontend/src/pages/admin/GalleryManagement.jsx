@@ -165,7 +165,7 @@ const GalleryManagement = () => {
 
       {/* Add Image Form */}
       {showAddForm && (
-        <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-6 mb-8">
+        <div className="bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl p-6 mb-8">
           <h3 className="text-2xl font-bold text-primary mb-4">
             Add New Image
           </h3>
@@ -190,7 +190,7 @@ const GalleryManagement = () => {
                       handleImageUpload(file);
                     }
                   }}
-                  className="w-full px-4 py-2 bg-[#050b10] border border-white/5 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-primary file:text-black file:cursor-pointer hover:file:bg-[#d4a406]"
+                  className="w-full px-4 py-2 bg-[#0f2933] border border-[#EAB308]/20 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-primary file:text-black file:cursor-pointer hover:file:bg-[#d4a406]"
                   disabled={uploadingImage}
                 />
                 {uploadingImage && (
@@ -200,9 +200,9 @@ const GalleryManagement = () => {
 
               {/* OR divider */}
               <div className="flex items-center my-3">
-                <div className="flex-1 border-t border-white/5"></div>
+                <div className="flex-1 border-t border-[#EAB308]/20"></div>
                 <span className="px-3 text-gray-500 text-sm">OR</span>
-                <div className="flex-1 border-t border-white/5"></div>
+                <div className="flex-1 border-t border-[#EAB308]/20"></div>
               </div>
 
               {/* URL Input Option */}
@@ -216,7 +216,7 @@ const GalleryManagement = () => {
                     setFormData({ ...formData, image_url: e.target.value })
                   }
                   placeholder="https://example.com/image.jpg"
-                  className="w-full px-4 py-2 bg-[#050b10] border border-white/5 rounded-lg text-white focus:border-primary/50 focus:outline-none"
+                  className="w-full px-4 py-2 bg-[#0f2933] border border-[#EAB308]/20 rounded-lg text-white focus:border-primary/50 focus:outline-none"
                 />
               </div>
 
@@ -227,7 +227,7 @@ const GalleryManagement = () => {
                   <img
                     src={formData.image_url}
                     alt="Preview"
-                    className="w-32 h-32 object-cover rounded-lg border border-white/5"
+                    className="w-32 h-32 object-cover rounded-lg border border-[#EAB308]/20"
                     onError={(e) => {
                       e.target.src = "https://via.placeholder.com/150?text=Invalid+Image";
                     }}
@@ -247,7 +247,7 @@ const GalleryManagement = () => {
                   setFormData({ ...formData, caption: e.target.value })
                 }
                 placeholder="Short description"
-                className="w-full px-4 py-2 bg-[#050b10] border border-white/5 rounded-lg text-white focus:border-primary/50 focus:outline-none"
+                className="w-full px-4 py-2 bg-[#0f2933] border border-[#EAB308]/20 rounded-lg text-white focus:border-primary/50 focus:outline-none"
               />
             </div>
 
@@ -266,7 +266,7 @@ const GalleryManagement = () => {
         {images.map((image) => (
           <div
             key={image._id}
-            className="bg-white/[0.03] border border-white/5 rounded-2xl overflow-hidden group hover:border-primary/20 transition-all duration-300"
+            className="bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl overflow-hidden group hover:border-primary/20 transition-all duration-300"
           >
             <div className="relative h-64">
               <img

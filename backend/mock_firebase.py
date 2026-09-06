@@ -35,12 +35,20 @@ class MockFirebaseManager(BaseDataManager):
         admins = self._read_sync("admin_users")
         if not admins:
             from auth import get_password_hash
-            self._write_sync("admin_users", [{
-                "_id": str(uuid.uuid4()),
-                "username": "Vijay@Tasteofhindustan",
-                "password": get_password_hash("Vijay@123"),
-                "created_at": datetime.utcnow().isoformat()
-            }])
+            self._write_sync("admin_users", [
+                {
+                    "_id": str(uuid.uuid4()),
+                    "username": "Vijay@persiandarbar",
+                    "password": get_password_hash("Vijay@123"),
+                    "created_at": datetime.utcnow().isoformat()
+                },
+                {
+                    "_id": str(uuid.uuid4()),
+                    "username": "Vijay@Tasteofhindustan",
+                    "password": get_password_hash("Vijay@123"),
+                    "created_at": datetime.utcnow().isoformat()
+                }
+            ])
 
         # Menu Items
         menu = self._read_sync("menu_items")

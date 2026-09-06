@@ -268,7 +268,7 @@ const TableSessions = () => {
           </button>
           <button
             onClick={fetchData}
-            className="bg-white/[0.03] text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-[#234d5c] transition"
+            className="bg-[#1a4855] text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-[#234d5c] transition"
           >
             <RefreshCw className="h-4 w-4" />
             <span>Refresh</span>
@@ -283,7 +283,7 @@ const TableSessions = () => {
           className={`px-4 py-2 rounded-lg font-medium transition flex items-center space-x-2 ${
             activeTab === "pending"
               ? "bg-yellow-500 text-black"
-              : "bg-white/[0.03] text-gray-300 hover:text-white"
+              : "bg-[#1a4855] text-gray-300 hover:text-white"
           }`}
         >
           <Bell className="h-4 w-4" />
@@ -299,7 +299,7 @@ const TableSessions = () => {
           className={`px-4 py-2 rounded-lg font-medium transition flex items-center space-x-2 ${
             activeTab === "active"
               ? "bg-green-500 text-black"
-              : "bg-white/[0.03] text-gray-300 hover:text-white"
+              : "bg-[#1a4855] text-gray-300 hover:text-white"
           }`}
         >
           <Users className="h-4 w-4" />
@@ -313,7 +313,7 @@ const TableSessions = () => {
           className={`px-4 py-2 rounded-lg font-medium transition flex items-center space-x-2 ${
             activeTab === "billing"
               ? "bg-blue-500 text-black"
-              : "bg-white/[0.03] text-gray-300 hover:text-white"
+              : "bg-[#1a4855] text-gray-300 hover:text-white"
           }`}
         >
           <Receipt className="h-4 w-4" />
@@ -325,13 +325,13 @@ const TableSessions = () => {
       {activeTab === "pending" && (
         <div className="space-y-4">
           {pendingOrders.length === 0 ? (
-            <div className="bg-white/[0.03] rounded-xl p-8 text-center">
+            <div className="bg-[#1a4855] rounded-xl p-8 text-center">
               <Bell className="h-12 w-12 text-gray-500 mx-auto mb-4" />
               <p className="text-gray-400">No pending orders</p>
             </div>
           ) : (
             pendingOrders.map((order) => (
-              <div key={order.order_id} className="bg-white/[0.03] rounded-xl p-4 border-l-4 border-yellow-500">
+              <div key={order.order_id} className="bg-[#1a4855] rounded-xl p-4 border-l-4 border-yellow-500">
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <div className="flex items-center space-x-3">
@@ -364,10 +364,10 @@ const TableSessions = () => {
                 </div>
 
                 {/* Order Items */}
-                <div className="bg-[#050b10] rounded-lg p-3">
+                <div className="bg-[#0f2933] rounded-lg p-3">
                   <table className="w-full">
                     <thead>
-                      <tr className="text-gray-400 text-sm border-b border-white/5">
+                      <tr className="text-gray-400 text-sm border-b border-[#EAB308]/20">
                         <th className="text-left py-2">Item</th>
                         <th className="text-center py-2">Qty</th>
                         <th className="text-right py-2">Price</th>
@@ -383,7 +383,7 @@ const TableSessions = () => {
                       ))}
                     </tbody>
                   </table>
-                  <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/5">
+                  <div className="flex justify-between items-center mt-3 pt-3 border-t border-[#EAB308]/20">
                     <span className="text-primary font-bold">Total</span>
                     <span className="text-primary font-bold text-lg">₹{order.total}</span>
                   </div>
@@ -398,13 +398,13 @@ const TableSessions = () => {
       {activeTab === "active" && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {activeSessions.length === 0 ? (
-            <div className="col-span-full bg-white/[0.03] rounded-xl p-8 text-center">
+            <div className="col-span-full bg-[#1a4855] rounded-xl p-8 text-center">
               <Users className="h-12 w-12 text-gray-500 mx-auto mb-4" />
               <p className="text-gray-400">No active tables</p>
             </div>
           ) : (
             activeSessions.map((session) => (
-              <div key={session.session_id} className="bg-white/[0.03] rounded-xl p-4">
+              <div key={session.session_id} className="bg-[#1a4855] rounded-xl p-4">
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <div className="flex items-center space-x-2">
@@ -427,7 +427,7 @@ const TableSessions = () => {
                 {/* Session Orders */}
                 <div className="space-y-2 mb-4">
                   {session.orders?.map((order, idx) => (
-                    <div key={order.order_id} className="bg-[#050b10] rounded-lg p-2 text-sm">
+                    <div key={order.order_id} className="bg-[#0f2933] rounded-lg p-2 text-sm">
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-gray-400">Order #{idx + 1}</span>
                         <span className={`px-2 py-0.5 rounded text-xs ${
@@ -479,7 +479,7 @@ const TableSessions = () => {
                 </div>
 
                 {/* Session Total */}
-                <div className="bg-[#050b10] rounded-lg p-3 mb-4">
+                <div className="bg-[#0f2933] rounded-lg p-3 mb-4">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-400">Session Total</span>
                     <span className="text-primary font-bold text-lg">₹{session.total}</span>
@@ -507,7 +507,7 @@ const TableSessions = () => {
           <div>
             <h3 className="text-lg font-bold text-primary mb-4">Pending Bills</h3>
             {billingSessions.length === 0 ? (
-              <div className="bg-white/[0.03] rounded-xl p-8 text-center">
+              <div className="bg-[#1a4855] rounded-xl p-8 text-center">
                 <Receipt className="h-12 w-12 text-gray-500 mx-auto mb-4" />
                 <p className="text-gray-400">No pending bills</p>
               </div>
@@ -517,7 +517,7 @@ const TableSessions = () => {
                   <div
                     key={session.session_id}
                     onClick={() => setSelectedSession(session)}
-                    className={`bg-white/[0.03] rounded-xl p-4 cursor-pointer transition ${
+                    className={`bg-[#1a4855] rounded-xl p-4 cursor-pointer transition ${
                       selectedSession?.session_id === session.session_id
                         ? "border border-primary/20"
                         : "hover:bg-[#234d5c]"
@@ -545,8 +545,8 @@ const TableSessions = () => {
           <div>
             <h3 className="text-lg font-bold text-primary mb-4">Bill Details</h3>
             {selectedSession ? (
-              <div className="bg-white/[0.03] rounded-xl p-4">
-                <div className="text-center mb-4 pb-4 border-b border-white/5">
+              <div className="bg-[#1a4855] rounded-xl p-4">
+                <div className="text-center mb-4 pb-4 border-b border-[#EAB308]/20">
                   <h4 className="text-xl font-bold text-white">Persian Darbar</h4>
                   <p className="text-gray-400">Table {selectedSession.table_number}</p>
                   <p className="text-gray-400">{selectedSession.customer_name}</p>
@@ -567,7 +567,7 @@ const TableSessions = () => {
                 </div>
 
                 {/* Totals */}
-                <div className="border-t border-white/5 pt-3 space-y-2">
+                <div className="border-t border-[#EAB308]/20 pt-3 space-y-2">
                   <div className="flex justify-between text-gray-400">
                     <span>Subtotal</span>
                     <span>₹{selectedSession.subtotal}</span>
@@ -582,17 +582,17 @@ const TableSessions = () => {
                       type="number"
                       value={discount}
                       onChange={(e) => setDiscount(Number(e.target.value))}
-                      className="w-24 bg-[#050b10] text-white px-2 py-1 rounded text-right"
+                      className="w-24 bg-[#0f2933] text-white px-2 py-1 rounded text-right"
                     />
                   </div>
-                  <div className="flex justify-between text-primary font-bold text-xl pt-2 border-t border-white/5">
+                  <div className="flex justify-between text-primary font-bold text-xl pt-2 border-t border-[#EAB308]/20">
                     <span>Total</span>
                     <span>₹{selectedSession.total - discount}</span>
                   </div>
                 </div>
 
                 {/* Payment Method */}
-                <div className="mt-4 pt-4 border-t border-white/5">
+                <div className="mt-4 pt-4 border-t border-[#EAB308]/20">
                   <p className="text-gray-400 text-sm mb-2">Payment Method</p>
                   <div className="flex space-x-2">
                     {["cash", "card", "upi"].map((method) => (
@@ -602,7 +602,7 @@ const TableSessions = () => {
                         className={`flex-1 py-2 rounded-lg font-medium transition ${
                           paymentMethod === method
                             ? "bg-primary text-black"
-                            : "bg-[#050b10] text-gray-300 hover:text-white"
+                            : "bg-[#0f2933] text-gray-300 hover:text-white"
                         }`}
                       >
                         {method.toUpperCase()}
@@ -621,7 +621,7 @@ const TableSessions = () => {
                 </button>
               </div>
             ) : (
-              <div className="bg-white/[0.03] rounded-xl p-8 text-center">
+              <div className="bg-[#1a4855] rounded-xl p-8 text-center">
                 <DollarSign className="h-12 w-12 text-gray-500 mx-auto mb-4" />
                 <p className="text-gray-400">Select a bill to view details</p>
               </div>

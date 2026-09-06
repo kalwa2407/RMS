@@ -1,8 +1,8 @@
-// Mock data for Taste of Hindustan
+// Mock data for Persian Darbar
 
 export const restaurantInfo = {
-  name: "Taste of Hindustan",
-  tagline: "Heart of Bharat · Since 1978",
+  name: "Persian Darbar",
+  tagline: "Original Since 1978 · Since 1978",
   description: "Experience the royal heritage of India. From aromatic biryanis to succulent kebabs, we bring the authentic soul of Hindustan to your plate in the heart of Pune.",
   address: "Upper Ground Floor, Renaissance Business Wellesley Road, Camp Area, Pune",
   phone: "+919175623047",
@@ -30,8 +30,8 @@ export const features = [
   },
   {
     id: 4,
-    title: "Hindustani Heritage",
-    description: "Authentic Indian ambiance and royal hospitality"
+    title: "Royal Experience",
+    description: "Authentic Persian ambiance and hospitality"
   }
 ];
 
@@ -315,7 +315,7 @@ export const reviews = [
     name: "Soumya Mishra",
     rating: 5,
     date: "13 days ago",
-    text: "Nafis Ali provided excellent service at Taste of Hindustan. He was courteous, attentive, and ensured a pleasant dining experience throughout. Truly professional and warm in his approach. The food quality was outstanding!"
+    text: "Nafis Ali provided excellent service at Persian Darbar. He was courteous, attentive, and ensured a pleasant dining experience throughout. Truly professional and warm in his approach. The food quality was outstanding!"
   },
   {
     id: 2,
@@ -336,7 +336,7 @@ export const reviews = [
     name: "Amit Patel",
     rating: 5,
     date: "2 months ago",
-    text: "A hidden gem in Camp area! The Taste of Hindustan special biryani is a must-try. The flavors are authentic and remind me of traditional royal kitchens. Highly recommended!"
+    text: "A hidden gem in Camp area! The Persian Darbar special biryani is a must-try. The flavors are authentic and remind me of traditional royal kitchens. Highly recommended!"
   },
   {
     id: 5,

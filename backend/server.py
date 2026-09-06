@@ -1437,6 +1437,18 @@ async def admin_get_sales_analytics(
 # ADMIN REPORTS ENDPOINTS
 # =============================================================================
 
+def _parse_order_dt(val):
+    if not val:
+        return None
+    if isinstance(val, str):
+        try:
+            val = datetime.fromisoformat(val.replace("Z", "+00:00"))
+        except Exception:
+            return None
+    if hasattr(val, "tzinfo") and val.tzinfo is not None:
+        val = val.astimezone().replace(tzinfo=None)
+    return val
+
 @admin_router.get("/reports/daily")
 async def admin_get_daily_report(
     date: str = None,
@@ -1460,13 +1472,8 @@ async def admin_get_daily_report(
     
     orders = []
     for o in all_orders:
-        created_at_val = o.get("created_at")
-        if isinstance(created_at_val, str):
-            created_at = datetime.fromisoformat(created_at_val)
-        else:
-            created_at = created_at_val
-        
-        if start_of_day <= created_at <= end_of_day:
+        created_at = _parse_order_dt(o.get("created_at"))
+        if created_at and start_of_day <= created_at <= end_of_day:
             orders.append(o)
     
     # Calculate metrics
@@ -1515,18 +1522,14 @@ async def admin_get_daily_report(
             takeaway += 1
         
         # Track hourly
-        created_at_val = order.get("created_at")
-        if isinstance(created_at_val, str):
-            dt = datetime.fromisoformat(created_at_val)
-        else:
-            dt = created_at_val
-        
-        hour = dt.hour
-        if hour not in hourly_stats:
-            hourly_stats[hour] = {"hour": hour, "orders": 0, "revenue": 0.0}
-        hourly_stats[hour]["orders"] += 1
-        if status in ["delivered", "completed", "ready"]:
-            hourly_stats[hour]["revenue"] += total
+        dt = _parse_order_dt(order.get("created_at"))
+        if dt:
+            hour = dt.hour
+            if hour not in hourly_stats:
+                hourly_stats[hour] = {"hour": hour, "orders": 0, "revenue": 0.0}
+            hourly_stats[hour]["orders"] += 1
+            if status in ["delivered", "completed", "ready"]:
+                hourly_stats[hour]["revenue"] += total
     
     # Sort items by quantity sold
     best_selling = sorted(item_sales.values(), key=lambda x: x["quantity"], reverse=True)[:10]
@@ -1584,13 +1587,8 @@ async def admin_get_period_report(
     
     orders = []
     for o in all_orders:
-        created_at_val = o.get("created_at")
-        if isinstance(created_at_val, str):
-            dt = datetime.fromisoformat(created_at_val)
-        else:
-            dt = created_at_val
-        
-        if start <= dt <= end:
+        dt = _parse_order_dt(o.get("created_at"))
+        if dt and start <= dt <= end:
             orders.append(o)
             
     # Sort by created_at
@@ -1604,11 +1602,9 @@ async def admin_get_period_report(
     
     for order in orders:
         # Parse created_at for date grouping
-        created_at_val = order.get("created_at")
-        if isinstance(created_at_val, str):
-            created_dt = datetime.fromisoformat(created_at_val)
-        else:
-            created_dt = created_at_val
+        created_dt = _parse_order_dt(order.get("created_at"))
+        if not created_dt:
+            continue
         
         order_date = created_dt.strftime("%Y-%m-%d")
         

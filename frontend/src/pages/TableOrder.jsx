@@ -249,8 +249,8 @@ const TableOrder = () => {
   // Invalid table (outside 1-44 range)
   if (!tableNumber || tableNumber < 1 || tableNumber > MAX_TABLES) {
     return (
-      <div className="min-h-screen bg-[#050b10] flex items-center justify-center p-6">
-        <div className="bg-white/[0.03] rounded-3xl p-10 text-center max-w-md border border-red-500">
+      <div className="min-h-screen bg-gradient-to-b from-[#184956] to-[#0f2933] flex items-center justify-center p-6">
+        <div className="bg-[#1a4855] rounded-3xl p-10 text-center max-w-md border border-red-500">
           <h1 className="text-2xl font-bold text-red-500 mb-4">Invalid Table</h1>
           <p className="text-gray-300 mb-4">Table number must be between 1 and {MAX_TABLES}.</p>
           <p className="text-gray-400 text-sm">Please scan the QR code at your table.</p>
@@ -262,11 +262,11 @@ const TableOrder = () => {
   // Session locked - another device is using this table
   if (sessionLocked && session) {
     return (
-      <div className="min-h-screen bg-[#050b10] flex items-center justify-center px-4 relative overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-b from-[#184956] to-[#0f2933] flex items-center justify-center px-4 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-white/[0.02] blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#1a4855] blur-[120px] rounded-full pointer-events-none" />
 
-        <div className="bg-white/[0.03] backdrop-blur-xl border border-white/5 rounded-[2.5rem] p-10 text-center max-w-md w-full shadow-2xl relative z-10">
+        <div className="bg-[#1a4855] border border-[#EAB308]/20 rounded-xl p-10 text-center max-w-md w-full shadow-2xl relative z-10">
           <div className="w-20 h-20 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/20 overflow-hidden relative mx-auto mb-6">
              <Lock className="h-8 w-8 text-orange-500" />
           </div>
@@ -275,8 +275,8 @@ const TableOrder = () => {
           <p className="text-gray-500 text-xs mb-8 uppercase tracking-widest">Please wait until the current experience is completed.</p>
           <button
             onClick={() => window.location.reload()}
-            className="bg-white/[0.05] border border-white/10 text-white px-8 py-4 rounded-2xl font-bold hover:bg-white hover:text-black hover:border-white uppercase tracking-widest text-[11px] transition-all flex items-center justify-center mx-auto space-x-3 w-full"
-            style={{ fontFamily: "'El Messiri', serif" }}
+            className="bg-[#1a4855] border border-[#EAB308]/20 text-white px-8 py-4 rounded-2xl font-bold hover:bg-white hover:text-black hover:border-white uppercase tracking-widest text-[11px] transition-all flex items-center justify-center mx-auto space-x-3 w-full"
+            
           >
             <RefreshCw className="h-4 w-4" />
             <span>Check Availability</span>
@@ -289,29 +289,29 @@ const TableOrder = () => {
   // Name entry modal
   if (showNameModal) {
     return (
-      <div className="min-h-screen bg-[#050b10] flex items-center justify-center px-4 relative overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-b from-[#184956] to-[#0f2933] flex items-center justify-center px-4 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-white/[0.02] blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#1a4855] blur-[120px] rounded-full pointer-events-none" />
 
-        <div className="bg-white/[0.03] backdrop-blur-xl border border-white/5 rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl relative z-10">
+        <div className="bg-[#1a4855] border border-[#EAB308]/20 rounded-xl p-10 max-w-md w-full shadow-2xl relative z-10">
           <div className="text-center mb-10">
             <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 overflow-hidden relative mx-auto mb-6">
                <span className="text-primary font-black text-3xl tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>TH</span>
             </div>
-            <h1 className="text-4xl text-white mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>Taste of Hindustan</h1>
-            <p className="text-primary text-[10px] uppercase tracking-[0.3em] font-bold mb-1" style={{ fontFamily: "'El Messiri', serif" }}>Welcome</p>
+            <h1 className="text-4xl text-white mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>Persian Darbar</h1>
+            <p className="text-primary text-[10px] uppercase tracking-[0.3em] font-bold mb-1" >Welcome</p>
             <p className="text-gray-500 text-xs italic">Table {tableNumber}</p>
           </div>
           
           <div className="space-y-6">
             <div className="space-y-2">
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest" style={{ fontFamily: "'El Messiri', serif" }}>Your Name</label>
+              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest" >Your Name</label>
               <input
                 type="text"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
                 placeholder="How shall we address you?"
-                className="w-full bg-white/[0.02] border border-white/10 rounded-2xl px-6 py-4 text-sm font-medium text-white outline-none focus:border-primary/50 transition-all placeholder:text-gray-600"
+                className="w-full bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl px-6 py-4 text-sm font-medium text-white outline-none focus:border-primary/50 transition-all placeholder:text-gray-600"
                 autoFocus
               />
             </div>
@@ -320,7 +320,7 @@ const TableOrder = () => {
               onClick={startSession}
               disabled={!customerName.trim()}
               className="w-full bg-primary text-black py-4 rounded-2xl font-bold uppercase tracking-[0.25em] text-[11px] shadow-2xl shadow-primary/20 hover:bg-white transition-all disabled:opacity-30 disabled:hover:bg-primary"
-              style={{ fontFamily: "'El Messiri', serif" }}
+              
             >
               Begin Your Experience
             </button>
@@ -333,9 +333,9 @@ const TableOrder = () => {
   // Order Status Page
   if (showStatusPage && session?.orders?.length > 0) {
     return (
-      <div className="min-h-screen bg-[#050b10] pb-24">
+      <div className="min-h-screen bg-gradient-to-b from-[#184956] to-[#0f2933] pb-24">
         {/* Header */}
-        <div className="bg-white/[0.03] border-b border-white/5 sticky top-0 z-40 py-3">
+        <div className="bg-[#1a4855] border-b border-[#EAB308]/20 sticky top-0 z-40 py-3">
           <div className="max-w-6xl mx-auto px-4 flex justify-between items-center">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center border border-primary/50 overflow-hidden relative">
@@ -363,7 +363,7 @@ const TableOrder = () => {
             const StatusIcon = status.icon;
             
             return (
-              <div key={order.order_id} className="bg-white/[0.03] rounded-2xl p-6 border border-white/5">
+              <div key={order.order_id} className="bg-[#1a4855] rounded-2xl p-6 border border-[#EAB308]/20">
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-gray-400">Order #{idx + 1}</span>
                   <span className="text-gray-400 text-sm">{order.kot_number || order.order_id}</span>
@@ -412,7 +412,7 @@ const TableOrder = () => {
                   ))}
                 </div>
                 
-                <div className="mt-4 pt-4 border-t border-white/5 flex justify-between">
+                <div className="mt-4 pt-4 border-t border-[#EAB308]/20 flex justify-between">
                   <span className="text-gray-400">Order Total</span>
                   <span className="text-primary font-bold">₹{order.total}</span>
                 </div>
@@ -434,9 +434,9 @@ const TableOrder = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#050b10] pb-24 lg:pb-6">
+    <div className="min-h-screen bg-gradient-to-b from-[#184956] to-[#0f2933] pb-24 lg:pb-6">
       {/* Header */}
-      <div className="bg-white/[0.03] border-b border-white/5 sticky top-0 z-40 py-3">
+      <div className="bg-[#1a4855] border-b border-[#EAB308]/20 sticky top-0 z-40 py-3">
         <div className="max-w-6xl mx-auto px-4 flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center border border-primary/50 overflow-hidden relative">
@@ -461,7 +461,7 @@ const TableOrder = () => {
 
       {/* Session Orders Status Bar */}
       {session?.orders?.length > 0 && (
-        <div className="bg-white/[0.03] border-b border-white/5 py-2 px-4">
+        <div className="bg-[#1a4855] border-b border-[#EAB308]/20 py-2 px-4">
           <div className="max-w-6xl mx-auto flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <span className="text-gray-400 text-sm">Orders:</span>
@@ -491,7 +491,7 @@ const TableOrder = () => {
               className={`px-4 py-2 rounded-full whitespace-nowrap transition text-sm ${
                 selectedCategory === cat 
                   ? "bg-primary text-black font-bold" 
-                  : "bg-white/[0.03] text-gray-300 hover:text-primary"
+                  : "bg-[#1a4855] text-gray-300 hover:text-primary"
               }`}>
               {cat}
             </button>
@@ -506,7 +506,7 @@ const TableOrder = () => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {filteredItems.map((item) => (
-                  <div key={item._id} className="bg-white/[0.03] rounded-xl p-3 flex space-x-3">
+                  <div key={item._id} className="bg-[#1a4855] rounded-xl p-3 flex space-x-3">
                     <img 
                       src={item.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200"} 
                       alt={item.name}
@@ -537,7 +537,7 @@ const TableOrder = () => {
           </div>
 
           {/* Desktop Cart */}
-          <div className="hidden lg:block bg-white/[0.03] rounded-xl p-4 h-fit sticky top-24">
+          <div className="hidden lg:block bg-[#1a4855] rounded-xl p-4 h-fit sticky top-24">
             <h2 className="text-lg font-bold text-primary mb-4 flex items-center">
               <ShoppingCart className="h-5 w-5 mr-2" />Your Order
             </h2>
@@ -548,14 +548,14 @@ const TableOrder = () => {
               <>
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {cart.map((item) => (
-                    <div key={item._id} className="bg-[#050b10] rounded-lg p-2 flex items-center space-x-2">
+                    <div key={item._id} className="bg-gradient-to-b from-[#184956] to-[#0f2933] rounded-lg p-2 flex items-center space-x-2">
                       <div className="flex-1 min-w-0">
                         <p className="text-white text-sm font-medium truncate">{item.name}</p>
                         <p className="text-primary text-sm">₹{item.price * item.quantity}</p>
                       </div>
                       <div className="flex items-center space-x-2">
                         <button onClick={() => updateQuantity(item._id, -1)}
-                          className="w-6 h-6 rounded-full bg-white/[0.03] text-white flex items-center justify-center">
+                          className="w-6 h-6 rounded-full bg-[#1a4855] text-white flex items-center justify-center">
                           <Minus className="h-3 w-3" />
                         </button>
                         <span className="text-white font-bold text-sm w-4 text-center">{item.quantity}</span>
@@ -571,7 +571,7 @@ const TableOrder = () => {
                   ))}
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-white/5">
+                <div className="mt-4 pt-4 border-t border-[#EAB308]/20">
                   <div className="flex justify-between text-primary font-bold text-lg">
                     <span>Total</span>
                     <span>₹{cartTotal}</span>
@@ -588,7 +588,7 @@ const TableOrder = () => {
               </>
             )}
 
-            <div className="mt-4 pt-4 border-t border-white/5 space-y-2">
+            <div className="mt-4 pt-4 border-t border-[#EAB308]/20 space-y-2">
               <Link to="/" className="flex items-center justify-center space-x-2 text-gray-400 hover:text-primary transition">
                 <Globe className="h-4 w-4" />
                 <span className="text-sm">Visit Main Website</span>
@@ -600,7 +600,7 @@ const TableOrder = () => {
 
       {/* Mobile Floating Cart Button */}
       {cart.length > 0 && (
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#050b10] to-transparent">
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0f2933] to-transparent">
           <button
             onClick={() => setShowMobileCart(true)}
             className="w-full bg-primary text-black py-4 rounded-2xl font-bold flex items-center justify-between px-6 shadow-lg shadow-primary/20"
@@ -624,12 +624,12 @@ const TableOrder = () => {
         <div className="lg:hidden fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowMobileCart(false)} />
           
-          <div className="absolute bottom-0 left-0 right-0 bg-white/[0.03] rounded-t-3xl max-h-[85vh] overflow-hidden animate-slide-up">
+          <div className="absolute bottom-0 left-0 right-0 bg-[#1a4855] rounded-t-3xl max-h-[85vh] overflow-hidden animate-slide-up">
             <div className="flex justify-center py-3">
               <div className="w-12 h-1 bg-gray-500 rounded-full" />
             </div>
             
-            <div className="flex justify-between items-center px-4 pb-3 border-b border-white/5">
+            <div className="flex justify-between items-center px-4 pb-3 border-b border-[#EAB308]/20">
               <h2 className="text-xl font-bold text-primary">Your Order</h2>
               <button onClick={() => setShowMobileCart(false)} className="text-gray-400">
                 <X className="h-6 w-6" />
@@ -638,7 +638,7 @@ const TableOrder = () => {
 
             <div className="overflow-y-auto max-h-[50vh] p-4 space-y-3">
               {cart.map((item) => (
-                <div key={item._id} className="bg-[#050b10] rounded-xl p-3 flex space-x-3">
+                <div key={item._id} className="bg-gradient-to-b from-[#184956] to-[#0f2933] rounded-xl p-3 flex space-x-3">
                   <img 
                     src={item.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100"} 
                     alt={item.name}
@@ -654,7 +654,7 @@ const TableOrder = () => {
                     <p className="text-primary font-bold">₹{item.price * item.quantity}</p>
                     <div className="flex items-center space-x-3 mt-2">
                       <button onClick={() => updateQuantity(item._id, -1)}
-                        className="w-8 h-8 rounded-full bg-white/[0.03] text-white flex items-center justify-center">
+                        className="w-8 h-8 rounded-full bg-[#1a4855] text-white flex items-center justify-center">
                         <Minus className="h-4 w-4" />
                       </button>
                       <span className="text-white font-bold text-lg w-6 text-center">{item.quantity}</span>
@@ -668,7 +668,7 @@ const TableOrder = () => {
               ))}
             </div>
 
-            <div className="p-4 border-t border-white/5 bg-white/[0.03]">
+            <div className="p-4 border-t border-[#EAB308]/20 bg-[#1a4855]">
               <div className="flex justify-between items-center mb-4">
                 <span className="text-gray-300">Subtotal</span>
                 <span className="text-white font-bold">₹{cartTotal}</span>

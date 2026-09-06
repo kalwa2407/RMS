@@ -26,10 +26,10 @@ const Contact = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#050b10] pt-28 md:pt-44 pb-16 md:pb-32 relative selection:bg-primary/30 scroll-smooth">
+    <div className="min-h-screen bg-gradient-to-b from-[#184956] to-[#0f2933] pt-28 md:pt-44 pb-16 md:pb-32 relative selection:bg-primary/30 scroll-smooth">
       {/* Dynamic Ambient Background */}
       <div className="absolute top-0 left-[-10%] w-[60%] h-[60%] bg-primary/5 blur-[150px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-white/[0.02] blur-[150px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-[#1a4855] blur-[150px] rounded-full pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 md:gap-20 items-stretch">
@@ -40,7 +40,7 @@ const Contact = () => {
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="inline-flex items-center space-x-3 glass-premium rounded-full px-6 py-2 border-white/5"
+                className="inline-flex items-center space-x-3 bg-[#1a4855] border border-[#EAB308]/20 rounded-full px-6 py-2 border-[#EAB308]/20"
               >
                 <Globe className="text-primary w-4 h-4" />
                 <span className="text-primary text-[10px] font-black uppercase tracking-[0.4em]">Global Presence, Local Heart</span>
@@ -49,9 +49,9 @@ const Contact = () => {
               <motion.h1 
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-4xl sm:text-5xl md:text-8xl font-display font-black text-white leading-tight"
+                className="text-4xl sm:text-5xl md:text-8xl font-black text-white leading-tight"
               >
-                Let's <br /> <span className="golden-text italic">Connect</span>
+                Let's <br /> <span className="text-[#EAB308] italic">Connect</span>
               </motion.h1>
               
               <motion.p 
@@ -71,12 +71,12 @@ const Contact = () => {
                ].map((item, i) => (
                  <ScrollReveal key={i} delay={i * 0.1}>
                     <div className="flex items-center space-x-8 group">
-                       <div className="w-16 h-16 rounded-[2rem] bg-white/[0.02] border border-white/5 flex items-center justify-center text-primary transition-all duration-700 group-hover:bg-primary group-hover:text-black group-hover:rotate-[360deg] group-hover:rounded-2xl">
+                       <div className="w-16 h-16 rounded-xl bg-[#1a4855] border border-[#EAB308]/20 flex items-center justify-center text-primary transition-all duration-700 group-hover:bg-primary group-hover:text-black group-hover:rotate-[360deg] group-hover:rounded-2xl">
                           <item.icon size={20} />
                        </div>
                        <div className="space-y-1">
                           <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.5em]">{item.channel}</p>
-                          <h3 className="text-xl font-display font-bold text-white group-hover:text-primary transition-colors">{item.val}</h3>
+                          <h3 className="text-xl font-bold text-white group-hover:text-primary transition-colors">{item.val}</h3>
                           <p className="text-gray-500 text-xs italic font-light">{item.desc}</p>
                        </div>
                     </div>
@@ -95,12 +95,12 @@ const Contact = () => {
             <motion.div 
                initial={{ opacity: 0, scale: 0.95 }}
                animate={{ opacity: 1, scale: 1 }}
-               className="glass-premium rounded-2xl md:rounded-[4rem] p-6 md:p-12 lg:p-20 border border-white/5 relative overflow-hidden backdrop-blur-3xl shadow-2xl h-full"
+               className="bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl md:rounded-[4rem] p-6 md:p-12 lg:p-20 border border-[#EAB308]/20 relative overflow-hidden shadow-2xl h-full"
             >
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
               
               <div className="mb-16">
-                 <h2 className="text-4xl font-display font-bold text-white mb-4">Direct Message</h2>
+                 <h2 className="text-4xl font-bold text-white mb-4">Direct Message</h2>
                  <p className="text-gray-500 font-light">Complete the seal below to initiate contact.</p>
               </div>
 
@@ -116,7 +116,7 @@ const Contact = () => {
                       value={formData.name}
                       onChange={(e) => handleChange('name', e.target.value)}
                       placeholder="HOW MAY WE ADDRESS YOU?"
-                      className="w-full bg-white/[0.02] border border-white/10 rounded-3xl px-8 py-5 text-[10px] font-black tracking-widest text-white outline-none focus:border-primary/50 transition-all uppercase"
+                      className="w-full bg-[#1a4855] border border-[#EAB308]/20 rounded-3xl px-8 py-5 text-[10px] font-black tracking-widest text-white outline-none focus:border-primary/50 transition-all uppercase"
                     />
                   </div>
                   <div className="space-y-4">
@@ -130,7 +130,7 @@ const Contact = () => {
                       value={formData.email}
                       onChange={(e) => handleChange('email', e.target.value)}
                       placeholder="GUEST@EXAMPLE.COM"
-                      className="w-full bg-white/[0.02] border border-white/10 rounded-3xl px-8 py-5 text-[10px] font-black tracking-widest text-white outline-none focus:border-primary/50 transition-all uppercase"
+                      className="w-full bg-[#1a4855] border border-[#EAB308]/20 rounded-3xl px-8 py-5 text-[10px] font-black tracking-widest text-white outline-none focus:border-primary/50 transition-all uppercase"
                     />
                   </div>
                 </div>
@@ -140,11 +140,11 @@ const Contact = () => {
                        <Phone size={12} />
                        <span>Subject / Area of Interest</span>
                     </label>
-                   <select className="w-full bg-white/[0.02] border border-white/10 rounded-3xl px-8 py-5 text-[10px] font-black tracking-widest text-white outline-none focus:border-primary/50 transition-all appearance-none">
-                      <option className="bg-[#050b10]">RESERVATION INQUIRY</option>
-                      <option className="bg-[#050b10]">CATERING & GRAND EVENTS</option>
-                      <option className="bg-[#050b10]">FRANCHISE OPPORTUNITY</option>
-                      <option className="bg-[#050b10]">GENERAL COMPLIMENTS</option>
+                   <select className="w-full bg-[#1a4855] border border-[#EAB308]/20 rounded-3xl px-8 py-5 text-[10px] font-black tracking-widest text-white outline-none focus:border-primary/50 transition-all appearance-none">
+                      <option className="bg-gradient-to-b from-[#184956] to-[#0f2933]">RESERVATION INQUIRY</option>
+                      <option className="bg-gradient-to-b from-[#184956] to-[#0f2933]">CATERING & GRAND EVENTS</option>
+                      <option className="bg-gradient-to-b from-[#184956] to-[#0f2933]">FRANCHISE OPPORTUNITY</option>
+                      <option className="bg-gradient-to-b from-[#184956] to-[#0f2933]">GENERAL COMPLIMENTS</option>
                    </select>
                 </div>
 
@@ -159,13 +159,13 @@ const Contact = () => {
                     onChange={(e) => handleChange('message', e.target.value)}
                     placeholder="DESCRIBE YOUR REQUEST IN DETAIL..."
                     rows={5}
-                    className="w-full bg-white/[0.02] border border-white/10 rounded-[3rem] px-10 py-8 text-[10px] font-black tracking-[0.2em] text-white outline-none focus:border-primary/50 transition-all resize-none"
+                    className="w-full bg-[#1a4855] border border-[#EAB308]/20 rounded-xl px-10 py-8 text-[10px] font-black tracking-[0.2em] text-white outline-none focus:border-primary/50 transition-all resize-none"
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full magnetic-button bg-primary text-black py-4 md:py-6 rounded-xl md:rounded-[2rem] font-black uppercase tracking-[0.2em] md:tracking-[0.4em] text-[10px] md:text-[12px] flex items-center justify-center space-x-4 shadow-2xl shadow-primary/20 active:scale-95 transition-all"
+                  className="w-full bg-primary text-black py-4 md:py-6 rounded-xl md:rounded-xl font-black uppercase tracking-[0.2em] md:tracking-[0.4em] text-[10px] md:text-[12px] flex items-center justify-center space-x-4 shadow-2xl shadow-primary/20 active:scale-95 transition-all"
                 >
                   <Send size={18} />
                   <span>Dispatch To Concierge</span>
@@ -186,7 +186,7 @@ const Contact = () => {
 
         {/* Cinematic Map / Footer Area */}
         <section className="mt-20 md:mt-52">
-           <div className="glass-premium rounded-2xl md:rounded-[4rem] border border-white/5 overflow-hidden aspect-[16/9] md:aspect-[21/9] relative group">
+           <div className="bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl md:rounded-[4rem] border border-[#EAB308]/20 overflow-hidden aspect-[16/9] md:aspect-[21/9] relative group">
               <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all duration-700 z-10" />
               <img 
                  src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=1200"
@@ -197,7 +197,7 @@ const Contact = () => {
                  <div className="w-20 h-20 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-6 animate-pulse">
                     <MapPin size={32} />
                  </div>
-                 <h3 className="text-2xl md:text-4xl font-display font-bold text-white mb-2 md:mb-4 italic">Locate The Grandeur</h3>
+                 <h3 className="text-2xl md:text-4xl font-bold text-white mb-2 md:mb-4 italic">Locate The Grandeur</h3>
                  <p className="text-gray-400 font-light text-xs md:text-sm max-w-md mx-auto italic">Upper Ground Floor, Renaissance Business Wellesley Road, Camp, Pune, Maharashtra 411001</p>
               </div>
            </div>

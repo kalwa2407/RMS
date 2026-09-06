@@ -1,0 +1,96 @@
+/* Persian Darbar - Classic Theme Styles */
+
+/* Persian Pattern Background */
+.persian-pattern {
+  background-image: 
+    repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(234, 179, 8, 0.03) 10px, rgba(234, 179, 8, 0.03) 20px),
+    repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(234, 179, 8, 0.03) 10px, rgba(234, 179, 8, 0.03) 20px);
+}
+
+/* Golden Decorative Border */
+.golden-border-top {
+  border-top: 3px solid #EAB308;
+  position: relative;
+}
+
+.golden-border-bottom {
+  border-bottom: 3px solid #EAB308;
+  position: relative;
+}
+
+.golden-divider {
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(to right, transparent, #EAB308 20%, #EAB308 80%, transparent);
+  margin: 0 auto;
+}
+
+body {
+  background: linear-gradient(to bottom, #184956, #0f2933);
+}
+
+/* Smooth transitions */
+* {
+  transition-property: transform, box-shadow, background-color, border-color;
+  transition-duration: 0.3s;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hover animations */
+button:hover {
+  transform: translateY(-2px);
+}
+
+.card-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #184956;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #EAB308;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #CA8A04;
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Focus states */
+*:focus {
+  outline: none;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: #EAB308 !important;
+  box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.2);
+}
+
+/* Animation keyframes */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}

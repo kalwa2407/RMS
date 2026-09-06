@@ -225,7 +225,7 @@ const MenuManagement = () => {
       </div>
 
       {showAddForm && (
-        <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-6 mb-8">
+        <div className="bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl p-6 mb-8">
           <h3 className="text-2xl font-bold text-primary mb-4">
             {editingItem ? "Edit Menu Item" : "Add New Menu Item"}
           </h3>
@@ -242,7 +242,7 @@ const MenuManagement = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
                   }
-                  className="w-full px-4 py-2 bg-[#050b10] border border-white/5 rounded-lg text-white focus:border-primary/50"
+                  className="w-full px-4 py-2 bg-[#0f2933] border border-[#EAB308]/20 rounded-lg text-white focus:border-primary/50"
                 />
               </div>
 
@@ -256,7 +256,7 @@ const MenuManagement = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, category: e.target.value })
                   }
-                  className="w-full px-4 py-2 bg-[#050b10] border border-white/5 rounded-lg text-white focus:border-primary/50"
+                  className="w-full px-4 py-2 bg-[#0f2933] border border-[#EAB308]/20 rounded-lg text-white focus:border-primary/50"
                 >
                   {categories.map((c) => (
                     <option key={c}>{c}</option>
@@ -276,7 +276,7 @@ const MenuManagement = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
                 }
-                className="w-full px-4 py-2 bg-[#050b10] border border-white/5 rounded-lg text-white"
+                className="w-full px-4 py-2 bg-[#0f2933] border border-[#EAB308]/20 rounded-lg text-white"
               />
             </div>
 
@@ -295,7 +295,7 @@ const MenuManagement = () => {
                       price: parseFloat(e.target.value),
                     })
                   }
-                  className="w-full px-4 py-2 bg-[#050b10] border border-white/5 rounded-lg text-white"
+                  className="w-full px-4 py-2 bg-[#0f2933] border border-[#EAB308]/20 rounded-lg text-white"
                 />
               </div>
 
@@ -318,7 +318,7 @@ const MenuManagement = () => {
                         handleImageUpload(file);
                       }
                     }}
-                    className="w-full px-4 py-2 bg-[#050b10] border border-white/5 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-primary file:text-black file:cursor-pointer hover:file:bg-[#d4a406]"
+                    className="w-full px-4 py-2 bg-[#0f2933] border border-[#EAB308]/20 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-primary file:text-black file:cursor-pointer hover:file:bg-[#d4a406]"
                     disabled={uploadingImage}
                   />
                   {uploadingImage && (
@@ -327,9 +327,9 @@ const MenuManagement = () => {
                 </div>
 
                 <div className="flex items-center my-3">
-                  <div className="flex-1 border-t border-white/5"></div>
+                  <div className="flex-1 border-t border-[#EAB308]/20"></div>
                   <span className="px-3 text-gray-500 text-sm">OR</span>
-                  <div className="flex-1 border-t border-white/5"></div>
+                  <div className="flex-1 border-t border-[#EAB308]/20"></div>
                 </div>
 
                 <div>
@@ -342,7 +342,7 @@ const MenuManagement = () => {
                       setFormData({ ...formData, image: e.target.value })
                     }
                     placeholder="https://example.com/image.jpg"
-                    className="w-full px-4 py-2 bg-[#050b10] border border-white/5 rounded-lg text-white"
+                    className="w-full px-4 py-2 bg-[#0f2933] border border-[#EAB308]/20 rounded-lg text-white"
                   />
                 </div>
 
@@ -352,7 +352,7 @@ const MenuManagement = () => {
                     <img
                       src={formData.image}
                       alt="Preview"
-                      className="w-32 h-32 object-cover rounded-lg border border-white/5"
+                      className="w-32 h-32 object-cover rounded-lg border border-[#EAB308]/20"
                       onError={(e) => {
                         e.target.src = "https://via.placeholder.com/150?text=Invalid+Image";
                       }}
@@ -401,7 +401,7 @@ const MenuManagement = () => {
         {menuItems.map((item) => (
           <div
             key={item._id}
-            className="bg-white/[0.03] border border-white/5 rounded-2xl overflow-hidden hover:border-primary/20"
+            className="bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl overflow-hidden hover:border-primary/20"
           >
             <div className="relative h-48">
               <img

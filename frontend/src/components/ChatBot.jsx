@@ -9,7 +9,7 @@ const ChatBot = () => {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: 'Hello! I\'m Vijay, the virtual manager of Taste of Hindustan. How can I assist you today? 😊'
+      content: 'Hello! I\'m Vijay, the virtual manager of Persian Darbar. How can I assist you today? 😊'
     }
   ]);
   const [input, setInput] = useState('');

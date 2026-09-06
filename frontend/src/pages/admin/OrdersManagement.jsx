@@ -310,7 +310,7 @@ const OrdersManagement = () => {
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
               statusFilter === tab.value
                 ? "bg-primary text-black"
-                : "bg-white/[0.03] text-gray-300 hover:bg-[#2a5865]"
+                : "bg-[#1a4855] text-gray-300 hover:bg-[#2a5865]"
             }`}
           >
             {tab.label}
@@ -339,10 +339,10 @@ const OrdersManagement = () => {
             return (
               <div
                 key={order.order_id}
-                className={`bg-white/[0.03] border-2 rounded-xl p-6 ${
+                className={`bg-[#1a4855] border-2 rounded-xl p-6 ${
                   order.order_type === "DINE_IN" 
                     ? "border-primary/20" 
-                    : "border-white/5"
+                    : "border-[#EAB308]/20"
                 }`}
               >
                 {/* Order Header */}
@@ -385,7 +385,7 @@ const OrdersManagement = () => {
                 </div>
 
                 {/* Customer Details */}
-                <div className="grid md:grid-cols-2 gap-4 mb-4 bg-[#050b10] rounded-lg p-4">
+                <div className="grid md:grid-cols-2 gap-4 mb-4 bg-[#0f2933] rounded-lg p-4">
                   <div>
                     <p className="text-gray-400 text-sm">Customer</p>
                     <p className="text-white font-medium">{order.customer_name}</p>
@@ -420,7 +420,7 @@ const OrdersManagement = () => {
                 </div>
 
                 {/* Order Total */}
-                <div className="border-t border-white/5 pt-3 mb-4">
+                <div className="border-t border-[#EAB308]/20 pt-3 mb-4">
                   <div className="flex justify-between text-sm mb-1">
                     <span className="text-gray-400">Subtotal</span>
                     <span className="text-white">₹{order.subtotal.toFixed(2)}</span>
@@ -506,7 +506,7 @@ const OrdersManagement = () => {
       {/* Order Details Modal */}
       {selectedOrder && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-          <div className="bg-white/[0.03] rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-[#1a4855] rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-start mb-6">
               <h3 className="text-2xl font-bold text-primary">
                 Order Details: {selectedOrder.order_id}
@@ -524,7 +524,7 @@ const OrdersManagement = () => {
               <h4 className="text-lg font-semibold text-white mb-3">Status History</h4>
               <div className="space-y-2">
                 {selectedOrder.status_history.map((history, idx) => (
-                  <div key={idx} className="bg-[#050b10] rounded-lg p-3">
+                  <div key={idx} className="bg-[#0f2933] rounded-lg p-3">
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="text-primary font-medium">{history.status}</p>

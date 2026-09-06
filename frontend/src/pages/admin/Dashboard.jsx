@@ -154,7 +154,7 @@ const Dashboard = () => {
         >
           Dashboard
         </h2>
-        <p className="text-gray-500 text-xs uppercase tracking-widest" style={{ fontFamily: "'El Messiri', serif" }}>Welcome to Taste of Hindustan Admin Panel</p>
+        <p className="text-gray-500 text-xs uppercase tracking-widest" >Welcome to Persian Darbar Admin Panel</p>
       </div>
 
       {/* STAT CARDS */}
@@ -164,7 +164,7 @@ const Dashboard = () => {
           return (
             <div
               key={index}
-              className="bg-white/[0.03] backdrop-blur-xl border border-white/5 rounded-[2rem] p-6 hover:border-primary/20 transition-all duration-500 group"
+              className="bg-[#1a4855] border border-[#EAB308]/20 rounded-xl p-6 hover:border-primary/20 transition-all duration-500 group"
             >
               <div className="flex items-center justify-between mb-5">
                 <div className="bg-primary/10 p-3 rounded-xl border border-primary/10">
@@ -175,7 +175,7 @@ const Dashboard = () => {
               <h3 className="text-3xl font-bold text-white mb-1" style={{ fontFamily: "'Playfair Display', serif" }}>
                 {card.value}
               </h3>
-              <p className="text-primary text-[11px] uppercase tracking-widest font-bold" style={{ fontFamily: "'El Messiri', serif" }}>{card.title}</p>
+              <p className="text-primary text-[11px] uppercase tracking-widest font-bold" >{card.title}</p>
               <p className="text-gray-500 text-xs mt-1">{card.subtitle}</p>
             </div>
           );
@@ -183,7 +183,7 @@ const Dashboard = () => {
       </div>
 
       {/* QUICK ACTIONS */}
-      <div className="mt-8 bg-white/[0.03] backdrop-blur-xl border border-white/5 rounded-[2rem] p-8">
+      <div className="mt-8 bg-[#1a4855] border border-[#EAB308]/20 rounded-xl p-8">
         <h3
           className="text-xl text-white mb-6"
           style={{ fontFamily: "'Playfair Display', serif" }}
@@ -194,34 +194,34 @@ const Dashboard = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <button
             onClick={() => navigate("/admin/menu")}
-            className="bg-white/[0.02] border border-white/5 hover:bg-primary hover:text-black hover:border-primary text-gray-400 p-5 rounded-2xl transition-all duration-300 group"
+            className="bg-[#1a4855] border border-[#EAB308]/20 hover:bg-primary hover:text-black hover:border-primary text-gray-400 p-5 rounded-2xl transition-all duration-300 group"
           >
             <MenuIcon className="h-5 w-5 mx-auto mb-2 group-hover:scale-110 transition-transform" />
-            <p className="text-[11px] font-bold uppercase tracking-widest" style={{ fontFamily: "'El Messiri', serif" }}>Add Menu</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest" >Add Menu</p>
           </button>
 
           <button
             onClick={() => navigate("/admin/gallery")}
-            className="bg-white/[0.02] border border-white/5 hover:bg-primary hover:text-black hover:border-primary text-gray-400 p-5 rounded-2xl transition-all duration-300 group"
+            className="bg-[#1a4855] border border-[#EAB308]/20 hover:bg-primary hover:text-black hover:border-primary text-gray-400 p-5 rounded-2xl transition-all duration-300 group"
           >
             <Image className="h-5 w-5 mx-auto mb-2 group-hover:scale-110 transition-transform" />
-            <p className="text-[11px] font-bold uppercase tracking-widest" style={{ fontFamily: "'El Messiri', serif" }}>Gallery</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest" >Gallery</p>
           </button>
 
           <button
             onClick={() => navigate("/admin/orders")}
-            className="bg-white/[0.02] border border-white/5 hover:bg-primary hover:text-black hover:border-primary text-gray-400 p-5 rounded-2xl transition-all duration-300 group"
+            className="bg-[#1a4855] border border-[#EAB308]/20 hover:bg-primary hover:text-black hover:border-primary text-gray-400 p-5 rounded-2xl transition-all duration-300 group"
           >
             <ShoppingBag className="h-5 w-5 mx-auto mb-2 group-hover:scale-110 transition-transform" />
-            <p className="text-[11px] font-bold uppercase tracking-widest" style={{ fontFamily: "'El Messiri', serif" }}>Orders</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest" >Orders</p>
           </button>
 
           <button
             onClick={() => navigate("/admin/reservations")}
-            className="bg-white/[0.02] border border-white/5 hover:bg-primary hover:text-black hover:border-primary text-gray-400 p-5 rounded-2xl transition-all duration-300 group"
+            className="bg-[#1a4855] border border-[#EAB308]/20 hover:bg-primary hover:text-black hover:border-primary text-gray-400 p-5 rounded-2xl transition-all duration-300 group"
           >
             <Calendar className="h-5 w-5 mx-auto mb-2 group-hover:scale-110 transition-transform" />
-            <p className="text-[11px] font-bold uppercase tracking-widest" style={{ fontFamily: "'El Messiri', serif" }}>Reservations</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest" >Reservations</p>
           </button>
         </div>
       </div>

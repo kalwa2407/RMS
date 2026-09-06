@@ -57,17 +57,17 @@ const OrderTracking = () => {
   const getStatusIndex = (status) => ['placed', 'accepted', 'preparing', 'ready', 'out_for_delivery', 'delivered'].indexOf(status);
 
   return (
-    <div className="min-h-screen bg-[#050b10] pt-40 pb-32 relative selection:bg-primary/30">
+    <div className="min-h-screen bg-gradient-to-b from-[#184956] to-[#0f2933] pt-40 pb-32 relative selection:bg-primary/30">
       {/* Cinematic Background */}
       <div className="absolute top-0 right-0 w-[60%] h-[60%] bg-primary/5 blur-[150px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[40%] h-[40%] bg-white/[0.02] blur-[150px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[40%] h-[40%] bg-[#1a4855] blur-[150px] rounded-full pointer-events-none" />
 
       <div className="max-w-5xl mx-auto px-4 relative z-10">
         <header className="text-center mb-24">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="inline-flex items-center space-x-3 glass-premium rounded-full px-6 py-2 mb-8 border-white/5"
+            className="inline-flex items-center space-x-3 bg-[#1a4855] border border-[#EAB308]/20 rounded-full px-6 py-2 mb-8 border-[#EAB308]/20"
           >
             <Navigation className="text-primary w-4 h-4" />
             <span className="text-primary text-[10px] font-black uppercase tracking-[0.4em]">Imperial Dispatch Herald</span>
@@ -76,22 +76,22 @@ const OrderTracking = () => {
           <motion.h1 
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-6xl md:text-8xl font-display font-black text-white mb-8"
+            className="text-6xl md:text-8xl font-black text-white mb-8"
           >
-            Track Your <span className="golden-text">Feast</span>
+            Track Your <span className="text-[#EAB308]">Feast</span>
           </motion.h1>
         </header>
 
         {/* High-End Search Interface */}
         <div className="relative max-w-2xl mx-auto mb-24">
           <form onSubmit={(e) => { e.preventDefault(); fetchOrder(orderId.trim()); }} className="relative group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-primary/5 to-primary/20 rounded-[2rem] blur opacity-30 group-hover:opacity-60 transition-all duration-500" />
+            <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-primary/5 to-primary/20 rounded-xl blur opacity-30 group-hover:opacity-60 transition-all duration-500" />
             <input
               type="text"
               value={orderId}
               onChange={(e) => setOrderId(e.target.value)}
               placeholder="ENTER ROYAL ORDER ID..."
-              className="w-full bg-[#0a1219] border border-white/10 rounded-[2rem] px-10 py-6 text-[10px] font-black tracking-[0.4em] text-white placeholder-gray-600 focus:outline-none focus:border-primary/40 relative z-10 uppercase"
+              className="w-full bg-[#0a1219] border border-[#EAB308]/20 rounded-xl px-10 py-6 text-[10px] font-black tracking-[0.4em] text-white placeholder-gray-600 focus:outline-none focus:border-primary/40 relative z-10 uppercase"
             />
             <button
               type="submit"
@@ -118,18 +118,18 @@ const OrderTracking = () => {
                    { label: "Imperial Recipient", val: order.customer_name, icon: Home },
                    { label: "Dispatch Zone", val: order.address, icon: MapPin }
                  ].map((item, i) => (
-                   <div key={i} className="glass-premium rounded-[2.5rem] p-8 border-white/5 relative overflow-hidden group">
+                   <div key={i} className="bg-[#1a4855] border border-[#EAB308]/20 rounded-xl p-8 border-[#EAB308]/20 relative overflow-hidden group">
                       <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                          <item.icon size={40} />
                       </div>
                       <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em] mb-2">{item.label}</p>
-                      <p className="text-white font-display font-bold text-lg truncate italic">{item.val}</p>
+                      <p className="text-white font-bold text-lg truncate italic">{item.val}</p>
                    </div>
                  ))}
               </div>
 
               {/* Liquid Status Timeline */}
-              <div className="glass-premium rounded-[4rem] p-12 md:p-20 border border-white/5 relative">
+              <div className="bg-[#1a4855] border border-[#EAB308]/20 rounded-[4rem] p-12 md:p-20 border border-[#EAB308]/20 relative">
                  <div className="flex flex-col space-y-12">
                    {['placed', 'accepted', 'preparing', 'ready', 'out_for_delivery', 'delivered'].map((status, index) => {
                      const isPast = getStatusIndex(order.status) > index;
@@ -141,11 +141,11 @@ const OrderTracking = () => {
                        <div key={status} className="flex items-start gap-10 relative group">
                          {/* Visual Line */}
                          {index < 5 && (
-                           <div className={`absolute left-7 top-16 bottom-[-3rem] w-px ${isPast ? 'bg-primary/50' : 'bg-white/5'} transition-colors duration-1000`} />
+                           <div className={`absolute left-7 top-16 bottom-[-3rem] w-px ${isPast ? 'bg-primary/50' : 'bg-[#1a4855]'} transition-colors duration-1000`} />
                          )}
                          
                          <div className={`w-14 h-14 rounded-full flex items-center justify-center border-2 transition-all duration-1000 relative z-10 ${
-                           isPast || isCurrent ? 'bg-black border-primary text-primary shadow-[0_0_20px_rgba(234,179,8,0.2)]' : 'bg-white/[0.02] border-white/5 text-gray-700'
+                           isPast || isCurrent ? 'bg-black border-primary text-primary shadow-[0_0_20px_rgba(234,179,8,0.2)]' : 'bg-[#1a4855] border-[#EAB308]/20 text-gray-700'
                          }`}>
                            {isCurrent ? <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2 }}><Icon size={20} /></motion.div> : <Icon size={20} />}
                          </div>
@@ -168,18 +168,18 @@ const OrderTracking = () => {
               </div>
 
               {/* Final Summary Component */}
-              <div className="glass-premium rounded-[3rem] p-10 border border-white/5 flex flex-col md:flex-row justify-between items-center gap-10">
+              <div className="bg-[#1a4855] border border-[#EAB308]/20 rounded-xl p-10 border border-[#EAB308]/20 flex flex-col md:flex-row justify-between items-center gap-10">
                  <div className="flex items-center space-x-6">
                     <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
                        <Receipt size={24} />
                     </div>
                     <div>
                        <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Total Transaction</p>
-                       <p className="text-3xl font-display font-black text-white italic">₹{order.total.toFixed(2)}</p>
+                       <p className="text-3xl font-black text-white italic">₹{order.total.toFixed(2)}</p>
                     </div>
                  </div>
                  <Link to="/order">
-                   <button className="px-10 py-5 glass-premium border-white/5 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all flex items-center space-x-3">
+                   <button className="px-10 py-5 bg-[#1a4855] border border-[#EAB308]/20 border-[#EAB308]/20 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all flex items-center space-x-3">
                       <ArrowLeft size={16} />
                       <span>Order More</span>
                    </button>
@@ -198,7 +198,7 @@ const OrderTracking = () => {
                 <Package className="w-24 h-24 text-white/[0.03] mx-auto relative z-10" />
               </div>
               <div className="space-y-4">
-                 <h3 className="text-2xl font-display font-bold text-gray-500 italic">No Dispatch Found</h3>
+                 <h3 className="text-2xl font-bold text-gray-500 italic">No Dispatch Found</h3>
                  <p className="text-gray-700 text-[10px] font-black uppercase tracking-[0.4em]">Awaiting valid entry into the imperial terminal</p>
               </div>
             </motion.div>

@@ -101,7 +101,7 @@ const Reports = () => {
           className={`px-4 py-2 rounded-lg font-medium transition ${
             activeTab === "daily"
               ? "bg-primary text-black"
-              : "bg-white/[0.03] text-gray-300 hover:text-white"
+              : "bg-[#1a4855] text-gray-300 hover:text-white"
           }`}
         >
           Daily Report
@@ -111,7 +111,7 @@ const Reports = () => {
           className={`px-4 py-2 rounded-lg font-medium transition ${
             activeTab === "period"
               ? "bg-primary text-black"
-              : "bg-white/[0.03] text-gray-300 hover:text-white"
+              : "bg-[#1a4855] text-gray-300 hover:text-white"
           }`}
         >
           Period Report
@@ -128,7 +128,7 @@ const Reports = () => {
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-white/[0.03] text-white px-4 py-2 rounded-lg border border-white/5"
+              className="bg-[#1a4855] text-white px-4 py-2 rounded-lg border border-[#EAB308]/20"
             />
             <button
               onClick={fetchDailyReport}
@@ -140,7 +140,7 @@ const Reports = () => {
 
           {/* Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white/[0.03] rounded-xl p-4">
+            <div className="bg-[#1a4855] rounded-xl p-4">
               <div className="flex items-center space-x-2 text-gray-400 mb-2">
                 <DollarSign className="h-5 w-5" />
                 <span>Total Sales</span>
@@ -149,7 +149,7 @@ const Reports = () => {
                 {formatCurrency(dailyReport.summary.total_sales)}
               </p>
             </div>
-            <div className="bg-white/[0.03] rounded-xl p-4">
+            <div className="bg-[#1a4855] rounded-xl p-4">
               <div className="flex items-center space-x-2 text-gray-400 mb-2">
                 <ShoppingBag className="h-5 w-5" />
                 <span>Total Orders</span>
@@ -161,7 +161,7 @@ const Reports = () => {
                 {dailyReport.summary.completed_orders} completed
               </p>
             </div>
-            <div className="bg-white/[0.03] rounded-xl p-4">
+            <div className="bg-[#1a4855] rounded-xl p-4">
               <div className="flex items-center space-x-2 text-gray-400 mb-2">
                 <DollarSign className="h-5 w-5" />
                 <span>Avg Order Value</span>
@@ -174,19 +174,19 @@ const Reports = () => {
 
           {/* Order Types */}
           <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="bg-white/[0.03] rounded-xl p-4 text-center">
+            <div className="bg-[#1a4855] rounded-xl p-4 text-center">
               <p className="text-gray-400 text-sm">Dine-in</p>
               <p className="text-3xl font-bold text-primary">
                 {dailyReport.order_types.dine_in}
               </p>
             </div>
-            <div className="bg-white/[0.03] rounded-xl p-4 text-center">
+            <div className="bg-[#1a4855] rounded-xl p-4 text-center">
               <p className="text-gray-400 text-sm">Delivery</p>
               <p className="text-3xl font-bold text-blue-500">
                 {dailyReport.order_types.delivery}
               </p>
             </div>
-            <div className="bg-white/[0.03] rounded-xl p-4 text-center">
+            <div className="bg-[#1a4855] rounded-xl p-4 text-center">
               <p className="text-gray-400 text-sm">Takeaway</p>
               <p className="text-3xl font-bold text-purple-500">
                 {dailyReport.order_types.takeaway}
@@ -196,7 +196,7 @@ const Reports = () => {
 
           <div className="grid md:grid-cols-2 gap-6">
             {/* Best Selling Items */}
-            <div className="bg-white/[0.03] rounded-xl p-4">
+            <div className="bg-[#1a4855] rounded-xl p-4">
               <h3 className="text-lg font-bold text-primary mb-4">Best Selling Items</h3>
               {dailyReport.best_selling_items.length === 0 ? (
                 <p className="text-gray-400">No sales data</p>
@@ -205,7 +205,7 @@ const Reports = () => {
                   {dailyReport.best_selling_items.slice(0, 5).map((item, idx) => (
                     <div
                       key={idx}
-                      className="flex justify-between items-center bg-[#050b10] rounded-lg p-3"
+                      className="flex justify-between items-center bg-[#0f2933] rounded-lg p-3"
                     >
                       <div className="flex items-center space-x-3">
                         <span className="w-6 h-6 bg-primary text-black rounded-full flex items-center justify-center text-sm font-bold">
@@ -226,7 +226,7 @@ const Reports = () => {
             </div>
 
             {/* Peak Hours */}
-            <div className="bg-white/[0.03] rounded-xl p-4">
+            <div className="bg-[#1a4855] rounded-xl p-4">
               <h3 className="text-lg font-bold text-primary mb-4">Peak Hours</h3>
               {dailyReport.peak_hours.length === 0 ? (
                 <p className="text-gray-400">No data</p>
@@ -235,7 +235,7 @@ const Reports = () => {
                   {dailyReport.peak_hours.map((hour, idx) => (
                     <div
                       key={idx}
-                      className="flex justify-between items-center bg-[#050b10] rounded-lg p-3"
+                      className="flex justify-between items-center bg-[#0f2933] rounded-lg p-3"
                     >
                       <div className="flex items-center space-x-3">
                         <Clock className="h-5 w-5 text-primary" />
@@ -258,13 +258,13 @@ const Reports = () => {
 
           {/* Orders per Table */}
           {dailyReport.orders_per_table.length > 0 && (
-            <div className="bg-white/[0.03] rounded-xl p-4 mt-6">
+            <div className="bg-[#1a4855] rounded-xl p-4 mt-6">
               <h3 className="text-lg font-bold text-primary mb-4">Orders per Table</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
                 {dailyReport.orders_per_table.map((table, idx) => (
                   <div
                     key={idx}
-                    className="bg-[#050b10] rounded-lg p-3 text-center"
+                    className="bg-[#0f2933] rounded-lg p-3 text-center"
                   >
                     <p className="text-primary font-bold">Table {table.table}</p>
                     <p className="text-white">{table.orders} orders</p>
@@ -292,7 +292,7 @@ const Reports = () => {
                 onChange={(e) =>
                   setDateRange({ ...dateRange, start: e.target.value })
                 }
-                className="bg-white/[0.03] text-white px-4 py-2 rounded-lg border border-white/5"
+                className="bg-[#1a4855] text-white px-4 py-2 rounded-lg border border-[#EAB308]/20"
               />
             </div>
             <div className="flex items-center space-x-2">
@@ -303,7 +303,7 @@ const Reports = () => {
                 onChange={(e) =>
                   setDateRange({ ...dateRange, end: e.target.value })
                 }
-                className="bg-white/[0.03] text-white px-4 py-2 rounded-lg border border-white/5"
+                className="bg-[#1a4855] text-white px-4 py-2 rounded-lg border border-[#EAB308]/20"
               />
             </div>
             <button
@@ -316,19 +316,19 @@ const Reports = () => {
 
           {/* Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white/[0.03] rounded-xl p-4">
+            <div className="bg-[#1a4855] rounded-xl p-4">
               <p className="text-gray-400 text-sm">Total Sales</p>
               <p className="text-2xl font-bold text-green-500">
                 {formatCurrency(periodReport.summary.total_sales)}
               </p>
             </div>
-            <div className="bg-white/[0.03] rounded-xl p-4">
+            <div className="bg-[#1a4855] rounded-xl p-4">
               <p className="text-gray-400 text-sm">Total Orders</p>
               <p className="text-2xl font-bold text-white">
                 {periodReport.summary.total_orders}
               </p>
             </div>
-            <div className="bg-white/[0.03] rounded-xl p-4">
+            <div className="bg-[#1a4855] rounded-xl p-4">
               <p className="text-gray-400 text-sm">Daily Avg Revenue</p>
               <p className="text-2xl font-bold text-white">
                 {formatCurrency(periodReport.summary.average_daily_revenue)}
@@ -337,12 +337,12 @@ const Reports = () => {
           </div>
 
           {/* Daily Breakdown */}
-          <div className="bg-white/[0.03] rounded-xl p-4 mb-6">
+          <div className="bg-[#1a4855] rounded-xl p-4 mb-6">
             <h3 className="text-lg font-bold text-primary mb-4">Daily Breakdown</h3>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="text-gray-400 text-sm border-b border-white/5">
+                  <tr className="text-gray-400 text-sm border-b border-[#EAB308]/20">
                     <th className="text-left py-2">Date</th>
                     <th className="text-center py-2">Orders</th>
                     <th className="text-center py-2">Dine-in</th>
@@ -353,7 +353,7 @@ const Reports = () => {
                 </thead>
                 <tbody>
                   {periodReport.daily_breakdown.map((day, idx) => (
-                    <tr key={idx} className="border-b border-white/5">
+                    <tr key={idx} className="border-b border-[#EAB308]/20">
                       <td className="py-3 text-white">{day.date}</td>
                       <td className="py-3 text-center text-white">{day.orders}</td>
                       <td className="py-3 text-center text-primary">{day.dine_in}</td>
@@ -370,13 +370,13 @@ const Reports = () => {
           </div>
 
           {/* Best Selling */}
-          <div className="bg-white/[0.03] rounded-xl p-4">
+          <div className="bg-[#1a4855] rounded-xl p-4">
             <h3 className="text-lg font-bold text-primary mb-4">Top Selling Items</h3>
             <div className="grid md:grid-cols-2 gap-3">
               {periodReport.best_selling_items.slice(0, 10).map((item, idx) => (
                 <div
                   key={idx}
-                  className="flex justify-between items-center bg-[#050b10] rounded-lg p-3"
+                  className="flex justify-between items-center bg-[#0f2933] rounded-lg p-3"
                 >
                   <div className="flex items-center space-x-3">
                     <span className="w-6 h-6 bg-primary text-black rounded-full flex items-center justify-center text-sm font-bold">

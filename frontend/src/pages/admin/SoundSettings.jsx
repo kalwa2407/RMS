@@ -125,7 +125,7 @@ const SoundSettings = () => {
   };
 
   const SoundCard = ({ type, title, icon: Icon, soundUrl, audioRef, color }) => (
-    <div className={`bg-white/[0.03] border-2 border-${color}-500/30 rounded-2xl p-6`}>
+    <div className={`bg-[#1a4855] border-2 border-${color}-500/30 rounded-2xl p-6`}>
       <div className="flex items-center space-x-3 mb-6">
         <div className={`bg-${color}-500/20 p-3 rounded-xl`}>
           <Icon className={`h-6 w-6 text-${color}-500`} />
@@ -139,7 +139,7 @@ const SoundSettings = () => {
       {/* Current Sound */}
       <div className="mb-4">
         {soundUrl ? (
-          <div className="bg-[#050b10] rounded-lg p-4 flex items-center justify-between">
+          <div className="bg-[#0f2933] rounded-lg p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Check className="w-5 h-5 text-green-500" />
               <span className="text-gray-300">Custom sound uploaded</span>
@@ -154,14 +154,14 @@ const SoundSettings = () => {
             </button>
           </div>
         ) : (
-          <div className="bg-[#050b10] rounded-lg p-4">
+          <div className="bg-[#0f2933] rounded-lg p-4">
             <p className="text-gray-400">Using default notification sound</p>
           </div>
         )}
       </div>
 
       {/* Upload */}
-      <div className="border-2 border-dashed border-white/5 rounded-lg p-6 text-center hover:border-primary/20 transition-colors">
+      <div className="border-2 border-dashed border-[#EAB308]/20 rounded-lg p-6 text-center hover:border-primary/20 transition-colors">
         <input
           type="file"
           id={`sound-upload-${type}`}
