@@ -1,11 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { LogIn } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
 import logoImg from "../../assets/logo.png";
-
-const API_BASE = (process.env.REACT_APP_BACKEND_URL || "");
+import API_BASE from "../../lib/config";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
@@ -17,6 +16,24 @@ const AdminLogin = () => {
   });
 
   const [loading, setLoading] = useState(false);
+
+  // Redirect if already logged in — validate token against backend first
+  useEffect(() => {
+    const token = localStorage.getItem("admin_token");
+    if (!token) return;
+    // Verify the token is still valid before redirecting
+    axios
+      .get(`${API_BASE}/api/admin/settings`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then(() => {
+        navigate("/admin/dashboard", { replace: true });
+      })
+      .catch(() => {
+        // Token is invalid/expired — clear it so user sees the login form
+        localStorage.removeItem("admin_token");
+      });
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

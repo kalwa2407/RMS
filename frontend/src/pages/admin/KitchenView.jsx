@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { ChefHat, Clock, RefreshCw, CheckCircle, AlertCircle } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
+import API_BASE from "../../lib/config";
 
 const KitchenView = () => {
   const { toast } = useToast();
@@ -8,10 +9,10 @@ const KitchenView = () => {
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(new Date());
 
-  const API_BASE = (process.env.REACT_APP_BACKEND_URL || "");
-  const token = localStorage.getItem("admin_token");
-
+  // API_BASE is a module-level constant — no need in deps
   const fetchKitchenOrders = useCallback(async () => {
+    // Always read token fresh to avoid stale closure
+    const token = localStorage.getItem("admin_token");
     try {
       const res = await fetch(`${API_BASE}/api/admin/kitchen/orders`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -26,7 +27,7 @@ const KitchenView = () => {
     } finally {
       setLoading(false);
     }
-  }, [API_BASE, token]);
+  }, []);
 
   // Auto-refresh every 10 seconds
   useEffect(() => {
@@ -36,6 +37,7 @@ const KitchenView = () => {
   }, [fetchKitchenOrders]);
 
   const updateOrderStatus = async (orderId, newStatus) => {
+    const token = localStorage.getItem("admin_token");
     try {
       const res = await fetch(`${API_BASE}/api/admin/orders/${orderId}/status`, {
         method: "PUT",

@@ -1,5 +1,5 @@
 from fastapi import FastAPI, APIRouter, Depends, HTTPException, status, UploadFile, File, Response
-from datetime import timezone, timedelta
+from datetime import datetime, timezone, timedelta
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from dotenv import load_dotenv
@@ -10,17 +10,16 @@ from sqlalchemy.orm import selectinload
 import os
 import logging
 from pathlib import Path
-from datetime import datetime, timedelta
 from typing import List, Optional
 import shutil
 import random
 import string
 
-# Import database and models (keep get_db for now to avoid breaking legacy code)
+# Import database and models
 from database import init_db, close_db, get_db
 from data_manager import get_data_manager, BaseDataManager
 from models import *
-from auth import verify_password, get_password_hash, create_access_token, verify_token
+from auth import verify_password, get_password_hash, create_access_token, verify_token, verify_captain_token, verify_delivery_token, verify_kitchen_token
 from invoice_generator import generate_invoice_pdf
 
 ROOT_DIR = Path(__file__).parent
@@ -37,11 +36,6 @@ ALLOWED_ORIGINS = [
     # Allow all Vercel preview deployments
     "https://rms-kalwa2407.vercel.app",
 ]
-# Allow any *.vercel.app origin at runtime
-import re
-
-class DynamicCORSMiddleware:
-    pass
 
 app.add_middleware(
     CORSMiddleware,
@@ -65,6 +59,7 @@ app.mount("/static", StaticFiles(directory=str(ROOT_DIR / "static")), name="stat
 api_router = APIRouter(prefix="/api")
 admin_router = APIRouter(prefix="/api/admin", tags=["admin"])
 delivery_router = APIRouter(prefix="/api/delivery", tags=["delivery"])
+kitchen_router = APIRouter(prefix="/api/kitchen", tags=["kitchen"])
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -308,6 +303,19 @@ async def create_order(order: OrderCreate, manager: BaseDataManager = Depends(ge
             detail="Minimum order value is ₹250 for delivery"
         )
     
+    # ── Delivery range enforcement ──
+    if order.order_type == "DELIVERY":
+        km = order.distance_km or 0
+        if km > 20:
+            raise HTTPException(
+                status_code=400,
+                detail="Out of delivery range. We only deliver within 20km."
+            )
+        elif km > 10:
+            order.delivery_fee = 60.0   # ₹60 flat for 10–20km
+        else:
+            order.delivery_fee = 0.0    # Free within 10km
+
     now = get_ist_now()
     order_dict = order.dict()
     order_id = generate_order_id()
@@ -2042,8 +2050,16 @@ async def delivery_login(credentials: DeliveryPartnerLogin, manager: BaseDataMan
     access_token = create_access_token(data={"sub": partner["phone"], "role": "delivery"})
     return TokenResponse(access_token=access_token)
 
+@delivery_router.get("/profile")
+async def delivery_get_profile(phone: str = Depends(verify_delivery_token), manager: BaseDataManager = Depends(get_data_manager)):
+    """Get delivery partner profile"""
+    partner = await manager.get_delivery_partner_by_phone(phone)
+    if not partner:
+        raise HTTPException(status_code=404, detail="Delivery partner not found")
+    return {**partner, "password": ""}
+
 @delivery_router.get("/orders")
-async def delivery_get_assigned_orders(phone: str = Depends(verify_token), manager: BaseDataManager = Depends(get_data_manager)):
+async def delivery_get_assigned_orders(phone: str = Depends(verify_delivery_token), manager: BaseDataManager = Depends(get_data_manager)):
     """Get orders assigned to delivery partner"""
     partner = await manager.get_delivery_partner_by_phone(phone)
     if not partner:
@@ -2057,7 +2073,7 @@ async def delivery_get_assigned_orders(phone: str = Depends(verify_token), manag
 async def delivery_update_order_status(
     order_id: str,
     new_status: str,
-    phone: str = Depends(verify_token),
+    phone: str = Depends(verify_delivery_token),
     manager: BaseDataManager = Depends(get_data_manager)
 ):
     """Update order status by delivery partner"""
@@ -2074,22 +2090,17 @@ async def delivery_update_order_status(
     history.append({
         "status": new_status,
         "timestamp": now.isoformat(),
-        "note": f"Status updated by delivery partner"
+        "note": "Status updated by delivery partner"
     })
     
-    update_data = {
-        "status": new_status,
-        "status_history": history
-    }
+    update_data = {"status": new_status, "status_history": history}
     
     if new_status == "delivered":
         update_data["payment_status"] = "paid"
-        
         partner = await manager.get_delivery_partner_by_phone(phone)
         if partner:
             current_orders = partner.get("current_orders", [])
             new_current_orders = [o for o in current_orders if o != order_id]
-            # Internal update for partner
             partners = await manager._read("delivery_partners")
             for p in partners:
                 if p.get("phone") == phone:
@@ -2099,8 +2110,433 @@ async def delivery_update_order_status(
             await manager._write("delivery_partners", partners)
     
     await manager.update_order(order_id, update_data)
-    
     return await manager.get_order_by_id(order_id)
+
+# =============================================================================
+# KITCHEN STAFF ADMIN CRUD
+# =============================================================================
+
+@admin_router.get("/kitchen-staff")
+async def admin_get_kitchen_staff(username: str = Depends(verify_token),
+                                  manager: BaseDataManager = Depends(get_data_manager)):
+    """Get all kitchen staff members"""
+    staff = await manager._read("kitchen_staff")
+    return [{"id": s.get("id", s.get("_id")), "staff_id": s.get("staff_id"),
+             "name": s.get("name"), "phone": s.get("phone",""),
+             "active": s.get("active", True)} for s in staff]
+
+
+@admin_router.post("/kitchen-staff")
+async def admin_create_kitchen_staff(data: dict,
+                                     username: str = Depends(verify_token),
+                                     manager: BaseDataManager = Depends(get_data_manager)):
+    """Create a new kitchen staff member"""
+    staff = await manager._read("kitchen_staff")
+    if any(s.get("staff_id") == data.get("staff_id") for s in staff):
+        raise HTTPException(status_code=400, detail="Staff ID already exists")
+    import uuid
+    new_member = {
+        "id": str(uuid.uuid4()),
+        "staff_id": data["staff_id"],
+        "name": data["name"],
+        "phone": data.get("phone", ""),
+        "password": get_password_hash(data["password"]),
+        "active": True,
+        "created_at": datetime.utcnow().isoformat()
+    }
+    staff.append(new_member)
+    await manager._write("kitchen_staff", staff)
+    return {"message": "Kitchen staff created", "staff_id": new_member["staff_id"]}
+
+
+@admin_router.put("/kitchen-staff/{member_id}")
+async def admin_update_kitchen_staff(member_id: str, data: dict,
+                                     username: str = Depends(verify_token),
+                                     manager: BaseDataManager = Depends(get_data_manager)):
+    """Update kitchen staff member"""
+    staff = await manager._read("kitchen_staff")
+    member = next((s for s in staff if s.get("id") == member_id or s.get("staff_id") == member_id), None)
+    if not member:
+        raise HTTPException(status_code=404, detail="Staff member not found")
+    if "name" in data: member["name"] = data["name"]
+    if "phone" in data: member["phone"] = data["phone"]
+    if "active" in data: member["active"] = data["active"]
+    if "password" in data and data["password"]:
+        member["password"] = get_password_hash(data["password"])
+    await manager._write("kitchen_staff", staff)
+    return {"message": "Updated"}
+
+
+@admin_router.delete("/kitchen-staff/{member_id}")
+async def admin_delete_kitchen_staff(member_id: str,
+                                     username: str = Depends(verify_token),
+                                     manager: BaseDataManager = Depends(get_data_manager)):
+    """Delete kitchen staff member"""
+    staff = await manager._read("kitchen_staff")
+    new_list = [s for s in staff if s.get("id") != member_id and s.get("staff_id") != member_id]
+    if len(new_list) == len(staff):
+        raise HTTPException(status_code=404, detail="Staff member not found")
+    await manager._write("kitchen_staff", new_list)
+    return {"message": "Deleted"}
+
+
+# =============================================================================
+# KITCHEN ROUTES  (standalone kitchen_router, separate from admin)
+# =============================================================================
+
+@kitchen_router.post("/login")
+async def kitchen_login(data: dict, manager: BaseDataManager = Depends(get_data_manager)):
+    """Kitchen staff login with staff_id + password"""
+    staff_list = await manager._read("kitchen_staff")
+    member = next((s for s in staff_list if s.get("staff_id") == data.get("staff_id")), None)
+    if not member or not verify_password(data.get("password", ""), member["password"]):
+        raise HTTPException(status_code=401, detail="Incorrect Staff ID or password")
+    if not member.get("active", True):
+        raise HTTPException(status_code=403, detail="Account is deactivated")
+    token = create_access_token(data={"sub": member["staff_id"], "role": "kitchen",
+                                      "name": member.get("name", "")})
+    return {"access_token": token, "token_type": "bearer",
+            "name": member.get("name"), "staff_id": member["staff_id"]}
+
+
+@kitchen_router.get("/orders")
+async def kitchen_get_orders(staff_id: str = Depends(verify_kitchen_token),
+                             manager: BaseDataManager = Depends(get_data_manager)):
+    """Get active kitchen orders (accepted + preparing) — same logic as admin kitchen view"""
+    orders = await manager._read("orders")
+    active = sorted(
+        [o for o in orders if o.get("status") in ["accepted", "preparing"]],
+        key=lambda x: x.get("accepted_at", x.get("created_at", ""))
+    )
+    return [{
+        "order_id": o.get("order_id"),
+        "kot_number": o.get("kot_number"),
+        "table_number": o.get("table_number"),
+        "order_type": o.get("order_type"),
+        "source": o.get("source", ""),
+        "items": [{"name": i.get("name"), "quantity": i.get("quantity"),
+                   "variant": i.get("variant"),
+                   "addons": [a.get("name") for a in i.get("addons", []) if isinstance(a, dict)],
+                   "special_instructions": i.get("special_instructions")}
+                  for i in o.get("items", [])],
+        "status": o.get("status"),
+        "created_at": o.get("created_at"),
+        "accepted_at": o.get("accepted_at"),
+        "customer_name": o.get("customer_name")
+    } for o in active]
+
+
+@kitchen_router.put("/orders/{order_id}/status")
+async def kitchen_update_order_status(order_id: str, data: dict,
+                                      staff_id: str = Depends(verify_kitchen_token),
+                                      manager: BaseDataManager = Depends(get_data_manager)):
+    """Update order status from kitchen (accepted→preparing, preparing→ready)"""
+    order = await manager.get_order_by_id(order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    new_status = data.get("status")
+    allowed = {"accepted": ["preparing"], "preparing": ["ready"]}
+    if new_status not in allowed.get(order.get("status", ""), []):
+        raise HTTPException(status_code=400,
+                            detail=f"Cannot move from {order.get('status')} to {new_status}")
+    now = datetime.utcnow()
+    history = order.get("status_history", [])
+    history.append({"status": new_status, "timestamp": now.isoformat(),
+                    "note": f"Marked by kitchen staff {staff_id}"})
+    update_data = {"status": new_status, "status_history": history}
+    if new_status == "ready":
+        update_data["ready_at"] = now.isoformat()
+    await manager.update_order(order_id, update_data)
+    return {"message": "Status updated", "new_status": new_status}
+
+
+# =============================================================================
+# CAPTAIN ROUTES
+# =============================================================================
+
+captain_router = APIRouter(prefix="/api/captain", tags=["captain"])
+
+@captain_router.post("/login")
+async def captain_login(credentials: CaptainLogin, manager: BaseDataManager = Depends(get_data_manager)):
+    """Captain login with captain_id + password"""
+    captains = await manager._read("captains")
+    captain = next((c for c in captains if c.get("captain_id") == credentials.captain_id), None)
+    
+    if not captain or not verify_password(credentials.password, captain["password"]):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Incorrect Captain ID or password")
+    
+    if not captain.get("active", True):
+        raise HTTPException(status_code=403, detail="Account is deactivated")
+    
+    access_token = create_access_token(data={"sub": captain["captain_id"], "role": "captain",
+                                             "name": captain.get("name", "")})
+    return {"access_token": access_token, "token_type": "bearer",
+            "name": captain.get("name"), "captain_id": captain["captain_id"]}
+
+
+@captain_router.get("/tables")
+async def captain_get_tables(captain_id: str = Depends(verify_captain_token),
+                              manager: BaseDataManager = Depends(get_data_manager)):
+    """Get all tables with live status for captain panel"""
+    tables = await manager.get_tables()
+    result = []
+    for t in tables:
+        info = {
+            "table_number": t.get("table_number"),
+            "capacity": t.get("capacity"),
+            "status": t.get("status"),  # free / occupied / reserved
+            "current_session_id": t.get("current_session_id"),
+            "current_order_id": t.get("current_order_id"),
+        }
+        result.append(info)
+    return result
+
+
+@captain_router.get("/tables/{table_number}/session")
+async def captain_get_table_session(table_number: int,
+                                     captain_id: str = Depends(verify_captain_token),
+                                     manager: BaseDataManager = Depends(get_data_manager)):
+    """Get active session for a table with all orders and their statuses"""
+    tables = await manager.get_tables()
+    table = next((t for t in tables if t.get("table_number") == table_number), None)
+    if not table:
+        raise HTTPException(status_code=404, detail="Table not found")
+    
+    session_id = table.get("current_session_id")
+    if not session_id or table.get("status") == "free":
+        return {"has_session": False, "session": None}
+    
+    session = await manager.get_table_session(session_id)
+    if not session:
+        return {"has_session": False, "session": None}
+    
+    orders = []
+    for oid in session.get("order_ids", []):
+        o = await manager.get_order_by_id(oid)
+        if o:
+            orders.append({
+                "order_id": o.get("order_id"),
+                "items": o.get("items", []),
+                "status": o.get("status"),
+                "subtotal": o.get("subtotal"),
+                "total": o.get("total"),
+                "created_at": o.get("created_at"),
+            })
+    
+    active = [o for o in orders if o.get("status") not in ["cancelled", "rejected"]]
+    return {
+        "has_session": True,
+        "session": {
+            **session,
+            "orders": orders,
+            "subtotal": sum(o.get("subtotal", 0) for o in active),
+            "total": sum(o.get("total", 0) for o in active),
+        }
+    }
+
+
+@captain_router.post("/order")
+async def captain_place_order(data: CaptainOrderCreate,
+                               captain_id: str = Depends(verify_captain_token),
+                               manager: BaseDataManager = Depends(get_data_manager)):
+    """Captain places/adds order for a table — creates session if needed"""
+    now = get_ist_now()
+    
+    # Find or create session
+    session = None
+    if data.session_id:
+        session = await manager.get_table_session(data.session_id)
+    
+    if not session:
+        tables = await manager.get_tables()
+        table = next((t for t in tables if t.get("table_number") == data.table_number), None)
+        if table and table.get("current_session_id"):
+            session = await manager.get_table_session(table["current_session_id"])
+    
+    if not session:
+        session_id = generate_session_id()
+        session = await manager.create_table_session({
+            "session_id": session_id,
+            "table_number": data.table_number,
+            "customer_name": data.customer_name,
+            "status": "active",
+            "order_ids": [],
+            "subtotal": 0.0,
+            "total": 0.0,
+            "created_at": now.isoformat(),
+            "updated_at": now.isoformat(),
+        })
+    
+    subtotal = sum(item.price * item.quantity for item in data.items)
+    taxes = round(subtotal * 0.05, 2)
+    total = round(subtotal + taxes, 2)
+    order_id = generate_order_id()
+    kot_num = generate_kot_number()
+    
+    order_data = {
+        "order_id": order_id,
+        "session_id": session["session_id"],
+        "customer_name": data.customer_name or session.get("customer_name", "Guest"),
+        "phone": "",
+        "address": f"Table {data.table_number}",
+        "items": [item.dict() for item in data.items],
+        "subtotal": subtotal,
+        "discount": 0.0,
+        "delivery_fee": 0.0,
+        "taxes": taxes,
+        "total": total,
+        "status": "accepted",  # Captain orders go straight to accepted (skip placed)
+        "order_type": "DINE_IN",
+        "table_number": data.table_number,
+        "kot_number": kot_num,
+        "accepted_at": now.isoformat(),
+        "payment_method": "pay_at_counter",
+        "payment_status": "pending",
+        "source": "captain",
+        "captain_id": captain_id,
+        "status_history": [{
+            "status": "accepted",
+            "timestamp": now.isoformat(),
+            "note": f"Order taken by Captain {captain_id} — KOT#{kot_num}"
+        }],
+        "created_at": now.isoformat(),
+        "updated_at": now.isoformat(),
+    }
+    
+    created_order = await manager.create_order(order_data)
+    
+    # Update session
+    order_ids = session.get("order_ids", []) + [order_id]
+    await manager.update_table_session(session["session_id"], {
+        "order_ids": order_ids,
+        "status": "active",
+        "subtotal": session.get("subtotal", 0.0) + subtotal,
+        "total": session.get("total", 0.0) + total,
+        "updated_at": now.isoformat(),
+    })
+    
+    # Mark table occupied
+    await manager.update_table_status(data.table_number, "occupied", order_id)
+    # Also store session_id on table
+    tables = await manager._read("tables")
+    for t in tables:
+        if t.get("table_number") == data.table_number:
+            t["current_session_id"] = session["session_id"]
+            break
+    await manager._write("tables", tables)
+    
+    return {"order": created_order, "session_id": session["session_id"],
+            "kot_number": kot_num, "message": "Order sent to kitchen"}
+
+
+@captain_router.post("/sessions/{session_id}/close")
+async def captain_close_session(session_id: str,
+                                 payment_method: str = "cash",
+                                 captain_id: str = Depends(verify_captain_token),
+                                 manager: BaseDataManager = Depends(get_data_manager)):
+    """Captain closes bill for a table (collects payment)"""
+    now = datetime.utcnow()
+    session = await manager.get_table_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Mark all orders as delivered/paid
+    orders = await manager._read("orders")
+    for o in orders:
+        if o.get("order_id") in session.get("order_ids", []):
+            o["status"] = "delivered"
+            o["payment_status"] = "paid"
+            o["payment_method"] = payment_method
+            o["updated_at"] = now.isoformat()
+    await manager._write("orders", orders)
+    
+    await manager.update_table_session(session_id, {
+        "status": "closed",
+        "payment_status": "paid",
+        "payment_method": payment_method,
+        "closed_at": now.isoformat(),
+    })
+    
+    await manager.update_table_status(session.get("table_number"), "free")
+    tables = await manager._read("tables")
+    for t in tables:
+        if t.get("table_number") == session.get("table_number"):
+            t["current_session_id"] = None
+            t["current_order_id"] = None
+            break
+    await manager._write("tables", tables)
+    
+    return {"message": "Bill closed, table is now free", "session_id": session_id}
+
+
+# =============================================================================
+# ADMIN — CAPTAIN MANAGEMENT
+# =============================================================================
+
+@admin_router.get("/captains")
+async def admin_get_captains(username: str = Depends(verify_token),
+                              manager: BaseDataManager = Depends(get_data_manager)):
+    """Get all captains"""
+    captains = await manager._read("captains")
+    return [{**c, "password": ""} for c in captains]
+
+
+@admin_router.post("/captains")
+async def admin_create_captain(captain: CaptainCreate,
+                                username: str = Depends(verify_token),
+                                manager: BaseDataManager = Depends(get_data_manager)):
+    """Create new captain account"""
+    captains = await manager._read("captains")
+    if any(c.get("captain_id") == captain.captain_id for c in captains):
+        raise HTTPException(status_code=400, detail="Captain ID already exists")
+    
+    new_captain = {
+        "id": str(uuid.uuid4()),
+        "captain_id": captain.captain_id,
+        "name": captain.name,
+        "phone": captain.phone,
+        "password": get_password_hash(captain.password),
+        "active": True,
+        "created_at": datetime.utcnow().isoformat(),
+    }
+    captains.append(new_captain)
+    await manager._write("captains", captains)
+    return {**new_captain, "password": ""}
+
+
+@admin_router.put("/captains/{captain_id}")
+async def admin_update_captain(captain_id: str,
+                                update: CaptainUpdate,
+                                username: str = Depends(verify_token),
+                                manager: BaseDataManager = Depends(get_data_manager)):
+    """Update captain"""
+    captains = await manager._read("captains")
+    captain = next((c for c in captains if c.get("id") == captain_id or c.get("captain_id") == captain_id), None)
+    if not captain:
+        raise HTTPException(status_code=404, detail="Captain not found")
+    
+    if update.name is not None: captain["name"] = update.name
+    if update.phone is not None: captain["phone"] = update.phone
+    if update.active is not None: captain["active"] = update.active
+    if update.password is not None: captain["password"] = get_password_hash(update.password)
+    
+    await manager._write("captains", captains)
+    return {**captain, "password": ""}
+
+
+@admin_router.delete("/captains/{captain_id}")
+async def admin_delete_captain(captain_id: str,
+                                username: str = Depends(verify_token),
+                                manager: BaseDataManager = Depends(get_data_manager)):
+    """Delete captain"""
+    captains = await manager._read("captains")
+    new_captains = [c for c in captains if c.get("id") != captain_id and c.get("captain_id") != captain_id]
+    if len(new_captains) == len(captains):
+        raise HTTPException(status_code=404, detail="Captain not found")
+    await manager._write("captains", new_captains)
+    return {"message": "Captain deleted"}
+
 
 # =============================================================================
 # STARTUP AND SHUTDOWN EVENTS
@@ -2141,6 +2577,8 @@ app.add_middleware(
 app.include_router(api_router)
 app.include_router(admin_router)
 app.include_router(delivery_router)
+app.include_router(captain_router)
+app.include_router(kitchen_router)
 
 # Health check endpoint
 @api_router.get("/health")

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Plus, Minus, Trash2, ShoppingCart, MapPin, Loader2, CreditCard, Wallet } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
+import API_BASE from "../lib/config";
 
 const Order = () => {
   const { toast } = useToast();
@@ -53,9 +54,15 @@ const Order = () => {
         const userLng = position.coords.longitude;
         setUserLocation({ lat: userLat, lng: userLng });
         const dist = calculateDistance(userLat, userLng, RESTAURANT_LOCATION.lat, RESTAURANT_LOCATION.lng);
-        setDistance(parseFloat(dist));
+        const distNum = parseFloat(dist);
+        setDistance(distNum);
         setLoadingLocation(false);
-        toast({ title: "Location Detected", description: `You are ${dist} km away. Delivery charges calculated.` });
+        
+        // Show delivery tier in toast
+        let feeMsg = "Free delivery!";
+        if (distNum > 20)  feeMsg = "Out of delivery range (>20km).";
+        else if (distNum > 10) feeMsg = "₹60 delivery fee (10-20km).";
+        toast({ title: `📍 ${dist} km away`, description: feeMsg });
       },
       (error) => {
         setLoadingLocation(false);
@@ -67,9 +74,9 @@ const Order = () => {
   useEffect(() => {
     const fetchMenu = async () => {
       try {
-        const res = await fetch(`${(process.env.REACT_APP_BACKEND_URL || "")}/api/menu`);
+        const res = await fetch(`${API_BASE}/api/menu`);
         const data = await res.json();
-        setMenu(data);
+        setMenu(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Menu load failed:", err);
       }
@@ -108,7 +115,20 @@ const Order = () => {
     if (subtotal < 250) return toast({ title: "Minimum order value: ₹250", variant: "destructive" });
 
     setIsPlacingOrder(true);
-    const deliveryFee = distance !== null && distance <= 10 ? 0 : 40;
+    // If location not detected and user hasn't skipped, block order
+    if (distance === null) {
+      toast({ title: "Location Required", description: "Please detect your location or choose standard delivery before placing order.", variant: "destructive" });
+      setIsPlacingOrder(false);
+      return;
+    }
+    // ── 3-tier delivery rule ──
+    if (distance !== null && distance > 20) {
+      toast({ title: "Out of delivery range", description: "We only deliver within 20km. Try takeaway or dine-in.", variant: "destructive" });
+      setIsPlacingOrder(false);
+      return;
+    }
+
+    const deliveryFee = distance === null ? 60 : distance <= 10 ? 0 : 60;
     const taxRate = 0.05;
     const taxes = subtotal * taxRate;
     const total = subtotal + deliveryFee + taxes;
@@ -269,12 +289,18 @@ const Order = () => {
                       {distance !== null && (
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-400">Delivery</span>
-                          <span className="text-green-400 font-bold">{distance <= 10 ? 'FREE' : '₹40'}</span>
+                          {distance > 20 ? (
+                            <span className="text-red-400 font-bold text-xs">OUT OF RANGE</span>
+                          ) : distance > 10 ? (
+                            <span className="text-orange-400 font-bold">₹60</span>
+                          ) : (
+                            <span className="text-green-400 font-bold">FREE</span>
+                          )}
                         </div>
                       )}
                       <div className="flex justify-between text-lg font-bold border-t border-[#EAB308]/20 pt-2">
                         <span className="text-white">Total</span>
-                        <span className="text-[#EAB308]">₹{calculateSubtotal() + (distance > 10 ? 40 : 0)}</span>
+                        <span className="text-[#EAB308]">₹{calculateSubtotal() + (distance !== null && distance > 10 && distance <= 20 ? 60 : 0)}</span>
                       </div>
                     </div>
 
@@ -306,16 +332,20 @@ const Order = () => {
                               {loadingLocation ? <Loader2 className="animate-spin" size={16} /> : <MapPin size={16} />}
                               <span>{loadingLocation ? 'Detecting...' : 'Detect My Location'}</span>
                             </button>
-                            <button type="button"
-                              onClick={() => { setDistance(15); toast({ title: 'Standard delivery applied (₹40)' }); }}
-                              className="text-xs text-gray-500 hover:text-[#EAB308] transition-colors"
-                            >
-                              Skip — Use Standard Delivery (₹40)
-                            </button>
+                            {/* Delivery range hint */}
+                            <div className="text-xs text-gray-600 space-y-0.5">
+                              <p>0–10 km — <span className="text-green-500">Free delivery</span></p>
+                              <p>10–20 km — <span className="text-orange-400">₹60 flat fee</span></p>
+                              <p>&gt;20 km — <span className="text-red-500">Not accepted</span></p>
+                            </div>
                           </div>
+                        ) : distance > 20 ? (
+                          <p className="text-red-400 text-sm font-bold">
+                            ❌ {distance} km — Out of delivery range (max 20 km)
+                          </p>
                         ) : (
                           <p className="text-green-400 text-sm font-bold">
-                            ✓ {distance} km away · {distance <= 10 ? 'Free Delivery!' : '₹40 Delivery'}
+                            ✓ {distance} km away · {distance <= 10 ? 'Free Delivery!' : '₹60 Delivery Fee'}
                           </p>
                         )}
                       </div>

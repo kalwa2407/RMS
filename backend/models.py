@@ -469,3 +469,46 @@ class DineInOrderCreate(BaseModel):
     items: List[OrderItem]
     session_id: Optional[str] = None  # If provided, adds to existing session
     special_instructions: Optional[str] = None
+
+# =============================================================================
+# CAPTAIN MODELS
+# =============================================================================
+
+class CaptainUser(BaseModel):
+    id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
+    captain_id: str          # Login ID e.g. "CAP001"
+    name: str
+    phone: str
+    password: str            # Hashed
+    active: bool = True
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {ObjectId: str}
+
+class CaptainCreate(BaseModel):
+    captain_id: str
+    name: str
+    phone: str
+    password: str
+
+class CaptainUpdate(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    password: Optional[str] = None
+    active: Optional[bool] = None
+
+class CaptainLogin(BaseModel):
+    captain_id: str
+    password: str
+
+class CaptainOrderCreate(BaseModel):
+    """Captain takes an order for a table"""
+    table_number: int
+    items: List[OrderItem]
+    customer_name: str = "Guest"
+    session_id: Optional[str] = None
+    special_instructions: Optional[str] = None
+

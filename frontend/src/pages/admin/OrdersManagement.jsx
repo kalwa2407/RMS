@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Check, X, Clock, Package, Truck, Home, Printer, Eye, Bell, Trash2 } from "lucide-react";
+import { Check, X, Clock, Package, Truck, Home, Printer, Eye, Bell, Trash2, Bike } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
-
-const API_BASE = (process.env.REACT_APP_BACKEND_URL || "");
+import API_BASE from "../../lib/config";
 
 const OrdersManagement = () => {
   const { toast } = useToast();
@@ -11,8 +10,9 @@ const OrdersManagement = () => {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [showInvoice, setShowInvoice] = useState(false);
-  const [lastOrderCount, setLastOrderCount] = useState(0);
+  const [lastPlacedCount, setLastPlacedCount] = useState(0);
+  const [deliveryPartners, setDeliveryPartners] = useState([]);
+  const [assigningOrder, setAssigningOrder] = useState(null); // order_id of dropdown open
   const audioRef = useRef(null);
 
   // Initialize audio on component mount - load custom sound if available
@@ -101,6 +101,7 @@ const OrdersManagement = () => {
 
   useEffect(() => {
     fetchOrders();
+    fetchPartners();
     
     // Poll for new orders every 10 seconds
     const interval = setInterval(() => {
@@ -109,6 +110,32 @@ const OrdersManagement = () => {
 
     return () => clearInterval(interval);
   }, [statusFilter]);
+
+  const fetchPartners = async () => {
+    try {
+      const token = localStorage.getItem("admin_token");
+      const { data } = await axios.get(`${API_BASE}/api/admin/delivery-partners`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setDeliveryPartners((Array.isArray(data) ? data : []).filter(p => p.active !== false));
+    } catch {}
+  };
+
+  const assignDelivery = async (orderId, partnerId) => {
+    try {
+      const token = localStorage.getItem("admin_token");
+      await axios.post(
+        `${API_BASE}/api/admin/orders/${orderId}/assign-delivery`,
+        { delivery_partner_id: partnerId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast({ title: "Assigned", description: "Delivery partner assigned" });
+      setAssigningOrder(null);
+      fetchOrders();
+    } catch (err) {
+      toast({ title: "Error", description: err.response?.data?.detail || "Failed to assign", variant: "destructive" });
+    }
+  };
 
   const fetchOrders = async (silent = false) => {
     try {
@@ -122,24 +149,20 @@ const OrdersManagement = () => {
       });
 
       const newOrders = response.data || [];
-      
-      // Check for new orders and play sound
-      if (silent && newOrders.length > lastOrderCount) {
-        const newOrdersCount = newOrders.filter(o => o.status === "placed").length;
-        const oldNewOrdersCount = orders.filter(o => o.status === "placed").length;
-        
-        if (newOrdersCount > oldNewOrdersCount) {
-          playNotificationSound();
-          toast({
-            title: "🔔 New Order Received!",
-            description: `You have ${newOrdersCount} new order(s)`,
-            duration: 5000,
-          });
-        }
+      const newPlacedCount = newOrders.filter(o => o.status === "placed").length;
+
+      // Only notify if genuinely new placed orders arrived (not tab filter changes)
+      if (silent && newPlacedCount > lastPlacedCount) {
+        playNotificationSound();
+        toast({
+          title: "🔔 New Order Received!",
+          description: `You have ${newPlacedCount} new order(s)`,
+          duration: 5000,
+        });
       }
 
       setOrders(newOrders);
-      setLastOrderCount(newOrders.length);
+      setLastPlacedCount(newPlacedCount);
     } catch (error) {
       if (!silent) {
         toast({
@@ -462,6 +485,50 @@ const OrdersManagement = () => {
                       <Printer className="w-4 h-4" />
                       Print Invoice
                     </button>
+                  )}
+
+                  {/* Assign Delivery Partner — for ready DELIVERY orders */}
+                  {order.order_type === "DELIVERY" && order.status === "ready" && (
+                    <div className="relative">
+                      {order.delivery_partner_name ? (
+                        <div className="flex items-center gap-2 bg-green-900/30 border border-green-500/30 px-4 py-2 rounded-lg">
+                          <Bike className="w-4 h-4 text-green-400" />
+                          <span className="text-green-400 text-sm font-medium">{order.delivery_partner_name}</span>
+                        </div>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => setAssigningOrder(assigningOrder === order.order_id ? null : order.order_id)}
+                            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center gap-2 text-sm"
+                          >
+                            <Bike className="w-4 h-4" />
+                            Assign Rider
+                          </button>
+                          {assigningOrder === order.order_id && (
+                            <div className="absolute bottom-full left-0 mb-1 bg-[#0f2933] border border-[#EAB308]/25 rounded-xl shadow-2xl z-20 w-56 overflow-hidden">
+                              <p className="text-xs text-gray-500 font-bold uppercase tracking-wider px-3 pt-3 pb-1">Select Partner</p>
+                              {deliveryPartners.length === 0 ? (
+                                <p className="text-gray-400 text-sm px-3 py-2">No active partners</p>
+                              ) : (
+                                deliveryPartners.map(p => (
+                                  <button
+                                    key={p.id}
+                                    onClick={() => assignDelivery(order.order_id, p.id)}
+                                    className="w-full text-left px-3 py-2.5 text-sm text-gray-200 hover:bg-[#1a4855] transition-colors flex items-center gap-2"
+                                  >
+                                    <Bike className="w-3.5 h-3.5 text-[#EAB308]" />
+                                    <div>
+                                      <p className="font-medium">{p.name}</p>
+                                      <p className="text-gray-500 text-xs">{p.vehicle_type} · {p.phone}</p>
+                                    </div>
+                                  </button>
+                                ))
+                              )}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
                   )}
 
                   {/* View Details */}

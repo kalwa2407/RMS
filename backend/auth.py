@@ -29,19 +29,57 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+
+def _decode_payload(credentials: HTTPAuthorizationCredentials) -> dict:
+    """Internal: decode JWT and return full payload dict."""
     try:
         token = credentials.credentials
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication credentials"
-            )
-        return username
+        if payload.get("sub") is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                detail="Invalid authentication credentials")
+        return payload
     except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Invalid authentication credentials")
+
+
+def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
+    """Generic — returns sub. Kept for backward compatibility with all admin routes."""
+    return _decode_payload(credentials)["sub"]
+
+
+def verify_admin_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
+    """Verify token has role=admin. Returns username."""
+    payload = _decode_payload(credentials)
+    if payload.get("role") != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Admin access required")
+    return payload["sub"]
+
+
+def verify_captain_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
+    """Verify token has role=captain. Returns captain_id."""
+    payload = _decode_payload(credentials)
+    if payload.get("role") != "captain":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Captain access required")
+    return payload["sub"]
+
+
+def verify_delivery_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
+    """Verify token has role=delivery. Returns phone."""
+    payload = _decode_payload(credentials)
+    if payload.get("role") != "delivery":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Delivery partner access required")
+    return payload["sub"]
+
+
+def verify_kitchen_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
+    """Verify token has role=kitchen. Returns staff_id."""
+    payload = _decode_payload(credentials)
+    if payload.get("role") != "kitchen":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Kitchen staff access required")
+    return payload["sub"]

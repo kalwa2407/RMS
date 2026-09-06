@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, User } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 
 const Navbar = () => {
@@ -46,9 +46,7 @@ const Navbar = () => {
                 {link.name}
               </Link>
             ))}
-            <Link to="/admin" className="p-2 rounded-full text-white hover:text-[#EAB308] transition-colors">
-              <User size={18} />
-            </Link>
+
           </div>
 
           <button
@@ -77,13 +75,7 @@ const Navbar = () => {
                 {link.name}
               </Link>
             ))}
-            <Link
-              to="/admin"
-              onClick={() => setIsOpen(false)}
-              className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-[#1a4855] hover:text-[#EAB308] transition-colors"
-            >
-              Admin Panel
-            </Link>
+
           </div>
         </div>
       )}
