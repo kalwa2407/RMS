@@ -273,13 +273,6 @@ const DeliveryPartnersManagement = () => {
         </div>
       )}
 
-      <div className="mt-6 bg-[#0f2933] border border-[#3b82f6]/10 rounded-xl p-4">
-        <p className="text-gray-500 text-xs">
-          <span className="text-[#3b82f6] font-bold">Rider login URL:</span>{" "}
-          <span className="font-mono">{window.location.origin}/delivery</span>
-          {" "}— Riders use their <span className="text-white">Phone Number</span> + <span className="text-white">password</span> to log in.
-        </p>
-      </div>
     </div>
   );
 };

@@ -219,13 +219,6 @@ const KitchenStaffManagement = () => {
         </div>
       )}
 
-      <div className="mt-6 bg-[#0f2933] border border-orange-500/10 rounded-xl p-4">
-        <p className="text-gray-500 text-xs">
-          <span className="text-orange-400 font-bold">Kitchen login URL:</span>{" "}
-          <span className="font-mono">{window.location.origin}/kitchen</span>
-          {" "}— Staff use their <span className="text-white">Staff ID</span> + <span className="text-white">password</span> to log in.
-        </p>
-      </div>
     </div>
   );
 };
