@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useEffect } from "react";
 import "./App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ChatBot from "./components/ChatBot";
@@ -45,6 +45,26 @@ import KitchenLogin from "./pages/kitchen/KitchenLogin";
 import KitchenPanel from "./pages/kitchen/KitchenPanel";
 
 import ScrollToTop from "./components/ScrollToTop";
+import StaffAppEntry from "./pages/StaffAppEntry";
+
+// Detect if running inside Capacitor native app
+const isNative = () => {
+  try {
+    return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  } catch {
+    return false;
+  }
+};
+
+// Native root redirect — shows staff entry on app, home on website
+const NativeRootRedirect = () => {
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (isNative()) navigate("/staff-entry", { replace: true });
+  }, [navigate]);
+  if (isNative()) return null;
+  return <><Navbar /><Home /><Footer /><ChatBot /></>;
+};
 
 function App() {
   return (
@@ -53,11 +73,11 @@ function App() {
         <ScrollToTop />
         <Routes>
 
+          {/* ---------------- STAFF APP ENTRY (Capacitor native) ---------------- */}
+          <Route path="/staff-entry" element={<StaffAppEntry />} />
+
           {/* ---------------- PUBLIC ROUTES ---------------- */}
-          <Route
-            path="/"
-            element={<><Navbar /><Home /><Footer /><ChatBot /></>}
-          />
+          <Route path="/" element={<NativeRootRedirect />} />
           <Route
             path="/menu"
             element={<><Navbar /><Menu /><Footer /><ChatBot /></>}

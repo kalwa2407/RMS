@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Grid3X3, Plus, Trash2, Users, Receipt, RefreshCw, Printer, X } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
+import API_BASE from "../../lib/config";
 
 const TableManagement = () => {
   const { toast } = useToast();
@@ -13,7 +14,6 @@ const TableManagement = () => {
   const [bulkCreate, setBulkCreate] = useState({ count: 10, capacity: 4 });
   const printRef = useRef();
 
-  import API_BASE from "../../lib/config";
   const token = localStorage.getItem("admin_token");
 
   const fetchTables = useCallback(async () => {
