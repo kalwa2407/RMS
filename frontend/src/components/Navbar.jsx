@@ -28,7 +28,7 @@ const Navbar = () => {
             <img
               src={logoImg}
               alt="Persian Darbar"
-              className="h-16 md:h-20 w-auto object-contain drop-shadow-md transition-transform hover:scale-105"
+              className="h-28 md:h-36 w-auto object-contain drop-shadow-md transition-transform hover:scale-105"
               style={{ mixBlendMode: 'screen' }}
             />
           </Link>
