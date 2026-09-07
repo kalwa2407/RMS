@@ -14,6 +14,7 @@ from typing import List, Optional
 import shutil
 import random
 import string
+import uuid
 
 # Import database and models
 from database import init_db, close_db, get_db

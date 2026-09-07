@@ -247,14 +247,6 @@ const CaptainsManagement = () => {
         </div>
       )}
 
-      {/* Login info box */}
-      <div className="mt-6 bg-[#0f2933] border border-[#EAB308]/10 rounded-xl p-4">
-        <p className="text-gray-500 text-xs">
-          <span className="text-[#EAB308] font-bold">Captain login URL:</span>{" "}
-          <span className="font-mono">{window.location.origin}/captain</span>
-          {" "}— Captains use their <span className="text-white">Captain ID</span> + <span className="text-white">password</span> to log in.
-        </p>
-      </div>
     </div>
   );
 };
