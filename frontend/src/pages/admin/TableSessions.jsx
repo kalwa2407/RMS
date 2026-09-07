@@ -242,42 +242,37 @@ const TableSessions = () => {
   }
 
   return (
-    <div className="p-6">
+    <div>
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center space-x-3">
-          <UtensilsCrossed className="h-8 w-8 text-primary" />
-          <div>
-            <h1 className="text-2xl font-bold text-primary">Table Dine-In Orders</h1>
-            <p className="text-gray-400 text-sm">PetPooja-Style Session Management</p>
-          </div>
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
+        <div>
+          <h1 className="text-2xl font-bold text-[#EAB308]" style={{ fontFamily: "'Playfair Display', serif" }}>Dine-In Orders</h1>
+          <p className="text-gray-500 text-xs uppercase tracking-widest">Table Session Management</p>
         </div>
-        <div className="flex items-center space-x-3">
-          {/* Sound Toggle Button */}
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
-            className={`px-4 py-2 rounded-lg flex items-center space-x-2 transition ${
-              soundEnabled 
-                ? "bg-green-600 text-white hover:bg-green-700" 
+            className={`px-3 py-2 rounded-lg flex items-center gap-1.5 text-sm font-bold transition ${
+              soundEnabled
+                ? "bg-green-600 text-white hover:bg-green-700"
                 : "bg-red-600 text-white hover:bg-red-700"
             }`}
-            title={soundEnabled ? "Sound ON - Click to mute" : "Sound OFF - Click to unmute"}
           >
             {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-            <span>{soundEnabled ? "Sound ON" : "Sound OFF"}</span>
+            <span className="hidden sm:inline">{soundEnabled ? "Sound ON" : "Sound OFF"}</span>
           </button>
           <button
             onClick={fetchData}
-            className="bg-[#1a4855] text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-[#234d5c] transition"
+            className="bg-[#1a4855] text-white px-3 py-2 rounded-lg flex items-center gap-1.5 text-sm hover:bg-[#234d5c] transition"
           >
             <RefreshCw className="h-4 w-4" />
-            <span>Refresh</span>
+            <span className="hidden sm:inline">Refresh</span>
           </button>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex space-x-2 mb-6">
+      {/* Tabs — horizontally scrollable on mobile */}
+      <div className="flex gap-2 mb-5 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
         <button
           onClick={() => setActiveTab("pending")}
           className={`px-4 py-2 rounded-lg font-medium transition flex items-center space-x-2 ${

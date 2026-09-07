@@ -80,24 +80,19 @@ const KitchenView = () => {
   }
 
   return (
-    <div className="p-6">
+    <div>
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center space-x-3">
-          <ChefHat className="h-8 w-8 text-primary" />
-          <div>
-            <h1 className="text-2xl font-bold text-primary">Kitchen View</h1>
-            <p className="text-gray-400 text-sm">
-              Last updated: {lastRefresh.toLocaleTimeString()}
-            </p>
-          </div>
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
+        <div>
+          <h1 className="text-2xl font-bold text-[#EAB308]" style={{ fontFamily: "'Playfair Display', serif" }}>Kitchen View</h1>
+          <p className="text-gray-500 text-xs">Updated: {lastRefresh.toLocaleTimeString()} · Auto-refresh every 10s</p>
         </div>
         <button
           onClick={fetchKitchenOrders}
-          className="flex items-center space-x-2 bg-[#1a4855] px-4 py-2 rounded-lg text-primary hover:bg-[#254a58] transition"
+          className="flex items-center gap-2 bg-[#1a4855] px-3 py-2 rounded-lg text-[#EAB308] text-sm hover:bg-[#254a58] transition"
         >
           <RefreshCw className="h-4 w-4" />
-          <span>Refresh</span>
+          <span className="hidden sm:inline">Refresh</span>
         </button>
       </div>
 

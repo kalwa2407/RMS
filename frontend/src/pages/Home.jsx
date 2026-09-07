@@ -19,7 +19,7 @@ const Home = () => {
           <div className="mb-8">
             <div className="inline-block border border-[#EAB308] rounded-full px-6 py-2">
               <p className="text-[#EAB308] text-base font-medium">
-                Irani Café • Persian Cuisine • Royal Dining
+                Persian Cuisine • Royal Dining
               </p>
             </div>
           </div>

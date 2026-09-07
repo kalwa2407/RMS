@@ -1098,6 +1098,20 @@ async def admin_update_reservation_status(
     await manager._write("reservations", reservations)
     return {"message": "Reservation status updated"}
 
+@admin_router.delete("/reservations/{reservation_id}")
+async def admin_delete_reservation(
+    reservation_id: str,
+    username: str = Depends(verify_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Delete a reservation"""
+    reservations = await manager._read("reservations")
+    new_list = [r for r in reservations if r.get("id") != reservation_id and r.get("_id") != reservation_id]
+    if len(new_list) == len(reservations):
+        raise HTTPException(status_code=404, detail="Reservation not found")
+    await manager._write("reservations", new_list)
+    return {"message": "Reservation deleted"}
+
 # Admin Reviews Management
 @admin_router.get("/reviews")
 async def admin_get_reviews(username: str = Depends(verify_token), manager: BaseDataManager = Depends(get_data_manager)):

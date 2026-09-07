@@ -204,8 +204,8 @@ const AdminLayout = () => {
       {/* ════════════════════════════════════
           MOBILE CONTENT AREA
       ════════════════════════════════════ */}
-      <div className="lg:hidden pt-[60px] pb-[72px] min-h-screen">
-        <div className="px-4 py-4">
+      <div className="lg:hidden pt-[60px] pb-[72px]">
+        <div className="px-3 py-3">
           <Outlet />
         </div>
       </div>
@@ -276,32 +276,37 @@ const AdminLayout = () => {
       </div>
 
       {/* ════════════════════════════════════
-          MOBILE FULL DRAWER (slide-in left)
+          MOBILE BOTTOM SHEET (slide-up from More)
       ════════════════════════════════════ */}
       {drawerOpen && (
-        <div className="lg:hidden fixed inset-0 z-[60] flex">
+        <div className="lg:hidden fixed inset-0 z-[60] flex flex-col justify-end">
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-black/65"
+            className="absolute inset-0 bg-black/60"
             style={{ backdropFilter: "blur(4px)" }}
             onClick={() => setDrawerOpen(false)}
           />
 
-          {/* Drawer panel */}
+          {/* Sheet panel — slides up from bottom */}
           <div
-            className="relative flex flex-col w-[300px] max-w-[85vw] h-full"
+            className="relative flex flex-col rounded-t-3xl max-h-[82vh]"
             style={{
-              background: "linear-gradient(160deg, #1a4855 0%, #0f3040 100%)",
-              borderRight: "1.5px solid rgba(234,179,8,0.25)",
-              boxShadow: "8px 0 40px rgba(0,0,0,0.5)",
+              background: "linear-gradient(175deg, #1a4855 0%, #0f3040 100%)",
+              borderTop: "1.5px solid rgba(234,179,8,0.3)",
+              boxShadow: "0 -8px 40px rgba(0,0,0,0.5)",
             }}
           >
-            {/* Drawer header */}
+            {/* Drag handle */}
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 rounded-full bg-[#EAB308]/40" />
+            </div>
+
+            {/* Sheet header */}
             <div
-              className="flex items-center justify-between px-5 py-4"
-              style={{ borderBottom: "1px solid rgba(234,179,8,0.18)" }}
+              className="flex items-center justify-between px-5 py-3"
+              style={{ borderBottom: "1px solid rgba(234,179,8,0.15)" }}
             >
-              <img src={logoImg} alt="Persian Darbar" className="h-10 w-auto object-contain" />
+              <img src={logoImg} alt="Persian Darbar" className="h-9 w-auto object-contain" />
               <button
                 onClick={() => setDrawerOpen(false)}
                 className="p-2 rounded-full bg-[#0f2933]/60 text-gray-400 hover:text-white transition-colors"
@@ -311,15 +316,15 @@ const AdminLayout = () => {
             </div>
 
             {/* Scrollable nav sections */}
-            <div className="flex-1 overflow-y-auto py-4 px-3">
+            <div className="flex-1 overflow-y-auto py-3 px-3">
               {SECTIONS.map((section) => (
-                <div key={section.label} className="mb-5">
+                <div key={section.label} className="mb-4">
                   <p
-                    className="text-[9px] font-black uppercase tracking-[0.2em] text-[#EAB308]/50 px-3 mb-2"
+                    className="text-[9px] font-black uppercase tracking-[0.2em] text-[#EAB308]/50 px-3 mb-1.5"
                   >
                     {section.label}
                   </p>
-                  <div className="space-y-0.5">
+                  <div className="grid grid-cols-3 gap-2">
                     {section.items.map((item) => {
                       const Icon = item.icon;
                       const active = isActive(item.path);
@@ -327,25 +332,16 @@ const AdminLayout = () => {
                         <Link
                           key={item.path}
                           to={item.path}
-                          className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                          className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all active:scale-95 ${
                             active
                               ? "bg-[#EAB308] text-black"
-                              : "text-gray-300 hover:bg-white/5 hover:text-white active:bg-white/10"
+                              : "bg-[#0f2933]/60 text-gray-300 hover:bg-white/5"
                           }`}
                         >
-                          <div
-                            className={`p-1.5 rounded-lg ${
-                              active ? "bg-black/15" : "bg-[#0f2933]/60"
-                            }`}
-                          >
-                            <Icon className="h-4 w-4" />
-                          </div>
-                          <span className={`text-sm font-semibold ${active ? "font-bold" : ""}`}>
+                          <Icon className="h-5 w-5" />
+                          <span className={`text-[10px] font-bold text-center leading-tight ${active ? "text-black" : ""}`}>
                             {item.name}
                           </span>
-                          {active && (
-                            <span className="ml-auto w-2 h-2 rounded-full bg-black/30" />
-                          )}
                         </Link>
                       );
                     })}
@@ -354,10 +350,10 @@ const AdminLayout = () => {
               ))}
             </div>
 
-            {/* Drawer footer — logout */}
+            {/* Sheet footer — logout */}
             <div
-              className="px-4 py-5"
-              style={{ borderTop: "1px solid rgba(234,179,8,0.15)" }}
+              className="px-4 py-4"
+              style={{ borderTop: "1px solid rgba(234,179,8,0.1)", paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
             >
               <button
                 onClick={handleLogout}

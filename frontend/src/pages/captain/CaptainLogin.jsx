@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { UtensilsCrossed, LogIn, Eye, EyeOff } from "lucide-react";
+import { LogIn, Eye, EyeOff } from "lucide-react";
 import axios from "axios";
 import API_BASE from "../../lib/config";
+import logoImg from "../../assets/logo.png";
 
 const CaptainLogin = () => {
   const navigate = useNavigate();
@@ -40,16 +41,13 @@ const CaptainLogin = () => {
         background: "linear-gradient(160deg, #0f2933 0%, #1a4855 60%, #0f2933 100%)",
       }}
     >
-      {/* Logo mark */}
-      <div
-        className="mb-8 w-20 h-20 rounded-3xl flex items-center justify-center shadow-2xl"
-        style={{
-          background: "linear-gradient(135deg, #EAB308, #d97706)",
-          boxShadow: "0 8px 32px rgba(234,179,8,0.35)",
-        }}
-      >
-        <UtensilsCrossed className="h-10 w-10 text-black" />
-      </div>
+      {/* Real logo */}
+      <img
+        src={logoImg}
+        alt="Persian Darbar"
+        className="mb-4 h-24 w-auto object-contain drop-shadow-2xl"
+        style={{ filter: "drop-shadow(0 4px 24px rgba(234,179,8,0.35))" }}
+      />
 
       <h1
         className="text-3xl font-bold text-white mb-1 text-center"
