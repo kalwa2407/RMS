@@ -39,7 +39,7 @@ const Footer = () => {
               <img
                 src={logoImg}
                 alt="Persian Darbar"
-                className="h-32 md:h-36 w-auto object-contain drop-shadow"
+                className="h-64 md:h-72 w-auto object-contain drop-shadow"
                 style={{ mixBlendMode: 'screen' }}
               />
             </div>

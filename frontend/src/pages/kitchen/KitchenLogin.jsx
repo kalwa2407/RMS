@@ -43,7 +43,7 @@ const KitchenLogin = () => {
       <img
         src={logoImg}
         alt="Persian Darbar"
-        className="mb-4 h-44 w-auto object-contain drop-shadow-2xl"
+        className="mb-4 h-80 w-auto object-contain drop-shadow-2xl"
         style={{ mixBlendMode: 'screen', filter: "drop-shadow(0 4px 24px rgba(249,115,22,0.35))" }}
       />
 

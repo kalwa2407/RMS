@@ -76,7 +76,7 @@ const StaffAppEntry = () => {
         <img
           src={logoImg}
           alt="Persian Darbar"
-          className="h-48 w-auto object-contain mx-auto"
+          className="h-80 w-auto object-contain mx-auto"
           style={{ mixBlendMode: "screen", filter: "drop-shadow(0 4px 24px rgba(234,179,8,0.3))" }}
         />
       </div>

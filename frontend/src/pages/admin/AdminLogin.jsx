@@ -88,7 +88,7 @@ const AdminLogin = () => {
             <img
               src={logoImg}
               alt="Persian Darbar"
-              className="h-56 md:h-64 w-auto object-contain drop-shadow-xl"
+              className="h-96 w-auto object-contain drop-shadow-xl"
               style={{ mixBlendMode: 'screen' }}
             />
           </div>
