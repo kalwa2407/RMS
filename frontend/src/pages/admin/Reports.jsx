@@ -8,6 +8,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
+import API_BASE from "../../lib/config";
 
 const Reports = () => {
   const { toast } = useToast();
@@ -23,7 +24,6 @@ const Reports = () => {
   });
   const [activeTab, setActiveTab] = useState("daily");
 
-  const API_BASE = (process.env.REACT_APP_BACKEND_URL || "");
   const token = localStorage.getItem("admin_token");
 
   const fetchDailyReport = useCallback(async () => {

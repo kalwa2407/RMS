@@ -3,7 +3,7 @@ import { Save, Key, MapPin, Phone, Mail } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
 
-const API_BASE = (process.env.REACT_APP_BACKEND_URL || "");
+import API_BASE from "../../lib/config";
 
 const Settings = () => {
   const { toast } = useToast();

@@ -10,7 +10,7 @@ import {
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE = (process.env.REACT_APP_BACKEND_URL || "");
+import API_BASE from "../../lib/config";
 
 const Dashboard = () => {
   const navigate = useNavigate();

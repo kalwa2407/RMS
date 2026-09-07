@@ -589,6 +589,13 @@ async def create_reservation(reservation: ReservationCreate, manager: BaseDataMa
     """Create a new reservation"""
     now = get_ist_now()
     reservation_data = reservation.dict()
+    
+    # Check for duplicate bookings at the same date and time
+    existing_reservations = await manager._read("reservations")
+    for r in existing_reservations:
+        if r.get("date") == reservation_data.get("date") and r.get("time") == reservation_data.get("time") and r.get("status") == "confirmed":
+            raise HTTPException(status_code=409, detail="A reservation already exists for this date and time.")
+
     reservation_data.update({
         "status": "pending",
         "created_at": now.isoformat(),
@@ -2149,7 +2156,7 @@ async def admin_create_kitchen_staff(data: dict,
     staff = await manager._read("kitchen_staff")
     if any(s.get("staff_id") == data.get("staff_id") for s in staff):
         raise HTTPException(status_code=400, detail="Staff ID already exists")
-    import uuid
+
     new_member = {
         "id": str(uuid.uuid4()),
         "staff_id": data["staff_id"],

@@ -4,7 +4,7 @@ import { Calendar, Clock, Users, MapPin, Check, Info, ChevronRight, ChevronLeft,
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "../hooks/use-toast";
 
-const API_BASE = (process.env.REACT_APP_BACKEND_URL || "");
+import API_BASE from "../lib/config";
 
 const Reservation = () => {
   const { toast } = useToast();

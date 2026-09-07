@@ -4,7 +4,7 @@ import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
 
 // Environment variable setup
-const API_BASE = (process.env.REACT_APP_BACKEND_URL || "");
+import API_BASE from "../../lib/config";
 
 const categories = [
   "Biryani",

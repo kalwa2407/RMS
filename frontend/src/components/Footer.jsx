@@ -4,7 +4,7 @@ import { MapPin, Phone, Mail, Clock } from 'lucide-react';
 import axios from 'axios';
 import logoImg from '../assets/logo.png';
 
-const API_BASE = (process.env.REACT_APP_BACKEND_URL || "");
+import API_BASE from "../lib/config";
 
 const Footer = () => {
   const [contactInfo, setContactInfo] = useState({
