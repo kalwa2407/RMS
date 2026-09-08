@@ -39,6 +39,9 @@ ALLOWED_ORIGINS = [
     "http://10.213.185.123:3000",
     "https://rms.tasteofhindustan.com",
     "https://tasteofhindustan.com",
+    "https://www.tasteofhindustan.com",
+    "https://persiandarbar.in",
+    "https://www.persiandarbar.in",
     "https://rms-kalwa2407.vercel.app",
 ]
 

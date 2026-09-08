@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { 
-  signInWithPopup, 
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut as firebaseSignOut, 
   onAuthStateChanged 
 } from 'firebase/auth';
@@ -92,9 +94,10 @@ export const CustomerAuthProvider = ({ children }) => {
     }
   };
 
-  // Google Sign-In
+  // Google Sign-In — try popup first, fallback to redirect for COOP-blocked environments
   const signInWithGoogle = async () => {
     try {
+      // Try popup first (works on localhost and same-origin)
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
       const token = await user.getIdToken();
@@ -103,6 +106,22 @@ export const CustomerAuthProvider = ({ children }) => {
       await fetchCustomerProfile(token, user);
       return { success: true, user };
     } catch (error) {
+      // If popup blocked by COOP or browser policy, fall back to redirect
+      if (
+        error.code === 'auth/popup-blocked' ||
+        error.code === 'auth/popup-closed-by-user' ||
+        error.code === 'auth/unauthorized-domain' ||
+        error.message?.includes('Cross-Origin-Opener-Policy')
+      ) {
+        try {
+          await signInWithRedirect(auth, googleProvider);
+          // Page will reload — result handled by getRedirectResult in useEffect
+          return { success: true, redirecting: true };
+        } catch (redirectError) {
+          console.error('Redirect Sign-In Error:', redirectError);
+          return { success: false, error: redirectError.message };
+        }
+      }
       console.error('Google Sign-In Error:', error);
       return { success: false, error: error.message };
     }
@@ -121,6 +140,25 @@ export const CustomerAuthProvider = ({ children }) => {
       return { success: false, error: error.message };
     }
   };
+
+  // Handle redirect result (for signInWithRedirect fallback)
+  useEffect(() => {
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result?.user) {
+          const user = result.user;
+          const token = await user.getIdToken();
+          setCurrentUser(user);
+          setIdToken(token);
+          await fetchCustomerProfile(token, user);
+        }
+      })
+      .catch((err) => {
+        if (err.code !== 'auth/popup-closed-by-user') {
+          console.error('Redirect result error:', err);
+        }
+      });
+  }, [fetchCustomerProfile]);
 
   // Listen to Auth State
   useEffect(() => {
