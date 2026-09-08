@@ -47,6 +47,14 @@ import KitchenPanel from "./pages/kitchen/KitchenPanel";
 import ScrollToTop from "./components/ScrollToTop";
 import StaffAppEntry from "./pages/StaffAppEntry";
 
+// Customer Auth & Portal
+import { CustomerAuthProvider } from "./context/CustomerAuthContext";
+import CustomerLogin from "./pages/customer/CustomerLogin";
+import CustomerDashboard from "./pages/customer/CustomerDashboard";
+import CustomerOrders from "./pages/customer/CustomerOrders";
+import CustomerReservations from "./pages/customer/CustomerReservations";
+import CustomerProfile from "./pages/customer/CustomerProfile";
+
 // Detect if running inside Capacitor native app
 const isNative = () => {
   try {
@@ -70,34 +78,47 @@ function App() {
   return (
     <div className="App">
       <BrowserRouter>
-        <ScrollToTop />
-        <Routes>
+        <CustomerAuthProvider>
+          <ScrollToTop />
+          <Routes>
 
-          {/* ---------------- STAFF APP ENTRY (Capacitor native) ---------------- */}
-          <Route path="/staff-entry" element={<StaffAppEntry />} />
+            {/* ---------------- STAFF APP ENTRY (Capacitor native) ---------------- */}
+            <Route path="/staff-entry" element={<StaffAppEntry />} />
 
-          {/* ---------------- PUBLIC ROUTES ---------------- */}
-          <Route path="/" element={<NativeRootRedirect />} />
-          <Route
-            path="/menu"
-            element={<><Navbar /><Menu /><Footer /><ChatBot /></>}
-          />
-          <Route
-            path="/gallery"
-            element={<><Navbar /><Gallery /><Footer /><ChatBot /></>}
-          />
-          <Route
-            path="/reviews"
-            element={<><Navbar /><Reviews /><Footer /><ChatBot /></>}
-          />
-          <Route
-            path="/order"
-            element={<><Navbar /><Order /><Footer /><ChatBot /></>}
-          />
-          <Route
-            path="/track-order"
-            element={<><Navbar /><OrderTracking /><Footer /><ChatBot /></>}
-          />
+            {/* ---------------- CUSTOMER PORTAL ---------------- */}
+            <Route path="/customer" element={<><Navbar /><CustomerDashboard /><Footer /></>} />
+            <Route path="/customer/login" element={<CustomerLogin />} />
+            <Route path="/customer/dashboard" element={<><Navbar /><CustomerDashboard /><Footer /></>} />
+            <Route path="/customer/orders" element={<><Navbar /><CustomerOrders /><Footer /></>} />
+            <Route path="/customer/reservations" element={<><Navbar /><CustomerReservations /><Footer /></>} />
+            <Route path="/customer/profile" element={<><Navbar /><CustomerProfile /><Footer /></>} />
+
+            {/* ---------------- PUBLIC ROUTES ---------------- */}
+            <Route path="/" element={<NativeRootRedirect />} />
+            <Route
+              path="/menu"
+              element={<><Navbar /><Menu /><Footer /><ChatBot /></>}
+            />
+            <Route
+              path="/gallery"
+              element={<><Navbar /><Gallery /><Footer /><ChatBot /></>}
+            />
+            <Route
+              path="/reviews"
+              element={<><Navbar /><Reviews /><Footer /><ChatBot /></>}
+            />
+            <Route
+              path="/order"
+              element={<><Navbar /><Order /><Footer /><ChatBot /></>}
+            />
+            <Route
+              path="/track-order"
+              element={<><Navbar /><OrderTracking /><Footer /><ChatBot /></>}
+            />
+            <Route
+              path="/track"
+              element={<><Navbar /><OrderTracking /><Footer /><ChatBot /></>}
+            />
           <Route
             path="/reservation"
             element={<><Navbar /><Reservation /><Footer /><ChatBot /></>}
@@ -173,6 +194,7 @@ function App() {
         </Routes>
 
         <Toaster />
+        </CustomerAuthProvider>
       </BrowserRouter>
     </div>
   );

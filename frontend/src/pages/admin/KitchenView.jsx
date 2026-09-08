@@ -145,16 +145,21 @@ const KitchenView = () => {
               </div>
 
               {/* Order Time */}
-              <div className="flex items-center space-x-2 text-gray-400 text-sm mb-4">
+              <div className="flex items-center space-x-2 text-gray-400 text-sm mb-1">
                 <Clock className="h-4 w-4" />
                 <span>{getTimeSinceOrder(order.created_at)}</span>
               </div>
+              {order.created_at && (
+                <p className="text-gray-600 text-xs mb-3">
+                  {new Date(order.created_at).toLocaleString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true, day: "2-digit", month: "short" })}
+                </p>
+              )}
 
               {/* Items */}
               <div className="bg-[#0f2933] rounded-lg p-3 mb-4">
                 <h4 className="text-white font-bold mb-2">Items:</h4>
                 <ul className="space-y-2">
-                  {order.items.map((item, idx) => (
+                  {(order.items || []).map((item, idx) => (
                     <li key={idx} className="text-gray-300">
                       <div className="flex justify-between">
                         <span>

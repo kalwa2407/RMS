@@ -39,7 +39,7 @@ const Reports = () => {
     } catch (err) {
       console.error("Failed to fetch daily report:", err);
     }
-  }, [API_BASE, token, selectedDate]);
+  }, [token, selectedDate]);
 
   const fetchPeriodReport = useCallback(async () => {
     try {
@@ -54,7 +54,7 @@ const Reports = () => {
     } catch (err) {
       console.error("Failed to fetch period report:", err);
     }
-  }, [API_BASE, token, dateRange]);
+  }, [token, dateRange]);
 
   useEffect(() => {
     const fetchData = async () => {

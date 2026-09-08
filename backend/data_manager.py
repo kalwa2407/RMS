@@ -12,6 +12,11 @@ class BaseDataManager(ABC):
         pass
 
     @abstractmethod
+    async def get_all_menu_items(self) -> List[Dict[str, Any]]:
+        """Get all menu items including unavailable (admin use only)"""
+        pass
+
+    @abstractmethod
     async def get_menu_item(self, item_id: str) -> Optional[Dict[str, Any]]:
         pass
 

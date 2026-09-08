@@ -20,7 +20,11 @@ import uuid
 from database import init_db, close_db, get_db
 from data_manager import get_data_manager, BaseDataManager
 from models import *
-from auth import verify_password, get_password_hash, create_access_token, verify_token, verify_captain_token, verify_delivery_token, verify_kitchen_token
+from auth import (
+    verify_password, get_password_hash, create_access_token, verify_token,
+    verify_captain_token, verify_delivery_token, verify_kitchen_token,
+    verify_customer_token, get_optional_customer
+)
 from invoice_generator import generate_invoice_pdf
 
 ROOT_DIR = Path(__file__).parent
@@ -251,8 +255,42 @@ async def get_gallery(manager: BaseDataManager = Depends(get_data_manager)):
 # Reviews Endpoints
 @api_router.get("/reviews")
 async def get_reviews(manager: BaseDataManager = Depends(get_data_manager)):
-    """Get all reviews"""
-    return await manager.get_reviews()
+    """Get all approved/published reviews"""
+    all_reviews = await manager.get_reviews()
+    # Only return approved reviews (those without pending=True)
+    return [r for r in all_reviews if not r.get("pending", False)]
+
+@api_router.post("/reviews")
+async def submit_review(review_data: dict, manager: BaseDataManager = Depends(get_data_manager)):
+    """Submit a public review — saved as pending for admin approval"""
+    import uuid, datetime
+    name = str(review_data.get("name", "")).strip()
+    text = str(review_data.get("text", "")).strip()
+    rating = int(review_data.get("rating", 5))
+    customer_uid = review_data.get("customer_uid", "")
+
+    if not name or len(name) < 2:
+        raise HTTPException(status_code=400, detail="Name must be at least 2 characters")
+    if not text or len(text) < 10:
+        raise HTTPException(status_code=400, detail="Review must be at least 10 characters")
+    if rating < 1 or rating > 5:
+        raise HTTPException(status_code=400, detail="Rating must be between 1 and 5")
+
+    review = {
+        "_id": str(uuid.uuid4()),
+        "name": name,
+        "text": text,
+        "rating": rating,
+        "date": datetime.datetime.utcnow().isoformat(),
+        "created_at": datetime.datetime.utcnow().isoformat(),
+        "customer_uid": customer_uid,
+        "pending": True,  # Requires admin approval
+    }
+
+    reviews = await manager._read("reviews")
+    reviews.append(review)
+    await manager._write("reviews", reviews)
+    return {"message": "Review submitted successfully. It will be visible after admin approval.", "id": review["_id"]}
 
 @api_router.get("/settings/public")
 async def get_public_settings(manager: BaseDataManager = Depends(get_data_manager)):
@@ -295,7 +333,11 @@ async def validate_coupon(coupon_validation: CouponValidation, manager: BaseData
 
 # Orders Endpoints
 @api_router.post("/orders")
-async def create_order(order: OrderCreate, manager: BaseDataManager = Depends(get_data_manager)):
+async def create_order(
+    order: OrderCreate,
+    manager: BaseDataManager = Depends(get_data_manager),
+    optional_customer: Optional[dict] = Depends(get_optional_customer)
+):
     """Create a new order with validation"""
     
     if order.order_type == "DELIVERY" and order.subtotal < 250:
@@ -320,6 +362,26 @@ async def create_order(order: OrderCreate, manager: BaseDataManager = Depends(ge
     now = get_ist_now()
     order_dict = order.dict()
     order_id = generate_order_id()
+    
+    # Auto-link customer if authenticated
+    if not order_dict.get("customer_uid") and optional_customer:
+        order_dict["customer_uid"] = optional_customer["uid"]
+
+    # If customer profile exists and phone is empty, update it
+    if optional_customer and order_dict.get("phone"):
+        try:
+            customers = await manager._read("customers")
+            for c in customers:
+                if c.get("uid") == optional_customer["uid"]:
+                    if not c.get("phone"):
+                        c["phone"] = order_dict["phone"].strip()
+                    if order_dict.get("address") and not c.get("address"):
+                        c["address"] = order_dict["address"].strip()
+                        c.setdefault("addresses", []).append(order_dict["address"].strip())
+                    await manager._write("customers", customers)
+                    break
+        except Exception:
+            pass
     
     order_dict.update({
         "order_id": order_id,
@@ -585,7 +647,11 @@ async def get_customer_orders(phone: str, manager: BaseDataManager = Depends(get
     return sorted(customer_orders, key=lambda x: x.get("created_at", ""), reverse=True)
 
 @api_router.post("/reservations")
-async def create_reservation(reservation: ReservationCreate, manager: BaseDataManager = Depends(get_data_manager)):
+async def create_reservation(
+    reservation: ReservationCreate,
+    manager: BaseDataManager = Depends(get_data_manager),
+    optional_customer: Optional[dict] = Depends(get_optional_customer)
+):
     """Create a new reservation"""
     now = get_ist_now()
     reservation_data = reservation.dict()
@@ -595,6 +661,23 @@ async def create_reservation(reservation: ReservationCreate, manager: BaseDataMa
     for r in existing_reservations:
         if r.get("date") == reservation_data.get("date") and r.get("time") == reservation_data.get("time") and r.get("status") == "confirmed":
             raise HTTPException(status_code=409, detail="A reservation already exists for this date and time.")
+
+    # Auto-link customer if authenticated
+    if not reservation_data.get("customer_uid") and optional_customer:
+        reservation_data["customer_uid"] = optional_customer["uid"]
+
+    # Auto-save phone to customer profile if empty
+    if optional_customer and reservation_data.get("phone"):
+        try:
+            customers = await manager._read("customers")
+            for c in customers:
+                if c.get("uid") == optional_customer["uid"]:
+                    if not c.get("phone"):
+                        c["phone"] = reservation_data["phone"].strip()
+                    await manager._write("customers", customers)
+                    break
+        except Exception:
+            pass
 
     reservation_data.update({
         "status": "pending",
@@ -706,8 +789,8 @@ async def change_password(
 # Admin Menu Management
 @admin_router.get("/menu")
 async def admin_get_menu(username: str = Depends(verify_token), manager: BaseDataManager = Depends(get_data_manager)):
-    """Get all menu items"""
-    return await manager.get_menu()
+    """Get ALL menu items including unavailable ones (admin view)"""
+    return await manager.get_all_menu_items()
 
 @admin_router.post("/menu")
 async def admin_create_menu_item(
@@ -732,7 +815,10 @@ async def admin_update_menu_item(
     manager: BaseDataManager = Depends(get_data_manager)
 ):
     """Update menu item"""
-    update_data = {k: v for k, v in menu_item.dict().items() if v is not None}
+    # Use dict(exclude_unset=True) so that available=False is NOT dropped
+    update_data = {k: v for k, v in menu_item.dict().items() if v is not None or k == "available"}
+    # Remove None values but KEEP False (available=False must be saved)
+    update_data = {k: v for k, v in menu_item.dict(exclude_unset=True).items()}
     if "variants" in update_data:
         update_data["variants"] = [v.dict() if hasattr(v, 'dict') else v for v in update_data["variants"]]
     if "addons" in update_data:
@@ -743,6 +829,20 @@ async def admin_update_menu_item(
         raise HTTPException(status_code=404, detail="Menu item not found")
     
     return await manager.get_menu_item(item_id)
+
+@admin_router.put("/menu/{item_id}/toggle-availability")
+async def admin_toggle_menu_availability(
+    item_id: str,
+    username: str = Depends(verify_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Quick toggle: available ↔ unavailable without full edit form"""
+    item = await manager.get_menu_item(item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Menu item not found")
+    new_available = not item.get("available", True)
+    await manager.update_menu_item_full(item_id, {"available": new_available})
+    return {"available": new_available, "message": f"Item marked {'available' if new_available else 'unavailable'}"}
 
 @admin_router.delete("/menu/{item_id}")
 async def admin_delete_menu_item(
@@ -920,12 +1020,26 @@ async def admin_assign_delivery_partner(
 
 # Invoice Download Endpoint
 @admin_router.get("/invoice/{order_id}")
-async def download_invoice(order_id: str, username: str = Depends(verify_token)):
-    """Download invoice PDF"""
+async def download_invoice(
+    order_id: str,
+    username: str = Depends(verify_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Download invoice PDF — auto-generate if not already stored"""
     invoice_path = INVOICE_DIR / f"invoice_{order_id}.pdf"
     
+    # Auto-generate if not found
     if not invoice_path.exists():
-        raise HTTPException(status_code=404, detail="Invoice not found")
+        order = await manager.get_order_by_id(order_id)
+        if not order:
+            raise HTTPException(status_code=404, detail="Order not found")
+        try:
+            invoice_url = await create_order_invoice(order_id, manager)
+            if not invoice_url or not invoice_path.exists():
+                raise HTTPException(status_code=500, detail="Could not generate invoice")
+        except Exception as e:
+            logger.error(f"Invoice generation failed: {e}")
+            raise HTTPException(status_code=500, detail=f"Invoice generation failed: {str(e)}")
     
     return FileResponse(
         path=str(invoice_path),
@@ -1122,9 +1236,28 @@ async def admin_delete_reservation(
 # Admin Reviews Management
 @admin_router.get("/reviews")
 async def admin_get_reviews(username: str = Depends(verify_token), manager: BaseDataManager = Depends(get_data_manager)):
-    """Get all reviews"""
+    """Get all reviews (including pending ones for admin)"""
     reviews = await manager._read("reviews")
     return sorted(reviews, key=lambda x: x.get("created_at", ""), reverse=True)
+
+@admin_router.post("/reviews/{review_id}/approve")
+async def admin_approve_review(
+    review_id: str,
+    username: str = Depends(verify_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Approve a pending review — makes it visible on the public site"""
+    reviews = await manager._read("reviews")
+    updated = False
+    for r in reviews:
+        if r.get("_id") == review_id or r.get("id") == review_id:
+            r["pending"] = False
+            updated = True
+            break
+    if not updated:
+        raise HTTPException(status_code=404, detail="Review not found")
+    await manager._write("reviews", reviews)
+    return {"message": "Review approved"}
 
 @admin_router.delete("/reviews/{review_id}")
 async def admin_delete_review(
@@ -2561,6 +2694,170 @@ async def admin_delete_captain(captain_id: str,
 
 
 # =============================================================================
+# CUSTOMER ROUTER (Swiggy/Zomato style public user dashboard & history)
+# =============================================================================
+customer_router = APIRouter(prefix="/api/customer", tags=["customer"])
+
+@customer_router.get("/profile")
+async def get_customer_profile(
+    user: dict = Depends(verify_customer_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Fetch logged in customer profile, auto-creating if first time"""
+    uid = user["uid"]
+    customers = await manager._read("customers")
+    profile = next((c for c in customers if c.get("uid") == uid), None)
+    
+    if not profile:
+        now = get_ist_now().isoformat()
+        profile = {
+            "_id": str(uuid.uuid4()),
+            "uid": uid,
+            "email": user.get("email", ""),
+            "name": user.get("name", "Customer"),
+            "phone": "",
+            "picture": user.get("picture", ""),
+            "address": "",
+            "addresses": [],
+            "created_at": now,
+            "updated_at": now
+        }
+        customers.append(profile)
+        await manager._write("customers", customers)
+        
+    return profile
+
+@customer_router.put("/profile")
+async def update_customer_profile(
+    update_data: CustomerProfileUpdate,
+    user: dict = Depends(verify_customer_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Update customer profile (phone number, name, delivery address)"""
+    uid = user["uid"]
+    customers = await manager._read("customers")
+    profile_idx = next((i for i, c in enumerate(customers) if c.get("uid") == uid), None)
+    now = get_ist_now().isoformat()
+
+    if profile_idx is None:
+        addr = update_data.address.strip() if update_data.address else ""
+        new_profile = {
+            "_id": str(uuid.uuid4()),
+            "uid": uid,
+            "email": user.get("email", ""),
+            "name": update_data.name or user.get("name", "Customer"),
+            "phone": update_data.phone.strip() if update_data.phone else "",
+            "picture": user.get("picture", ""),
+            "address": addr,
+            "addresses": update_data.addresses or ([addr] if addr else []),
+            "created_at": now,
+            "updated_at": now
+        }
+        customers.append(new_profile)
+        await manager._write("customers", customers)
+        return new_profile
+    
+    current = customers[profile_idx]
+    if update_data.name is not None:
+        current["name"] = update_data.name
+    if update_data.phone is not None:
+        current["phone"] = update_data.phone.strip()
+    if update_data.address is not None:
+        current["address"] = update_data.address.strip()
+        addrs = current.setdefault("addresses", [])
+        if update_data.address.strip() and update_data.address.strip() not in addrs:
+            addrs.append(update_data.address.strip())
+    if update_data.addresses is not None:
+        current["addresses"] = update_data.addresses
+        
+    current["updated_at"] = now
+    customers[profile_idx] = current
+    await manager._write("customers", customers)
+    return current
+
+@customer_router.get("/orders")
+async def get_customer_orders_list(
+    user: dict = Depends(verify_customer_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Get all orders belonging to customer by UID, phone, or email"""
+    uid = user["uid"]
+    user_email = (user.get("email") or "").lower().strip()
+    
+    customers = await manager._read("customers")
+    profile = next((c for c in customers if c.get("uid") == uid), None)
+    user_phone = profile.get("phone", "").strip() if profile else ""
+    
+    all_orders = await manager.get_orders()
+    matched = []
+    seen_ids = set()
+    
+    for o in all_orders:
+        oid = o.get("order_id") or o.get("_id") or o.get("id")
+        if not oid or oid in seen_ids:
+            continue
+        
+        # Match by customer_uid
+        if o.get("customer_uid") and o.get("customer_uid") == uid:
+            matched.append(o)
+            seen_ids.add(oid)
+            continue
+            
+        # Match by phone
+        if user_phone and o.get("phone") and o.get("phone").strip() == user_phone:
+            matched.append(o)
+            seen_ids.add(oid)
+            continue
+            
+        # Match by email
+        if user_email and o.get("email") and o.get("email").lower().strip() == user_email:
+            matched.append(o)
+            seen_ids.add(oid)
+            continue
+
+    return sorted(matched, key=lambda x: x.get("created_at", ""), reverse=True)
+
+@customer_router.get("/reservations")
+async def get_customer_reservations_list(
+    user: dict = Depends(verify_customer_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Get all reservations belonging to customer by UID, phone, or email"""
+    uid = user["uid"]
+    user_email = (user.get("email") or "").lower().strip()
+    
+    customers = await manager._read("customers")
+    profile = next((c for c in customers if c.get("uid") == uid), None)
+    user_phone = profile.get("phone", "").strip() if profile else ""
+    
+    all_res = await manager._read("reservations")
+    matched = []
+    seen_ids = set()
+    
+    for r in all_res:
+        rid = r.get("id") or r.get("_id")
+        if not rid or rid in seen_ids:
+            continue
+            
+        if r.get("customer_uid") and r.get("customer_uid") == uid:
+            matched.append(r)
+            seen_ids.add(rid)
+            continue
+            
+        if user_phone and r.get("phone") and r.get("phone").strip() == user_phone:
+            matched.append(r)
+            seen_ids.add(rid)
+            continue
+            
+        if user_email and r.get("email") and r.get("email").lower().strip() == user_email:
+            matched.append(r)
+            seen_ids.add(rid)
+            continue
+
+    return sorted(matched, key=lambda x: x.get("created_at", ""), reverse=True)
+
+
+# =============================================================================
 # STARTUP AND SHUTDOWN EVENTS
 # =============================================================================
 
@@ -2601,6 +2898,7 @@ app.include_router(admin_router)
 app.include_router(delivery_router)
 app.include_router(captain_router)
 app.include_router(kitchen_router)
+app.include_router(customer_router)
 
 # Health check endpoint
 @api_router.get("/health")

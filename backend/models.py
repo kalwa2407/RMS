@@ -125,6 +125,7 @@ class OrderItem(BaseModel):
 class Order(BaseModel):
     id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
     order_id: str  # Human-readable order ID like ORD12345
+    customer_uid: Optional[str] = None  # Firebase UID of customer if logged in
     customer_name: str
     phone: str
     email: Optional[str] = None
@@ -162,6 +163,7 @@ class Order(BaseModel):
         json_encoders = {ObjectId: str}
 
 class OrderCreate(BaseModel):
+    customer_uid: Optional[str] = None  # Firebase UID if logged in
     customer_name: str
     phone: str
     email: Optional[str] = None
@@ -222,6 +224,7 @@ class OrderCancellationRequest(BaseModel):
 # Reservation Models
 class Reservation(BaseModel):
     id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
+    customer_uid: Optional[str] = None  # Firebase UID if logged in
     customer_name: str
     phone: str
     email: Optional[str] = None
@@ -239,6 +242,7 @@ class Reservation(BaseModel):
         json_encoders = {ObjectId: str}
 
 class ReservationCreate(BaseModel):
+    customer_uid: Optional[str] = None  # Firebase UID if logged in
     customer_name: str
     phone: str
     email: Optional[str] = None
@@ -249,6 +253,30 @@ class ReservationCreate(BaseModel):
 
 class ReservationStatusUpdate(BaseModel):
     status: str
+
+# Customer Profile Models
+class CustomerProfile(BaseModel):
+    id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
+    uid: str
+    email: Optional[str] = None
+    name: Optional[str] = None
+    phone: Optional[str] = ""
+    picture: Optional[str] = None
+    address: Optional[str] = ""
+    addresses: List[str] = []
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {ObjectId: str}
+
+class CustomerProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    addresses: Optional[List[str]] = None
 
 # Review Models
 class Review(BaseModel):

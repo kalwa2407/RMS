@@ -71,7 +71,7 @@ const Dashboard = () => {
 
       setStats({
         totalOrders: orders.length,
-        pendingOrders: orders.filter((o) => o.status === "pending").length,
+        pendingOrders: orders.filter((o) => o.status === "placed").length,
 
         totalReservations: reservations.length,
         pendingReservations: reservations.filter((r) => r.status === "pending")
@@ -154,7 +154,7 @@ const Dashboard = () => {
         >
           Dashboard
         </h2>
-        <p className="text-gray-500 text-xs uppercase tracking-widest" >Welcome to Persian Darbar Admin Panel</p>
+        <p className="text-gray-500 text-xs uppercase tracking-widest" >Welcome to Taste of Hindustan Admin Panel</p>
       </div>
 
       {/* STAT CARDS */}

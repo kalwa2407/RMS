@@ -121,7 +121,7 @@ const StaffAppEntry = () => {
 
       {/* Footer note */}
       <p className="text-gray-600 text-[10px] mt-10 text-center uppercase tracking-widest">
-        Persian Darbar — Staff Access Only
+        Taste of Hindustan — Staff Access Only
       </p>
     </div>
   );

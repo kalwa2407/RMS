@@ -1,10 +1,46 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { Plus, Minus, Trash2, ShoppingCart, MapPin, Loader2, CreditCard, Wallet } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
 import API_BASE from "../lib/config";
+import { useCustomerAuth } from "../context/CustomerAuthContext";
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
+import L from "leaflet";
+
+// Fix leaflet default marker icons
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
+
+const restaurantIcon = new L.Icon({
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41],
+});
+const userIcon = new L.Icon({
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41],
+});
+
+const MapFitBounds = ({ positions }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (positions && positions.length === 2) {
+      const bounds = L.latLngBounds(positions);
+      map.fitBounds(bounds, { padding: [40, 40] });
+    }
+  }, [positions, map]);
+  return null;
+};
 
 const Order = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { currentUser, customerProfile, idToken } = useCustomerAuth();
 
   const [menu, setMenu] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -26,6 +62,18 @@ const Order = () => {
     address: "",
     paymentMethod: "cod",
   });
+
+  // Pre-fill customer details if logged in
+  useEffect(() => {
+    if (currentUser || customerProfile) {
+      setCustomerInfo(prev => ({
+        ...prev,
+        name: prev.name || customerProfile?.name || currentUser?.displayName || "",
+        phone: prev.phone || customerProfile?.phone || localStorage.getItem('customer_phone') || "",
+        address: prev.address || customerProfile?.address || localStorage.getItem('customer_address') || ""
+      }));
+    }
+  }, [currentUser, customerProfile]);
 
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
     const R = 6371;
@@ -134,6 +182,8 @@ const Order = () => {
     const total = subtotal + deliveryFee + taxes;
 
     const orderData = {
+      customer_uid: currentUser?.uid || null,
+      email: currentUser?.email || null,
       customer_name: customerInfo.name,
       phone: customerInfo.phone,
       address: customerInfo.address,
@@ -158,14 +208,23 @@ const Order = () => {
     };
 
     try {
-      const res = await fetch(`${(process.env.REACT_APP_BACKEND_URL || "")}/api/orders`, {
+      const headers = { "Content-Type": "application/json" };
+      if (idToken) {
+        headers["Authorization"] = `Bearer ${idToken}`;
+      }
+
+      const res = await fetch(`${API_BASE}/api/orders`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(orderData),
       });
 
       if (!res.ok) throw new Error("Invalid order");
       const data = await res.json();
+
+      if (data.order_id) {
+        localStorage.setItem("lastOrderId", data.order_id);
+      }
 
       toast({ 
         title: "Order Placed! 🎉", 
@@ -173,8 +232,14 @@ const Order = () => {
       });
 
       setCart([]);
-      setCustomerInfo({ name: "", phone: "", address: "", paymentMethod: "cod" });
       setDistance(null);
+
+      // Smooth redirect to live tracking
+      setTimeout(() => {
+        if (data.order_id) {
+          navigate(`/track?order_id=${data.order_id}`);
+        }
+      }, 1200);
     } catch (err) {
       toast({ title: "Order failed", description: "Something went wrong. Please try again.", variant: "destructive" });
     } finally {
@@ -349,6 +414,51 @@ const Order = () => {
                           </p>
                         )}
                       </div>
+
+                      {/* Leaflet Map — shows once GPS is detected */}
+                      {userLocation && (
+                        <div className="rounded-xl overflow-hidden border border-[#EAB308]/20" style={{ height: 200 }}>
+                          <MapContainer
+                            center={[userLocation.lat, userLocation.lng]}
+                            zoom={12}
+                            style={{ height: "100%", width: "100%" }}
+                            zoomControl={false}
+                          >
+                            <TileLayer
+                              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                            />
+                            {/* Restaurant marker */}
+                            <Marker
+                              position={[RESTAURANT_LOCATION.lat, RESTAURANT_LOCATION.lng]}
+                              icon={restaurantIcon}
+                            >
+                              <Popup>🍽️ Persian Darbar (Restaurant)</Popup>
+                            </Marker>
+                            {/* User marker */}
+                            <Marker
+                              position={[userLocation.lat, userLocation.lng]}
+                              icon={userIcon}
+                            >
+                              <Popup>📍 Your Location ({distance} km away)</Popup>
+                            </Marker>
+                            {/* Line between */}
+                            <Polyline
+                              positions={[
+                                [RESTAURANT_LOCATION.lat, RESTAURANT_LOCATION.lng],
+                                [userLocation.lat, userLocation.lng]
+                              ]}
+                              color={distance > 20 ? "#ef4444" : distance > 10 ? "#f97316" : "#22c55e"}
+                              weight={2}
+                              dashArray="6 4"
+                            />
+                            <MapFitBounds positions={[
+                              [RESTAURANT_LOCATION.lat, RESTAURANT_LOCATION.lng],
+                              [userLocation.lat, userLocation.lng]
+                            ]} />
+                          </MapContainer>
+                        </div>
+                      )}
 
                       {/* Payment Method */}
                       <div className="grid grid-cols-2 gap-3">

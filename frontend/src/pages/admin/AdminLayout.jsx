@@ -100,7 +100,11 @@ const AdminLayout = () => {
   useEffect(() => { setDrawerOpen(false); }, [location.pathname]);
 
   const isActive     = (path) => location.pathname === path;
-  const handleLogout = () => { localStorage.removeItem("admin_token"); navigate("/admin"); };
+  const handleLogout = () => {
+    localStorage.removeItem("admin_token");
+    const isNative = !!(window.Capacitor?.isNativePlatform?.());
+    navigate(isNative ? "/staff-entry" : "/admin");
+  };
   const currentPage  = ALL_ITEMS.find((m) => m.path === location.pathname)?.name ?? "Admin";
 
   return (
@@ -110,8 +114,8 @@ const AdminLayout = () => {
           DESKTOP HEADER (lg+)
       ════════════════════════════════════ */}
       <div className="hidden lg:block bg-[#1a4855] border-b-2 border-[#EAB308] sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <img src={logoImg} alt="Persian Darbar" className="h-40 w-auto object-contain" style={{ mixBlendMode: 'screen' }} />
+        <div className="max-w-7xl mx-auto px-6 py-3 flex justify-between items-center">
+          <img src={logoImg} alt="Persian Darbar" className="h-14 w-auto object-contain" style={{ mixBlendMode: 'screen' }} />
           <button
             onClick={handleLogout}
             className="flex items-center gap-2 bg-[#0f2933] border border-[#EAB308]/30 px-5 py-2.5 rounded-lg text-gray-300 hover:bg-red-900/30 hover:text-red-400 hover:border-red-500/30 transition-all text-sm font-bold"
@@ -181,7 +185,7 @@ const AdminLayout = () => {
 
           {/* Center: Logo + page name */}
           <div className="flex items-center gap-2">
-            <img src={logoImg} alt="Persian Darbar" className="h-20 w-auto object-contain" style={{ mixBlendMode: 'screen' }} />
+            <img src={logoImg} alt="Persian Darbar" className="h-10 w-auto object-contain" style={{ mixBlendMode: 'screen' }} />
             <span
               className="text-[#EAB308] font-bold text-sm uppercase tracking-widest"
               style={{ fontFamily: "'Playfair Display', serif" }}
@@ -204,7 +208,7 @@ const AdminLayout = () => {
       {/* ════════════════════════════════════
           MOBILE CONTENT AREA
       ════════════════════════════════════ */}
-      <div className="lg:hidden pt-[60px] pb-[72px]">
+      <div className="lg:hidden pt-[64px] pb-[72px]">
         <div className="px-3 py-3">
           <Outlet />
         </div>

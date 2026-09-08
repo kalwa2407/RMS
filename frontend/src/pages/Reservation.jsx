@@ -3,11 +3,13 @@ import { Link } from "react-router-dom";
 import { Calendar, Clock, Users, MapPin, Check, Info, ChevronRight, ChevronLeft, Loader2, Sparkles, User, Phone, MessageSquare } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "../hooks/use-toast";
-
 import API_BASE from "../lib/config";
+import { useCustomerAuth } from "../context/CustomerAuthContext";
 
 const Reservation = () => {
   const { toast } = useToast();
+  const { currentUser, customerProfile, idToken } = useCustomerAuth();
+
   const [step, setStep] = useState(1);
   const [tables, setTables] = useState([]);
   const [availableTables, setAvailableTables] = useState([]);
@@ -23,6 +25,17 @@ const Reservation = () => {
     guests: "2",
     specialRequests: "",
   });
+
+  // Pre-fill customer details if logged in
+  useEffect(() => {
+    if (currentUser || customerProfile) {
+      setFormData(prev => ({
+        ...prev,
+        name: prev.name || customerProfile?.name || currentUser?.displayName || "",
+        phone: prev.phone || customerProfile?.phone || localStorage.getItem('customer_phone') || ""
+      }));
+    }
+  }, [currentUser, customerProfile]);
 
   const timeSlots = [
     "11:00 AM","11:30 AM","12:00 PM","12:30 PM","1:00 PM","1:30 PM","2:00 PM",
@@ -70,6 +83,8 @@ const Reservation = () => {
   const handleSubmit = async () => {
     setLoading(true);
     const reservationData = {
+      customer_uid: currentUser?.uid || null,
+      email: currentUser?.email || null,
       customer_name: formData.name,
       phone: formData.phone,
       date: formData.date,
@@ -80,9 +95,14 @@ const Reservation = () => {
     };
 
     try {
+      const headers = { "Content-Type": "application/json" };
+      if (idToken) {
+        headers["Authorization"] = `Bearer ${idToken}`;
+      }
+
       const res = await fetch(`${API_BASE}/api/reservations`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(reservationData),
       });
 
@@ -466,13 +486,19 @@ const Reservation = () => {
                   </p>
                 </div>
 
-                <div className="pt-8 flex flex-col items-center space-y-6">
-                   <Link to="/" className="w-full">
-                      <button className="w-full bg-[#1a4855] border border-[#EAB308]/20 text-white py-5 rounded-xl font-black uppercase tracking-[0.3em] text-[10px] hover:bg-white hover:text-black transition-all">
-                        Return To Court
+                <div className="pt-8 flex flex-col items-center space-y-4">
+                   <Link to="/customer/reservations" className="w-full">
+                      <button className="w-full bg-[#EAB308] hover:bg-[#CA8A04] text-black py-4 rounded-xl font-bold uppercase tracking-wider text-xs transition-all shadow-lg flex items-center justify-center gap-2">
+                        <span>Track Live Status in Customer Hub</span>
+                        <ChevronRight size={16} />
                       </button>
                    </Link>
-                   <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Your confirmation code: #PD-{Math.random().toString(36).substring(7).toUpperCase()}</p>
+                   <Link to="/" className="w-full">
+                      <button className="w-full bg-[#1a4855] border border-[#EAB308]/20 text-white py-3.5 rounded-xl font-semibold uppercase tracking-[0.2em] text-[10px] hover:bg-white hover:text-black transition-all">
+                        Return To Home
+                      </button>
+                   </Link>
+                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Your confirmation code: #PD-{Math.random().toString(36).substring(7).toUpperCase()}</p>
                 </div>
               </motion.div>
             )}

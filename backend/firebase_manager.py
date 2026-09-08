@@ -84,6 +84,11 @@ class FirebaseManager(BaseDataManager):
             menu = [item for item in menu if item.get("category") == category]
         return menu
 
+    async def get_all_menu_items(self) -> List[Dict[str, Any]]:
+        """Get ALL menu items including unavailable (for admin panel)"""
+        docs = self.db.collection('menu_items').stream()
+        return [doc.to_dict() for doc in docs]
+
     async def get_menu_item(self, item_id: str) -> Optional[Dict[str, Any]]:
         doc = self.db.collection('menu_items').document(item_id).get()
         return doc.to_dict() if doc.exists else None

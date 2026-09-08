@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
+import { getAnalytics, isSupported } from "firebase/analytics";
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBNWnChrD5s0Ky5rnKdtm9HQP2_179hmUQ",
@@ -13,6 +14,18 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
 
-export { app, analytics };
+// Initialize Auth
+const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+// Safe analytics init
+let analytics = null;
+if (typeof window !== 'undefined') {
+  isSupported().then(yes => {
+    if (yes) analytics = getAnalytics(app);
+  }).catch(() => {});
+}
+
+export { app, auth, googleProvider, analytics };

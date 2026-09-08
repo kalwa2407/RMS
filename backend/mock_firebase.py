@@ -19,7 +19,7 @@ class MockFirebaseManager(BaseDataManager):
         collections = [
             "menu_items", "orders", "tables", "reservations", 
             "reviews", "admin_users", "settings", "coupons", 
-            "delivery_partners", "inventory", "table_sessions"
+            "delivery_partners", "inventory", "table_sessions", "customers"
         ]
         for col in collections:
             file_path = self.db_path / f"{col}.json"
@@ -132,6 +132,10 @@ class MockFirebaseManager(BaseDataManager):
         if category and category != "All":
             menu = [item for item in menu if item.get("category") == category]
         return menu
+
+    async def get_all_menu_items(self) -> List[Dict[str, Any]]:
+        """Get ALL menu items including unavailable (for admin panel)"""
+        return self._read_sync("menu_items")
 
     async def get_menu_item(self, item_id: str) -> Optional[Dict[str, Any]]:
         menu = self._read_sync("menu_items")

@@ -83,3 +83,79 @@ def verify_kitchen_token(credentials: HTTPAuthorizationCredentials = Depends(sec
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail="Kitchen staff access required")
     return payload["sub"]
+
+
+security_optional = HTTPBearer(auto_error=False)
+
+
+def verify_customer_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
+    """Verify Firebase ID token or internal JWT for customer. Returns user dict."""
+    if not credentials or not credentials.credentials:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Customer authentication required")
+    token = credentials.credentials
+    
+    # 1. Try Firebase Admin ID Token verification
+    try:
+        import firebase_admin
+        from firebase_admin import auth as fb_auth
+        if firebase_admin._apps:
+            decoded = fb_auth.verify_id_token(token)
+            return {
+                "uid": decoded.get("uid"),
+                "email": decoded.get("email"),
+                "name": decoded.get("name", "Customer"),
+                "picture": decoded.get("picture")
+            }
+    except Exception:
+        pass
+    
+    # 2. Try internal JWT decode
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("sub"):
+            return {
+                "uid": payload.get("sub"),
+                "email": payload.get("email"),
+                "name": payload.get("name", "Customer"),
+                "picture": payload.get("picture")
+            }
+    except Exception:
+        pass
+    
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid customer token")
+
+
+def get_optional_customer(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_optional)) -> Optional[dict]:
+    """Optional customer token verifier for guest/authenticated hybrid routes."""
+    if not credentials or not credentials.credentials:
+        return None
+    token = credentials.credentials
+    
+    try:
+        import firebase_admin
+        from firebase_admin import auth as fb_auth
+        if firebase_admin._apps:
+            decoded = fb_auth.verify_id_token(token)
+            return {
+                "uid": decoded.get("uid"),
+                "email": decoded.get("email"),
+                "name": decoded.get("name", "Customer"),
+                "picture": decoded.get("picture")
+            }
+    except Exception:
+        pass
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("sub"):
+            return {
+                "uid": payload.get("sub"),
+                "email": payload.get("email"),
+                "name": payload.get("name", "Customer"),
+                "picture": payload.get("picture")
+            }
+    except Exception:
+        pass
+
+    return None
+
