@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { Plus, Minus, Trash2, ShoppingCart, MapPin, Loader2, CreditCard, Wallet } from "lucide-react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import { Plus, Minus, Trash2, ShoppingCart, MapPin, Loader2, CreditCard, Wallet, Lock, Crown, Sparkles } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
 import API_BASE from "../lib/config";
 import { useCustomerAuth } from "../context/CustomerAuthContext";
@@ -40,6 +40,7 @@ const MapFitBounds = ({ positions }) => {
 const Order = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const { currentUser, customerProfile, idToken } = useCustomerAuth();
 
   const [menu, setMenu] = useState([]);
@@ -74,6 +75,45 @@ const Order = () => {
       }));
     }
   }, [currentUser, customerProfile]);
+
+  // ─── Auth Guard ──────────────────────────────────────────────────────
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#184956] to-[#0b131b] flex items-center justify-center px-4 py-32 relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-[#EAB308]/5 blur-[130px] rounded-full pointer-events-none" />
+        <div className="max-w-md w-full text-center relative z-10">
+          <div className="w-20 h-20 rounded-2xl bg-[#EAB308]/10 border border-[#EAB308]/30 flex items-center justify-center mx-auto mb-6">
+            <Lock className="w-9 h-9 text-[#EAB308]" />
+          </div>
+          <div className="inline-flex items-center gap-2 bg-[#EAB308]/10 border border-[#EAB308]/20 rounded-full px-4 py-1.5 mb-6">
+            <Crown className="w-3.5 h-3.5 text-[#EAB308]" />
+            <span className="text-[#EAB308] text-[10px] font-black uppercase tracking-[0.4em]">Members Only</span>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-black text-white mb-4 leading-tight" style={{ fontFamily: 'Playfair Display, serif' }}>
+            Order <span className="text-[#EAB308]">Online</span>
+          </h1>
+          <p className="text-gray-400 text-sm font-light leading-relaxed mb-10 max-w-sm mx-auto">
+            Sign in to place your order — track it live from kitchen to your doorstep. It's free and takes 5 seconds.
+          </p>
+          <div className="space-y-3">
+            <Link to="/customer/login" state={{ from: location }} className="block">
+              <button className="w-full group relative overflow-hidden bg-[#EAB308] hover:bg-[#CA8A04] text-black font-black py-4 px-8 rounded-2xl text-sm uppercase tracking-[0.25em] transition-all shadow-2xl shadow-[#EAB308]/20 hover:shadow-[#EAB308]/40 hover:scale-[1.02] flex items-center justify-center gap-3">
+                <span className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                <Sparkles className="w-4 h-4" />
+                Sign In to Order
+              </button>
+            </Link>
+            <Link to="/" className="block">
+              <button className="w-full bg-transparent border border-white/10 hover:border-white/20 text-gray-400 hover:text-white font-semibold py-3.5 px-8 rounded-2xl text-xs uppercase tracking-widest transition-all">
+                Back to Home
+              </button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  // ─────────────────────────────────────────────────────────────────────
 
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
     const R = 6371;

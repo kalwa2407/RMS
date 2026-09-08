@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
-import { Calendar, Clock, Users, MapPin, Check, Info, ChevronRight, ChevronLeft, Loader2, Sparkles, User, Phone, MessageSquare } from "lucide-react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Calendar, Clock, Users, MapPin, Check, Info, ChevronRight, ChevronLeft, Loader2, Sparkles, User, Phone, MessageSquare, Lock, Crown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "../hooks/use-toast";
 import API_BASE from "../lib/config";
@@ -10,6 +10,7 @@ const Reservation = () => {
   const { toast } = useToast();
   const { currentUser, customerProfile, idToken } = useCustomerAuth();
   const topRef = useRef(null);
+  const location = useLocation();
 
   const [step, setStep] = useState(1);
   const [tables, setTables] = useState([]);
@@ -140,6 +141,63 @@ const Reservation = () => {
     acc[loc].push(table);
     return acc;
   }, {});
+
+  // ─── Auth Guard ───────────────────────────────────────────────────
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#184956] to-[#0b131b] flex items-center justify-center px-4 py-32">
+        <div className="max-w-md w-full text-center">
+          {/* Glow */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-[#EAB308]/5 blur-[120px] rounded-full" />
+          </div>
+
+          <div className="relative z-10">
+            {/* Icon */}
+            <div className="w-20 h-20 rounded-2xl bg-[#EAB308]/10 border border-[#EAB308]/30 flex items-center justify-center mx-auto mb-6">
+              <Lock className="w-9 h-9 text-[#EAB308]" />
+            </div>
+
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 bg-[#EAB308]/10 border border-[#EAB308]/20 rounded-full px-4 py-1.5 mb-6">
+              <Crown className="w-3.5 h-3.5 text-[#EAB308]" />
+              <span className="text-[#EAB308] text-[10px] font-black uppercase tracking-[0.4em]">Members Only</span>
+            </div>
+
+            <h1
+              className="text-4xl md:text-5xl font-black text-white mb-4 leading-tight"
+              style={{ fontFamily: 'Playfair Display, serif' }}
+            >
+              Reserve Your <span className="text-[#EAB308]">Royal Table</span>
+            </h1>
+            <p className="text-gray-400 text-sm font-light leading-relaxed mb-10 max-w-sm mx-auto">
+              Sign in to access our concierge reservation system — it's free, instant, and unlocks your complete dining experience.
+            </p>
+
+            <div className="space-y-3">
+              <Link
+                to="/customer/login"
+                state={{ from: location }}
+                className="block"
+              >
+                <button className="w-full group relative overflow-hidden bg-[#EAB308] hover:bg-[#CA8A04] text-black font-black py-4 px-8 rounded-2xl text-sm uppercase tracking-[0.25em] transition-all shadow-2xl shadow-[#EAB308]/20 hover:shadow-[#EAB308]/40 hover:scale-[1.02] flex items-center justify-center gap-3">
+                  <span className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                  <Sparkles className="w-4 h-4" />
+                  Sign In to Reserve
+                </button>
+              </Link>
+              <Link to="/" className="block">
+                <button className="w-full bg-transparent border border-white/10 hover:border-white/20 text-gray-400 hover:text-white font-semibold py-3.5 px-8 rounded-2xl text-xs uppercase tracking-widest transition-all">
+                  Back to Home
+                </button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  // ─────────────────────────────────────────────────────────────────
 
   return (
     <div ref={topRef} className="min-h-screen bg-gradient-to-b from-[#184956] to-[#0f2933] pt-32 md:pt-36 pb-20 md:pb-32 relative selection:bg-primary/30">
