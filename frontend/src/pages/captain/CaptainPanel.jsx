@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   UtensilsCrossed, RefreshCw, LogOut, ChefHat, Plus, X, Minus,
-  Check, Clock, Receipt, ShoppingBag, Users, Bell, AlertCircle, CheckCircle
+  Check, Clock, Receipt, ShoppingBag, Users, Bell, AlertCircle, CheckCircle, Search
 } from "lucide-react";
 import axios from "axios";
 import API_BASE from "../../lib/config";
@@ -56,6 +56,7 @@ const CaptainPanel = () => {
   const [menu, setMenu] = useState([]);
   const [menuCategory, setMenuCategory] = useState("All");
   const [cart, setCart] = useState([]);
+  const [menuSearch, setMenuSearch] = useState("");
   const [guestName, setGuestName] = useState("Guest");
   const [placing, setPlacing] = useState(false);
   const [closingBill, setClosingBill] = useState(false);
@@ -216,7 +217,11 @@ const CaptainPanel = () => {
   };
 
   const categories = ["All", ...new Set(menu.map(i => i.category))];
-  const filteredMenu = menuCategory === "All" ? menu : menu.filter(i => i.category === menuCategory);
+  const filteredMenu = menu.filter(i => {
+    const matchesCategory = menuCategory === "All" || i.category === menuCategory;
+    const matchesSearch = !menuSearch.trim() || i.name.toLowerCase().includes(menuSearch.trim().toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
   const occupiedTables = tables.filter(t => t.status !== "free");
 
   return (
@@ -519,6 +524,24 @@ const CaptainPanel = () => {
                     placeholder="Guest name (optional)"
                     className="w-full bg-white/5 border border-[#EAB308]/15 text-white rounded-xl px-4 py-2.5 text-sm mb-3 focus:outline-none focus:border-[#EAB308]/40 placeholder-gray-600" />
                 )}
+
+                {/* Search bar */}
+                <div className="relative mb-3">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={menuSearch}
+                    onChange={e => setMenuSearch(e.target.value)}
+                    placeholder="Search menu items..."
+                    className="w-full bg-white/5 border border-[#EAB308]/15 text-white rounded-xl pl-9 pr-9 py-2.5 text-sm focus:outline-none focus:border-[#EAB308]/40 placeholder-gray-600"
+                  />
+                  {menuSearch && (
+                    <button onClick={() => setMenuSearch("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
 
                 {/* Category pills */}
                 <div className="flex gap-2 overflow-x-auto pb-1 mb-3 -mx-1 px-1 no-scrollbar">

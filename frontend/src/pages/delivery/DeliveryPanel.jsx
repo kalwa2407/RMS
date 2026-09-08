@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import {
   Bike, LogOut, RefreshCw, MapPin, Package,
   CheckCircle, Truck, Phone, CreditCard, Tag,
-  Clock, Star, Navigation, IndianRupee
+  Clock, Navigation, IndianRupee, TrendingUp, Star,
+  ChevronRight, RotateCw
 } from "lucide-react";
 import axios from "axios";
 import API_BASE from "../../lib/config";
@@ -31,26 +32,28 @@ const timeSince = (ts) => {
 };
 
 const STATUS_FLOW = {
-  ready: { next: "out_for_delivery", label: "Picked Up — Start Delivery 🛵", color: "from-green-600 to-emerald-600" },
-  out_for_delivery: { next: "delivered", label: "Delivered Successfully ✓", color: "from-emerald-600 to-teal-600" },
+  ready: { next: "out_for_delivery", label: "Picked Up — Start Delivery", color: "#16a34a" },
+  out_for_delivery: { next: "delivered", label: "Mark as Delivered", color: "#7c3aed" },
 };
-
-const statusBadge = (s) => ({
-  accepted: { label: "Accepted", bg: "bg-blue-500/15", text: "text-blue-400", border: "border-blue-500/25" },
-  preparing: { label: "🔥 Preparing", bg: "bg-yellow-500/15", text: "text-yellow-400", border: "border-yellow-500/25" },
-  ready: { label: "✅ Ready for Pickup", bg: "bg-emerald-500/15", text: "text-emerald-400", border: "border-emerald-500/35" },
-  out_for_delivery: { label: "🛵 Out for Delivery", bg: "bg-purple-500/15", text: "text-purple-400", border: "border-purple-500/25" },
-}[s] || { label: s, bg: "bg-gray-700/30", text: "text-gray-400", border: "border-gray-600/25" });
 
 const DeliveryPanel = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("delivery_token");
+  const riderId = localStorage.getItem("delivery_id") || "rider";
 
   const [profile, setProfile] = useState(null);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(null);
-  const [totalEarnings, setTotalEarnings] = useState(0);
+  const [tab, setTab] = useState("active"); // "active" | "completed"
+
+  // Cumulative stats — persist in localStorage per rider session
+  const statsKey = `rider_stats_${riderId}`;
+  const [cumulativeStats, setCumulativeStats] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(statsKey)) || { count: 0, earnings: 0 };
+    } catch { return { count: 0, earnings: 0 }; }
+  });
 
   useEffect(() => {
     if (!token) navigate("/staff-entry", { replace: true });
@@ -77,9 +80,15 @@ const DeliveryPanel = () => {
       });
       const ordersData = Array.isArray(data) ? data : [];
       setOrders(ordersData);
-      // Calculate today's earnings from delivered orders
+
+      // Recalculate cumulative stats from all delivered orders in this session
       const delivered = ordersData.filter(o => o.status === "delivered");
-      setTotalEarnings(delivered.reduce((sum, o) => sum + (o.total || 0), 0));
+      const newStats = {
+        count: delivered.length,
+        earnings: delivered.reduce((sum, o) => sum + (o.total || 0), 0)
+      };
+      setCumulativeStats(newStats);
+      localStorage.setItem(statsKey, JSON.stringify(newStats));
     } catch (err) {
       if (err.response?.status === 401 || err.response?.status === 403) {
         localStorage.removeItem("delivery_token");
@@ -88,12 +97,12 @@ const DeliveryPanel = () => {
     } finally {
       setLoading(false);
     }
-  }, [token, navigate]);
+  }, [token, navigate, statsKey]);
 
   useEffect(() => {
     fetchProfile();
     fetchOrders();
-    const interval = setInterval(fetchOrders, 15000);
+    const interval = setInterval(fetchOrders, 12000);
     return () => clearInterval(interval);
   }, [fetchProfile, fetchOrders]);
 
@@ -106,6 +115,9 @@ const DeliveryPanel = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       await fetchOrders();
+      if (newStatus === "delivered") {
+        setTab("completed");
+      }
     } catch (err) {
       alert(err.response?.data?.detail || "Failed to update status");
     } finally {
@@ -114,8 +126,7 @@ const DeliveryPanel = () => {
   };
 
   const openMaps = (address) => {
-    const encoded = encodeURIComponent(address);
-    window.open(`https://maps.google.com/?q=${encoded}`, "_blank");
+    window.open(`https://maps.google.com/?q=${encodeURIComponent(address)}`, "_blank");
   };
 
   const logout = () => {
@@ -124,212 +135,230 @@ const DeliveryPanel = () => {
   };
 
   const activeOrders = orders.filter(o => o.status !== "delivered" && o.status !== "cancelled");
-  const completedToday = orders.filter(o => o.status === "delivered");
+  const completedOrders = orders.filter(o => o.status === "delivered");
+
+  const displayOrders = tab === "active" ? activeOrders : completedOrders;
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(135deg, #060d1a 0%, #0d1b2a 100%)" }}>
+    <div className="h-screen flex flex-col overflow-hidden" style={{ background: "#0a0f1a" }}>
 
       {/* ── HEADER ── */}
-      <div className="sticky top-0 z-40 shrink-0"
-        style={{ background: "rgba(6,13,26,0.97)", borderBottom: "1.5px solid rgba(59,130,246,0.2)", backdropFilter: "blur(12px)" }}>
-        <div className="flex items-center justify-between px-4 py-3">
+      <div className="shrink-0 z-40" style={{ background: "rgba(10,15,26,0.98)", borderBottom: "1.5px solid rgba(255,255,255,0.07)", backdropFilter: "blur(16px)" }}>
+
+        {/* Top bar */}
+        <div className="flex items-center justify-between px-4 pt-4 pb-3">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20"
-              style={{ background: "linear-gradient(135deg,#3b82f6,#1d4ed8)" }}>
-              <Bike className="h-6 w-6 text-white" />
+            <div className="relative">
+              <div className="w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg" style={{ background: "linear-gradient(135deg,#16a34a,#059669)" }}>
+                <Bike className="h-5 w-5 text-white" />
+              </div>
+              <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-400 rounded-full border-2" style={{ borderColor: "#0a0f1a" }} />
             </div>
             <div>
-              <p className="text-white font-bold text-sm leading-none">{profile?.name || "Delivery Partner"}</p>
-              <p className="text-gray-500 text-xs mt-0.5">
-                {profile?.vehicle_type && `${profile.vehicle_type}`}
-                {profile?.vehicle_number && ` · ${profile.vehicle_number}`}
+              <p className="text-white font-bold text-sm leading-tight">{profile?.name || "Delivery Partner"}</p>
+              <p className="text-green-400 text-[10px] font-medium mt-0.5 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-green-400 rounded-full inline-block" />
+                Online · {profile?.vehicle_type || "Delivery"}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={fetchOrders}
-              className="p-2 rounded-xl bg-white/5 text-gray-400 active:scale-90 transition-transform border border-white/8">
-              <RefreshCw className="h-4 w-4" />
+            <button onClick={fetchOrders} className="p-2 rounded-xl active:scale-90 transition-transform" style={{ background: "rgba(255,255,255,0.06)" }}>
+              <RotateCw className="h-4 w-4 text-gray-400" />
             </button>
-            <button onClick={logout}
-              className="p-2 rounded-xl bg-red-900/30 text-red-400 active:scale-90 transition-transform border border-red-500/20">
-              <LogOut className="h-4 w-4" />
+            <button onClick={logout} className="p-2 rounded-xl active:scale-90 transition-transform" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)" }}>
+              <LogOut className="h-4 w-4 text-red-400" />
             </button>
           </div>
         </div>
 
-        {/* Stats Bar */}
-        <div className="flex divide-x divide-white/5 px-4 pb-3">
-          <div className="flex-1 pr-4">
-            <p className="text-gray-600 text-[10px] uppercase tracking-wider">Active</p>
-            <p className="text-white font-black text-xl leading-tight">{activeOrders.length}</p>
+        {/* Stats row — like Swiggy */}
+        <div className="flex px-4 pb-4 gap-3">
+          <div className="flex-1 rounded-2xl px-4 py-3 flex items-center gap-3" style={{ background: "rgba(22,163,74,0.1)", border: "1px solid rgba(22,163,74,0.2)" }}>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(22,163,74,0.2)" }}>
+              <CheckCircle className="h-4.5 w-4.5 text-green-400" style={{ width: "18px", height: "18px" }} />
+            </div>
+            <div>
+              <p className="text-green-400 font-black text-2xl leading-none">{cumulativeStats.count}</p>
+              <p className="text-green-600 text-[10px] font-medium mt-0.5">Delivered</p>
+            </div>
           </div>
-          <div className="flex-1 px-4">
-            <p className="text-gray-600 text-[10px] uppercase tracking-wider">Delivered</p>
-            <p className="text-emerald-400 font-black text-xl leading-tight">{completedToday.length}</p>
+          <div className="flex-1 rounded-2xl px-4 py-3 flex items-center gap-3" style={{ background: "rgba(124,58,237,0.1)", border: "1px solid rgba(124,58,237,0.2)" }}>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(124,58,237,0.2)" }}>
+              <IndianRupee className="text-violet-400" style={{ width: "18px", height: "18px" }} />
+            </div>
+            <div>
+              <p className="text-violet-400 font-black text-2xl leading-none">{fmt(cumulativeStats.earnings).replace("₹", "")}</p>
+              <p className="text-violet-600 text-[10px] font-medium mt-0.5">₹ Value</p>
+            </div>
           </div>
-          <div className="flex-1 pl-4">
-            <p className="text-gray-600 text-[10px] uppercase tracking-wider">Value</p>
-            <p className="text-blue-400 font-black text-xl leading-tight">{fmt(orders.reduce((s, o) => s + (o.total || 0), 0))}</p>
+          <div className="flex-1 rounded-2xl px-4 py-3 flex items-center gap-3" style={{ background: "rgba(234,179,8,0.08)", border: "1px solid rgba(234,179,8,0.15)" }}>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(234,179,8,0.15)" }}>
+              <Package className="text-yellow-400" style={{ width: "18px", height: "18px" }} />
+            </div>
+            <div>
+              <p className="text-yellow-400 font-black text-2xl leading-none">{activeOrders.length}</p>
+              <p className="text-yellow-600 text-[10px] font-medium mt-0.5">Active</p>
+            </div>
           </div>
+        </div>
+
+        {/* Tab bar */}
+        <div className="flex mx-4 mb-4 rounded-2xl overflow-hidden" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+          {[
+            { key: "active", label: "Active", count: activeOrders.length },
+            { key: "completed", label: "Completed", count: completedOrders.length },
+          ].map(({ key, label, count }) => (
+            <button key={key} onClick={() => setTab(key)}
+              className="flex-1 py-2.5 text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+              style={{
+                background: tab === key ? (key === "active" ? "rgba(22,163,74,0.2)" : "rgba(124,58,237,0.2)") : "transparent",
+                color: tab === key ? (key === "active" ? "#4ade80" : "#a78bfa") : "#6b7280",
+                borderRadius: "16px",
+              }}>
+              <span>{label}</span>
+              {count > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black"
+                  style={{ background: tab === key ? (key === "active" ? "rgba(22,163,74,0.3)" : "rgba(124,58,237,0.3)") : "rgba(255,255,255,0.08)", color: "inherit" }}>
+                  {count}
+                </span>
+              )}
+            </button>
+          ))}
         </div>
       </div>
 
       {/* ── CONTENT ── */}
-      <div className="flex-1 px-4 py-4">
-
-        {/* Page title */}
-        <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-white font-bold text-xl" style={{ fontFamily: "'Playfair Display', serif" }}>
-            My Orders
-          </h1>
-          <span className="text-gray-600 text-xs">Auto-refresh 15s</span>
-        </div>
-
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {loading ? (
           <div className="flex items-center justify-center h-48 text-gray-600 gap-2 text-sm">
-            <RefreshCw className="h-4 w-4 animate-spin" /> Loading...
+            <RotateCw className="h-4 w-4 animate-spin" /> Loading...
           </div>
-        ) : orders.length === 0 ? (
+        ) : displayOrders.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-60 gap-4">
-            <div className="w-20 h-20 rounded-full flex items-center justify-center"
-              style={{ background: "rgba(59,130,246,0.08)", border: "2px solid rgba(59,130,246,0.15)" }}>
-              <Bike className="h-10 w-10 text-blue-500/40" />
+            <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.04)", border: "2px solid rgba(255,255,255,0.08)" }}>
+              {tab === "active"
+                ? <Bike className="h-10 w-10" style={{ color: "rgba(255,255,255,0.2)" }} />
+                : <CheckCircle className="h-10 w-10" style={{ color: "rgba(255,255,255,0.2)" }} />}
             </div>
-            <p className="text-white font-semibold">No orders assigned yet</p>
-            <p className="text-gray-600 text-sm">Check back in a moment</p>
+            <p className="text-white font-semibold">{tab === "active" ? "No active orders" : "No completed orders"}</p>
+            <p className="text-gray-600 text-sm">{tab === "active" ? "Sit tight — orders will appear here" : "Delivered orders will show here"}</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {orders.map(order => {
-              const badge = statusBadge(order.status);
-              const flow = STATUS_FLOW[order.status];
-              const isCOD = order.payment_method === "cod";
-              const isUpdating = updating === order.order_id;
-              const isCompleted = order.status === "delivered";
+          displayOrders.map(order => {
+            const flow = STATUS_FLOW[order.status];
+            const isCOD = order.payment_method === "cod";
+            const isUpdating = updating === order.order_id;
+            const isCompleted = order.status === "delivered";
+            const isPickup = order.status === "ready";
+            const isOFD = order.status === "out_for_delivery";
 
-              return (
-                <div key={order.order_id}
-                  className={`rounded-2xl overflow-hidden transition-all ${isCompleted ? "opacity-60" : ""}`}
-                  style={{
-                    background: isCompleted ? "rgba(255,255,255,0.02)" : "rgba(15,30,50,0.8)",
-                    border: `1.5px solid ${order.status === "ready" ? "rgba(34,197,94,0.4)" :
-                      order.status === "out_for_delivery" ? "rgba(139,92,246,0.3)" : "rgba(59,130,246,0.12)"}`
-                  }}>
+            return (
+              <div key={order.order_id} className="rounded-3xl overflow-hidden"
+                style={{
+                  background: isCompleted ? "rgba(255,255,255,0.03)" : "rgba(15,25,40,0.9)",
+                  border: `1.5px solid ${isPickup ? "rgba(22,163,74,0.5)" : isOFD ? "rgba(124,58,237,0.4)" : isCompleted ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.08)"}`
+                }}>
 
-                  {/* Order header */}
-                  <div className="flex items-center justify-between px-4 py-3"
-                    style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                    <div className="flex items-center gap-2">
-                      <Package className="h-4 w-4 text-blue-400" />
-                      <span className="text-white font-bold text-sm font-mono">{order.order_id?.slice(-10)}</span>
+                {/* Status banner */}
+                {(isPickup || isOFD) && (
+                  <div className="px-4 py-2.5 flex items-center gap-2"
+                    style={{ background: isPickup ? "rgba(22,163,74,0.12)" : "rgba(124,58,237,0.12)", borderBottom: `1px solid ${isPickup ? "rgba(22,163,74,0.2)" : "rgba(124,58,237,0.15)"}` }}>
+                    <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: isPickup ? "#4ade80" : "#a78bfa" }} />
+                    <p className="text-xs font-bold" style={{ color: isPickup ? "#4ade80" : "#a78bfa" }}>
+                      {isPickup ? "🟢 Ready for pickup at restaurant" : "🛵 On the way to customer"}
+                    </p>
+                  </div>
+                )}
+
+                {/* Order header */}
+                <div className="flex items-center justify-between px-4 pt-4 pb-2">
+                  <div className="flex items-center gap-2">
+                    <p className="text-gray-500 text-xs font-mono">#{order.order_id?.slice(-8)}</p>
+                    <span className="text-gray-700">·</span>
+                    <p className="text-gray-500 text-xs">{timeSince(order.created_at)}</p>
+                  </div>
+                  {isCompleted && (
+                    <div className="flex items-center gap-1 bg-green-500/10 border border-green-500/20 rounded-full px-2.5 py-1">
+                      <CheckCircle className="h-3 w-3 text-green-400" />
+                      <span className="text-green-400 text-[10px] font-bold">Delivered</span>
                     </div>
-                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${badge.bg} ${badge.text} ${badge.border}`}>
-                      {badge.label}
-                    </span>
-                  </div>
+                  )}
+                </div>
 
-                  {/* Date + Time */}
-                  <div className="px-4 pt-2.5 flex items-center gap-1.5 text-gray-600 text-xs">
-                    <Clock className="h-3 w-3" />
-                    <span>{formatTime(order.created_at)}</span>
-                    <span>·</span>
-                    <span>{timeSince(order.created_at)}</span>
-                  </div>
-
-                  {/* Customer + address */}
-                  <div className="px-4 py-3 space-y-2.5"
-                    style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                    <div className="flex items-start gap-2.5">
-                      <div className="w-7 h-7 rounded-xl bg-blue-500/15 flex items-center justify-center shrink-0">
-                        <Phone className="h-3.5 w-3.5 text-blue-400" />
-                      </div>
-                      <div>
-                        <p className="text-white font-semibold text-sm">{order.customer_name}</p>
-                        <p className="text-gray-400 text-xs">{order.phone}</p>
-                      </div>
+                {/* Customer info */}
+                <div className="px-4 pb-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 rounded-full bg-[#EAB308]/10 border border-[#EAB308]/20 flex items-center justify-center">
+                      <span className="text-[#EAB308] text-xs font-bold">{order.customer_name?.[0]?.toUpperCase() || "?"}</span>
                     </div>
-                    <button onClick={() => order.address && openMaps(order.address)}
-                      className="flex items-start gap-2.5 w-full text-left group">
-                      <div className="w-7 h-7 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0 group-hover:bg-emerald-500/20 transition-colors">
-                        <MapPin className="h-3.5 w-3.5 text-emerald-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-gray-300 text-sm leading-snug">{order.address || "—"}</p>
-                        {order.address && (
-                          <p className="text-emerald-500 text-xs mt-0.5 flex items-center gap-1">
-                            <Navigation className="h-2.5 w-2.5" /> Open in Maps
-                          </p>
-                        )}
-                      </div>
-                    </button>
+                    <div>
+                      <p className="text-white font-bold text-sm leading-tight">{order.customer_name}</p>
+                      {order.phone && <p className="text-gray-500 text-xs">{order.phone}</p>}
+                    </div>
                   </div>
 
-                  {/* Items */}
-                  <div className="px-4 py-2.5" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                    <p className="text-gray-600 text-[10px] uppercase tracking-wider mb-2">Items</p>
+                  {/* Address tap-to-maps */}
+                  <button onClick={() => order.address && openMaps(order.address)}
+                    className="w-full flex items-start gap-3 rounded-2xl p-3 text-left active:scale-[0.98] transition-all"
+                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(22,163,74,0.15)" }}>
+                      <MapPin className="h-4 w-4 text-green-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-gray-200 text-sm leading-snug">{order.address || "—"}</p>
+                      {order.address && <p className="text-green-500 text-xs mt-0.5 flex items-center gap-1"><Navigation className="h-2.5 w-2.5" /> Open Maps</p>}
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-gray-600 shrink-0 self-center" />
+                  </button>
+                </div>
+
+                {/* Items */}
+                <div className="px-4 pb-3">
+                  <p className="text-gray-600 text-[10px] uppercase tracking-wider mb-1.5">Items</p>
+                  <div className="space-y-1">
                     {(order.items || []).map((item, i) => (
-                      <div key={i} className="flex justify-between text-sm py-0.5">
+                      <div key={i} className="flex justify-between text-sm">
                         <span className="text-gray-300">{item.quantity}× {item.name}</span>
                         <span className="text-gray-500">{fmt(item.price * item.quantity)}</span>
                       </div>
                     ))}
                   </div>
-
-                  {/* Payment */}
-                  <div className="px-4 py-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4 text-gray-600" />
-                      <span className="text-gray-400 text-sm font-bold uppercase tracking-wider">
-                        {order.payment_method || "—"}
-                      </span>
-                      {isCOD && (
-                        <span className="bg-orange-500/15 text-orange-400 border border-orange-500/25 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                          COLLECT CASH
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-white font-black text-lg">{fmt(order.total)}</span>
-                  </div>
-
-                  {/* COD highlight */}
-                  {isCOD && !isCompleted && (
-                    <div className="mx-4 mb-3 rounded-xl px-3 py-2.5 flex items-center gap-2"
-                      style={{ background: "rgba(249,115,22,0.1)", border: "1px solid rgba(249,115,22,0.25)" }}>
-                      <Tag className="h-4 w-4 text-orange-400 shrink-0" />
-                      <span className="text-orange-300 text-sm font-bold">
-                        Collect {fmt(order.total)} in cash from customer
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Action button */}
-                  {flow && !isCompleted && (
-                    <div className="px-4 pb-4">
-                      <button onClick={() => updateStatus(order.order_id, flow.next)} disabled={isUpdating}
-                        className={`w-full flex items-center justify-center gap-2 py-4 rounded-xl font-black text-sm text-white transition-all active:scale-[0.98] disabled:opacity-50 bg-gradient-to-r ${flow.color} shadow-lg`}>
-                        {flow.next === "delivered"
-                          ? <CheckCircle className="h-4 w-4" />
-                          : <Truck className="h-4 w-4" />}
-                        {isUpdating ? "Updating..." : flow.label}
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Delivered badge */}
-                  {isCompleted && (
-                    <div className="px-4 pb-4">
-                      <div className="flex items-center justify-center gap-2 py-3 rounded-xl"
-                        style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)" }}>
-                        <CheckCircle className="h-4 w-4 text-emerald-500" />
-                        <span className="text-emerald-400 font-bold text-sm">Delivered ✓</span>
-                      </div>
-                    </div>
-                  )}
                 </div>
-              );
-            })}
-          </div>
+
+                {/* Payment row */}
+                <div className="mx-4 mb-4 rounded-2xl px-4 py-3 flex items-center justify-between"
+                  style={{ background: isCOD ? "rgba(249,115,22,0.08)" : "rgba(255,255,255,0.04)", border: isCOD ? "1px solid rgba(249,115,22,0.25)" : "1px solid rgba(255,255,255,0.06)" }}>
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4 text-gray-500" />
+                    <span className="text-gray-400 text-xs font-bold uppercase tracking-wider">{order.payment_method || "—"}</span>
+                    {isCOD && (
+                      <span className="bg-orange-500/15 text-orange-400 border border-orange-500/25 text-[9px] font-bold px-2 py-0.5 rounded-full">COLLECT CASH</span>
+                    )}
+                  </div>
+                  <span className="text-white font-black text-lg">{fmt(order.total)}</span>
+                </div>
+
+                {/* CTA Button — Zomato style full width */}
+                {flow && !isCompleted && (
+                  <div className="px-4 pb-4">
+                    <button
+                      onClick={() => updateStatus(order.order_id, flow.next)}
+                      disabled={isUpdating}
+                      className="w-full py-4 rounded-2xl font-black text-white text-sm tracking-wide flex items-center justify-center gap-2.5 active:scale-[0.98] transition-all disabled:opacity-50 shadow-xl"
+                      style={{ background: `linear-gradient(135deg, ${flow.color}, ${isPickup ? "#059669" : "#5b21b6"})`, boxShadow: `0 8px 24px ${flow.color}40` }}>
+                      {isUpdating
+                        ? <><RotateCw className="h-4 w-4 animate-spin" /> Updating...</>
+                        : <>
+                          {flow.next === "delivered" ? <CheckCircle className="h-5 w-5" /> : <Truck className="h-5 w-5" />}
+                          {flow.label}
+                        </>}
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })
         )}
       </div>
     </div>

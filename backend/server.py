@@ -1415,6 +1415,47 @@ async def admin_delete_coupon(
     await manager._write("coupons", new_coupons)
     return {"message": "Coupon deleted successfully"}
 
+# Admin Rider Performance Stats
+@admin_router.get("/delivery-stats")
+async def admin_get_delivery_stats(username: str = Depends(verify_token), manager: BaseDataManager = Depends(get_data_manager)):
+    """Get per-rider delivery performance stats: count of delivered orders and total value delivered."""
+    orders = await manager._read("orders")
+    partners = await manager._read("delivery_partners")
+
+    # Build a lookup of partner id -> name
+    partner_map = {}
+    for p in partners:
+        pid = p.get("id") or p.get("_id")
+        if pid:
+            partner_map[str(pid)] = p.get("name", "Unknown Rider")
+
+    # Group delivered orders by rider
+    stats = {}
+    for o in orders:
+        if o.get("status") != "delivered":
+            continue
+        rider_id = str(o.get("delivery_partner_id") or o.get("assigned_rider_id") or "")
+        rider_name = o.get("delivery_partner_name") or partner_map.get(rider_id) or "Unassigned"
+        if not rider_id:
+            rider_id = "unassigned"
+            rider_name = "Unassigned"
+        if rider_id not in stats:
+            stats[rider_id] = {
+                "rider_id": rider_id,
+                "rider_name": rider_name,
+                "deliveries": 0,
+                "total_value": 0.0,
+                "last_delivered": None
+            }
+        stats[rider_id]["deliveries"] += 1
+        stats[rider_id]["total_value"] += float(o.get("total") or 0)
+        delivered_at = o.get("updated_at") or o.get("created_at")
+        if delivered_at:
+            if not stats[rider_id]["last_delivered"] or delivered_at > stats[rider_id]["last_delivered"]:
+                stats[rider_id]["last_delivered"] = delivered_at
+
+    return sorted(stats.values(), key=lambda x: x["deliveries"], reverse=True)
+
 # Admin Delivery Partners Management
 @admin_router.get("/delivery-partners")
 async def admin_get_delivery_partners(username: str = Depends(verify_token), manager: BaseDataManager = Depends(get_data_manager)):

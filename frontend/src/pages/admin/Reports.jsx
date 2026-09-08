@@ -6,6 +6,9 @@ import {
   Clock,
   Calendar,
   RefreshCw,
+  Bike,
+  Truck,
+  TrendingUp,
 } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import API_BASE from "../../lib/config";
@@ -23,6 +26,8 @@ const Reports = () => {
     end: new Date().toISOString().split("T")[0],
   });
   const [activeTab, setActiveTab] = useState("daily");
+  const [riderStats, setRiderStats] = useState([]);
+  const [loadingRiders, setLoadingRiders] = useState(false);
 
   const token = localStorage.getItem("admin_token");
 
@@ -56,14 +61,28 @@ const Reports = () => {
     }
   }, [token, dateRange]);
 
+  const fetchRiderStats = useCallback(async () => {
+    setLoadingRiders(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/delivery-stats`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) setRiderStats(await res.json());
+    } catch (err) {
+      console.error("Failed to fetch rider stats:", err);
+    } finally {
+      setLoadingRiders(false);
+    }
+  }, [token]);
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      await Promise.all([fetchDailyReport(), fetchPeriodReport()]);
+      await Promise.all([fetchDailyReport(), fetchPeriodReport(), fetchRiderStats()]);
       setLoading(false);
     };
     fetchData();
-  }, [fetchDailyReport, fetchPeriodReport]);
+  }, [fetchDailyReport, fetchPeriodReport, fetchRiderStats]);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-IN", {
@@ -115,6 +134,17 @@ const Reports = () => {
           }`}
         >
           Period Report
+        </button>
+        <button
+          onClick={() => setActiveTab("riders")}
+          className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${
+            activeTab === "riders"
+              ? "bg-primary text-black"
+              : "bg-[#1a4855] text-gray-300 hover:text-white"
+          }`}
+        >
+          <Bike className="h-4 w-4" />
+          Rider Performance
         </button>
       </div>
 
@@ -394,6 +424,116 @@ const Reports = () => {
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Rider Performance Tab */}
+      {activeTab === "riders" && (
+        <div>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <Truck className="h-5 w-5 text-primary" />
+              Rider Delivery Performance
+            </h2>
+            <button
+              onClick={fetchRiderStats}
+              className="bg-primary text-black px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2"
+            >
+              <RefreshCw className="h-4 w-4" /> Refresh
+            </button>
+          </div>
+
+          {loadingRiders ? (
+            <div className="flex items-center justify-center h-32">
+              <RefreshCw className="h-6 w-6 text-primary animate-spin" />
+            </div>
+          ) : riderStats.length === 0 ? (
+            <div className="bg-[#1a4855] rounded-xl p-8 text-center">
+              <Bike className="h-12 w-12 text-gray-600 mx-auto mb-3" />
+              <p className="text-gray-400">No delivery data available yet</p>
+              <p className="text-gray-600 text-sm mt-1">Stats will appear once orders are delivered</p>
+            </div>
+          ) : (
+            <>
+              {/* Summary cards */}
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="bg-[#1a4855] rounded-xl p-4">
+                  <div className="flex items-center gap-2 text-gray-400 mb-2">
+                    <Bike className="h-5 w-5" />
+                    <span className="text-sm">Total Riders</span>
+                  </div>
+                  <p className="text-2xl font-bold text-white">{riderStats.length}</p>
+                </div>
+                <div className="bg-[#1a4855] rounded-xl p-4">
+                  <div className="flex items-center gap-2 text-gray-400 mb-2">
+                    <ShoppingBag className="h-5 w-5" />
+                    <span className="text-sm">Total Deliveries</span>
+                  </div>
+                  <p className="text-2xl font-bold text-green-500">
+                    {riderStats.reduce((sum, r) => sum + r.deliveries, 0)}
+                  </p>
+                </div>
+                <div className="bg-[#1a4855] rounded-xl p-4">
+                  <div className="flex items-center gap-2 text-gray-400 mb-2">
+                    <TrendingUp className="h-5 w-5" />
+                    <span className="text-sm">Total Value</span>
+                  </div>
+                  <p className="text-2xl font-bold text-primary">
+                    {formatCurrency(riderStats.reduce((sum, r) => sum + r.total_value, 0))}
+                  </p>
+                </div>
+              </div>
+
+              {/* Rider table */}
+              <div className="bg-[#1a4855] rounded-xl overflow-hidden">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-white/10">
+                      <th className="text-left px-4 py-3 text-gray-400 text-sm font-semibold">#</th>
+                      <th className="text-left px-4 py-3 text-gray-400 text-sm font-semibold">Rider Name</th>
+                      <th className="text-center px-4 py-3 text-gray-400 text-sm font-semibold">Deliveries</th>
+                      <th className="text-right px-4 py-3 text-gray-400 text-sm font-semibold">Total Value</th>
+                      <th className="text-right px-4 py-3 text-gray-400 text-sm font-semibold">Last Active</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {riderStats.map((rider, idx) => (
+                      <tr key={rider.rider_id} className="border-b border-white/5 hover:bg-white/5 transition">
+                        <td className="px-4 py-3">
+                          <span className="w-6 h-6 bg-primary text-black rounded-full flex items-center justify-center text-sm font-bold">
+                            {idx + 1}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-blue-500/15 flex items-center justify-center">
+                              <Bike className="h-4 w-4 text-blue-400" />
+                            </div>
+                            <span className="text-white font-semibold">{rider.rider_name}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="bg-green-500/15 text-green-400 border border-green-500/25 px-3 py-1 rounded-full text-sm font-bold">
+                            {rider.deliveries}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right text-primary font-bold">
+                          {formatCurrency(rider.total_value)}
+                        </td>
+                        <td className="px-4 py-3 text-right text-gray-400 text-sm">
+                          {rider.last_delivered
+                            ? new Date(rider.last_delivered).toLocaleDateString('en-IN', {
+                                day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                              })
+                            : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
