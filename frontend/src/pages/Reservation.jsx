@@ -9,6 +9,7 @@ import { useCustomerAuth } from "../context/CustomerAuthContext";
 const Reservation = () => {
   const { toast } = useToast();
   const { currentUser, customerProfile, idToken } = useCustomerAuth();
+  const topRef = useRef(null);
 
   const [step, setStep] = useState(1);
   const [tables, setTables] = useState([]);
@@ -77,8 +78,17 @@ const Reservation = () => {
     }
   };
 
-  const nextStep = () => setStep(step + 1);
-  const prevStep = () => setStep(step - 1);
+  const scrollToTop = () => {
+    // iOS Safari safe scroll
+    if (topRef.current) {
+      topRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const nextStep = () => { setStep(step + 1); setTimeout(scrollToTop, 50); };
+  const prevStep = () => { setStep(step - 1); setTimeout(scrollToTop, 50); };
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -132,7 +142,7 @@ const Reservation = () => {
   }, {});
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#184956] to-[#0f2933] pt-28 md:pt-40 pb-16 md:pb-32 relative selection:bg-primary/30 scroll-smooth">
+    <div ref={topRef} className="min-h-screen bg-gradient-to-b from-[#184956] to-[#0f2933] pt-32 md:pt-36 pb-20 md:pb-32 relative selection:bg-primary/30">
       {/* Dynamic Background */}
       <div className="absolute top-0 right-0 w-[60%] h-[60%] bg-primary/5 blur-[150px] rounded-full pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[40%] h-[40%] bg-[#1a4855] blur-[150px] rounded-full pointer-events-none" />
@@ -177,7 +187,7 @@ const Reservation = () => {
           </div>
         </header>
 
-        <div className="bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl md:rounded-[4rem] p-6 md:p-12 lg:p-20 border border-[#EAB308]/20 relative overflow-hidden shadow-2xl">
+        <div className="bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl md:rounded-[4rem] p-6 md:p-12 lg:p-20 relative overflow-hidden shadow-2xl">
           <div className="absolute top-0 left-0 w-full h-1 bg-[#1a4855]" />
           
           <AnimatePresence mode="wait">

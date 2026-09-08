@@ -537,7 +537,7 @@ const TableOrder = () => {
           </div>
 
           {/* Desktop Cart */}
-          <div className="hidden lg:block bg-[#1a4855] rounded-xl p-4 h-fit sticky top-24">
+          <div className="hidden lg:block bg-[#1a4855] rounded-xl p-4 h-fit sticky top-28">
             <h2 className="text-lg font-bold text-primary mb-4 flex items-center">
               <ShoppingCart className="h-5 w-5 mr-2" />Your Order
             </h2>

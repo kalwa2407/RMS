@@ -26,12 +26,12 @@ const Navbar = () => {
   return (
     <nav className="bg-[#184956] border-b-2 border-[#EAB308] fixed w-full top-0 z-50 shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20 md:h-24">
+        <div className="flex justify-between items-center h-24 md:h-28">
           <Link to="/" className="flex items-center py-2">
             <img
               src={logoImg}
               alt="Taste of Hindustan"
-              className="h-14 md:h-16 w-auto object-contain drop-shadow-md transition-transform hover:scale-105"
+              className="h-20 md:h-24 w-auto object-contain drop-shadow-md transition-transform hover:scale-105"
               style={{ mixBlendMode: 'screen' }}
             />
           </Link>

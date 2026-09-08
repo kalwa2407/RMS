@@ -36,16 +36,16 @@ app = FastAPI()
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "http://10.213.185.123:3000",
     "https://rms.tasteofhindustan.com",
     "https://tasteofhindustan.com",
-    # Allow all Vercel preview deployments
     "https://rms-kalwa2407.vercel.app",
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
-    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_origin_regex=r"https?://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
