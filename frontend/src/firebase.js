@@ -4,7 +4,7 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBNWnChrD5s0Ky5rnKdtm9HQP2_179hmUQ",
-  authDomain: "tasteofhindustanrms.firebaseapp.com",
+  authDomain: "persiandarbar.in",
   projectId: "tasteofhindustanrms",
   storageBucket: "tasteofhindustanrms.firebasestorage.app",
   messagingSenderId: "63332283509",

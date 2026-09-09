@@ -75,10 +75,10 @@ const Navbar = () => {
             ) : (
               <Link
                 to="/customer/login"
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#EAB308] hover:bg-[#CA8A04] text-black text-xs font-bold transition-all duration-200 shadow"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#EAB308] hover:bg-[#CA8A04] text-black text-xs font-bold transition-all duration-200 shadow whitespace-nowrap"
               >
                 <User className="w-3.5 h-3.5" />
-                <span>Sign In</span>
+                <span>Become a Member</span>
               </Link>
             )}
           </div>
@@ -104,9 +104,9 @@ const Navbar = () => {
             ) : (
               <Link
                 to="/customer/login"
-                className="px-3 py-1 rounded-full bg-[#EAB308] text-black text-xs font-bold"
+                className="px-3 py-1 rounded-full bg-[#EAB308] text-black text-xs font-bold whitespace-nowrap"
               >
-                Sign In
+                Member
               </Link>
             )}
 
@@ -152,7 +152,7 @@ const Navbar = () => {
                 onClick={() => setIsOpen(false)}
                 className="block px-3 py-2 rounded-md text-base font-semibold text-center text-black bg-[#EAB308]"
               >
-                Sign In / Register
+                👑 Become a PersianDarbar Member
               </Link>
             )}
           </div>

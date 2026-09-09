@@ -86,12 +86,12 @@ function App() {
             <Route path="/staff-entry" element={<StaffAppEntry />} />
 
             {/* ---------------- CUSTOMER PORTAL ---------------- */}
-            <Route path="/customer" element={<><Navbar /><CustomerDashboard /><Footer /></>} />
+            <Route path="/customer" element={<CustomerDashboard />} />
             <Route path="/customer/login" element={<CustomerLogin />} />
-            <Route path="/customer/dashboard" element={<><Navbar /><CustomerDashboard /><Footer /></>} />
-            <Route path="/customer/orders" element={<><Navbar /><CustomerOrders /><Footer /></>} />
-            <Route path="/customer/reservations" element={<><Navbar /><CustomerReservations /><Footer /></>} />
-            <Route path="/customer/profile" element={<><Navbar /><CustomerProfile /><Footer /></>} />
+            <Route path="/customer/dashboard" element={<CustomerDashboard />} />
+            <Route path="/customer/orders" element={<CustomerOrders />} />
+            <Route path="/customer/reservations" element={<CustomerReservations />} />
+            <Route path="/customer/profile" element={<CustomerProfile />} />
 
             {/* ---------------- PUBLIC ROUTES ---------------- */}
             <Route path="/" element={<NativeRootRedirect />} />
