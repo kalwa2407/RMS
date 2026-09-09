@@ -211,66 +211,19 @@ const About = () => {
             <div className="w-24 h-[1px] bg-primary mx-auto mt-6 opacity-30" />
           </ScrollReveal>
 
-          {/* Story paragraphs — alternating layout */}
-          <div className="space-y-12 md:space-y-20 max-w-5xl mx-auto">
-
-            {/* Para 1 — The name */}
+          {/* Single combined story paragraph */}
+          <div className="max-w-5xl mx-auto">
             <ScrollReveal>
-              <div className="relative bg-gradient-to-br from-[#1a4855] to-[#0f2933] rounded-3xl p-8 md:p-12 border border-[#EAB308]/15 overflow-hidden">
-                <div className="absolute top-0 right-0 w-40 h-40 bg-[#EAB308]/5 blur-[60px] rounded-full" />
+              <div className="relative bg-gradient-to-br from-[#1a4855] to-[#0f2933] rounded-3xl p-8 md:p-14 border border-[#EAB308]/15 overflow-hidden">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-[#EAB308]/5 blur-[80px] rounded-full" />
+                <div className="absolute bottom-0 left-0 w-40 h-40 bg-[#EAB308]/5 blur-[60px] rounded-full" />
                 <div className="flex items-start gap-5 relative">
                   <div className="shrink-0 w-12 h-12 rounded-2xl bg-[#EAB308]/10 border border-[#EAB308]/20 flex items-center justify-center mt-1">
                     <Crown className="text-[#EAB308]" size={20} />
                   </div>
-                  <p className="text-gray-300 text-base md:text-lg leading-relaxed font-light">
-                    The name <span className="text-[#EAB308] font-semibold">Persian Darbar</span> symbolizes and sounds synonymous to the Mughal dynasty and to the legacy of Mughal cuisine, coming from Mughal period and giving a feeling of a Royal Era while you dine.
-                  </p>
-                </div>
-              </div>
-            </ScrollReveal>
-
-            {/* Para 2 — Journey */}
-            <ScrollReveal delay={0.1}>
-              <div className="relative bg-gradient-to-br from-[#1a4855] to-[#0f2933] rounded-3xl p-8 md:p-12 border border-[#EAB308]/15 overflow-hidden">
-                <div className="absolute bottom-0 left-0 w-40 h-40 bg-[#EAB308]/5 blur-[60px] rounded-full" />
-                <div className="flex items-start gap-5 relative">
-                  <div className="shrink-0 w-12 h-12 rounded-2xl bg-[#EAB308]/10 border border-[#EAB308]/20 flex items-center justify-center mt-1">
-                    <History className="text-[#EAB308]" size={20} />
-                  </div>
-                  <p className="text-gray-300 text-base md:text-lg leading-relaxed font-light">
-                    The brand Persian Darbar started its journey in the year <span className="text-[#EAB308] font-semibold">1978</span> with the founders envisioning this brand, which reflects quality and taste. The founders carried out the vision &amp; expanded its branches across Mumbai with their rich recipes, love for food, sharp business acumen &amp; strong leadership qualities — resulting in an everlasting journey for Mumbaikars to relish unique Mughlai recipes developed over <span className="text-[#EAB308] font-semibold">4 decades</span> &amp; currently expanding at pan India level.
-                  </p>
-                </div>
-              </div>
-            </ScrollReveal>
-
-            {/* Para 3 — Quality */}
-            <ScrollReveal delay={0.1}>
-              <div className="relative bg-gradient-to-br from-[#1a4855] to-[#0f2933] rounded-3xl p-8 md:p-12 border border-[#EAB308]/15 overflow-hidden">
-                <div className="absolute top-0 left-1/2 w-40 h-40 bg-[#EAB308]/5 blur-[60px] rounded-full" />
-                <div className="flex items-start gap-5 relative">
-                  <div className="shrink-0 w-12 h-12 rounded-2xl bg-[#EAB308]/10 border border-[#EAB308]/20 flex items-center justify-center mt-1">
-                    <ShieldCheck className="text-[#EAB308]" size={20} />
-                  </div>
-                  <p className="text-gray-300 text-base md:text-lg leading-relaxed font-light">
-                    Persian Darbar stands for <span className="text-[#EAB308] font-semibold">quality, trust, consistent taste &amp; royal ambience</span> — a rare combination in the food business. All real spices, saffron, excellent quality of mutton and chicken freshly served every day.
-                  </p>
-                </div>
-              </div>
-            </ScrollReveal>
-
-            {/* Para 4 — Raan King */}
-            <ScrollReveal delay={0.1}>
-              <div className="relative bg-gradient-to-br from-[#EAB308]/10 via-[#1a4855] to-[#0f2933] rounded-3xl p-8 md:p-12 border border-[#EAB308]/30 overflow-hidden">
-                {/* Glowing accent */}
-                <div className="absolute inset-0 bg-gradient-to-r from-[#EAB308]/5 to-transparent pointer-events-none" />
-                <div className="flex items-start gap-5 relative">
-                  <div className="shrink-0 w-12 h-12 rounded-2xl bg-[#EAB308]/20 border border-[#EAB308]/40 flex items-center justify-center mt-1">
-                    <Utensils className="text-[#EAB308]" size={20} />
-                  </div>
-                  <div>
-                    <p className="text-gray-300 text-base md:text-lg leading-relaxed font-light mb-4">
-                      Serving all sorts of Mughlai Cuisines like <span className="text-[#EAB308] font-semibold">"Mutton Raan Biryani"</span> and assorted kebabs which are famous for their exclusive taste.
+                  <div className="space-y-5">
+                    <p className="text-gray-300 text-base md:text-lg leading-relaxed font-light">
+                      The name <span className="text-[#EAB308] font-semibold">Persian Darbar</span> symbolizes and sounds synonymous to the Mughal dynasty and to the legacy of Mughal cuisine, coming from Mughal period and giving a feeling of a Royal Era while you dine. The brand started its journey in the year <span className="text-[#EAB308] font-semibold">1978</span> with the founders envisioning this brand, which reflects quality and taste. The founders carried out the vision &amp; expanded its branches across Mumbai with their rich recipes, love for food, sharp business acumen &amp; strong leadership qualities — resulting in an everlasting journey for Mumbaikars to relish unique Mughlai recipes developed over <span className="text-[#EAB308] font-semibold">4 decades</span> &amp; currently expanding at pan India level. Persian Darbar stands for <span className="text-[#EAB308] font-semibold">quality, trust, consistent taste &amp; royal ambience</span> — a rare combination in the food business, with all real spices, saffron, excellent quality of mutton and chicken freshly served every day. Serving all sorts of Mughlai Cuisines like <span className="text-[#EAB308] font-semibold">"Mutton Raan Biryani"</span> and assorted kebabs famous for their exclusive taste, the word of mouth for Persian Darbar is very strong among food lovers. They also serve <span className="text-[#EAB308] font-semibold">outdoor &amp; corporate catering</span> to many eminent MNCs and brands. The chefs have been serving this brand for <span className="text-[#EAB308] font-semibold">decades</span> — they know this is the most authentic preparation and aesthetic cooking style, rare to find, focusing exclusively on quality. The founders are visionaries — very clear that come what may, they would not serve anything below their standards set from day one. Today, the <span className="text-[#EAB308] font-semibold">next generation</span>, led by young and dynamic leaders, follows the same discipline of maintaining exceptional quality — which brings them laurels all the time.
                     </p>
                     <div className="inline-flex items-center gap-3 bg-[#EAB308]/10 border border-[#EAB308]/30 rounded-full px-6 py-2.5">
                       <Crown className="text-[#EAB308]" size={16} />
@@ -280,44 +233,6 @@ const About = () => {
                 </div>
               </div>
             </ScrollReveal>
-
-            {/* Para 5 — Word of mouth + Chefs */}
-            <ScrollReveal delay={0.1}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="relative bg-gradient-to-br from-[#1a4855] to-[#0f2933] rounded-3xl p-8 border border-[#EAB308]/15 overflow-hidden">
-                  <div className="w-10 h-10 rounded-xl bg-[#EAB308]/10 border border-[#EAB308]/20 flex items-center justify-center mb-5">
-                    <Users className="text-[#EAB308]" size={18} />
-                  </div>
-                  <p className="text-gray-300 text-sm md:text-base leading-relaxed font-light">
-                    The word of mouth for Persian Darbar is very strong among food lovers. They also serve <span className="text-[#EAB308] font-semibold">outdoor &amp; corporate catering</span> to many eminent MNCs and brands as their favourite food brand.
-                  </p>
-                </div>
-                <div className="relative bg-gradient-to-br from-[#1a4855] to-[#0f2933] rounded-3xl p-8 border border-[#EAB308]/15 overflow-hidden">
-                  <div className="w-10 h-10 rounded-xl bg-[#EAB308]/10 border border-[#EAB308]/20 flex items-center justify-center mb-5">
-                    <Award className="text-[#EAB308]" size={18} />
-                  </div>
-                  <p className="text-gray-300 text-sm md:text-base leading-relaxed font-light">
-                    The chefs have been serving this brand for <span className="text-[#EAB308] font-semibold">decades</span> — they know this is the most authentic preparation and aesthetic cooking style, rare to find, focusing exclusively on quality.
-                  </p>
-                </div>
-              </div>
-            </ScrollReveal>
-
-            {/* Para 6 — Founders vision */}
-            <ScrollReveal delay={0.1}>
-              <div className="relative bg-gradient-to-br from-[#1a4855] to-[#0f2933] rounded-3xl p-8 md:p-12 border border-[#EAB308]/15 overflow-hidden">
-                <div className="absolute top-1/2 right-0 w-48 h-48 bg-[#EAB308]/5 blur-[80px] rounded-full -translate-y-1/2" />
-                <div className="flex items-start gap-5 relative">
-                  <div className="shrink-0 w-12 h-12 rounded-2xl bg-[#EAB308]/10 border border-[#EAB308]/20 flex items-center justify-center mt-1">
-                    <Sparkles className="text-[#EAB308]" size={20} />
-                  </div>
-                  <p className="text-gray-300 text-base md:text-lg leading-relaxed font-light">
-                    The founders are visionaries — very clear that come what may, they would not serve anything below their standards set from day one. Today, the <span className="text-[#EAB308] font-semibold">next generation</span>, led by young and dynamic leaders, follows the same discipline of maintaining exceptional quality — which brings them laurels all the time through positive reviews from customers all over again &amp; again.
-                  </p>
-                </div>
-              </div>
-            </ScrollReveal>
-
           </div>
         </section>
 
