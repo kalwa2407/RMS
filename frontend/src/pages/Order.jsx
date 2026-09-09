@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { Plus, Minus, Trash2, ShoppingCart, MapPin, Loader2, CreditCard, Wallet, Lock, Crown, Sparkles } from "lucide-react";
+import { Plus, Minus, Trash2, ShoppingCart, MapPin, Loader2, CreditCard, Wallet, Lock, Crown, Sparkles, X } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
 import API_BASE from "../lib/config";
 import { useCustomerAuth } from "../context/CustomerAuthContext";
@@ -46,6 +46,7 @@ const Order = () => {
   const [menu, setMenu] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [cart, setCart] = useState([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [distance, setDistance] = useState(null);
   const [loadingLocation, setLoadingLocation] = useState(false);
@@ -76,44 +77,7 @@ const Order = () => {
     }
   }, [currentUser, customerProfile]);
 
-  // ─── Auth Guard ──────────────────────────────────────────────────────
-  if (!currentUser) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-[#184956] to-[#0b131b] flex items-center justify-center px-4 py-32 relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-[#EAB308]/5 blur-[130px] rounded-full pointer-events-none" />
-        <div className="max-w-md w-full text-center relative z-10">
-          <div className="w-20 h-20 rounded-2xl bg-[#EAB308]/10 border border-[#EAB308]/30 flex items-center justify-center mx-auto mb-6">
-            <Lock className="w-9 h-9 text-[#EAB308]" />
-          </div>
-          <div className="inline-flex items-center gap-2 bg-[#EAB308]/10 border border-[#EAB308]/20 rounded-full px-4 py-1.5 mb-6">
-            <Crown className="w-3.5 h-3.5 text-[#EAB308]" />
-            <span className="text-[#EAB308] text-[10px] font-black uppercase tracking-[0.4em]">Members Only</span>
-          </div>
-          <h1 className="text-4xl md:text-5xl font-black text-white mb-4 leading-tight" style={{ fontFamily: 'Playfair Display, serif' }}>
-            Order <span className="text-[#EAB308]">Online</span>
-          </h1>
-          <p className="text-gray-400 text-sm font-light leading-relaxed mb-10 max-w-sm mx-auto">
-            Sign in to place your order — track it live from kitchen to your doorstep. It's free and takes 5 seconds.
-          </p>
-          <div className="space-y-3">
-            <Link to="/customer/login" state={{ from: location }} className="block">
-              <button className="w-full group relative overflow-hidden bg-[#EAB308] hover:bg-[#CA8A04] text-black font-black py-4 px-8 rounded-2xl text-sm uppercase tracking-[0.25em] transition-all shadow-2xl shadow-[#EAB308]/20 hover:shadow-[#EAB308]/40 hover:scale-[1.02] flex items-center justify-center gap-3">
-                <span className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                <Sparkles className="w-4 h-4" />
-                Sign In to Order
-              </button>
-            </Link>
-            <Link to="/" className="block">
-              <button className="w-full bg-transparent border border-white/10 hover:border-white/20 text-gray-400 hover:text-white font-semibold py-3.5 px-8 rounded-2xl text-xs uppercase tracking-widest transition-all">
-                Back to Home
-              </button>
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  // ─────────────────────────────────────────────────────────────────────
+  // ─── Auth check — sign-in only needed at checkout ─────────────────
 
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
     const R = 6371;
@@ -288,7 +252,7 @@ const Order = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#184956] to-[#0f2933] pt-28 pb-16">
+    <div className="min-h-screen bg-gradient-to-b from-[#184956] to-[#0f2933] pt-28 pb-32 lg:pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h1 className="text-5xl md:text-6xl font-bold text-[#EAB308] mb-4" style={{ fontFamily: "Playfair Display, serif" }}>
@@ -346,7 +310,7 @@ const Order = () => {
           </div>
 
           {/* Cart */}
-          <div className="lg:sticky lg:top-28">
+          <div className="hidden lg:block lg:sticky lg:top-28">
             <div className="bg-[#1a4855] rounded-xl border-2 border-[#EAB308]/30 overflow-hidden">
               <div className="bg-[#EAB308] p-4 flex justify-between items-center">
                 <div className="flex items-center space-x-3">
@@ -413,18 +377,22 @@ const Order = () => {
                       <input required value={customerInfo.name}
                         onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
                         placeholder="Your Name"
-                        className="w-full bg-[#0f2933] text-white px-4 py-3 rounded-lg border border-[#EAB308]/30 focus:border-[#EAB308] outline-none placeholder-gray-400 text-sm"
+                        className="w-full bg-[#0f2933] text-white px-4 py-3 rounded-lg border border-[#EAB308]/30 focus:border-[#EAB308] outline-none placeholder-gray-400"
+                        style={{ fontSize: '16px' }}
                       />
                       <input required value={customerInfo.phone}
                         onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})}
                         placeholder="Phone Number"
-                        className="w-full bg-[#0f2933] text-white px-4 py-3 rounded-lg border border-[#EAB308]/30 focus:border-[#EAB308] outline-none placeholder-gray-400 text-sm"
+                        type="tel"
+                        className="w-full bg-[#0f2933] text-white px-4 py-3 rounded-lg border border-[#EAB308]/30 focus:border-[#EAB308] outline-none placeholder-gray-400"
+                        style={{ fontSize: '16px' }}
                       />
                       <textarea required value={customerInfo.address}
                         onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})}
                         placeholder="Delivery Address"
-                        className="w-full bg-[#0f2933] text-white px-4 py-3 rounded-lg border border-[#EAB308]/30 focus:border-[#EAB308] outline-none placeholder-gray-400 text-sm resize-none"
+                        className="w-full bg-[#0f2933] text-white px-4 py-3 rounded-lg border border-[#EAB308]/30 focus:border-[#EAB308] outline-none placeholder-gray-400 resize-none"
                         rows={2}
+                        style={{ fontSize: '16px' }}
                       />
 
                       {/* Location Detection */}
@@ -541,6 +509,214 @@ const Order = () => {
           </div>
         </div>
       </div>
+
+      {/* ── Floating Cart FAB — Mobile only (Swiggy/Zomato style) ── */}
+      {cart.length > 0 && (
+        <div
+          className="fixed bottom-0 left-0 right-0 z-50 lg:hidden px-4"
+          style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
+        >
+          <button
+            onClick={() => setIsCartOpen(true)}
+            className="w-full flex items-center justify-between bg-[#EAB308] text-black rounded-2xl px-5 py-4 active:scale-[0.97] transition-transform"
+            style={{ boxShadow: '0 8px 40px rgba(234,179,8,0.45)' }}
+          >
+            <div className="flex items-center gap-3">
+              <span className="bg-black/20 text-black font-black text-sm w-8 h-8 rounded-xl flex items-center justify-center leading-none">
+                {cart.reduce((s, i) => s + i.quantity, 0)}
+              </span>
+              <span className="font-black text-sm uppercase tracking-widest">View Cart</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="font-black text-lg">₹{calculateSubtotal()}</span>
+              <ShoppingCart size={18} />
+            </div>
+          </button>
+        </div>
+      )}
+
+      {/* ── Mobile Cart Drawer ── */}
+      {isCartOpen && (
+        <div className="fixed inset-0 z-[70] lg:hidden flex flex-col justify-end">
+          <style>{`
+            @keyframes slideUpCart {
+              from { transform: translateY(100%); opacity: 0.7; }
+              to   { transform: translateY(0);    opacity: 1; }
+            }
+          `}</style>
+
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/60"
+            style={{ backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
+            onClick={() => setIsCartOpen(false)}
+          />
+
+          {/* Drawer panel */}
+          <div
+            className="relative bg-[#0b1a24] rounded-t-3xl flex flex-col overflow-hidden border-t border-[#EAB308]/20"
+            style={{
+              maxHeight: '92dvh',
+              animation: 'slideUpCart 0.35s cubic-bezier(0.32, 0.72, 0, 1)',
+              paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+            }}
+          >
+            {/* Handle bar */}
+            <div className="flex justify-center pt-3 pb-2 shrink-0">
+              <div className="w-12 h-1.5 rounded-full bg-white/20" />
+            </div>
+
+            {/* Drawer header */}
+            <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <ShoppingCart className="h-5 w-5 text-[#EAB308]" />
+                <h2 className="text-white font-black text-lg" style={{ fontFamily: 'Playfair Display, serif' }}>Your Cart</h2>
+                <span className="bg-[#EAB308] text-black text-[11px] font-black px-2 py-0.5 rounded-full">
+                  {cart.reduce((s, i) => s + i.quantity, 0)} items
+                </span>
+              </div>
+              <button
+                onClick={() => setIsCartOpen(false)}
+                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-gray-300 active:bg-white/20 transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Scrollable content */}
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5" style={{ WebkitOverflowScrolling: 'touch' }}>
+
+              {/* Cart items */}
+              <div className="space-y-3">
+                {cart.map((item) => (
+                  <div key={item._id} className="flex items-center justify-between bg-[#1a4855]/50 rounded-2xl p-3 border border-[#EAB308]/10">
+                    <div className="flex-1 min-w-0 mr-3">
+                      <h4 className="text-white font-bold text-sm truncate">{item.name}</h4>
+                      <p className="text-[#EAB308] text-xs font-bold mt-0.5">₹{item.price * item.quantity}</p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button onClick={() => updateQuantity(item._id, -1)} className="w-7 h-7 rounded-full bg-[#0f2933] border border-[#EAB308]/20 text-white flex items-center justify-center active:bg-[#EAB308] active:text-black transition-colors">
+                        <Minus size={13} />
+                      </button>
+                      <span className="text-white font-black text-sm w-5 text-center">{item.quantity}</span>
+                      <button onClick={() => updateQuantity(item._id, 1)} className="w-7 h-7 rounded-full bg-[#0f2933] border border-[#EAB308]/20 text-white flex items-center justify-center active:bg-[#EAB308] active:text-black transition-colors">
+                        <Plus size={13} />
+                      </button>
+                      <button onClick={() => removeFromCart(item._id)} className="w-7 h-7 rounded-full bg-red-900/20 text-red-400 flex items-center justify-center active:bg-red-900/40 transition-colors">
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Price summary */}
+              <div className="bg-[#1a4855]/40 rounded-2xl p-4 space-y-2 border border-[#EAB308]/10">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Subtotal</span>
+                  <span className="text-white font-bold">₹{calculateSubtotal()}</span>
+                </div>
+                {distance !== null && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Delivery</span>
+                    {distance > 20 ? (
+                      <span className="text-red-400 font-bold text-xs">OUT OF RANGE</span>
+                    ) : distance > 10 ? (
+                      <span className="text-orange-400 font-bold">₹60</span>
+                    ) : (
+                      <span className="text-green-400 font-bold">FREE</span>
+                    )}
+                  </div>
+                )}
+                <div className="flex justify-between border-t border-[#EAB308]/20 pt-2">
+                  <span className="text-white font-black">Total</span>
+                  <span className="text-[#EAB308] font-black text-xl">
+                    ₹{calculateSubtotal() + (distance !== null && distance > 10 && distance <= 20 ? 60 : 0)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Checkout form inside drawer */}
+              <form onSubmit={(e) => { handleSubmit(e); setIsCartOpen(false); }} className="space-y-3 pb-2">
+                <input required value={customerInfo.name}
+                  onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
+                  placeholder="Your Name"
+                  className="w-full bg-[#0f2933] text-white px-4 py-3 rounded-xl border border-[#EAB308]/30 focus:border-[#EAB308] outline-none placeholder-gray-500"
+                  style={{ fontSize: '16px' }}
+                />
+                <input required value={customerInfo.phone}
+                  onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})}
+                  placeholder="Phone Number" type="tel"
+                  className="w-full bg-[#0f2933] text-white px-4 py-3 rounded-xl border border-[#EAB308]/30 focus:border-[#EAB308] outline-none placeholder-gray-500"
+                  style={{ fontSize: '16px' }}
+                />
+                <textarea required value={customerInfo.address}
+                  onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})}
+                  placeholder="Delivery Address"
+                  className="w-full bg-[#0f2933] text-white px-4 py-3 rounded-xl border border-[#EAB308]/30 focus:border-[#EAB308] outline-none placeholder-gray-500 resize-none"
+                  rows={2} style={{ fontSize: '16px' }}
+                />
+
+                {/* Location detect */}
+                <div className="bg-[#0f2933] rounded-xl p-3 text-center border border-[#EAB308]/15">
+                  {!distance ? (
+                    <div className="space-y-2">
+                      <button type="button" onClick={getUserLocation}
+                        className="flex items-center justify-center gap-2 w-full text-[#EAB308] transition-colors font-bold py-1"
+                        style={{ fontSize: '15px' }}
+                      >
+                        {loadingLocation ? <Loader2 className="animate-spin" size={16} /> : <MapPin size={16} />}
+                        <span>{loadingLocation ? 'Detecting...' : 'Detect My Location'}</span>
+                      </button>
+                      <div className="text-xs text-gray-600 space-y-0.5">
+                        <p>0–10 km — <span className="text-green-500">Free delivery</span></p>
+                        <p>10–20 km — <span className="text-orange-400">₹60 flat fee</span></p>
+                        <p>&gt;20 km — <span className="text-red-500">Not accepted</span></p>
+                      </div>
+                    </div>
+                  ) : distance > 20 ? (
+                    <p className="text-red-400 text-sm font-bold">❌ {distance} km — Out of range</p>
+                  ) : (
+                    <p className="text-green-400 text-sm font-bold">✓ {distance} km · {distance <= 10 ? 'Free Delivery!' : '₹60 Fee'}</p>
+                  )}
+                </div>
+
+                {/* Payment method */}
+                <div className="grid grid-cols-2 gap-3">
+                  <button type="button"
+                    onClick={() => setCustomerInfo({...customerInfo, paymentMethod: 'cod'})}
+                    className={`p-3 rounded-xl border font-bold transition-all flex items-center justify-center gap-2 ${
+                      customerInfo.paymentMethod === 'cod'
+                        ? 'bg-[#EAB308] border-[#EAB308] text-black'
+                        : 'bg-[#0f2933] border-[#EAB308]/30 text-gray-400'
+                    }`} style={{ fontSize: '14px' }}
+                  >
+                    <Wallet size={16} /><span>Cash</span>
+                  </button>
+                  <button type="button"
+                    onClick={() => setCustomerInfo({...customerInfo, paymentMethod: 'online'})}
+                    className={`p-3 rounded-xl border font-bold transition-all flex items-center justify-center gap-2 ${
+                      customerInfo.paymentMethod === 'online'
+                        ? 'bg-[#EAB308] border-[#EAB308] text-black'
+                        : 'bg-[#0f2933] border-[#EAB308]/30 text-gray-400'
+                    }`} style={{ fontSize: '14px' }}
+                  >
+                    <CreditCard size={16} /><span>Online</span>
+                  </button>
+                </div>
+
+                <button type="submit" disabled={isPlacingOrder}
+                  className="w-full bg-[#EAB308] hover:bg-[#CA8A04] text-black py-4 rounded-2xl font-black transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  style={{ fontSize: '16px', boxShadow: '0 8px 32px rgba(234,179,8,0.35)' }}
+                >
+                  {isPlacingOrder ? <Loader2 className="animate-spin" size={18} /> : <span>Place Order 🎉</span>}
+                </button>
+                <p className="text-center text-gray-600 text-xs">Minimum order value: ₹250</p>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

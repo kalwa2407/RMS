@@ -13,7 +13,6 @@ const Navbar = () => {
     { name: 'Home', path: '/' },
     { name: 'Menu', path: '/menu' },
     { name: 'Order Online', path: '/order' },
-    { name: 'Track Order', path: '/track-order' },
     { name: 'Table Booking', path: '/reservation' },
     { name: 'Gallery', path: '/gallery' },
     { name: 'Reviews', path: '/reviews' },

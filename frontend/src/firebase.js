@@ -2,16 +2,9 @@ import { initializeApp } from "firebase/app";
 import { getAnalytics, isSupported } from "firebase/analytics";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
-const isLocal = typeof window !== 'undefined' && (
-  window.location.hostname === 'localhost' ||
-  window.location.hostname === '127.0.0.1' ||
-  window.location.hostname.startsWith('192.168.') ||
-  window.location.hostname.startsWith('10.')
-);
-
 const firebaseConfig = {
   apiKey: "AIzaSyBNWnChrD5s0Ky5rnKdtm9HQP2_179hmUQ",
-  authDomain: isLocal ? "tasteofhindustanrms.firebaseapp.com" : "persiandarbar.in",
+  authDomain: "tasteofhindustanrms.firebaseapp.com",
   projectId: "tasteofhindustanrms",
   storageBucket: "tasteofhindustanrms.firebasestorage.app",
   messagingSenderId: "63332283509",

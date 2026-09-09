@@ -11,6 +11,43 @@ body {
         "Helvetica Neue", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* iOS: prevent elastic overscroll on the body itself */
+    overscroll-behavior: none;
+}
+
+/* ── iOS Safari global fixes ─────────────────────────────────── */
+
+/* 1. Remove the blue/grey tap-highlight flash on all tappable elements */
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* 2. Prevent double-tap zoom on buttons & interactive elements */
+button, a, [role="button"] {
+    touch-action: manipulation;
+}
+
+/* 3. Momentum (inertia) scrolling inside any overflow-y-auto container */
+.overflow-y-auto,
+.overflow-y-scroll {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* 4. Expose safe-area insets as CSS custom properties for JS/inline use */
+:root {
+    --sat: env(safe-area-inset-top,    0px);
+    --sar: env(safe-area-inset-right,  0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sal: env(safe-area-inset-left,   0px);
+}
+
+/* 5. Ensure backdrop-filter works on Safari (needs -webkit- prefix) */
+[class*="backdrop-blur"] {
+    -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness)
+        var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale)
+        var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert)
+        var(--tw-backdrop-opacity) var(--tw-backdrop-saturate)
+        var(--tw-backdrop-sepia);
 }
 
 code {
