@@ -82,14 +82,39 @@ export const CustomerAuthProvider = ({ children }) => {
     }
 
     try {
-      const res = await fetch(`${API_BASE}/api/customer/profile`, {
+      // Get fresh token
+      let token = idToken;
+      try {
+        token = await currentUser.getIdToken();
+        setIdToken(token);
+      } catch (e) { /* use existing */ }
+
+      let res = await fetch(`${API_BASE}/api/customer/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(updateData)
       });
+
+      // Auto-refresh on 401
+      if (res.status === 401 && currentUser) {
+        try {
+          const freshToken = await currentUser.getIdToken(true);
+          setIdToken(freshToken);
+          res = await fetch(`${API_BASE}/api/customer/profile`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${freshToken}`
+            },
+            body: JSON.stringify(updateData)
+          });
+        } catch (refreshErr) {
+          console.warn('Token refresh for profile update failed:', refreshErr);
+        }
+      }
 
       if (res.ok) {
         const updated = await res.json();

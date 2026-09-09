@@ -3,6 +3,7 @@ import { X, Send, MessageCircle, Minimize2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { ScrollArea } from './ui/scroll-area';
+import API_BASE from '../lib/config';
 
 const ChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -33,8 +34,7 @@ const ChatBot = () => {
     setIsLoading(true);
 
     try {
-      const BACKEND_URL = (process.env.REACT_APP_BACKEND_URL || "");
-      const response = await fetch(`${BACKEND_URL}/api/chat`, {
+      const response = await fetch(`${API_BASE}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userMessage })

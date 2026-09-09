@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import API_BASE from "../lib/config";
 
 const Menu = () => {
   const [menuItems, setMenuItems] = useState([]);
@@ -11,7 +12,7 @@ const Menu = () => {
   useEffect(() => {
     const fetchMenu = async () => {
       try {
-        const res = await fetch(`${(process.env.REACT_APP_BACKEND_URL || "")}/api/menu`);
+        const res = await fetch(`${API_BASE}/api/menu`);
         const data = await res.json();
         setMenuItems(data);
         const categories = ["All", ...new Set(data.map((item) => item.category))];

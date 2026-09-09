@@ -3,6 +3,7 @@ import { Search, Package, CheckCircle, Clock, Truck, Home, Navigation, ShieldChe
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "../hooks/use-toast";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import API_BASE from "../lib/config";
 
 const OrderTracking = () => {
   const { toast } = useToast();
@@ -44,7 +45,7 @@ const OrderTracking = () => {
   const fetchOrder = async (id, silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const res = await fetch(`${(process.env.REACT_APP_BACKEND_URL || "")}/api/orders/${id}`);
+      const res = await fetch(`${API_BASE}/api/orders/${id}`);
       if (!res.ok) throw new Error("Order not found");
       const data = await res.json();
       if (lastStatus && lastStatus !== data.status && !silent) {

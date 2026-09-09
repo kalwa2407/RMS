@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 const CustomerReservations = () => {
-  const { idToken } = useCustomerAuth();
+  const { idToken, fetchWithAuth } = useCustomerAuth();
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -26,9 +26,7 @@ const CustomerReservations = () => {
     if (!idToken) return;
     if (!isPolling) setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/customer/reservations`, {
-        headers: { 'Authorization': `Bearer ${idToken}` }
-      });
+      const res = await fetchWithAuth(`${API_BASE}/api/customer/reservations`);
       if (res.ok) {
         const data = await res.json();
         setReservations(data || []);
@@ -39,7 +37,7 @@ const CustomerReservations = () => {
       if (!isPolling) setLoading(false);
       setIsRefreshing(false);
     }
-  }, [idToken]);
+  }, [idToken, fetchWithAuth]);
 
   useEffect(() => {
     if (idToken) {

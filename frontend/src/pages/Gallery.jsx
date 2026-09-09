@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { X, Search, Maximize2, Camera, MapPin, Sparkles } from "lucide-react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
+import API_BASE from "../lib/config";
 
 const categories = ["All", "Ambience", "Food", "Royal", "Events"];
 
@@ -13,7 +14,7 @@ const Gallery = () => {
   useEffect(() => {
     const fetchGallery = async () => {
       try {
-        const res = await fetch(`${(process.env.REACT_APP_BACKEND_URL || "")}/api/gallery`);
+        const res = await fetch(`${API_BASE}/api/gallery`);
         const data = await res.json();
         setGallery(data.length > 0 ? data : generateMockGallery());
         setLoading(false);

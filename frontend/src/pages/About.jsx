@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Award, Users, Heart, Clock, Utensils, ShieldCheck, Sparkles, History, MapPin, Phone, Crown, ExternalLink } from "lucide-react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
-import axios from "axios";
+import API_BASE from "../lib/config";
 
-const API_URL = (process.env.REACT_APP_BACKEND_URL || "");
+const API_URL = API_BASE;
 
 /* ── Scroll-reveal wrapper ─────────────────────────────────── */
 const ScrollReveal = ({ children, delay = 0, className = "" }) => {
