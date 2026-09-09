@@ -1,6 +1,6 @@
 {
   "short_name": "Persian Darbar",
-  "name": "Persian Darbar — Authentic Royal Dining",
+  "name": "Persian Darbar Staff",
   "icons": [
     {
       "src": "/logo.png",
@@ -13,9 +13,10 @@
       "sizes": "512x512"
     }
   ],
-  "start_url": "/",
-  "background_color": "#0b131b",
-  "theme_color": "#0b131b",
+  "start_url": "/staff-entry?source=pwa",
+  "scope": "/",
+  "background_color": "#0a1f28",
+  "theme_color": "#0a1f28",
   "display": "standalone",
   "orientation": "portrait"
 }

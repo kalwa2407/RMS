@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import logoImg from "../../assets/logo.png";
 import API_BASE from "../../lib/config";
+import { isStandaloneApp } from "../../lib/pwa";
 
 /* ── Section grouping for drawer ──────────────────────────────────────────── */
 const SECTIONS = [
@@ -102,8 +103,7 @@ const AdminLayout = () => {
   const isActive     = (path) => location.pathname === path;
   const handleLogout = () => {
     localStorage.removeItem("admin_token");
-    const isNative = !!(window.Capacitor?.isNativePlatform?.());
-    navigate(isNative ? "/staff-entry" : "/admin");
+    navigate(isStandaloneApp() ? "/staff-entry" : "/admin");
   };
   const currentPage  = ALL_ITEMS.find((m) => m.path === location.pathname)?.name ?? "Admin";
 

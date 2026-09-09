@@ -61,8 +61,12 @@ const roles = [
   },
 ];
 
+import { isStandaloneApp, isIOSDevice } from "../lib/pwa";
+
 const StaffAppEntry = () => {
   const navigate = useNavigate();
+  const standalone = isStandaloneApp();
+  const isIOS = isIOSDevice();
 
   return (
     <div
@@ -83,11 +87,21 @@ const StaffAppEntry = () => {
 
       {/* Tagline */}
       <p
-        className="text-[#EAB308]/60 text-xs uppercase tracking-[0.3em] mb-10 text-center"
+        className="text-[#EAB308]/60 text-xs uppercase tracking-[0.3em] mb-6 text-center"
         style={{ fontFamily: "'Playfair Display', serif" }}
       >
         Staff Portal
       </p>
+
+      {/* iOS Add to Home Screen tip if in regular Safari */}
+      {isIOS && !standalone && (
+        <div className="w-full max-w-sm mb-6 px-4 py-2.5 rounded-2xl bg-[#EAB308]/10 border border-[#EAB308]/30 flex items-center gap-2.5 text-left text-xs text-[#EAB308]">
+          <span className="text-base">📲</span>
+          <span>
+            <strong>Add to Home Screen:</strong> Tap Safari's <strong>Share</strong> icon and select <strong>"Add to Home Screen"</strong> to open this portal directly.
+          </span>
+        </div>
+      )}
 
       {/* Role grid */}
       <div className="w-full max-w-sm grid grid-cols-2 gap-4">
@@ -119,9 +133,22 @@ const StaffAppEntry = () => {
         ))}
       </div>
 
+      {/* Link to public website */}
+      <button
+        type="button"
+        onClick={() => {
+          sessionStorage.setItem("allow_public_website", "true");
+          navigate("/");
+        }}
+        className="mt-8 text-xs text-[#EAB308]/70 hover:text-[#EAB308] transition-colors flex items-center gap-1.5 underline decoration-[#EAB308]/30 underline-offset-4 active:scale-95"
+      >
+        <span>View Public Restaurant Website</span>
+        <span>&rarr;</span>
+      </button>
+
       {/* Footer note */}
-      <p className="text-gray-600 text-[10px] mt-10 text-center uppercase tracking-widest">
-        Taste of Hindustan — Staff Access Only
+      <p className="text-gray-500 text-[10px] mt-6 text-center uppercase tracking-widest">
+        Persian Darbar — Staff & Operations Access
       </p>
     </div>
   );

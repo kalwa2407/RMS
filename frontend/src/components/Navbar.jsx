@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, User } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 import { useCustomerAuth } from '../context/CustomerAuthContext';
+import { isStandaloneApp } from '../lib/pwa';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -80,6 +81,17 @@ const Navbar = () => {
                 <span>Become a Member</span>
               </Link>
             )}
+
+            {isStandaloneApp() && (
+              <Link
+                to="/staff-entry"
+                onClick={() => sessionStorage.removeItem("allow_public_website")}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#EAB308]/20 border border-[#EAB308] text-[#EAB308] hover:bg-[#EAB308] hover:text-black text-xs font-bold transition-all duration-200"
+              >
+                <span>👑</span>
+                <span>Staff Portal</span>
+              </Link>
+            )}
           </div>
 
           <div className="flex items-center gap-2 lg:hidden">
@@ -152,6 +164,19 @@ const Navbar = () => {
                 className="block px-3 py-2 rounded-md text-base font-semibold text-center text-black bg-[#EAB308]"
               >
                 👑 Become a PersianDarbar Member
+              </Link>
+            )}
+
+            {isStandaloneApp() && (
+              <Link
+                to="/staff-entry"
+                onClick={() => {
+                  sessionStorage.removeItem("allow_public_website");
+                  setIsOpen(false);
+                }}
+                className="block mt-3 px-3 py-2.5 rounded-xl text-base font-bold text-center text-black bg-[#EAB308] shadow-lg"
+              >
+                👑 Switch to Staff Portal (4 Panels)
               </Link>
             )}
           </div>

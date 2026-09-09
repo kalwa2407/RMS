@@ -55,23 +55,35 @@ import CustomerOrders from "./pages/customer/CustomerOrders";
 import CustomerReservations from "./pages/customer/CustomerReservations";
 import CustomerProfile from "./pages/customer/CustomerProfile";
 
-// Detect if running inside Capacitor native app
-const isNative = () => {
-  try {
-    return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
-  } catch {
-    return false;
-  }
-};
+import { isStandaloneApp } from "./lib/pwa";
 
-// Native root redirect — shows staff entry on app, home on website
+// Standalone / Native root redirect — shows 4-panel staff entry on iOS PWA, Android & Capacitor, home on regular website
 const NativeRootRedirect = () => {
   const navigate = useNavigate();
+  const shouldGoToStaff = isStandaloneApp() && sessionStorage.getItem("allow_public_website") !== "true";
+
   useEffect(() => {
-    if (isNative()) navigate("/staff-entry", { replace: true });
-  }, [navigate]);
-  if (isNative()) return null;
-  return <><Navbar /><Home /><Footer /><ChatBot /></>;
+    if (shouldGoToStaff) {
+      navigate("/staff-entry", { replace: true });
+    }
+  }, [shouldGoToStaff, navigate]);
+
+  if (shouldGoToStaff) {
+    return (
+      <div className="min-h-screen bg-[#0a1f28] flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-[#EAB308] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <Navbar />
+      <Home />
+      <Footer />
+      <ChatBot />
+    </>
+  );
 };
 
 function App() {

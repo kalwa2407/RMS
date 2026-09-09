@@ -144,6 +144,15 @@ const AdminLogin = () => {
             >
               {loading ? "Authenticating..." : "Secure Login"}
             </button>
+
+            <button
+              type="button"
+              onClick={() => navigate("/staff-entry")}
+              className="w-full text-center text-xs text-gray-400 hover:text-white transition-colors py-2 flex items-center justify-center gap-1.5 mt-2"
+            >
+              <span>&larr;</span>
+              <span>Back to Staff Portal</span>
+            </button>
           </form>
         </div>
       </div>
