@@ -257,6 +257,10 @@ class MockFirebaseManager(BaseDataManager):
         orders = self._read_sync("orders")
         return [o for o in orders if o.get("delivery_partner_id") == partner_id]
 
+    async def get_orders(self) -> List[Dict[str, Any]]:
+        return self._read_sync("orders")
+
+
     async def get_table_session(self, session_id: str) -> Optional[Dict[str, Any]]:
         sessions = self._read_sync("table_sessions")
         for s in sessions:

@@ -258,6 +258,10 @@ class FirebaseManager(BaseDataManager):
             items.sort(key=lambda x: str(x.get('created_at', '')), reverse=True)
             return items
 
+    async def get_orders(self) -> List[Dict[str, Any]]:
+        return await self._read("orders")
+
+
     async def create_menu_item(self, item_data: Dict[str, Any]) -> Dict[str, Any]:
         doc_id = item_data.get("_id") or str(uuid.uuid4())
         item_data["_id"] = doc_id

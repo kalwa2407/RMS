@@ -85,6 +85,11 @@ class BaseDataManager(ABC):
         pass
 
     @abstractmethod
+    async def get_orders(self) -> List[Dict[str, Any]]:
+        pass
+
+
+    @abstractmethod
     async def get_table_session(self, session_id: str) -> Optional[Dict[str, Any]]:
         pass
 

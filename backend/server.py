@@ -1,7 +1,7 @@
-from fastapi import FastAPI, APIRouter, Depends, HTTPException, status, UploadFile, File, Response
+from fastapi import FastAPI, APIRouter, Depends, HTTPException, status, UploadFile, File, Response, Request
 from datetime import datetime, timezone, timedelta
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -72,6 +72,15 @@ kitchen_router = APIRouter(prefix="/api/kitchen", tags=["kitchen"])
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Global exception on {request.method} {request.url.path}: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error", "error": str(exc)},
+    )
+
 
 # =============================================================================
 # UTILITY FUNCTIONS
@@ -2832,7 +2841,7 @@ async def get_customer_orders_list(
     profile = next((c for c in customers if c.get("uid") == uid), None)
     user_phone = profile.get("phone", "").strip() if profile else ""
     
-    all_orders = await manager.get_orders()
+    all_orders = await manager._read("orders")
     matched = []
     seen_ids = set()
     
