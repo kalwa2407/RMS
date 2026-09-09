@@ -113,11 +113,11 @@ function App() {
             />
             <Route
               path="/track-order"
-              element={<><Navbar /><OrderTracking /><Footer /><ChatBot /></>}
+              element={<OrderTracking />}
             />
             <Route
               path="/track"
-              element={<><Navbar /><OrderTracking /><Footer /><ChatBot /></>}
+              element={<OrderTracking />}
             />
           <Route
             path="/reservation"

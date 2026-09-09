@@ -84,17 +84,34 @@ const CustomerProfile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#184956] to-[#0f2933] text-white pt-24 pb-16 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <div className="h-[100dvh] flex flex-col overflow-hidden" style={{ background: "#070d14" }}>
 
-        {/* Back navigation */}
-        <Link
-          to="/customer/dashboard"
-          className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-[#EAB308] transition-colors"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Back to Dashboard</span>
-        </Link>
+      {/* ─── Fixed Header ─── */}
+      <div className="shrink-0" style={{ background: "rgba(7,13,20,0.98)", borderBottom: "1px solid rgba(234,179,8,0.1)", backdropFilter: "blur(16px)" }}>
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-3">
+            <Link to="/customer/dashboard" className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-[#EAB308] transition-colors">
+              <ArrowLeft className="w-4 h-4" />
+            </Link>
+            <div>
+              <h1 className="text-white font-bold text-sm leading-tight">My Profile</h1>
+              <p className="text-[#EAB308] text-[10px] font-semibold">{currentUser?.email || ''}</p>
+            </div>
+          </div>
+          <button
+            onClick={async () => { await signOutCustomer(); navigate('/'); }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-red-300 transition-all"
+            style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.15)" }}
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ─── Scrollable Content ─── */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-4 max-w-2xl mx-auto space-y-4">
 
         {/* Profile Card Header */}
         <div className="bg-[#0f2933]/90 border border-[#EAB308]/20 rounded-2xl p-6 sm:p-8 backdrop-blur-md shadow-xl flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
@@ -291,6 +308,7 @@ const CustomerProfile = () => {
           </div>
         </form>
 
+        </div>
       </div>
     </div>
   );

@@ -97,7 +97,7 @@ const CustomerDashboard = () => {
   ];
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: "#070d14" }}>
+    <div className="h-[100dvh] flex flex-col overflow-hidden" style={{ background: "#070d14" }}>
 
       {/* ─── Fixed Header ─── */}
       <div className="shrink-0 pt-safe" style={{ background: "rgba(7,13,20,0.98)", borderBottom: "1px solid rgba(234,179,8,0.1)", backdropFilter: "blur(16px)" }}>

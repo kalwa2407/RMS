@@ -54,11 +54,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Create upload and invoice directories
+# Create upload, invoice, and sounds directories
 UPLOAD_DIR = ROOT_DIR / "static" / "uploads"
 INVOICE_DIR = ROOT_DIR / "static" / "invoices"
+SOUNDS_DIR = ROOT_DIR / "static" / "sounds"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 INVOICE_DIR.mkdir(parents=True, exist_ok=True)
+SOUNDS_DIR.mkdir(parents=True, exist_ok=True)
+
 
 # Serve static files
 app.mount("/static", StaticFiles(directory=str(ROOT_DIR / "static")), name="static")
@@ -1101,15 +1104,25 @@ async def admin_upload_notification_sound(
 ):
     """Upload custom notification sound"""
     try:
-        allowed_types = ["audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/webm"]
-        if file.content_type not in allowed_types:
-            raise HTTPException(status_code=400, detail="Invalid file type")
+        allowed_types = [
+            "audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "audio/wave",
+            "audio/ogg", "audio/webm", "video/webm", "audio/mp4", "audio/x-m4a",
+            "audio/aac", "application/octet-stream"
+        ]
+        file_extension = file.filename.split(".")[-1].lower() if "." in (file.filename or "") else "mp3"
+        allowed_exts = ["mp3", "wav", "ogg", "webm", "m4a", "aac", "opus"]
+        
+        content_type = (file.content_type or "").lower()
+        is_audio = content_type.startswith("audio/") or content_type in allowed_types or file_extension in allowed_exts
+        if not is_audio:
+            raise HTTPException(status_code=400, detail="Invalid file type. Please upload an MP3, WAV, OGG, or WebM audio file.")
         
         sounds_dir = ROOT_DIR / "static" / "sounds"
         sounds_dir.mkdir(parents=True, exist_ok=True)
         
-        file_extension = file.filename.split(".")[-1].lower()
-        filename = f"notification.{file_extension}"
+        ext = file_extension if file_extension in allowed_exts else "mp3"
+        timestamp = int(datetime.now().timestamp())
+        filename = f"notification_{timestamp}.{ext}"
         
         file_path = sounds_dir / filename
         with open(file_path, "wb") as buffer:
@@ -1119,6 +1132,8 @@ async def admin_upload_notification_sound(
         await manager.update_setting("notification_sound", sound_url)
         return {"success": True, "url": sound_url, "message": "Notification sound updated successfully"}
     
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Sound upload failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
@@ -1145,15 +1160,25 @@ async def admin_upload_dinein_notification_sound(
 ):
     """Upload custom dine-in notification sound"""
     try:
-        allowed_types = ["audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/webm"]
-        if file.content_type not in allowed_types:
-            raise HTTPException(status_code=400, detail="Invalid file type")
+        allowed_types = [
+            "audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "audio/wave",
+            "audio/ogg", "audio/webm", "video/webm", "audio/mp4", "audio/x-m4a",
+            "audio/aac", "application/octet-stream"
+        ]
+        file_extension = file.filename.split(".")[-1].lower() if "." in (file.filename or "") else "mp3"
+        allowed_exts = ["mp3", "wav", "ogg", "webm", "m4a", "aac", "opus"]
+        
+        content_type = (file.content_type or "").lower()
+        is_audio = content_type.startswith("audio/") or content_type in allowed_types or file_extension in allowed_exts
+        if not is_audio:
+            raise HTTPException(status_code=400, detail="Invalid file type. Please upload an MP3, WAV, OGG, or WebM audio file.")
         
         sounds_dir = ROOT_DIR / "static" / "sounds"
         sounds_dir.mkdir(parents=True, exist_ok=True)
         
-        file_extension = file.filename.split(".")[-1].lower()
-        filename = f"notification_dinein.{file_extension}"
+        ext = file_extension if file_extension in allowed_exts else "mp3"
+        timestamp = int(datetime.now().timestamp())
+        filename = f"notification_dinein_{timestamp}.{ext}"
         
         file_path = sounds_dir / filename
         with open(file_path, "wb") as buffer:
@@ -1163,43 +1188,16 @@ async def admin_upload_dinein_notification_sound(
         await manager.update_setting("notification_sound_dinein", sound_url)
         return {"success": True, "url": sound_url, "message": "Dine-in notification sound updated successfully"}
     
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Sound upload failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
     finally:
         file.file.close()
         
-@admin_router.post("/upload/sound/dinein")
-async def admin_upload_dinein_notification_sound(
-    file: UploadFile = File(...),
-    username: str = Depends(verify_token),
-    manager: BaseDataManager = Depends(get_data_manager)
-):
-    """Upload custom dine-in notification sound"""
-    try:
-        allowed_types = ["audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/webm"]
-        if file.content_type not in allowed_types:
-            raise HTTPException(status_code=400, detail="Invalid file type")
-        
-        sounds_dir = ROOT_DIR / "static" / "sounds"
-        sounds_dir.mkdir(parents=True, exist_ok=True)
-        
-        file_extension = file.filename.split(".")[-1].lower()
-        filename = f"notification_dinein.{file_extension}"
-        
-        file_path = sounds_dir / filename
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-        
-        sound_url = f"/static/sounds/{filename}"
-        await manager.update_setting("notification_sound_dinein", sound_url)
-        return {"success": True, "url": sound_url, "message": "Dine-in notification sound updated successfully"}
-    
-    except Exception as e:
-        logger.error(f"Sound upload failed: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
-    finally:
-        file.file.close()
+
+
 
 # Admin Reservations Management
 @admin_router.get("/reservations")

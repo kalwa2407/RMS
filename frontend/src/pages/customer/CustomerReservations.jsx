@@ -87,48 +87,39 @@ const CustomerReservations = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#184956] to-[#0f2933] text-white pt-24 pb-16 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="h-[100dvh] flex flex-col overflow-hidden" style={{ background: "#070d14" }}>
 
-        {/* Header Bar */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <Link
-              to="/customer/dashboard"
-              className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-[#EAB308] transition-colors mb-2"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Dashboard</span>
+      {/* ─── Fixed Header ─── */}
+      <div className="shrink-0" style={{ background: "rgba(7,13,20,0.98)", borderBottom: "1px solid rgba(234,179,8,0.1)", backdropFilter: "blur(16px)" }}>
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-3">
+            <Link to="/customer/dashboard" className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-[#EAB308] transition-colors">
+              <ArrowLeft className="w-4 h-4" />
             </Link>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2" style={{ fontFamily: 'Playfair Display, serif' }}>
-              <span>My Table Reservations</span>
-              <span className="text-sm font-sans font-normal text-gray-400">({reservations.length})</span>
-            </h1>
+            <div>
+              <h1 className="text-white font-bold text-sm leading-tight">My Reservations</h1>
+              <p className="text-[#EAB308] text-[10px] font-semibold">{reservations.length} booking{reservations.length !== 1 ? 's' : ''}</p>
+            </div>
           </div>
-
-          <div className="flex items-center gap-2 self-stretch sm:self-auto">
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => {
-                setIsRefreshing(true);
-                fetchReservations();
-              }}
+              onClick={() => { setIsRefreshing(true); fetchReservations(); }}
               disabled={isRefreshing}
-              className="px-3.5 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 text-xs rounded-xl border border-white/10 transition-colors flex items-center gap-1.5 cursor-pointer"
-              title="Refresh Status"
+              className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-[#EAB308] transition-colors"
             >
-              <RotateCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-[#EAB308]' : ''}`} />
-              <span>Refresh</span>
+              <RotateCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-[#EAB308]' : ''}`} />
             </button>
-
-            <Link
-              to="/reservation"
-              className="px-5 py-2.5 bg-[#EAB308] hover:bg-[#CA8A04] text-black font-bold text-xs sm:text-sm rounded-xl transition-all shadow-md flex items-center gap-2 justify-center"
-            >
-              <Plus className="w-4 h-4" />
+            <Link to="/reservation" className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-black bg-[#EAB308] hover:bg-[#CA8A04] transition-all">
+              <Plus className="w-3.5 h-3.5" />
               <span>Book Table</span>
             </Link>
           </div>
         </div>
+      </div>
+
+      {/* ─── Scrollable Content ─── */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-4 space-y-4">
 
         {/* Live indicator if pending */}
         {reservations.some(r => r.status === 'pending') && (
@@ -238,6 +229,7 @@ const CustomerReservations = () => {
           </div>
         )}
 
+        </div>
       </div>
     </div>
   );

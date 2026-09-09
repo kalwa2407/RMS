@@ -140,70 +140,61 @@ const CustomerOrders = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#184956] to-[#0f2933] text-white pt-24 pb-16 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-5xl mx-auto space-y-6">
+    <div className="h-[100dvh] flex flex-col overflow-hidden" style={{ background: "#070d14" }}>
 
-        {/* Back Link & Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <Link
-              to="/customer/dashboard"
-              className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-[#EAB308] transition-colors mb-2"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Dashboard</span>
+      {/* ─── Fixed Header ─── */}
+      <div className="shrink-0" style={{ background: "rgba(7,13,20,0.98)", borderBottom: "1px solid rgba(234,179,8,0.1)", backdropFilter: "blur(16px)" }}>
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-3">
+            <Link to="/customer/dashboard" className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-[#EAB308] transition-colors">
+              <ArrowLeft className="w-4 h-4" />
             </Link>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2" style={{ fontFamily: 'Playfair Display, serif' }}>
-              <span>My Order History</span>
-              <span className="text-sm font-sans font-normal text-gray-400">({orders.length})</span>
-            </h1>
+            <div>
+              <h1 className="text-white font-bold text-sm leading-tight">My Orders</h1>
+              <p className="text-[#EAB308] text-[10px] font-semibold">{orders.length} total order{orders.length !== 1 ? 's' : ''}</p>
+            </div>
           </div>
-
-          <Link
-            to="/order"
-            className="px-5 py-2.5 bg-[#EAB308] hover:bg-[#CA8A04] text-black font-bold text-xs sm:text-sm rounded-xl transition-all shadow-md flex items-center gap-2 self-stretch sm:self-auto justify-center"
-          >
-            <ShoppingBag className="w-4 h-4" />
-            <span>Place New Order</span>
+          <Link to="/order" className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-black bg-[#EAB308] hover:bg-[#CA8A04] transition-all">
+            <ShoppingBag className="w-3.5 h-3.5" />
+            <span>Order Now</span>
           </Link>
         </div>
 
-        {/* Filter Tabs & Search Bar */}
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-[#0f2933]/90 border border-[#EAB308]/20 rounded-2xl p-3">
-          {/* Tabs */}
-          <div className="flex items-center gap-1 overflow-x-auto">
-            {[
-              { id: 'all', label: 'All' },
-              { id: 'active', label: 'Active' },
-              { id: 'delivered', label: 'Delivered' },
-              { id: 'cancelled', label: 'Cancelled' }
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setFilter(tab.id)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                  filter === tab.id
-                    ? 'bg-[#EAB308] text-black shadow'
-                    : 'text-gray-300 hover:bg-white/5'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Search Box */}
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        {/* Filter + Search bar */}
+        <div className="flex items-center gap-2 px-4 pb-3 overflow-x-auto no-scrollbar">
+          {[
+            { id: 'all', label: 'All' },
+            { id: 'active', label: 'Active 🔴' },
+            { id: 'delivered', label: 'Delivered' },
+            { id: 'cancelled', label: 'Cancelled' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setFilter(tab.id)}
+              className={`px-3 py-1 rounded-full text-[10px] font-bold whitespace-nowrap transition-all shrink-0 ${
+                filter === tab.id ? 'bg-[#EAB308] text-black' : 'bg-white/5 text-gray-300 border border-white/10'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+          <div className="relative flex-1 min-w-[130px]">
+            <Search className="w-3 h-3 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by Dish or Order ID..."
-              className="w-full md:w-64 pl-9 pr-3 py-1.5 bg-[#0a1e25] border border-[#EAB308]/30 rounded-xl text-xs text-white placeholder-gray-400 focus:outline-none focus:border-[#EAB308]"
+              placeholder="Search..."
+              className="w-full pl-7 pr-2 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] text-white placeholder-gray-500 focus:outline-none focus:border-[#EAB308]/50"
             />
           </div>
         </div>
+      </div>
+
+      {/* ─── Scrollable Content ─── */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-4 space-y-4">
+
 
         {/* Orders List */}
         {loading ? (
@@ -340,6 +331,7 @@ const CustomerOrders = () => {
           </div>
         )}
 
+        </div>
       </div>
     </div>
   );
