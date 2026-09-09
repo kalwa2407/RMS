@@ -123,8 +123,15 @@ class FirebaseManager(BaseDataManager):
         return [doc.to_dict() for doc in docs]
 
     async def get_reviews(self) -> List[Dict[str, Any]]:
-        docs = self.db.collection('reviews').order_by('created_at', direction=firestore.Query.DESCENDING).stream()
-        return [doc.to_dict() for doc in docs]
+        try:
+            docs = self.db.collection('reviews').order_by('created_at', direction=firestore.Query.DESCENDING).stream()
+            return [doc.to_dict() for doc in docs]
+        except Exception as e:
+            logger.warning(f"Fallback to memory sort for reviews: {e}")
+            docs = self.db.collection('reviews').stream()
+            items = [doc.to_dict() for doc in docs]
+            items.sort(key=lambda x: str(x.get('created_at', '')), reverse=True)
+            return items
 
     async def get_settings(self) -> Dict[str, Any]:
         docs = self.db.collection('settings').stream()
@@ -241,8 +248,15 @@ class FirebaseManager(BaseDataManager):
         query = self.db.collection('orders')
         if status_filter and status_filter != "all":
             query = query.where('status', '==', status_filter)
-        docs = query.order_by('created_at', direction=firestore.Query.DESCENDING).stream()
-        return [doc.to_dict() for doc in docs]
+        try:
+            docs = query.order_by('created_at', direction=firestore.Query.DESCENDING).stream()
+            return [doc.to_dict() for doc in docs]
+        except Exception as e:
+            logger.warning(f"Fallback to memory sort for orders: {e}")
+            docs = query.stream()
+            items = [doc.to_dict() for doc in docs]
+            items.sort(key=lambda x: str(x.get('created_at', '')), reverse=True)
+            return items
 
     async def create_menu_item(self, item_data: Dict[str, Any]) -> Dict[str, Any]:
         doc_id = item_data.get("_id") or str(uuid.uuid4())
