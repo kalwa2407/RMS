@@ -17,14 +17,31 @@ export const CustomerAuthProvider = ({ children }) => {
   const [customerProfile, setCustomerProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Sync / fetch customer profile from backend
+  // Sync / fetch customer profile from backend with auto-refresh on 401
   const fetchCustomerProfile = useCallback(async (token, user) => {
     try {
-      const res = await fetch(`${API_BASE}/api/customer/profile`, {
+      let activeToken = token;
+      let res = await fetch(`${API_BASE}/api/customer/profile`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${activeToken}`
         }
       });
+
+      // If 401 Unauthorized, force-refresh token once from Firebase and retry
+      if (res.status === 401 && user) {
+        try {
+          activeToken = await user.getIdToken(true);
+          setIdToken(activeToken);
+          res = await fetch(`${API_BASE}/api/customer/profile`, {
+            headers: {
+              'Authorization': `Bearer ${activeToken}`
+            }
+          });
+        } catch (refreshErr) {
+          console.warn('Could not force-refresh token:', refreshErr);
+        }
+      }
+
       if (res.ok) {
         const data = await res.json();
         setCustomerProfile(data);
@@ -184,6 +201,43 @@ export const CustomerAuthProvider = ({ children }) => {
     return () => unsubscribe();
   }, [fetchCustomerProfile]);
 
+  // Authenticated fetch wrapper with automatic token refresh on 401
+  const fetchWithAuth = useCallback(async (url, options = {}) => {
+    let token = idToken;
+    if (!token && auth.currentUser) {
+      try {
+        token = await auth.currentUser.getIdToken();
+        setIdToken(token);
+      } catch (e) {
+        console.warn('Could not get current token:', e);
+      }
+    }
+
+    const headers = {
+      ...(options.headers || {}),
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    };
+
+    let res = await fetch(url, { ...options, headers });
+
+    // If 401 Unauthorized, force-refresh token once and retry
+    if (res.status === 401 && auth.currentUser) {
+      try {
+        const freshToken = await auth.currentUser.getIdToken(true);
+        setIdToken(freshToken);
+        const retryHeaders = {
+          ...(options.headers || {}),
+          'Authorization': `Bearer ${freshToken}`
+        };
+        res = await fetch(url, { ...options, headers: retryHeaders });
+      } catch (refreshErr) {
+        console.warn('Token refresh retry failed:', refreshErr);
+      }
+    }
+
+    return res;
+  }, [idToken]);
+
   return (
     <CustomerAuthContext.Provider
       value={{
@@ -194,6 +248,7 @@ export const CustomerAuthProvider = ({ children }) => {
         signInWithGoogle,
         signOutCustomer,
         updateProfile,
+        fetchWithAuth,
         refreshProfile: () => idToken && currentUser && fetchCustomerProfile(idToken, currentUser)
       }}
     >

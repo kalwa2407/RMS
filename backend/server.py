@@ -2265,15 +2265,26 @@ async def delivery_get_profile(phone: str = Depends(verify_delivery_token), mana
     return {**partner, "password": ""}
 
 @delivery_router.get("/orders")
-async def delivery_get_assigned_orders(phone: str = Depends(verify_delivery_token), manager: BaseDataManager = Depends(get_data_manager)):
-    """Get orders assigned to delivery partner"""
+async def delivery_get_assigned_orders(
+    phone: str = Depends(verify_delivery_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Get ALL orders assigned to delivery partner (active + completed).
+    Frontend handles tab splitting: active vs completed (delivered)."""
     partner = await manager.get_delivery_partner_by_phone(phone)
     if not partner:
         raise HTTPException(status_code=404, detail="Delivery partner not found")
-    
-    orders = await manager.get_orders_by_partner(partner.get("id") or partner.get("_id"))
-    active_statuses = ["accepted", "preparing", "ready", "out_for_delivery"]
-    return [o for o in orders if o.get("status") in active_statuses]
+
+    partner_id = partner.get("id") or partner.get("_id")
+    orders = await manager.get_orders_by_partner(partner_id)
+
+    # Include all relevant statuses — active AND completed
+    visible_statuses = {"accepted", "preparing", "ready", "out_for_delivery", "delivered", "cancelled"}
+    return sorted(
+        [o for o in orders if o.get("status") in visible_statuses],
+        key=lambda x: x.get("created_at", ""),
+        reverse=True
+    )
 
 @delivery_router.put("/orders/{order_id}/status")
 async def delivery_update_order_status(
@@ -2923,7 +2934,11 @@ async def startup_event():
         logger.info("PostgreSQL database initialized successfully")
     else:
         logger.info(f"Running in {db_mode} mode. Bypassing PostgreSQL initialization.")
-        # MockFirebaseManager handles its own seeding in __init__
+        try:
+            get_data_manager()
+            logger.info("DataManager and Firebase pre-initialized successfully.")
+        except Exception as e:
+            logger.warning(f"Could not pre-initialize DataManager on startup: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_event():

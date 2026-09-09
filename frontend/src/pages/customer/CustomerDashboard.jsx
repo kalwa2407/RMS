@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 
 const CustomerDashboard = () => {
-  const { currentUser, customerProfile, updateProfile, signOutCustomer, idToken } = useCustomerAuth();
+  const { currentUser, customerProfile, updateProfile, signOutCustomer, idToken, fetchWithAuth } = useCustomerAuth();
   const navigate = useNavigate();
 
   const [tab, setTab] = useState('home'); // 'home' | 'orders' | 'bookings' | 'profile'
@@ -34,31 +34,27 @@ const CustomerDashboard = () => {
     if (!idToken) return;
     setLoadingOrders(true);
     try {
-      const res = await fetch(`${API_BASE}/api/customer/orders`, {
-        headers: { 'Authorization': `Bearer ${idToken}` }
-      });
+      const res = await fetchWithAuth(`${API_BASE}/api/customer/orders`);
       if (res.ok) setOrders((await res.json()) || []);
     } catch (err) {
       console.error('Error fetching customer orders:', err);
     } finally {
       setLoadingOrders(false);
     }
-  }, [idToken]);
+  }, [idToken, fetchWithAuth]);
 
   const fetchReservations = useCallback(async () => {
     if (!idToken) return;
     setLoadingRes(true);
     try {
-      const res = await fetch(`${API_BASE}/api/customer/reservations`, {
-        headers: { 'Authorization': `Bearer ${idToken}` }
-      });
+      const res = await fetchWithAuth(`${API_BASE}/api/customer/reservations`);
       if (res.ok) setReservations((await res.json()) || []);
     } catch (err) {
       console.error('Error fetching reservations:', err);
     } finally {
       setLoadingRes(false);
     }
-  }, [idToken]);
+  }, [idToken, fetchWithAuth]);
 
   useEffect(() => {
     if (idToken) { fetchOrders(); fetchReservations(); }

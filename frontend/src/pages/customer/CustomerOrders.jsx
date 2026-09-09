@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 const CustomerOrders = () => {
-  const { idToken, currentUser } = useCustomerAuth();
+  const { idToken, currentUser, fetchWithAuth } = useCustomerAuth();
   const navigate = useNavigate();
 
   const [orders, setOrders] = useState([]);
@@ -31,9 +31,7 @@ const CustomerOrders = () => {
     if (!idToken) return;
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/customer/orders`, {
-        headers: { 'Authorization': `Bearer ${idToken}` }
-      });
+      const res = await fetchWithAuth(`${API_BASE}/api/customer/orders`);
       if (res.ok) {
         const data = await res.json();
         setOrders(data || []);
@@ -43,7 +41,7 @@ const CustomerOrders = () => {
     } finally {
       setLoading(false);
     }
-  }, [idToken]);
+  }, [idToken, fetchWithAuth]);
 
   useEffect(() => {
     if (idToken) {
