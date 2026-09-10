@@ -96,6 +96,15 @@ const CustomerDashboard = () => {
   const [phoneErr, setPhoneErr]   = useState('');
 
   const sseRef = useRef(null);
+  const mainScrollRef = useRef(null);
+
+  /* ── Auto-scroll to top when switching tabs or subtabs (native mobile app behavior) ── */
+  useEffect(() => {
+    if (mainScrollRef.current) {
+      mainScrollRef.current.scrollTop = 0;
+    }
+    window.scrollTo(0, 0);
+  }, [tab, orderSubTab]);
 
   /* ── In-App Ordering State ── */
   const [menu, setMenu]                   = useState([]);
@@ -448,7 +457,7 @@ const CustomerDashboard = () => {
       </div>
 
       {/* ═══ SCROLLABLE BODY ═══ */}
-      <div className="relative z-10 flex-1 overflow-y-auto overscroll-contain">
+      <div ref={mainScrollRef} className="relative z-10 flex-1 overflow-y-auto overscroll-contain">
 
         {/* ══ HOME ══ */}
         {tab === 'home' && (
@@ -876,7 +885,10 @@ const CustomerDashboard = () => {
                   {menuCategories.map(cat => (
                     <button
                       key={cat}
-                      onClick={() => setSelectedCat(cat)}
+                      onClick={() => {
+                        setSelectedCat(cat);
+                        if (mainScrollRef.current) mainScrollRef.current.scrollTop = 0;
+                      }}
                       className={`px-4 py-2 rounded-2xl text-xs font-bold whitespace-nowrap transition-all active:scale-95 ${
                         selectedCat === cat
                           ? 'bg-[#EAB308] text-black shadow-[0_0_15px_rgba(234,179,8,0.4)]'
@@ -1570,7 +1582,13 @@ const CustomerDashboard = () => {
           const active = tab === key;
           return (
             <button key={key}
-              onClick={() => setTab(key)}
+              onClick={() => {
+                if (tab === key) {
+                  mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                  setTab(key);
+                }
+              }}
               className="flex-1 flex flex-col items-center justify-center py-2 gap-1 relative transition-all active:scale-95 group">
               {gold ? (
                 /* Prominent solid gold center reserve button as in mockup */
