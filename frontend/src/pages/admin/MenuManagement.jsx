@@ -342,7 +342,8 @@ const MenuManagement = () => {
               }`}>
               {/* Image */}
               <div className="relative h-44">
-                <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                <img src={item.image} alt={item.name} className="w-full h-full object-cover"
+                  onError={e => { e.target.onerror = null; e.target.src = '/no-image.png'; }} />
 
                 {/* Price badge */}
                 <div className="absolute top-3 right-3 bg-primary text-black px-3 py-1 rounded-full font-bold text-sm shadow-lg">
