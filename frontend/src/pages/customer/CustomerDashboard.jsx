@@ -354,9 +354,7 @@ const CustomerDashboard = () => {
                     <p className="text-xs mt-0.5" style={{ color:'rgba(234,179,8,0.5)' }}>₹{pdCoins.toLocaleString()} value · Earn 10% on dine-in</p>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background:GF, border:`1.5px solid ${GB}` }}>
-                      <Star className="w-6 h-6" style={{ color:GOLD }} />
-                    </div>
+                    <img src="/pd_coin.png" alt="PD Coin" className="w-14 h-14 drop-shadow-lg" style={{ filter:'drop-shadow(0 0 8px rgba(234,179,8,0.4))' }} />
                     <button onClick={()=>setTab('coins')}
                       className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl active:scale-95 transition-all"
                       style={{ background:GF, border:`1px solid ${GB}`, color:GOLD }}>
@@ -617,14 +615,22 @@ const CustomerDashboard = () => {
           <div className="p-4 space-y-4">
             <div className="rounded-2xl p-5 text-center"
               style={{ background:`linear-gradient(135deg,rgba(234,179,8,0.12),rgba(202,138,4,0.05))`, border:`1.5px solid ${GB}` }}>
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] mb-3" style={{ color:GOLD }}>PD Coins</p>
-              <div className="flex items-center justify-center gap-2 mb-1">
-                <Star className="w-6 h-6" style={{ color:GOLD }} />
-                <span className="text-5xl font-black text-white">{pdCoins.toLocaleString()}</span>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] mb-4" style={{ color:GOLD }}>PD Coins</p>
+              {/* Brand coin asset */}
+              <div className="flex justify-center mb-4">
+                <img
+                  src="/pd_coin.png"
+                  alt="PD Coin"
+                  className="w-28 h-28"
+                  style={{ filter:'drop-shadow(0 0 20px rgba(234,179,8,0.55)) drop-shadow(0 4px 12px rgba(0,0,0,0.6))', animation:'spin 18s linear infinite' }}
+                />
               </div>
-              <p className="font-bold text-sm mb-3" style={{ color:'rgba(234,179,8,0.65)' }}>₹{pdCoins.toLocaleString()} Value</p>
+              <span className="text-5xl font-black text-white">{pdCoins.toLocaleString()}</span>
+              <p className="font-bold text-sm mt-1 mb-3" style={{ color:'rgba(234,179,8,0.65)' }}>₹{pdCoins.toLocaleString()} Value</p>
               <div className="w-16 h-px mx-auto mb-3" style={{ background:GB }} />
-              <p className="text-xs text-gray-500">Redeem on your next visit</p>
+              <div className="flex items-center justify-center gap-3 text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">
+                <span>Dine</span><span style={{color:GOLD}}>◆</span><span>Earn</span><span style={{color:GOLD}}>◆</span><span>Redeem</span><span style={{color:GOLD}}>◆</span><span>Revisit</span>
+              </div>
             </div>
 
             <div className="rounded-2xl p-4" style={{ background:CARD, border:'1px solid rgba(255,255,255,0.07)' }}>
@@ -649,7 +655,7 @@ const CustomerDashboard = () => {
               <p className="text-xs font-black uppercase tracking-widest mb-3" style={{ color:GOLD }}>Transaction History</p>
               {pdCoins === 0 ? (
                 <div className="py-8 text-center">
-                  <Star className="w-10 h-10 text-gray-800 mx-auto mb-2" />
+                  <img src="/pd_coin.png" alt="" className="w-12 h-12 mx-auto mb-2 opacity-20" />
                   <p className="text-gray-600 text-sm">No transactions yet</p>
                   <p className="text-gray-700 text-xs mt-1">Dine in to start earning!</p>
                 </div>

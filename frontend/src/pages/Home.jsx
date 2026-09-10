@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChefHat, Award, Clock, Star, Sparkles, ShieldCheck, History, PhoneCall, CalendarCheck, Utensils, ArrowRight, Crown, MapPin, Phone, ExternalLink } from 'lucide-react';
-import { features } from '../mockData';
+import { ChefHat, Award, Clock, Star, Sparkles, ShieldCheck, History, PhoneCall, CalendarCheck, Utensils, ArrowRight, Crown, MapPin, Phone, ExternalLink, Flame, Check } from 'lucide-react';
 import { useCustomerAuth } from '../context/CustomerAuthContext';
 import API_BASE from '../lib/config';
 
@@ -33,6 +32,41 @@ const HOME_BRANCHES = [
     phones: ["+91 91756 23046"],
     mapSrc: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3783.5!2d73.8567!3d18.5204!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bc2c0a7a1c5e12d%3A0x0!2sRenaissance+Business+Centre+Camp+Pune!5e0!3m2!1sen!2sin!4v1694000000003",
     mapLink: "https://maps.google.com/?q=Renaissance+Business+Centre+Camp+Pune+Maharashtra",
+  },
+];
+
+const ROYAL_PILLARS = [
+  {
+    number: "01",
+    tag: "ESTD. 1978",
+    title: "Master Culinary Ustads",
+    description: "Centuries-old royal Mughlai recipes perfected over 46+ years by dedicated master chefs guarding secret ancestral spice blends.",
+    highlight: "46+ Years Legacy",
+    Icon: Crown,
+  },
+  {
+    number: "02",
+    tag: "SIGNATURE CRAFT",
+    title: "Dum-Pukht & Slow Flame",
+    description: "Our legendary Mutton Raan Biryani and 18-hour slow-simmered Nihari, prepared on charcoal embers in sealed brass degs.",
+    highlight: "18-Hour Slow Simmer",
+    Icon: Flame,
+  },
+  {
+    number: "03",
+    tag: "PURE HERITAGE",
+    title: "Sacred Spices & Saffron",
+    description: "Pure Kashmiri saffron, cold-pressed artisanal ghee, and hand-selected whole spices stone-ground daily for an authentic royal aroma.",
+    highlight: "100% Pure Saffron",
+    Icon: Sparkles,
+  },
+  {
+    number: "04",
+    tag: "COURTLY SERVICE",
+    title: "Imperial Darbari Ambiance",
+    description: "Immerse yourself in courtly Mughal grandeur with magnificent architecture, warm Persian hospitality, and aristocratic dining comfort.",
+    highlight: "Palace Hospitality",
+    Icon: Award,
   },
 ];
 
@@ -169,24 +203,85 @@ const Home = () => {
       {/* Golden Border */}
       <div className="golden-divider"></div>
 
-      {/* Features Section */}
-      <section className="py-20 bg-[#1a4855] persian-pattern">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature, index) => {
-              const icons = [ChefHat, Award, Clock, Star];
-              const Icon = icons[index];
-              return (
-                <div key={feature.id} className="bg-[#0f2933] rounded-xl p-6 text-center hover:shadow-xl transition-all duration-300 card-hover">
-                  <div className="w-16 h-16 bg-[#1a4855] rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Icon className="h-8 w-8 text-[#EAB308]" />
-                  </div>
-                  <h3 className="text-lg font-bold text-white mb-2">{feature.title}</h3>
-                  <p className="text-gray-400 text-sm leading-relaxed">{feature.description}</p>
-                </div>
-              );
-            })}
+      {/* ══ Royal Pillars — Why Persian Darbar ══ */}
+      <section className="relative py-24 overflow-hidden" style={{ background: 'linear-gradient(180deg, #0f2933 0%, #0a1f28 60%, #0f2933 100%)' }}>
+
+        {/* Section watermark */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden">
+          <span className="text-[12rem] md:text-[18rem] font-black uppercase text-white/[0.025] tracking-[0.2em] leading-none whitespace-nowrap">DARBAR</span>
+        </div>
+
+        {/* Ambient glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[60%] h-96 rounded-full pointer-events-none" style={{ background: 'radial-gradient(ellipse, rgba(234,179,8,0.06) 0%, transparent 70%)' }} />
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+          {/* Section header */}
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-3 border border-[#EAB308]/25 rounded-full px-5 py-2 mb-6" style={{ background: 'rgba(234,179,8,0.06)' }}>
+              <Crown className="w-3.5 h-3.5 text-[#EAB308]" />
+              <span className="text-[#EAB308] text-[10px] font-black uppercase tracking-[0.45em]">The Persian Darbar Difference</span>
+            </div>
+            <h2 className="text-4xl md:text-6xl font-black text-white italic mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
+              Why <span className="text-[#EAB308]">Royalty</span> Dines Here
+            </h2>
+            <div className="w-20 h-px mx-auto" style={{ background: 'linear-gradient(to right, transparent, #EAB308, transparent)' }} />
           </div>
+
+          {/* Pillars grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-16">
+            {ROYAL_PILLARS.map((pillar) => (
+              <div
+                key={pillar.number}
+                className="group relative rounded-2xl p-6 cursor-default transition-all duration-500 overflow-hidden"
+                style={{
+                  background: 'rgba(255,255,255,0.025)',
+                  border: '1px solid rgba(234,179,8,0.12)',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.border = '1px solid rgba(234,179,8,0.35)'; e.currentTarget.style.background = 'rgba(234,179,8,0.05)'; e.currentTarget.style.transform = 'translateY(-6px)'; e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.4), 0 0 30px rgba(234,179,8,0.08)'; }}
+                onMouseLeave={e => { e.currentTarget.style.border = '1px solid rgba(234,179,8,0.12)'; e.currentTarget.style.background = 'rgba(255,255,255,0.025)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+              >
+                {/* Editorial number watermark */}
+                <div className="absolute top-3 right-4 font-black text-7xl leading-none select-none" style={{ color: 'rgba(234,179,8,0.06)' }}>{pillar.number}</div>
+
+                {/* Tag */}
+                <span className="text-[9px] font-black uppercase tracking-[0.35em] text-[#EAB308]/60 block mb-4">{pillar.tag}</span>
+
+                {/* Icon */}
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-5" style={{ background: 'rgba(234,179,8,0.10)', border: '1px solid rgba(234,179,8,0.20)' }}>
+                  <pillar.Icon className="w-5 h-5 text-[#EAB308]" />
+                </div>
+
+                {/* Title */}
+                <h3 className="text-white font-bold text-lg mb-3 leading-snug" style={{ fontFamily: 'Playfair Display, serif' }}>{pillar.title}</h3>
+
+                {/* Description */}
+                <p className="text-gray-500 text-xs leading-relaxed mb-4">{pillar.description}</p>
+
+                {/* Highlight pill */}
+                <div className="inline-flex items-center gap-1.5" style={{ background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.18)', borderRadius: '99px', padding: '4px 10px' }}>
+                  <Check className="w-3 h-3 text-[#EAB308]" />
+                  <span className="text-[#EAB308] text-[10px] font-bold">{pillar.highlight}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Heritage stat strip */}
+          <div className="rounded-2xl p-6 flex flex-wrap gap-6 items-center justify-around" style={{ background: 'rgba(234,179,8,0.04)', border: '1px solid rgba(234,179,8,0.14)' }}>
+            {[
+              { value: '46+', label: 'Years of Tradition' },
+              { value: '10K+', label: 'Imperial Guests / Month' },
+              { value: '50+', label: 'Ancestral Recipes' },
+              { value: '4', label: 'Royal Locations' },
+            ].map((stat, i) => (
+              <div key={i} className="text-center">
+                <div className="text-2xl md:text-3xl font-black text-[#EAB308] italic" style={{ fontFamily: 'Playfair Display, serif' }}>{stat.value}</div>
+                <div className="text-gray-500 text-[10px] font-black uppercase tracking-[0.3em] mt-1">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+
         </div>
       </section>
 
