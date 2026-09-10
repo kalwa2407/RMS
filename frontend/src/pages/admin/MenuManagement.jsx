@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Plus, Edit2, Trash2, Save, X, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { Plus, Edit2, Trash2, Save, X, Eye, EyeOff, AlertCircle, Star, Info } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
 import API_BASE from "../../lib/config";
@@ -140,6 +140,7 @@ const MenuManagement = () => {
   });
 
   const unavailableCount = menuItems.filter(i => i.available === false).length;
+  const signatureCount = menuItems.filter(i => i.popular === true).length;
 
   if (loading) {
     return (
@@ -162,6 +163,9 @@ const MenuManagement = () => {
           </h2>
           <p className="text-gray-400 text-sm mt-1">
             {menuItems.length} total items
+            {signatureCount > 0 && (
+              <span className="ml-2 text-yellow-400">· ⭐ {signatureCount} signature</span>
+            )}
             {unavailableCount > 0 && (
               <span className="ml-2 text-orange-400">· {unavailableCount} unavailable</span>
             )}
@@ -188,6 +192,18 @@ const MenuManagement = () => {
             {f.label}
           </button>
         ))}
+      </div>
+
+      {/* Signature Dish Info Banner */}
+      <div className="flex items-start gap-2 bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 mb-4">
+        <Star className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5 fill-yellow-400" />
+        <p className="text-yellow-300 text-sm">
+          <strong>Signature Dishes</strong> — Items marked as ⭐ Signature will appear in the{" "}
+          <strong>"Signature Dishes"</strong> section on the Home page.
+          {signatureCount > 0
+            ? <> Currently <strong>{signatureCount} item(s)</strong> are marked as Signature (first 3 will show on Home).</>
+            : <> No items marked as Signature yet.</>}
+        </p>
       </div>
 
       {/* Unavailable notice */}
@@ -254,16 +270,45 @@ const MenuManagement = () => {
                 className="w-24 h-24 object-cover rounded-xl border border-[#EAB308]/20"
                 onError={e => { e.target.style.display = "none"; }} />
             )}
-            <div className="flex gap-6">
-              <label className="flex items-center gap-2 text-white text-sm cursor-pointer">
-                <input type="checkbox" checked={formData.popular} onChange={e => setFormData({ ...formData, popular: e.target.checked })}
-                  className="accent-primary" />
-                Popular
+            <div className="flex flex-col sm:flex-row gap-4">
+              {/* Signature Dish Toggle */}
+              <label className={`flex items-center gap-3 cursor-pointer px-4 py-3 rounded-xl border transition-all ${
+                formData.popular
+                  ? "bg-yellow-500/15 border-yellow-500/40 text-yellow-300"
+                  : "bg-[#0f2933] border-[#EAB308]/15 text-gray-400 hover:border-yellow-500/30"
+              }`}>
+                <input
+                  type="checkbox"
+                  checked={formData.popular}
+                  onChange={e => setFormData({ ...formData, popular: e.target.checked })}
+                  className="accent-yellow-400 w-4 h-4"
+                />
+                <Star className={`w-4 h-4 ${formData.popular ? "fill-yellow-400 text-yellow-400" : "text-gray-500"}`} />
+                <div>
+                  <p className="font-semibold text-sm leading-none">Signature Dish</p>
+                  <p className="text-xs mt-0.5 opacity-70">Shows on Home page Signature section</p>
+                </div>
               </label>
-              <label className="flex items-center gap-2 text-white text-sm cursor-pointer">
-                <input type="checkbox" checked={formData.available} onChange={e => setFormData({ ...formData, available: e.target.checked })}
-                  className="accent-primary" />
-                Available
+
+              {/* Available Toggle */}
+              <label className={`flex items-center gap-3 cursor-pointer px-4 py-3 rounded-xl border transition-all ${
+                formData.available
+                  ? "bg-green-500/10 border-green-500/30 text-green-300"
+                  : "bg-[#0f2933] border-red-500/20 text-red-400"
+              }`}>
+                <input
+                  type="checkbox"
+                  checked={formData.available}
+                  onChange={e => setFormData({ ...formData, available: e.target.checked })}
+                  className="accent-green-400 w-4 h-4"
+                />
+                {formData.available
+                  ? <Eye className="w-4 h-4" />
+                  : <EyeOff className="w-4 h-4" />}
+                <div>
+                  <p className="font-semibold text-sm leading-none">{formData.available ? "Available" : "Unavailable"}</p>
+                  <p className="text-xs mt-0.5 opacity-70">{formData.available ? "Visible on public menu" : "Hidden from public menu"}</p>
+                </div>
               </label>
             </div>
             <div className="flex gap-3">
@@ -304,10 +349,10 @@ const MenuManagement = () => {
                   ₹{item.price}
                 </div>
 
-                {/* Popular badge */}
+                {/* Signature Dish badge */}
                 {item.popular && (
-                  <div className="absolute top-3 left-3 bg-green-500 text-white px-2 py-0.5 rounded-full text-xs font-bold">
-                    🔥 Popular
+                  <div className="absolute top-3 left-3 bg-yellow-500 text-black px-2 py-0.5 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg">
+                    <Star className="w-3 h-3 fill-black" /> Signature
                   </div>
                 )}
 

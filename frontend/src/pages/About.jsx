@@ -149,9 +149,9 @@ const About = () => {
           <ScrollReveal className="lg:col-span-12 xl:col-span-7">
             <div className="relative group aspect-[4/3] md:aspect-video overflow-hidden rounded-2xl md:rounded-[4rem] bg-[#1a4855] border border-[#EAB308]/20">
               <img
-                src="https://images.unsplash.com/photo-1572471553554-bc9917e51ed3"
-                alt="The Imperial Kitchen"
-                className="w-full h-full object-cover grayscale-[0.5] group-hover:grayscale-0 transition-all duration-[2000ms] scale-110 group-hover:scale-100"
+                src="/luxury_persian_restaurant_interior_1776082050142.png"
+                alt="Persian Darbar — Royal Dining"
+                className="w-full h-full object-cover grayscale-[0.3] group-hover:grayscale-0 transition-all duration-[2000ms] scale-110 group-hover:scale-100"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent p-6 md:p-12 flex flex-col justify-end">
                 <p className="text-primary text-[10px] font-black uppercase tracking-[0.5em] mb-2 md:mb-4">Established 1978</p>
@@ -220,20 +220,21 @@ const About = () => {
 
             {/* Seamless blended story paragraph */}
             <ScrollReveal delay={0.1}>
-              <div className="relative py-8 md:py-12 px-5 sm:px-8 md:px-12 rounded-2xl md:rounded-3xl border border-[#EAB308]/15 bg-gradient-to-b from-[#1a4855]/40 via-[#0f2933]/60 to-[#1a4855]/40 backdrop-blur-sm shadow-[0_10px_40px_rgba(0,0,0,0.2)]">
-                {/* Decorative golden accent lines */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-[2px] bg-gradient-to-r from-transparent via-[#EAB308]/60 to-transparent" />
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-[2px] bg-gradient-to-r from-transparent via-[#EAB308]/60 to-transparent" />
+              <div className="relative py-8 md:py-12 px-2 sm:px-4">
+                {/* Golden top accent */}
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="h-[1px] w-12 bg-[#EAB308]" />
+                  <span className="text-xs font-black text-[#EAB308] uppercase tracking-widest">Our Heritage • Since 1978</span>
+                </div>
 
-                <p className="text-gray-200 text-sm sm:text-base md:text-lg leading-relaxed md:leading-loose font-light text-left md:text-justify relative z-10">
-                  The name <span className="text-[#EAB308] font-semibold">Persian Darbar</span> symbolizes and sounds synonymous to the Mughal dynasty and to the legacy of Mughal cuisine, coming from Mughal period and giving a feeling of a Royal Era while you dine. The brand started its journey in the year <span className="text-[#EAB308] font-semibold">1978</span> with the founders envisioning this brand, which reflects quality and taste. The founders carried out the vision &amp; expanded its branches across Mumbai with their rich recipes, love for food, sharp business acumen &amp; strong leadership qualities — resulting in an everlasting journey for Mumbaikars to relish unique Mughlai recipes developed over <span className="text-[#EAB308] font-semibold">4 decades</span> &amp; currently expanding at pan India level. Persian Darbar stands for <span className="text-[#EAB308] font-semibold">quality, trust, consistent taste &amp; royal ambience</span> — a rare combination in the food business, with all real spices, saffron, excellent quality of mutton and chicken freshly served every day. Serving all sorts of Mughlai Cuisines like <span className="text-[#EAB308] font-semibold">"Mutton Raan Biryani"</span> and assorted kebabs famous for their exclusive taste, the word of mouth for Persian Darbar is very strong among food lovers. They also serve <span className="text-[#EAB308] font-semibold">outdoor &amp; corporate catering</span> to many eminent MNCs and brands. The chefs have been serving this brand for <span className="text-[#EAB308] font-semibold">decades</span> — they know this is the most authentic preparation and aesthetic cooking style, rare to find, focusing exclusively on quality. The founders are visionaries — very clear that come what may, they would not serve anything below their standards set from day one. Today, the <span className="text-[#EAB308] font-semibold">next generation</span>, led by young and dynamic leaders, follows the same discipline of maintaining exceptional quality — which brings them laurels all the time.
+                <p className="text-gray-400 font-light text-sm md:text-lg leading-relaxed italic text-justify">
+                  The name <span className="text-[#EAB308] font-semibold not-italic">Persian Darbar</span> symbolizes and sounds synonymous to the Mughal dynasty and to the legacy of Mughal cuisine, coming from Mughal period and giving a feeling of a Royal Era while you dine. The brand started its journey in the year <span className="text-[#EAB308] font-semibold not-italic">1978</span> with the founders envisioning this brand, which reflects quality and taste. The founders carried out the vision &amp; expanded its branches across Mumbai with their rich recipes, love for food, sharp business acumen &amp; strong leadership qualities — resulting in an everlasting journey for Mumbaikars to relish unique Mughlai recipes developed over <span className="text-[#EAB308] font-semibold not-italic">4 decades</span> &amp; currently expanding at pan India level. Persian Darbar stands for <span className="text-[#EAB308] font-semibold not-italic">quality, trust, consistent taste &amp; royal ambience</span> — a rare combination in the food business, with all real spices, saffron, excellent quality of mutton and chicken freshly served every day. Serving all sorts of Mughlai Cuisines like <span className="text-[#EAB308] font-semibold not-italic">"Mutton Raan Biryani"</span> and assorted kebabs famous for their exclusive taste, the word of mouth for Persian Darbar is very strong among food lovers. They also serve <span className="text-[#EAB308] font-semibold not-italic">outdoor &amp; corporate catering</span> to many eminent MNCs and brands. The chefs have been serving this brand for <span className="text-[#EAB308] font-semibold not-italic">decades</span> — they know this is the most authentic preparation and aesthetic cooking style, rare to find, focusing exclusively on quality. The founders are visionaries — very clear that come what may, they would not serve anything below their standards set from day one. Today, the <span className="text-[#EAB308] font-semibold not-italic">next generation</span>, led by young and dynamic leaders, follows the same discipline of maintaining exceptional quality — which brings them laurels all the time.
                 </p>
 
-                <div className="flex justify-center mt-8">
-                  <div className="inline-flex items-center gap-2.5 bg-[#EAB308]/10 border border-[#EAB308]/30 rounded-full px-5 py-2">
-                    <Crown className="text-[#EAB308]" size={15} />
-                    <span className="text-[#EAB308] font-black text-xs uppercase tracking-widest">THE RAAN KING OF MUMBAI</span>
-                  </div>
+                {/* Golden bottom author line — same as Beyond The Plate */}
+                <div className="flex items-center space-x-4 pt-8">
+                  <div className="h-[1px] w-12 bg-[#EAB308]" />
+                  <span className="text-xs font-black text-[#EAB308] uppercase tracking-widest">The Raan King Of Mumbai</span>
                 </div>
               </div>
             </ScrollReveal>

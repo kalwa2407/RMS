@@ -1,23 +1,155 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChefHat, Award, Clock, Star, Sparkles, ShieldCheck, History, PhoneCall, CalendarCheck, Utensils, ArrowRight, Crown } from 'lucide-react';
-import { menuItems, features } from '../mockData';
+import { ChefHat, Award, Clock, Star, Sparkles, ShieldCheck, History, PhoneCall, CalendarCheck, Utensils, ArrowRight, Crown, MapPin, Phone, ExternalLink } from 'lucide-react';
+import { features } from '../mockData';
 import { useCustomerAuth } from '../context/CustomerAuthContext';
+import API_BASE from '../lib/config';
+
+const HOME_BRANCHES = [
+  {
+    city: "BANDRA", badge: "Flagship", accent: "#EAB308",
+    address: "Moray Mahal, Linking Road,\nBandra West, Mumbai",
+    phones: ["+91 98929 57741", "+91 77388 93395", "022 6694 1326"],
+    mapSrc: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3771.2!2d72.8360!3d19.0550!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7c95e1e0a8e1d%3A0x0!2sMoray%20Mahal%2C%20Linking%20Rd%2C%20Bandra%20West%2C%20Mumbai!5e0!3m2!1sen!2sin!4v1694000000000",
+    mapLink: "https://maps.google.com/?q=Moray+Mahal+Linking+Road+Bandra+West+Mumbai",
+  },
+  {
+    city: "ANDHERI", badge: "East Mumbai", accent: "#f97316",
+    address: "Times Square Building, B-3,\nAndheri-Kurla Road, Marol, Andheri (E)",
+    phones: ["+91 87799 19652", "+91 90829 94556", "022 4968 2090"],
+    mapSrc: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3769.9!2d72.8796!3d19.1130!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7b7e6b4af2f4b%3A0x0!2sTimes%20Square%20Building%20Andheri-Kurla%20Road%20Marol%20Andheri!5e0!3m2!1sen!2sin!4v1694000000001",
+    mapLink: "https://maps.google.com/?q=Times+Square+Building+Andheri+Kurla+Road+Marol+Andheri+East+Mumbai",
+  },
+  {
+    city: "KURLA", badge: "Central Hub", accent: "#8b5cf6",
+    address: "No.17, Kanakia Zillion,\nL.B.S Marg, CST Road Junction,\nKurla West, Mumbai",
+    phones: ["+91 91675 10547", "+91 91674 97707", "022 2086 0844"],
+    mapSrc: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3771.8!2d72.8800!3d19.0700!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7c63a37c67a47%3A0x0!2sKanakia%20Zillion%20LBS%20Marg%20Kurla%20West%20Mumbai!5e0!3m2!1sen!2sin!4v1694000000002",
+    mapLink: "https://maps.google.com/?q=Kanakia+Zillion+LBS+Marg+Kurla+West+Mumbai",
+  },
+  {
+    city: "PUNE", badge: "Pune", accent: "#22c55e",
+    address: "My Office Renaissance Business Centre,\nDr Baba Saheb Ambedkar Rd, Camp,\nPune, Maharashtra 411001",
+    phones: ["+91 91756 23046"],
+    mapSrc: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3783.5!2d73.8567!3d18.5204!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bc2c0a7a1c5e12d%3A0x0!2sRenaissance+Business+Centre+Camp+Pune!5e0!3m2!1sen!2sin!4v1694000000003",
+    mapLink: "https://maps.google.com/?q=Renaissance+Business+Centre+Camp+Pune+Maharashtra",
+  },
+];
 
 const Home = () => {
-  const signatureDishes = menuItems.filter(item => item.popular).slice(0, 3);
   const { currentUser } = useCustomerAuth();
+  const [signatureDishes, setSignatureDishes] = useState([]);
+  const [loadingDishes, setLoadingDishes] = useState(true);
+
+  // Hero slideshow — add images to /public/dynamic_images/ as img1.jpg, img2.jpg ... img9.jpg
+  const heroImages = [
+    '/dynamic_images/img1.jpeg',
+    '/dynamic_images/img2.jpeg',
+    '/dynamic_images/img3.jpeg',
+    '/dynamic_images/img4.jpeg',
+    '/dynamic_images/img5.jpeg',
+    '/dynamic_images/img6.jpeg',
+    '/dynamic_images/img7.jpeg',
+    '/dynamic_images/img8.jpeg',
+    '/dynamic_images/img9.jpeg',
+  ];
+  const [heroIndex, setHeroIndex] = useState(0);
+  const [prevHeroIndex, setPrevHeroIndex] = useState(null);
+  const [transitioning, setTransitioning] = useState(false);
+
+  const goToSlide = (index) => {
+    if (transitioning) return;
+    setPrevHeroIndex(heroIndex);
+    setTransitioning(true);
+    setHeroIndex(index);
+    setTimeout(() => {
+      setPrevHeroIndex(null);
+      setTransitioning(false);
+    }, 1000);
+  };
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const next = (heroIndex + 1) % heroImages.length;
+      goToSlide(next);
+    }, 4000);
+    return () => clearInterval(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [heroIndex, transitioning]);
+
+  useEffect(() => {
+    const fetchSignatureDishes = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/menu`);
+        const data = await res.json();
+        // Only items marked as Signature (popular=true) by admin, max 3 on Home
+        const signature = data.filter(item => item.popular === true && item.available !== false).slice(0, 3);
+        setSignatureDishes(signature);
+      } catch (err) {
+        console.error('Failed to fetch signature dishes:', err);
+      } finally {
+        setLoadingDishes(false);
+      }
+    };
+    fetchSignatureDishes();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#184956] to-[#0f2933]">
-      {/* Hero Section */}
-      <section
-        className="relative h-screen flex items-center justify-center bg-cover bg-center"
-        style={{
-          backgroundImage: 'linear-gradient(rgba(15, 41, 51, 0.85), rgba(15, 41, 51, 0.85)), url(https://images.unsplash.com/photo-1544148103-0773bf10d330?q=80&w=2070&auto=format&fit=crop)'
-        }}
-      >
-        <div className="text-center text-white px-4 max-w-4xl mx-auto fade-in-up">
+      {/* Hero Section — Dynamic Slideshow */}
+      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+
+        {/* Background layers — crossfade */}
+        {/* Previous image (fading out) */}
+        {prevHeroIndex !== null && (
+          <div
+            className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000 opacity-0"
+            style={{ backgroundImage: `url(${heroImages[prevHeroIndex]})` }}
+          />
+        )}
+        {/* Current image (fading in) */}
+        <div
+          key={heroIndex}
+          className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
+          style={{ backgroundImage: `url(${heroImages[heroIndex]})` }}
+        />
+        {/* Dark overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0f2933]/80 via-[#0f2933]/70 to-[#0f2933]/90" />
+
+        {/* Prev / Next arrows */}
+        <button
+          onClick={() => goToSlide((heroIndex - 1 + heroImages.length) % heroImages.length)}
+          className="absolute left-4 md:left-8 z-20 w-10 h-10 rounded-full bg-black/30 border border-[#EAB308]/30 text-[#EAB308] flex items-center justify-center hover:bg-[#EAB308]/20 transition-all"
+          aria-label="Previous"
+        >
+          &#8249;
+        </button>
+        <button
+          onClick={() => goToSlide((heroIndex + 1) % heroImages.length)}
+          className="absolute right-4 md:right-8 z-20 w-10 h-10 rounded-full bg-black/30 border border-[#EAB308]/30 text-[#EAB308] flex items-center justify-center hover:bg-[#EAB308]/20 transition-all"
+          aria-label="Next"
+        >
+          &#8250;
+        </button>
+
+        {/* Dot indicators */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+          {heroImages.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => goToSlide(i)}
+              className={`transition-all duration-300 rounded-full ${
+                i === heroIndex
+                  ? 'w-6 h-2 bg-[#EAB308]'
+                  : 'w-2 h-2 bg-white/40 hover:bg-white/70'
+              }`}
+              aria-label={`Slide ${i + 1}`}
+            />
+          ))}
+        </div>
+
+        {/* Content */}
+        <div className="relative z-10 text-center text-white px-4 max-w-4xl mx-auto fade-in-up">
           <div className="mb-8">
             <div className="inline-block border border-[#EAB308] rounded-full px-6 py-2">
               <p className="text-[#EAB308] text-base font-medium">
@@ -85,31 +217,55 @@ const Home = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {signatureDishes.map((dish) => (
-              <div key={dish.id} className="bg-[#1a4855] rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 card-hover">
-                <div className="relative h-56 overflow-hidden">
-                  <img
-                    src={dish.image}
-                    alt={dish.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-[#EAB308] mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>{dish.name}</h3>
-                  <p className="text-gray-300 text-sm mb-4 leading-relaxed">{dish.description}</p>
-                  <div className="flex justify-between items-center">
-                    <span className="text-2xl font-bold text-[#EAB308]">₹{dish.price}</span>
-                    <Link to="/order">
-                      <button className="bg-[#EAB308] hover:bg-[#CA8A04] text-black px-6 py-2 rounded-full font-bold transition-all duration-300">
-                        Order Now
-                      </button>
-                    </Link>
+          {loadingDishes ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="bg-[#1a4855] rounded-xl overflow-hidden animate-pulse">
+                  <div className="h-56 bg-[#0f2933]" />
+                  <div className="p-6 space-y-3">
+                    <div className="h-5 bg-[#0f2933] rounded w-3/4" />
+                    <div className="h-3 bg-[#0f2933] rounded w-full" />
+                    <div className="h-3 bg-[#0f2933] rounded w-2/3" />
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : signatureDishes.length === 0 ? (
+            <div className="text-center py-16 text-gray-500">
+              <Star className="w-12 h-12 mx-auto mb-3 opacity-30" />
+              <p>No signature dishes available right now.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {signatureDishes.map((dish) => (
+                <div key={dish._id || dish.id} className="bg-[#1a4855] rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 card-hover">
+                  <div className="relative h-56 overflow-hidden">
+                    <img
+                      src={dish.image}
+                      alt={dish.name}
+                      className="w-full h-full object-cover"
+                      onError={e => { e.target.src = '/no-image.png'; }}
+                    />
+                    <div className="absolute top-3 left-3 bg-yellow-500 text-black px-2 py-0.5 rounded-full text-xs font-bold flex items-center gap-1 shadow">
+                      <Star className="w-3 h-3 fill-black" /> Signature
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold text-[#EAB308] mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>{dish.name}</h3>
+                    <p className="text-gray-300 text-sm mb-4 leading-relaxed">{dish.description}</p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-2xl font-bold text-[#EAB308]">₹{dish.price}</span>
+                      <Link to="/order">
+                        <button className="bg-[#EAB308] hover:bg-[#CA8A04] text-black px-6 py-2 rounded-full font-bold transition-all duration-300">
+                          Order Now
+                        </button>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="text-center mt-12">
             <Link to="/menu">
@@ -239,6 +395,104 @@ const Home = () => {
           </div>
         </section>
       )}
+      {/* Golden Border */}
+      <div className="golden-divider" />
+
+      {/* ══════════════════════════════════════════
+          OUR BRANCHES — Compact Map Cards
+      ══════════════════════════════════════════ */}
+      <section className="py-20 bg-[#0f2933]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="text-center mb-12">
+            <span className="text-[#EAB308] text-[10px] font-black uppercase tracking-[0.5em] block mb-3">Where To Find Us</span>
+            <h2 className="text-3xl md:text-5xl font-black text-white italic mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
+              Our <span className="text-[#EAB308]">Branches</span>
+            </h2>
+            <div className="w-24 h-[1px] bg-[#EAB308]/30 mx-auto mt-4" />
+            <p className="text-gray-500 text-sm mt-4 max-w-xl mx-auto">
+              Four royal courts across Maharashtra — each one a gateway to authentic Mughal culinary heritage.
+            </p>
+          </div>
+
+          {/* Branch Cards Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {HOME_BRANCHES.map((branch) => (
+              <div
+                key={branch.city}
+                className="group relative rounded-3xl overflow-hidden border border-white/10 flex flex-col"
+                style={{ background: 'linear-gradient(135deg, #0f1e28, #152535)' }}
+              >
+                {/* Top accent line */}
+                <div className="h-0.5 w-full shrink-0" style={{ background: `linear-gradient(90deg, transparent, ${branch.accent}, transparent)` }} />
+
+                {/* Card header */}
+                <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-2xl flex items-center justify-center shrink-0" style={{ background: `${branch.accent}20`, border: `1px solid ${branch.accent}30` }}>
+                      <MapPin style={{ color: branch.accent }} size={16} />
+                    </div>
+                    <div>
+                      <p className="text-white font-black text-base leading-none" style={{ fontFamily: 'Playfair Display, serif' }}>{branch.city}</p>
+                      <span className="text-[10px] font-bold uppercase tracking-widest mt-0.5 block" style={{ color: branch.accent }}>{branch.badge}</span>
+                    </div>
+                  </div>
+                  <a
+                    href={branch.mapLink} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider transition-all hover:scale-105 active:scale-95"
+                    style={{ background: `${branch.accent}15`, border: `1px solid ${branch.accent}30`, color: branch.accent }}
+                  >
+                    <ExternalLink size={11} /> Get Directions
+                  </a>
+                </div>
+
+                {/* Address */}
+                <div className="px-5 pb-3 shrink-0">
+                  <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-line">{branch.address}</p>
+                </div>
+
+                {/* Compact Map — 150px height */}
+                <div
+                  className="relative mx-4 mb-4 rounded-2xl overflow-hidden shrink-0"
+                  style={{ height: 150, border: `1.5px solid ${branch.accent}25`, boxShadow: `0 0 30px ${branch.accent}10` }}
+                >
+                  <div className="absolute top-0 left-0 w-10 h-10 rounded-br-2xl pointer-events-none z-10" style={{ background: `linear-gradient(135deg, ${branch.accent}25, transparent)` }} />
+                  <div className="absolute bottom-0 right-0 w-10 h-10 rounded-tl-2xl pointer-events-none z-10" style={{ background: `linear-gradient(315deg, ${branch.accent}25, transparent)` }} />
+                  <iframe
+                    title={`Map - Persian Darbar ${branch.city}`}
+                    src={branch.mapSrc}
+                    width="100%" height="100%"
+                    style={{ border: 0, filter: 'invert(90%) hue-rotate(180deg) brightness(0.85) contrast(1.1)' }}
+                    allowFullScreen="" loading="lazy" referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
+
+                {/* Phone numbers */}
+                {branch.phones.length > 0 && (
+                  <div className="px-5 pb-5 shrink-0">
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] mb-2" style={{ color: branch.accent }}>Contact</p>
+                    <div className="flex flex-wrap gap-2">
+                      {branch.phones.map(ph => (
+                        <a key={ph} href={`tel:${ph.replace(/\s/g, '')}`}
+                          className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-gray-300 hover:text-white transition-all"
+                          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+                        >
+                          <Phone size={9} style={{ color: branch.accent }} />
+                          {ph}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Bottom glow */}
+                <div className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none" style={{ background: `linear-gradient(to top, ${branch.accent}06, transparent)` }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
     </div>
   );
 };
