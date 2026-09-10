@@ -36,9 +36,7 @@ const Navbar = () => {
     <nav
       className="fixed w-full top-0 z-50 transition-all duration-300"
       style={{
-        background: scrolled ? 'rgba(10, 31, 40, 0.95)' : 'rgba(15, 41, 51, 0.92)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
+        background: '#184956',
         boxShadow: scrolled ? '0 10px 30px -10px rgba(0,0,0,0.6)' : '0 4px 20px -5px rgba(0,0,0,0.3)',
       }}
     >
