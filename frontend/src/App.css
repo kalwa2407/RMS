@@ -64,10 +64,7 @@ button:hover {
   background: #CA8A04;
 }
 
-/* Smooth scroll */
-html {
-  scroll-behavior: smooth;
-}
+/* Focus states */
 
 /* Focus states */
 *:focus {

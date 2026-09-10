@@ -71,7 +71,10 @@ const Menu = () => {
             {menuCategories.map((category) => (
               <button
                 key={category}
-                onClick={() => setSelectedCategory(category)}
+                onClick={() => {
+                  setSelectedCategory(category);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
                 className={`px-6 py-2 text-sm font-bold rounded-full transition-all duration-300 ${
                   selectedCategory === category
                     ? "bg-[#EAB308] text-black shadow-lg"

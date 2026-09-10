@@ -487,7 +487,10 @@ const TableOrder = () => {
         {/* Category Filter */}
         <div className="flex overflow-x-auto space-x-2 pb-4 scrollbar-hide mb-4">
           {categories.map((cat) => (
-            <button key={cat} onClick={() => setSelectedCategory(cat)}
+            <button key={cat} onClick={() => {
+              setSelectedCategory(cat);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
               className={`px-4 py-2 rounded-full whitespace-nowrap transition text-sm ${
                 selectedCategory === cat 
                   ? "bg-primary text-black font-bold" 
