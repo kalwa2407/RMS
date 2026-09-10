@@ -261,6 +261,34 @@ async def get_tables(manager: BaseDataManager = Depends(get_data_manager)):
     """Get all tables for reservation"""
     return await manager.get_tables()
 
+@api_router.get("/tables/stream")
+async def stream_table_status(request: Request, manager: BaseDataManager = Depends(get_data_manager)):
+    """SSE stream — pushes live table status every 3 seconds to customer dashboard"""
+    import asyncio, json as _json
+
+    async def event_generator():
+        while True:
+            if await request.is_disconnected():
+                break
+            try:
+                tables = await manager.get_tables()
+                payload = _json.dumps(tables)
+                yield f"data: {payload}\n\n"
+            except Exception as e:
+                yield f"data: {_json.dumps({'error': str(e)})}\n\n"
+            await asyncio.sleep(3)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
+
+
 # Gallery Endpoints
 @api_router.get("/gallery")
 async def get_gallery(manager: BaseDataManager = Depends(get_data_manager)):
