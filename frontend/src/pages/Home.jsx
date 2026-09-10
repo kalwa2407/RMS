@@ -74,7 +74,6 @@ const Home = () => {
       goToSlide(next);
     }, 4000);
     return () => clearInterval(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [heroIndex, transitioning]);
 
   useEffect(() => {
