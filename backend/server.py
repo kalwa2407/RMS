@@ -1069,7 +1069,7 @@ async def admin_upload_image(
     file: UploadFile = File(...),
     username: str = Depends(verify_token)
 ):
-    """Upload image file"""
+    """Upload image to Firebase Storage (permanent, survives server restarts)"""
     try:
         allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"]
         if file.content_type not in allowed_types:
@@ -1077,19 +1077,39 @@ async def admin_upload_image(
                 status_code=400,
                 detail="Invalid file type. Only JPEG, PNG, WebP, and GIF are allowed."
             )
-        
+
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         random_suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
         file_extension = file.filename.split(".")[-1].lower()
-        filename = f"img_{timestamp}_{random_suffix}.{file_extension}"
-        
-        file_path = UPLOAD_DIR / filename
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-        
-        image_url = f"/static/uploads/{filename}"
-        return {"success": True, "url": image_url, "filename": filename}
-    
+        filename = f"menu_images/img_{timestamp}_{random_suffix}.{file_extension}"
+
+        file_contents = await file.read()
+
+        # Try Firebase Storage first
+        try:
+            from firebase_admin import storage as fb_storage
+            import firebase_admin
+
+            # Initialize storage bucket
+            bucket_name = os.environ.get("FIREBASE_STORAGE_BUCKET", "tasteofhindustanrms.firebasestorage.app")
+            bucket = fb_storage.bucket(bucket_name)
+            blob = bucket.blob(filename)
+            blob.upload_from_string(file_contents, content_type=file.content_type)
+            blob.make_public()
+            image_url = blob.public_url
+            logger.info(f"Image uploaded to Firebase Storage: {image_url}")
+            return {"success": True, "url": image_url, "filename": filename, "storage": "firebase"}
+
+        except Exception as firebase_err:
+            logger.warning(f"Firebase Storage failed, falling back to local: {firebase_err}")
+            # Fallback: save to local disk
+            local_filename = f"img_{timestamp}_{random_suffix}.{file_extension}"
+            file_path = UPLOAD_DIR / local_filename
+            with open(file_path, "wb") as buffer:
+                buffer.write(file_contents)
+            image_url = f"/static/uploads/{local_filename}"
+            return {"success": True, "url": image_url, "filename": local_filename, "storage": "local"}
+
     except Exception as e:
         logger.error(f"Image upload failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
