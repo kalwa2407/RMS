@@ -98,14 +98,6 @@ const CustomerDashboard = () => {
   const sseRef = useRef(null);
   const mainScrollRef = useRef(null);
 
-  /* ── Auto-scroll to top when switching tabs or subtabs (native mobile app behavior) ── */
-  useEffect(() => {
-    if (mainScrollRef.current) {
-      mainScrollRef.current.scrollTop = 0;
-    }
-    window.scrollTo(0, 0);
-  }, [tab, orderSubTab]);
-
   /* ── In-App Ordering State ── */
   const [menu, setMenu]                   = useState([]);
   const [menuLoading, setMenuLoading]     = useState(true);
@@ -121,6 +113,14 @@ const CustomerDashboard = () => {
   const [payMethod, setPayMethod]         = useState('cod');
   const [placingOrder, setPlacingOrder]   = useState(false);
   const [orderDone, setOrderDone]         = useState(null);
+
+  /* ── Auto-scroll to top when switching tabs or subtabs (native mobile app behavior) ── */
+  useEffect(() => {
+    if (mainScrollRef.current) {
+      mainScrollRef.current.scrollTop = 0;
+    }
+    window.scrollTo(0, 0);
+  }, [tab, orderSubTab]);
 
   useEffect(() => {
     if (customerProfile?.address) setDeliveryAddr(customerProfile.address);
