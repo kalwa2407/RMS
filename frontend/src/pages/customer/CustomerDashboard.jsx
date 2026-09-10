@@ -8,7 +8,8 @@ import {
   Truck, UtensilsCrossed, RotateCw,
   Eye, User, ChevronRight, Crown, Home, Plus, X,
   Star, Minus, Zap, Gift, TrendingUp, BookOpen,
-  Search, MapPin, CheckCircle2, Trash2, Sparkles
+  Search, MapPin, CheckCircle2, Trash2, Sparkles,
+  ShieldCheck, MessageSquare, ExternalLink, Share2
 } from 'lucide-react';
 
 /* ─── Design tokens ─── */
@@ -95,6 +96,15 @@ const CustomerDashboard = () => {
   const [phoneOk, setPhoneOk]     = useState(false);
   const [phoneErr, setPhoneErr]   = useState('');
 
+  /* address edit & profile helpers */
+  const [editAddr, setEditAddr]   = useState(false);
+  const [addrVal, setAddrVal]     = useState('');
+  const [addrSav, setAddrSav]     = useState(false);
+  const [addrOk, setAddrOk]       = useState(false);
+  const [addrErr, setAddrErr]     = useState('');
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+
   const sseRef = useRef(null);
   const mainScrollRef = useRef(null);
 
@@ -123,7 +133,10 @@ const CustomerDashboard = () => {
   }, [tab, orderSubTab]);
 
   useEffect(() => {
-    if (customerProfile?.address) setDeliveryAddr(customerProfile.address);
+    if (customerProfile?.address) {
+      setDeliveryAddr(customerProfile.address);
+      setAddrVal(customerProfile.address);
+    }
   }, [customerProfile]);
 
   /* ── Fetch Menu items ── */
@@ -251,6 +264,38 @@ const CustomerDashboard = () => {
     setPhoneSav(false);
     if (r.success) { setEditPhone(false); setPhoneOk(true); setTimeout(() => setPhoneOk(false), 3000); fetchOrders(); }
     else setPhoneErr(r.warning || 'Failed');
+  };
+
+  /* ── Address save ── */
+  const saveAddress = async (e) => {
+    e.preventDefault(); setAddrErr('');
+    if (!addrVal.trim()) { setAddrErr('Enter a valid delivery address'); return; }
+    setAddrSav(true);
+    const r = await updateProfile({ address: addrVal.trim() });
+    setAddrSav(false);
+    if (r.success) {
+      setEditAddr(false);
+      setAddrOk(true);
+      setDeliveryAddr(addrVal.trim());
+      setTimeout(() => setAddrOk(false), 3000);
+    } else {
+      setAddrErr(r.warning || 'Failed to save address');
+    }
+  };
+
+  /* ── Share App ── */
+  const handleShareApp = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: 'Persian Darbar',
+        text: 'Experience authentic royal Mughlai dining and earn PD Coins at Persian Darbar!',
+        url: window.location.origin
+      }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(window.location.origin);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2500);
+    }
   };
 
   /* ── In-App Cart & Ordering Calculations ── */
@@ -1292,73 +1337,446 @@ const CustomerDashboard = () => {
           </div>
         )}
 
-        {/* ══ PROFILE ══ */}
+        {/* ══ PROFILE (Swiggy / Zomato Luxury Persian Darbar VIP Experience) ══ */}
         {tab === 'profile' && (
-          <div className="p-4 space-y-4">
-            <div className="flex flex-col items-center pt-6 pb-2">
-              {currentUser?.photoURL
-                ? <img src={currentUser.photoURL} alt="" className="w-20 h-20 rounded-full object-cover mb-3" style={{ border:`3px solid ${GB}`, boxShadow:`0 0 20px ${GF}` }} />
-                : <div className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold mb-3" style={{ background:GF, border:`3px solid ${GB}`, color:GOLD }}>{currentUser?.displayName?.[0]||'U'}</div>
-              }
-              <p className="text-white font-bold text-lg" style={{ fontFamily:"'Playfair Display',serif" }}>{currentUser?.displayName}</p>
-              <div className="flex items-center gap-1 mt-0.5">
-                <Crown className="w-3 h-3" style={{ color:GOLD }} />
-                <span className="text-[9px] font-black uppercase tracking-widest" style={{ color:GOLD }}>Persian Darbar Member</span>
-              </div>
-              <p className="text-gray-500 text-xs mt-1">{currentUser?.email}</p>
-            </div>
+          <div className="p-4 space-y-4 pb-14">
 
-            <div className="grid grid-cols-3 gap-2.5">
-              {[['Orders',orders.length],['Bookings',reservations.length],['PD Coins',pdCoins]].map(([l,v])=>(
-                <div key={l} className="rounded-3xl p-4 text-center" style={GLASS_CARD_SM}>
-                  <p className="text-2xl font-black text-white">{v}</p>
-                  <p className="text-[9px] text-white/60 uppercase tracking-widest font-bold mt-1">{l}</p>
-                </div>
-              ))}
-            </div>
+            {/* 1. ROYAL PRIVILEGE PASSPORT HERO CARD */}
+            <div className="relative rounded-3xl p-6 overflow-hidden text-white"
+              style={{
+                background: 'linear-gradient(135deg, rgba(234,179,8,0.18) 0%, rgba(22,27,36,0.72) 45%, rgba(10,12,16,0.92) 100%)',
+                backdropFilter: 'blur(30px)',
+                WebkitBackdropFilter: 'blur(30px)',
+                border: '1.5px solid rgba(234, 179, 8, 0.38)',
+                boxShadow: '0 16px 40px 0 rgba(0, 0, 0, 0.5), inset 0 1px 2px rgba(255,255,255,0.25)'
+              }}>
+              {/* Subtle luxury ambient glow */}
+              <div className="absolute top-0 right-0 w-44 h-44 bg-[#EAB308]/15 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -bottom-10 -left-10 w-36 h-36 bg-[#EAB308]/10 rounded-full blur-2xl pointer-events-none" />
 
-            <div className="rounded-3xl p-5" style={GLASS_CARD}>
-              <div className="flex items-center justify-between mb-3">
+              {/* Passport Header Strip */}
+              <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-white/15">
                 <div className="flex items-center gap-2">
-                  <Phone className="w-4 h-4" style={{ color:GOLD }} />
-                  <span className="text-white/75 text-sm font-semibold">Mobile Number</span>
+                  <Crown className="w-4 h-4 text-[#EAB308]" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[#EAB308]">
+                    Privilege Club Passport
+                  </span>
                 </div>
-                {!editPhone && (
-                  <button onClick={()=>setEditPhone(true)} className="text-xs flex items-center gap-1 active:scale-95 transition-all" style={{ color:GOLD }}>
-                    <Edit2 className="w-3 h-3" /> {customerProfile?.phone?'Edit':'Add'}
-                  </button>
-                )}
+                <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-white/10 text-white/80 border border-white/15">
+                  #PD-{(currentUser?.uid?.slice(-6) || 'ROYAL').toUpperCase()}
+                </span>
               </div>
-              {editPhone ? (
-                <form onSubmit={savePhone} className="space-y-2.5">
-                  <div className="flex items-center gap-2 rounded-2xl px-3.5 py-2.5" style={{ background:'rgba(255,255,255,0.1)', border:`1px solid ${GB}` }}>
-                    <span className="text-white/60 text-sm font-mono">+91</span>
-                    <input type="tel" value={phoneVal} maxLength="10" autoFocus onChange={e=>setPhoneVal(e.target.value)}
-                      placeholder="10-digit number" className="flex-1 bg-transparent text-white text-sm focus:outline-none placeholder-white/40" />
+
+              {/* Avatar & Main Info */}
+              <div className="flex items-center gap-4">
+                <div className="relative shrink-0">
+                  <div className="w-20 h-20 rounded-full p-1 shadow-2xl"
+                    style={{
+                      background: 'linear-gradient(135deg, #FDE047 0%, #EAB308 50%, #92400E 100%)',
+                      boxShadow: '0 0 20px rgba(234,179,8,0.5)'
+                    }}>
+                    {currentUser?.photoURL ? (
+                      <img src={currentUser.photoURL} alt="" className="w-full h-full rounded-full object-cover border-2 border-[#12161f]" />
+                    ) : (
+                      <div className="w-full h-full rounded-full flex items-center justify-center text-2xl font-bold bg-[#12161f] text-[#EAB308]">
+                        {currentUser?.displayName?.[0] || 'U'}
+                      </div>
+                    )}
                   </div>
-                  {phoneErr && <p className="text-red-400 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3" />{phoneErr}</p>}
-                  {phoneOk  && <p className="text-emerald-400 text-xs flex items-center gap-1"><Check className="w-3 h-3" />Saved!</p>}
-                  <div className="flex gap-2">
-                    <button type="submit" disabled={phoneSav}
-                      className="flex-1 py-3 rounded-2xl text-black font-bold text-sm active:scale-95 transition-all disabled:opacity-50 shadow-md" style={{ background:GOLD }}>
-                      {phoneSav?'Saving...':'Save'}
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 border-2 border-[#12161f] flex items-center justify-center text-white shadow-md" title="Active Member">
+                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                  </div>
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-white font-black text-xl leading-tight truncate" style={{ fontFamily: "'Playfair Display',serif" }}>
+                    {currentUser?.displayName || 'Royal Patron'}
+                  </h2>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-[#EAB308]/25 text-[#EAB308] border border-[#EAB308]/40">
+                      {pdCoins > 500 ? '⭐ Royal Elite Member' : '👑 Royal Patron'}
+                    </span>
+                  </div>
+                  <p className="text-white/65 text-xs mt-1 truncate">{currentUser?.email}</p>
+                </div>
+              </div>
+
+              {/* Privilege Perks footer pill */}
+              <div className="mt-4 pt-3.5 border-t border-white/10 flex items-center justify-between text-[11px] text-white/80">
+                <span className="flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[#EAB308]" />
+                  <span>10% Dine-In PD Coin Cashback</span>
+                </span>
+                <span className="text-[#EAB308] font-bold">Priority Seating</span>
+              </div>
+            </div>
+
+            {/* 2. SWIGGY/ZOMATO 3-METRIC STATS & WALLET STRIP */}
+            <div className="grid grid-cols-3 gap-2.5">
+              {/* PD Coins Wallet */}
+              <button
+                onClick={() => setTab('coins')}
+                className="group relative rounded-3xl p-3.5 text-center transition-all duration-200 active:scale-95"
+                style={GLASS_CARD}
+              >
+                <div className="w-10 h-10 rounded-2xl mx-auto mb-1 flex items-center justify-center p-1.5 bg-amber-500/15 border border-amber-500/30">
+                  <img src="/pd_coin.png" alt="PD Coin" className="w-7 h-7 drop-shadow" />
+                </div>
+                <p className="text-xl font-black text-white">{pdCoins.toLocaleString()}</p>
+                <p className="text-[9px] text-[#EAB308] font-bold uppercase tracking-wider mt-0.5">PD Coins</p>
+                <p className="text-[9px] text-white/50 mt-0.5">₹{pdCoins} value ›</p>
+              </button>
+
+              {/* Orders */}
+              <button
+                onClick={() => { setTab('order'); setOrderSubTab('history'); }}
+                className="group relative rounded-3xl p-3.5 text-center transition-all duration-200 active:scale-95"
+                style={GLASS_CARD}
+              >
+                <div className="w-10 h-10 rounded-2xl mx-auto mb-1 flex items-center justify-center bg-blue-500/15 border border-blue-500/30 text-blue-400">
+                  <ShoppingBag className="w-5 h-5" />
+                </div>
+                <p className="text-xl font-black text-white">{orders.length}</p>
+                <p className="text-[9px] text-blue-300 font-bold uppercase tracking-wider mt-0.5">Orders</p>
+                <p className="text-[9px] text-white/50 mt-0.5">History ›</p>
+              </button>
+
+              {/* Bookings */}
+              <button
+                onClick={() => setTab('reserve')}
+                className="group relative rounded-3xl p-3.5 text-center transition-all duration-200 active:scale-95"
+                style={GLASS_CARD}
+              >
+                <div className="w-10 h-10 rounded-2xl mx-auto mb-1 flex items-center justify-center bg-purple-500/15 border border-purple-500/30 text-purple-400">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <p className="text-xl font-black text-white">{reservations.length}</p>
+                <p className="text-[9px] text-purple-300 font-bold uppercase tracking-wider mt-0.5">Bookings</p>
+                <p className="text-[9px] text-white/50 mt-0.5">Reserve ›</p>
+              </button>
+            </div>
+
+            {/* 3. GROUPED LIST: FOOD & DINING */}
+            <div className="space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#EAB308] px-2">
+                Food &amp; Dining Experience
+              </p>
+              <div className="rounded-3xl overflow-hidden divide-y divide-white/10" style={GLASS_CARD}>
+                {/* Past Orders */}
+                <button
+                  onClick={() => { setTab('order'); setOrderSubTab('history'); }}
+                  className="w-full p-4 flex items-center justify-between text-left hover:bg-white/[0.04] active:bg-white/[0.08] transition-colors"
+                >
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-amber-500/20 text-[#EAB308] border border-amber-500/30">
+                      <Clock className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-white font-bold text-sm">Past Orders &amp; Receipts</p>
+                      <p className="text-white/60 text-xs mt-0.5">
+                        {activeOrders.length > 0 ? `${activeOrders.length} active order in progress` : `${orders.length} past feast${orders.length === 1 ? '' : 's'}`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {activeOrders.length > 0 && (
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                    )}
+                    <ChevronRight className="w-4 h-4 text-white/40" />
+                  </div>
+                </button>
+
+                {/* Table Bookings */}
+                <button
+                  onClick={() => setTab('reserve')}
+                  className="w-full p-4 flex items-center justify-between text-left hover:bg-white/[0.04] active:bg-white/[0.08] transition-colors"
+                >
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                      <Calendar className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-white font-bold text-sm">Royal Table Reservation</p>
+                      <p className="text-white/60 text-xs mt-0.5">
+                        {activeRes.length > 0 ? `${activeRes.length} upcoming booking` : 'Book in advance for family & feasts'}
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-white/40" />
+                </button>
+
+                {/* Browse Royal Menu */}
+                <button
+                  onClick={() => { setTab('order'); setOrderSubTab('menu'); }}
+                  className="w-full p-4 flex items-center justify-between text-left hover:bg-white/[0.04] active:bg-white/[0.08] transition-colors"
+                >
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                      <UtensilsCrossed className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-white font-bold text-sm">Explore Royal Menu</p>
+                      <p className="text-white/60 text-xs mt-0.5">Biryanis, Mughlai Starters, Raan &amp; Desserts</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-white/40" />
+                </button>
+              </div>
+            </div>
+
+            {/* 4. GROUPED LIST: SAVED DETAILS & ADDRESSES */}
+            <div className="space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#EAB308] px-2">
+                Saved Details &amp; Addresses
+              </p>
+              <div className="rounded-3xl overflow-hidden divide-y divide-white/10" style={GLASS_CARD}>
+                {/* Mobile Number Row */}
+                <div className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-amber-500/20 text-[#EAB308] border border-amber-500/30">
+                        <Phone className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-white font-bold text-sm">Primary Mobile Number</p>
+                        <p className="text-white/60 text-xs mt-0.5">
+                          {customerProfile?.phone ? `+91 ${customerProfile.phone}` : 'Not linked yet'}
+                        </p>
+                      </div>
+                    </div>
+                    {!editPhone && (
+                      <button
+                        onClick={() => setEditPhone(true)}
+                        className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-[#EAB308] bg-[#EAB308]/15 border border-[#EAB308]/30 active:scale-95 transition-all"
+                      >
+                        {customerProfile?.phone ? 'Edit' : 'Add'}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Inline edit phone */}
+                  {editPhone && (
+                    <form onSubmit={savePhone} className="pt-2 space-y-2.5">
+                      <div className="flex items-center gap-2 rounded-2xl px-3.5 py-2.5 bg-white/10 border border-[#EAB308]/40">
+                        <span className="text-white/60 text-sm font-mono">+91</span>
+                        <input
+                          type="tel"
+                          value={phoneVal}
+                          maxLength="10"
+                          autoFocus
+                          onChange={e => setPhoneVal(e.target.value)}
+                          placeholder="Enter 10-digit mobile number"
+                          className="flex-1 bg-transparent text-white text-sm focus:outline-none placeholder-white/40"
+                        />
+                      </div>
+                      {phoneErr && <p className="text-red-400 text-xs flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" />{phoneErr}</p>}
+                      {phoneOk && <p className="text-emerald-400 text-xs flex items-center gap-1"><Check className="w-3.5 h-3.5" />Phone saved!</p>}
+                      <div className="flex gap-2">
+                        <button
+                          type="submit"
+                          disabled={phoneSav}
+                          className="flex-1 py-2.5 rounded-xl text-black font-bold text-xs bg-[#EAB308] active:scale-95 disabled:opacity-50 shadow-md"
+                        >
+                          {phoneSav ? 'Saving...' : 'Save Number'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setEditPhone(false); setPhoneVal(customerProfile?.phone || ''); setPhoneErr(''); }}
+                          className="px-4 py-2.5 rounded-xl text-white/70 text-xs bg-white/10"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+
+                {/* Delivery Address Row */}
+                <div className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                        <MapPin className="w-5 h-5" />
+                      </div>
+                      <div className="max-w-[200px]">
+                        <p className="text-white font-bold text-sm">Delivery Address</p>
+                        <p className="text-white/60 text-xs mt-0.5 truncate">
+                          {customerProfile?.address || 'Save address for 1-tap checkout'}
+                        </p>
+                      </div>
+                    </div>
+                    {!editAddr && (
+                      <button
+                        onClick={() => setEditAddr(true)}
+                        className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-[#EAB308] bg-[#EAB308]/15 border border-[#EAB308]/30 active:scale-95 transition-all"
+                      >
+                        {customerProfile?.address ? 'Edit' : 'Add'}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Inline edit address */}
+                  {editAddr && (
+                    <form onSubmit={saveAddress} className="pt-2 space-y-2.5">
+                      <textarea
+                        value={addrVal}
+                        rows={2}
+                        autoFocus
+                        onChange={e => setAddrVal(e.target.value)}
+                        placeholder="House/Flat, Street, Area, Pune"
+                        className="w-full bg-white/10 text-white text-xs p-3 rounded-2xl border border-[#EAB308]/40 focus:outline-none placeholder-white/40 resize-none"
+                      />
+                      {addrErr && <p className="text-red-400 text-xs flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" />{addrErr}</p>}
+                      {addrOk && <p className="text-emerald-400 text-xs flex items-center gap-1"><Check className="w-3.5 h-3.5" />Address saved!</p>}
+                      <div className="flex gap-2">
+                        <button
+                          type="submit"
+                          disabled={addrSav}
+                          className="flex-1 py-2.5 rounded-xl text-black font-bold text-xs bg-[#EAB308] active:scale-95 disabled:opacity-50 shadow-md"
+                        >
+                          {addrSav ? 'Saving...' : 'Save Address'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setEditAddr(false); setAddrVal(customerProfile?.address || ''); setAddrErr(''); }}
+                          className="px-4 py-2.5 rounded-xl text-white/70 text-xs bg-white/10"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+
+                {/* Payment Methods */}
+                <div className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                      <ShieldCheck className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-white font-bold text-sm">Payment Methods</p>
+                      <p className="text-white/60 text-xs mt-0.5">UPI, Cards &amp; Cash on Delivery</p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    Active
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* 5. GROUPED LIST: CONCIERGE & SUPPORT */}
+            <div className="space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#EAB308] px-2">
+                Persian Darbar Concierge
+              </p>
+              <div className="rounded-3xl overflow-hidden divide-y divide-white/10" style={GLASS_CARD}>
+                {/* WhatsApp Chat */}
+                <button
+                  onClick={() => window.open('https://wa.me/917028033763?text=Hello%20Persian%20Darbar,%20I%20would%20like%20assistance', '_blank')}
+                  className="w-full p-4 flex items-center justify-between text-left hover:bg-white/[0.04] active:bg-white/[0.08] transition-colors"
+                >
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                      <MessageSquare className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-white font-bold text-sm">WhatsApp Concierge</p>
+                      <p className="text-white/60 text-xs mt-0.5">Direct banquet bookings, special orders &amp; support</p>
+                    </div>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-white/40" />
+                </button>
+
+                {/* Call Restaurant */}
+                <button
+                  onClick={() => window.location.href = 'tel:+912026130000'}
+                  className="w-full p-4 flex items-center justify-between text-left hover:bg-white/[0.04] active:bg-white/[0.08] transition-colors"
+                >
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                      <Phone className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-white font-bold text-sm">Call Camp, Pune Desk</p>
+                      <p className="text-white/60 text-xs mt-0.5">+91 20 2613 0000 · Open 11:00 AM - 1:00 AM</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-white/40" />
+                </button>
+
+                {/* Share App */}
+                <button
+                  onClick={handleShareApp}
+                  className="w-full p-4 flex items-center justify-between text-left hover:bg-white/[0.04] active:bg-white/[0.08] transition-colors"
+                >
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-amber-500/20 text-[#EAB308] border border-amber-500/30">
+                      <Share2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-white font-bold text-sm">Share Persian Darbar</p>
+                      <p className="text-white/60 text-xs mt-0.5">
+                        {copiedLink ? '✓ Link copied to clipboard!' : 'Invite friends & family to the royal experience'}
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-white/40" />
+                </button>
+              </div>
+            </div>
+
+            {/* 6. SIGN OUT CARD (With Confirmation) */}
+            <div className="rounded-3xl p-4 overflow-hidden"
+              style={{
+                background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(30, 15, 18, 0.50) 100%)',
+                border: '1px solid rgba(239, 68, 68, 0.28)',
+                backdropFilter: 'blur(20px)'
+              }}>
+              {!showSignOutConfirm ? (
+                <button
+                  onClick={() => setShowSignOutConfirm(true)}
+                  className="w-full flex items-center justify-center gap-2.5 py-2 font-bold text-red-300 text-sm active:scale-95 transition-all"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out of Account</span>
+                </button>
+              ) : (
+                <div className="space-y-3 text-center">
+                  <p className="text-white font-bold text-sm">Are you sure you want to sign out?</p>
+                  <p className="text-white/60 text-xs">You will need to sign in again to view your coins &amp; orders.</p>
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      onClick={async () => { await signOutCustomer(); navigate('/'); }}
+                      className="flex-1 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider bg-red-500 text-white shadow-lg active:scale-95 transition-all"
+                    >
+                      Yes, Sign Out
                     </button>
-                    <button type="button" onClick={()=>{setEditPhone(false);setPhoneVal(customerProfile?.phone||'');setPhoneErr('');}}
-                      className="px-4 py-3 rounded-2xl text-white/70 text-sm" style={{ background:'rgba(255,255,255,0.1)' }}>
+                    <button
+                      onClick={() => setShowSignOutConfirm(false)}
+                      className="flex-1 py-2.5 rounded-2xl font-bold text-xs bg-white/10 text-white/80 active:scale-95 transition-all"
+                    >
                       Cancel
                     </button>
                   </div>
-                </form>
-              ) : (
-                <p className="text-white font-bold">{customerProfile?.phone?`+91 ${customerProfile.phone}`:<span className="text-white/40 font-normal text-sm">Not added yet</span>}</p>
+                </div>
               )}
             </div>
 
-            <button onClick={async()=>{await signOutCustomer();navigate('/');}}
-              className="w-full py-4 rounded-3xl font-bold text-red-300 text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-md"
-              style={{ background:'rgba(239,68,68,0.12)', border:'1px solid rgba(239,68,68,0.3)', backdropFilter:'blur(12px)' }}>
-              <LogOut className="w-4 h-4" /> Sign Out
-            </button>
+            {/* 7. BRAND HERITAGE FOOTER */}
+            <div className="text-center pt-2 pb-4 space-y-1 select-none">
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#EAB308]">
+                PERSIAN DARBAR
+              </p>
+              <p className="text-[9px] text-white/40 tracking-wider">
+                Serving Royal Mughlai Cuisine Since 1976 · Camp, Pune
+              </p>
+              <p className="text-[8px] text-white/30 font-mono pt-1">
+                Version 2.4.0 (Privilege Edition)
+              </p>
+            </div>
+
           </div>
         )}
 
