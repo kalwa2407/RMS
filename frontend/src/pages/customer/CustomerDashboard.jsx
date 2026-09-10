@@ -7,7 +7,8 @@ import {
   Edit2, Check, ArrowRight, LogOut, AlertCircle,
   Truck, UtensilsCrossed, RotateCw,
   Eye, User, ChevronRight, Crown, Home, Plus, X,
-  Star, Minus, Zap, Gift, TrendingUp, BookOpen
+  Star, Minus, Zap, Gift, TrendingUp, BookOpen,
+  Search, MapPin, CheckCircle2, Trash2, Sparkles
 } from 'lucide-react';
 
 /* ─── Design tokens ─── */
@@ -95,6 +96,46 @@ const CustomerDashboard = () => {
   const [phoneErr, setPhoneErr]   = useState('');
 
   const sseRef = useRef(null);
+
+  /* ── In-App Ordering State ── */
+  const [menu, setMenu]                   = useState([]);
+  const [menuLoading, setMenuLoading]     = useState(true);
+  const [selectedCat, setSelectedCat]     = useState('All');
+  const [searchQuery, setSearchQuery]     = useState('');
+  const [cart, setCart]                   = useState([]);
+  const [orderSubTab, setOrderSubTab]     = useState('menu'); // 'menu' | 'history'
+  const [isCartOpen, setIsCartOpen]       = useState(false);
+  const [orderType, setOrderType]         = useState('DELIVERY'); // 'DELIVERY' | 'TAKEAWAY'
+  const [deliveryAddress, setDeliveryAddr]= useState('');
+  const [distanceKm, setDistanceKm]       = useState(null);
+  const [detectingLoc, setDetectingLoc]   = useState(false);
+  const [payMethod, setPayMethod]         = useState('cod');
+  const [placingOrder, setPlacingOrder]   = useState(false);
+  const [orderDone, setOrderDone]         = useState(null);
+
+  useEffect(() => {
+    if (customerProfile?.address) setDeliveryAddr(customerProfile.address);
+  }, [customerProfile]);
+
+  /* ── Fetch Menu items ── */
+  const fetchMenu = useCallback(async () => {
+    setMenuLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/menu`);
+      if (res.ok) {
+        const data = await res.json();
+        setMenu(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error('Failed to load menu:', err);
+    } finally {
+      setMenuLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchMenu();
+  }, [fetchMenu]);
 
   useEffect(() => { if (customerProfile?.phone) setPhoneVal(customerProfile.phone); }, [customerProfile]);
 
@@ -203,10 +244,143 @@ const CustomerDashboard = () => {
     else setPhoneErr(r.warning || 'Failed');
   };
 
+  /* ── In-App Cart & Ordering Calculations ── */
+  const menuCategories = ['All', ...new Set(menu.map(i => i.category).filter(Boolean))];
+  const filteredMenuItems = menu.filter(item => {
+    const matchesCat = selectedCat === 'All' || item.category === selectedCat;
+    const matchesSearch = !searchQuery.trim() || 
+      item.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      item.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCat && matchesSearch && item.available !== false;
+  });
+
+  const cartItemCount   = cart.reduce((sum, i) => sum + i.quantity, 0);
+  const cartSubtotal    = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const cartDeliveryFee = orderType === 'TAKEAWAY' ? 0 : (distanceKm !== null && distanceKm > 10 ? 60 : 0);
+  const cartTaxes       = Math.round(cartSubtotal * 0.05);
+  const cartTotal       = cartSubtotal + cartDeliveryFee + cartTaxes;
+
+  const addToCart = (item) => {
+    setCart(prev => {
+      const exist = prev.find(c => c._id === item._id);
+      if (exist) {
+        return prev.map(c => c._id === item._id ? { ...c, quantity: c.quantity + 1 } : c);
+      }
+      return [...prev, { ...item, quantity: 1 }];
+    });
+  };
+
+  const updateCartQty = (id, delta) => {
+    setCart(prev => 
+      prev.map(c => c._id === id ? { ...c, quantity: c.quantity + delta } : c)
+          .filter(c => c.quantity > 0)
+    );
+  };
+
+  const detectDistance = () => {
+    if (!navigator.geolocation) {
+      setDistanceKm(4.2);
+      return;
+    }
+    setDetectingLoc(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const R = 6371;
+        const dLat = (pos.coords.latitude - 18.5204) * Math.PI / 180;
+        const dLon = (pos.coords.longitude - 73.8567) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+          Math.cos(18.5204 * Math.PI / 180) * Math.cos(pos.coords.latitude * Math.PI / 180) *
+          Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const dist = parseFloat((R * c).toFixed(1));
+        setDistanceKm(dist);
+        setDetectingLoc(false);
+      },
+      () => {
+        setDistanceKm(4.5);
+        setDetectingLoc(false);
+      },
+      { timeout: 8000 }
+    );
+  };
+
+  const handlePlaceOrder = async () => {
+    if (cart.length === 0) return;
+    if (orderType === 'DELIVERY' && cartSubtotal < 250) {
+      alert('Minimum order value for delivery is ₹250. Or choose Takeaway Pickup (no minimum)!');
+      return;
+    }
+    const phone = phoneVal || customerProfile?.phone;
+    if (!phone) {
+      alert('Please enter your contact mobile number.');
+      return;
+    }
+    if (orderType === 'DELIVERY' && !deliveryAddress.trim()) {
+      alert('Please enter your delivery address.');
+      return;
+    }
+    if (orderType === 'DELIVERY' && distanceKm && distanceKm > 20) {
+      alert('Out of delivery range (>20km). Please choose Takeaway Pickup.');
+      return;
+    }
+
+    setPlacingOrder(true);
+    const orderData = {
+      customer_uid: currentUser?.uid || null,
+      email: currentUser?.email || null,
+      customer_name: currentUser?.displayName || customerProfile?.name || 'Valued Guest',
+      phone: phone.trim(),
+      address: orderType === 'TAKEAWAY' ? 'Takeaway Pickup: Persian Darbar (Camp, Pune)' : deliveryAddress.trim(),
+      order_type: orderType,
+      distance_km: distanceKm || 3.5,
+      payment_method: payMethod,
+      items: cart.map(i => ({
+        item_id: String(i._id),
+        name: i.name,
+        price: i.price,
+        quantity: i.quantity,
+        variant: null,
+        variant_price: 0.0,
+        addons: [],
+        special_instructions: null
+      })),
+      subtotal: cartSubtotal,
+      discount: 0.0,
+      delivery_fee: cartDeliveryFee,
+      taxes: cartTaxes,
+      total: cartTotal,
+      coupon_code: null
+    };
+
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
+      const res = await fetch(`${API_BASE}/api/orders`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(orderData)
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Could not place order');
+      }
+      const data = await res.json();
+      setCart([]);
+      setIsCartOpen(false);
+      setOrderDone(data);
+      setOrderSubTab('history');
+      fetchOrders();
+    } catch (err) {
+      alert(err.message || 'Order failed. Please try again.');
+    } finally {
+      setPlacingOrder(false);
+    }
+  };
+
   /* ── Bottom nav ── */
   const NAV = [
     { key:'home',     Icon:Home,          label:'Home' },
-    { key:'order',    Icon:UtensilsCrossed,label:'Order' },
+    { key:'order',    Icon:UtensilsCrossed,label:'Order', count: cartItemCount },
     { key:'reserve',  Icon:Calendar,      label:'Reserve', gold:true },
     { key:'coins',    Icon:Star,          label:'Rewards', dot: pdCoins>0 },
     { key:'profile',  Icon:User,          label:'Profile' },
@@ -499,31 +673,94 @@ const CustomerDashboard = () => {
                 </div>
               </div>
 
-              {/* Quick action grid (Frosted Glass Tiles) */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* ═══ QUICK ACTIONS (Ultra-Premium Frosted Glass Jewel Tiles) ═══ */}
+              <div className="grid grid-cols-2 gap-3.5">
                 {[
-                  { Icon:UtensilsCrossed, label:'Order Food',   sub:'Biryanis & Kebabs', color:GOLD,       action:()=>navigate('/order') },
-                  { Icon:Calendar,        label:'Reserve Table',sub:'Book in advance',   color:'#a78bfa',   action:()=>setTab('reserve') },
-                  { Icon:Clock,           label:'My Orders',    sub:`${orders.length} total`, color:'#60a5fa', action:()=>setTab('order') },
-                  { Icon:BookOpen,        label:'My Bookings',  sub:`${reservations.length} total`, color:'#34d399', action:()=>setTab('bookings') },
-                ].map(({ Icon, label, sub, color, action })=>(
-                  <button key={label} onClick={action}
-                    className="rounded-3xl p-4 text-left active:scale-[0.97] transition-all group"
+                  {
+                    Icon: UtensilsCrossed,
+                    label: 'Order Food',
+                    sub: 'Biryanis & Kebabs',
+                    badge: 'In-App',
+                    color: GOLD,
+                    glow: 'rgba(234, 179, 8, 0.35)',
+                    border: 'rgba(234, 179, 8, 0.40)',
+                    iconBg: 'radial-gradient(circle at 30% 30%, rgba(234,179,8,0.35) 0%, rgba(202,138,4,0.12) 100%)',
+                    action: () => { setTab('order'); setOrderSubTab('menu'); }
+                  },
+                  {
+                    Icon: Calendar,
+                    label: 'Reserve Table',
+                    sub: 'Book in advance',
+                    badge: 'Instant',
+                    color: '#a78bfa',
+                    glow: 'rgba(167, 139, 250, 0.35)',
+                    border: 'rgba(167, 139, 250, 0.40)',
+                    iconBg: 'radial-gradient(circle at 30% 30%, rgba(167,139,250,0.35) 0%, rgba(139,92,246,0.12) 100%)',
+                    action: () => setTab('reserve')
+                  },
+                  {
+                    Icon: Clock,
+                    label: 'My Orders',
+                    sub: `${orders.length} order${orders.length === 1 ? '' : 's'}`,
+                    badge: activeOrders.length > 0 ? `${activeOrders.length} active` : null,
+                    color: '#60a5fa',
+                    glow: 'rgba(96, 165, 250, 0.35)',
+                    border: 'rgba(96, 165, 250, 0.40)',
+                    iconBg: 'radial-gradient(circle at 30% 30%, rgba(96,165,250,0.35) 0%, rgba(59,130,246,0.12) 100%)',
+                    action: () => { setTab('order'); setOrderSubTab('history'); }
+                  },
+                  {
+                    Icon: BookOpen,
+                    label: 'My Bookings',
+                    sub: `${reservations.length} total`,
+                    badge: activeRes.length > 0 ? `${activeRes.length} live` : null,
+                    color: '#34d399',
+                    glow: 'rgba(52, 211, 153, 0.35)',
+                    border: 'rgba(52, 211, 153, 0.40)',
+                    iconBg: 'radial-gradient(circle at 30% 30%, rgba(52,211,153,0.35) 0%, rgba(16,185,129,0.12) 100%)',
+                    action: () => setTab('bookings')
+                  },
+                ].map(({ Icon, label, sub, badge, color, glow, border, iconBg, action }) => (
+                  <button
+                    key={label}
+                    onClick={action}
+                    className="group relative rounded-3xl p-4 text-left active:scale-[0.97] transition-all duration-300 overflow-hidden"
                     style={{
-                      background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.09) 0%, rgba(20, 20, 25, 0.40) 100%)',
-                      backdropFilter: 'blur(18px)',
-                      WebkitBackdropFilter: 'blur(18px)',
-                      border: '1px solid rgba(255, 255, 255, 0.16)',
-                      boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
-                    }}>
-                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-3 transition-transform group-hover:scale-105"
-                      style={{ background:`${color}20`, border:`1px solid ${color}40` }}>
-                      <Icon style={{ color, width:18, height:18 }} />
+                      background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(18, 22, 28, 0.55) 100%)',
+                      backdropFilter: 'blur(24px)',
+                      WebkitBackdropFilter: 'blur(24px)',
+                      border: '1px solid rgba(255, 255, 255, 0.18)',
+                      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.2)'
+                    }}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div
+                        className="w-11 h-11 rounded-2xl flex items-center justify-center transition-transform duration-300 group-hover:scale-105"
+                        style={{
+                          background: iconBg,
+                          border: `1.5px solid ${border}`,
+                          boxShadow: `0 0 16px ${glow}`
+                        }}
+                      >
+                        <Icon style={{ color, width: 20, height: 20 }} />
+                      </div>
+                      {badge && (
+                        <span
+                          className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full"
+                          style={{
+                            background: `${color}20`,
+                            color: color,
+                            border: `1px solid ${color}45`
+                          }}
+                        >
+                          {badge}
+                        </span>
+                      )}
                     </div>
-                    <p className="text-white font-bold text-sm">{label}</p>
-                    <div className="flex items-center justify-between mt-1">
-                      <p className="text-white/60 text-xs">{sub}</p>
-                      <ChevronRight className="w-3.5 h-3.5 text-white/40" />
+                    <p className="text-white font-bold text-[15px] leading-tight drop-shadow-sm mb-1">{label}</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-white/65 text-xs font-medium">{sub}</p>
+                      <ChevronRight className="w-4 h-4 text-white/40 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
                     </div>
                   </button>
                 ))}
@@ -552,51 +789,278 @@ const CustomerDashboard = () => {
           </div>
         )}
 
-        {/* ══ ORDER ══ */}
+        {/* ══ ORDER (In-App Food Ordering & History) ══ */}
         {tab === 'order' && (
-          <div className="p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-white font-bold text-base" style={{ fontFamily:"'Playfair Display',serif" }}>My Orders</h2>
-              <button onClick={fetchOrders} className="p-2 rounded-xl active:scale-90 transition-transform" style={{ background:'rgba(255,255,255,0.05)' }}>
-                <RotateCw className="w-4 h-4 text-gray-400" />
+          <div className="p-4 space-y-4 pb-24">
+
+            {/* Sub-tab switcher */}
+            <div className="flex items-center gap-2 p-1.5 rounded-2xl"
+              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter:'blur(16px)' }}>
+              <button
+                onClick={() => setOrderSubTab('menu')}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                  orderSubTab === 'menu'
+                    ? 'bg-[#EAB308] text-black shadow-lg'
+                    : 'text-white/70 hover:text-white'
+                }`}
+              >
+                <UtensilsCrossed className="w-4 h-4" />
+                <span>Order Menu</span>
+              </button>
+              <button
+                onClick={() => setOrderSubTab('history')}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                  orderSubTab === 'history'
+                    ? 'bg-[#EAB308] text-black shadow-lg'
+                    : 'text-white/70 hover:text-white'
+                }`}
+              >
+                <Clock className="w-4 h-4" />
+                <span>My Orders ({orders.length})</span>
+                {activeOrders.length > 0 && (
+                  <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                )}
               </button>
             </div>
-            <Link to="/order">
-              <div className="rounded-3xl p-4 flex items-center gap-3 active:scale-[0.98] transition-all" style={GLASS_GOLD_CARD}>
-                <UtensilsCrossed className="w-5 h-5" style={{ color:GOLD }} />
-                <div className="flex-1">
-                  <p className="text-white font-bold text-sm">Order Food Now</p>
-                  <p className="text-xs text-white/70">Biryanis, Kebabs & more</p>
-                </div>
-                <ArrowRight className="w-4 h-4" style={{ color:GOLD }} />
-              </div>
-            </Link>
-            {loadO ? (
-              <div className="flex items-center justify-center py-16 gap-2 text-white/50 text-sm"><RotateCw className="w-4 h-4 animate-spin" /> Loading...</div>
-            ) : orders.length === 0 ? (
-              <div className="flex flex-col items-center py-16 gap-3"><ShoppingBag className="w-14 h-14 text-white/20" /><p className="text-white/60 text-sm">No orders yet</p></div>
-            ) : orders.map(o => (
-              <div key={o.order_id||o._id} className="rounded-3xl overflow-hidden" style={GLASS_CARD_SM}>
-                <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
-                  <div className="flex items-center gap-2">
-                    <span className="text-white/50 text-xs font-mono">#{o.order_id?.slice(-8)}</span>
-                    {badge(o.status)}
+
+            {/* ── SUB-TAB: MENU & IN-APP CART ── */}
+            {orderSubTab === 'menu' && (
+              <div className="space-y-4">
+
+                {/* Order Success Banner (if just placed) */}
+                {orderDone && (
+                  <div className="rounded-3xl p-5 text-center space-y-2.5"
+                    style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.35)', backdropFilter: 'blur(16px)' }}>
+                    <div className="w-12 h-12 rounded-full mx-auto flex items-center justify-center bg-emerald-500/20 text-emerald-400">
+                      <CheckCircle2 className="w-6 h-6" />
+                    </div>
+                    <p className="text-emerald-400 font-black text-sm uppercase tracking-widest">Order Placed Successfully!</p>
+                    <p className="text-white text-xs">Order ID: <span className="font-mono text-[#EAB308]">#{orderDone.order_id?.slice(-8)}</span></p>
+                    <div className="pt-1 flex justify-center gap-2">
+                      <button
+                        onClick={() => { setOrderSubTab('history'); setOrderDone(null); }}
+                        className="px-4 py-1.5 rounded-xl text-xs font-bold bg-[#EAB308] text-black"
+                      >
+                        View Order Status
+                      </button>
+                      <button
+                        onClick={() => setOrderDone(null)}
+                        className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/10 text-white/70"
+                      >
+                        Dismiss
+                      </button>
+                    </div>
                   </div>
-                  <span className="text-white font-bold text-sm">₹{o.total?.toFixed(0)}</span>
+                )}
+
+                {/* Search Bar */}
+                <div className="relative rounded-2xl flex items-center px-4 py-3"
+                  style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.16)', backdropFilter: 'blur(16px)' }}>
+                  <Search className="w-4 h-4 text-white/50 mr-2.5 shrink-0" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="Search Biryanis, Kebabs, Desserts..."
+                    className="w-full bg-transparent text-white text-sm focus:outline-none placeholder-white/40"
+                  />
+                  {searchQuery && (
+                    <button onClick={() => setSearchQuery('')} className="text-white/50 hover:text-white">
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
-                <div className="px-4 py-3 flex items-center justify-between">
-                  <div>
-                    <p className="text-white/90 text-sm font-medium">{o.items?.map(i=>`${i.quantity}x ${i.name}`).slice(0,2).join(', ')}{o.items?.length>2?` +${o.items.length-2}`:''}</p>
-                    <p className="text-white/50 text-xs mt-0.5">{fmt(o.created_at)} · {fmtT(o.created_at)}</p>
+
+                {/* Category Pills (Horizontal Scroll) */}
+                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar select-none">
+                  {menuCategories.map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setSelectedCat(cat)}
+                      className={`px-4 py-2 rounded-2xl text-xs font-bold whitespace-nowrap transition-all active:scale-95 ${
+                        selectedCat === cat
+                          ? 'bg-[#EAB308] text-black shadow-[0_0_15px_rgba(234,179,8,0.4)]'
+                          : 'bg-white/[0.08] text-white/80 border border-white/15 hover:bg-white/15'
+                      }`}
+                      style={{ backdropFilter: 'blur(12px)' }}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Menu Items List */}
+                {menuLoading ? (
+                  <div className="flex flex-col items-center justify-center py-20 gap-3 text-white/50 text-sm">
+                    <RotateCw className="w-6 h-6 animate-spin text-[#EAB308]" />
+                    <span>Loading Royal Menu...</span>
                   </div>
-                  <Link to={`/track?order_id=${o.order_id}`}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold active:scale-95 transition-all shadow-sm"
-                    style={{ background:'rgba(234,179,8,0.18)', border:`1px solid ${GB}`, color:GOLD }}>
-                    <Eye className="w-3.5 h-3.5" /> Track
-                  </Link>
+                ) : filteredMenuItems.length === 0 ? (
+                  <div className="rounded-3xl p-10 text-center" style={GLASS_CARD_SM}>
+                    <UtensilsCrossed className="w-12 h-12 text-white/20 mx-auto mb-3" />
+                    <p className="text-white font-bold text-sm">No dishes found</p>
+                    <p className="text-white/50 text-xs mt-1">Try another category or search term</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {filteredMenuItems.map(item => {
+                      const inCart = cart.find(c => c._id === item._id);
+                      const qty = inCart ? inCart.quantity : 0;
+                      return (
+                        <div
+                          key={item._id}
+                          className="rounded-3xl p-3.5 flex gap-3.5 items-center transition-all group"
+                          style={GLASS_CARD}
+                        >
+                          {/* Dish Image */}
+                          <div className="w-20 h-20 rounded-2xl overflow-hidden shrink-0 relative bg-black/40 border border-white/15">
+                            <img
+                              src={item.image || '/no-image.png'}
+                              alt={item.name}
+                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                              onError={e => { e.target.src = '/no-image.png'; }}
+                            />
+                            {item.popular && (
+                              <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded-md bg-[#EAB308] text-black font-black text-[8px] uppercase tracking-wider">
+                                Star
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <span className={`w-2 h-2 rounded-full ${item.category?.toLowerCase().includes('veg') && !item.category?.toLowerCase().includes('non') ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                              <h3 className="text-white font-bold text-sm leading-snug truncate" style={{ fontFamily: "'Playfair Display',serif" }}>
+                                {item.name}
+                              </h3>
+                            </div>
+                            <p className="text-white/60 text-xs line-clamp-1 mb-1.5">{item.description || item.category}</p>
+                            <p className="text-[#EAB308] font-black text-sm">₹{item.price}</p>
+                          </div>
+
+                          {/* Add / Stepper CTA */}
+                          <div className="shrink-0 flex items-center">
+                            {qty === 0 ? (
+                              <button
+                                onClick={() => addToCart(item)}
+                                className="px-3.5 py-2 rounded-2xl text-xs font-black uppercase tracking-wider text-black shadow-md transition-all active:scale-95 flex items-center gap-1"
+                                style={{
+                                  background: 'linear-gradient(135deg, #FDE047 0%, #EAB308 60%, #CA8A04 100%)',
+                                  boxShadow: '0 4px 12px rgba(234,179,8,0.35)'
+                                }}
+                              >
+                                <Plus className="w-3.5 h-3.5 stroke-[2.5]" /> Add
+                              </button>
+                            ) : (
+                              <div className="flex items-center gap-1.5 rounded-2xl p-1"
+                                style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(234,179,8,0.4)' }}>
+                                <button
+                                  onClick={() => updateCartQty(item._id, -1)}
+                                  className="w-7 h-7 rounded-xl flex items-center justify-center bg-white/10 hover:bg-white/20 text-white active:scale-90 transition-all"
+                                >
+                                  <Minus className="w-3 h-3" />
+                                </button>
+                                <span className="text-white font-black text-xs px-1.5 min-w-[18px] text-center">{qty}</span>
+                                <button
+                                  onClick={() => updateCartQty(item._id, 1)}
+                                  className="w-7 h-7 rounded-xl flex items-center justify-center bg-[#EAB308] text-black font-black active:scale-90 transition-all"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+              </div>
+            )}
+
+            {/* ── SUB-TAB: ORDER HISTORY ── */}
+            {orderSubTab === 'history' && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between pb-1">
+                  <p className="text-xs font-black uppercase tracking-widest text-[#EAB308]">Your Orders</p>
+                  <button onClick={fetchOrders} className="p-2 rounded-xl active:scale-90 transition-transform" style={{ background:'rgba(255,255,255,0.08)' }}>
+                    <RotateCw className="w-4 h-4 text-white/70" />
+                  </button>
+                </div>
+                {loadO ? (
+                  <div className="flex items-center justify-center py-16 gap-2 text-white/50 text-sm">
+                    <RotateCw className="w-4 h-4 animate-spin text-[#EAB308]" /> Loading orders...
+                  </div>
+                ) : orders.length === 0 ? (
+                  <div className="rounded-3xl p-12 text-center" style={GLASS_CARD_SM}>
+                    <ShoppingBag className="w-14 h-14 text-white/20 mx-auto mb-3" />
+                    <p className="text-white font-bold text-sm">No orders yet</p>
+                    <p className="text-white/50 text-xs mt-1 mb-4">Start ordering delicious Persian Darbar feasts!</p>
+                    <button
+                      onClick={() => setOrderSubTab('menu')}
+                      className="px-5 py-2.5 rounded-2xl bg-[#EAB308] text-black font-bold text-xs uppercase tracking-wider active:scale-95"
+                    >
+                      Browse Menu Now
+                    </button>
+                  </div>
+                ) : (
+                  orders.map(o => (
+                    <div key={o.order_id || o._id} className="rounded-3xl overflow-hidden" style={GLASS_CARD_SM}>
+                      <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
+                        <div className="flex items-center gap-2">
+                          <span className="text-white/50 text-xs font-mono">#{o.order_id?.slice(-8)}</span>
+                          {badge(o.status)}
+                        </div>
+                        <span className="text-white font-bold text-sm">₹{o.total?.toFixed(0)}</span>
+                      </div>
+                      <div className="px-4 py-3 flex items-center justify-between">
+                        <div>
+                          <p className="text-white/90 text-sm font-medium">{o.items?.map(i=>`${i.quantity}x ${i.name}`).slice(0,2).join(', ')}{o.items?.length>2?` +${o.items.length-2}`:''}</p>
+                          <p className="text-white/50 text-xs mt-0.5">{fmt(o.created_at)} · {fmtT(o.created_at)}</p>
+                        </div>
+                        <Link to={`/track?order_id=${o.order_id}`}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold active:scale-95 transition-all shadow-sm"
+                          style={{ background:'rgba(234,179,8,0.18)', border:`1px solid ${GB}`, color:GOLD }}>
+                          <Eye className="w-3.5 h-3.5" /> Track
+                        </Link>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* ── FLOATING CART PILL ── */}
+            {orderSubTab === 'menu' && cart.length > 0 && !isCartOpen && (
+              <div className="sticky bottom-2 z-30 pt-2">
+                <div
+                  onClick={() => setIsCartOpen(true)}
+                  className="rounded-3xl p-4 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-all shadow-2xl"
+                  style={{
+                    background: 'linear-gradient(135deg, #FDE047 0%, #EAB308 60%, #CA8A04 100%)',
+                    border: '1.5px solid rgba(255,255,255,0.5)',
+                    boxShadow: '0 12px 36px rgba(0,0,0,0.6), 0 0 24px rgba(234,179,8,0.6)'
+                  }}
+                >
+                  <div className="flex items-center gap-3 text-black">
+                    <div className="w-10 h-10 rounded-2xl bg-black/15 flex items-center justify-center font-black text-sm">
+                      {cartItemCount}
+                    </div>
+                    <div>
+                      <p className="font-black text-base leading-tight">₹{cartSubtotal.toLocaleString()}</p>
+                      <p className="text-[10px] font-bold text-black/75 uppercase tracking-wider">{cart.length} dish{cart.length === 1 ? '' : 'es'} in cart</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-black font-black text-xs uppercase tracking-wider bg-black/10 px-3.5 py-2 rounded-xl">
+                    <span>Checkout</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </div>
                 </div>
               </div>
-            ))}
+            )}
+
           </div>
         )}
 
@@ -888,6 +1352,211 @@ const CustomerDashboard = () => {
 
       </div>
 
+      {/* ═══ IN-APP CART & CHECKOUT DRAWER (Glassmorphism) ═══ */}
+      {isCartOpen && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/70 backdrop-blur-md">
+          <div
+            className="w-full max-h-[88dvh] rounded-t-3xl flex flex-col overflow-hidden text-white shadow-2xl"
+            style={{
+              background: 'linear-gradient(180deg, rgba(20, 24, 32, 0.95) 0%, rgba(10, 12, 16, 0.98) 100%)',
+              borderTop: '1px solid rgba(255, 255, 255, 0.22)',
+              backdropFilter: 'blur(30px)',
+              WebkitBackdropFilter: 'blur(30px)'
+            }}
+          >
+            {/* Header */}
+            <div className="px-5 py-4 flex items-center justify-between border-b border-white/10">
+              <div className="flex items-center gap-2.5">
+                <ShoppingBag className="w-5 h-5 text-[#EAB308]" />
+                <h3 className="font-bold text-lg text-white" style={{ fontFamily: "'Playfair Display',serif" }}>
+                  Your Feast Cart
+                </h3>
+                <span className="text-xs text-white/50">({cartItemCount} items)</span>
+              </div>
+              <button
+                onClick={() => setIsCartOpen(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Scrollable Cart Content */}
+            <div className="p-5 overflow-y-auto space-y-4 flex-1">
+
+              {/* Items List */}
+              <div className="space-y-2.5">
+                {cart.map(item => (
+                  <div key={item._id} className="rounded-2xl p-3 flex items-center justify-between gap-3"
+                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-bold text-sm truncate">{item.name}</p>
+                      <p className="text-[#EAB308] text-xs font-semibold">₹{item.price} each</p>
+                    </div>
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex items-center gap-1 bg-white/10 rounded-xl p-0.5 border border-white/15">
+                        <button
+                          onClick={() => updateCartQty(item._id, -1)}
+                          className="w-6 h-6 rounded-lg flex items-center justify-center text-white active:scale-90"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="text-xs font-bold text-white px-1.5">{item.quantity}</span>
+                        <button
+                          onClick={() => updateCartQty(item._id, 1)}
+                          className="w-6 h-6 rounded-lg flex items-center justify-center bg-[#EAB308] text-black font-bold active:scale-90"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+                      <span className="text-white font-bold text-sm min-w-[50px] text-right">
+                        ₹{(item.price * item.quantity).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Order Type: Delivery vs Takeaway */}
+              <div className="rounded-2xl p-1.5 flex gap-2" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
+                <button
+                  type="button"
+                  onClick={() => setOrderType('DELIVERY')}
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                    orderType === 'DELIVERY' ? 'bg-[#EAB308] text-black shadow-md' : 'text-white/70'
+                  }`}
+                >
+                  <Truck className="w-4 h-4" /> Home Delivery
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOrderType('TAKEAWAY')}
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                    orderType === 'TAKEAWAY' ? 'bg-[#EAB308] text-black shadow-md' : 'text-white/70'
+                  }`}
+                >
+                  <ShoppingBag className="w-4 h-4" /> Takeaway Pickup
+                </button>
+              </div>
+
+              {/* Delivery Details */}
+              {orderType === 'DELIVERY' && (
+                <div className="rounded-2xl p-4 space-y-3" style={GLASS_CARD_SM}>
+                  <div>
+                    <label className="text-xs font-bold text-white/75 block mb-1">Delivery Address</label>
+                    <textarea
+                      rows={2}
+                      value={deliveryAddress}
+                      onChange={e => setDeliveryAddr(e.target.value)}
+                      placeholder="Enter flat/house no, street, landmark..."
+                      className="w-full rounded-xl p-3 bg-white/10 text-white text-xs border border-white/20 focus:outline-none focus:border-[#EAB308] placeholder-white/40 resize-none"
+                    />
+                  </div>
+
+                  {/* Geolocation Distance Check */}
+                  <div className="flex items-center justify-between pt-1">
+                    <button
+                      type="button"
+                      onClick={detectDistance}
+                      disabled={detectingLoc}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/15 text-[#EAB308] border border-[#EAB308]/30 active:scale-95 transition-all"
+                    >
+                      <MapPin className="w-3.5 h-3.5" />
+                      <span>{detectingLoc ? 'Detecting...' : distanceKm ? `📍 ${distanceKm} km away` : 'Detect Range'}</span>
+                    </button>
+                    <span className="text-[11px] text-white/60">
+                      {distanceKm === null ? 'Within 10km: Free' : distanceKm <= 10 ? '✅ Free Delivery' : distanceKm <= 20 ? '₹60 Delivery Fee' : '❌ Out of range (>20km)'}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Takeaway Info */}
+              {orderType === 'TAKEAWAY' && (
+                <div className="rounded-2xl p-3.5 flex items-center gap-3 bg-white/5 border border-white/10 text-xs text-white/80">
+                  <MapPin className="w-4 h-4 text-[#EAB308] shrink-0" />
+                  <span>Pickup counter at <strong>Persian Darbar, Camp, Pune</strong>. Ready in ~25-30 mins. No minimum order limit!</span>
+                </div>
+              )}
+
+              {/* Contact Phone */}
+              <div className="rounded-2xl p-3 flex items-center gap-2" style={GLASS_CARD_SM}>
+                <Phone className="w-4 h-4 text-[#EAB308]" />
+                <span className="text-xs text-white/60">Contact:</span>
+                <input
+                  type="tel"
+                  maxLength={10}
+                  value={phoneVal}
+                  onChange={e => setPhoneVal(e.target.value)}
+                  placeholder="10-digit mobile number"
+                  className="flex-1 bg-transparent text-white font-bold text-xs focus:outline-none placeholder-white/40"
+                />
+              </div>
+
+              {/* Payment Method */}
+              <div className="rounded-2xl p-3.5 space-y-2" style={GLASS_CARD_SM}>
+                <label className="text-xs font-bold text-white/75 block">Payment Option</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPayMethod('cod')}
+                    className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
+                      payMethod === 'cod' ? 'bg-[#EAB308] text-black shadow' : 'bg-white/10 text-white/70'
+                    }`}
+                  >
+                    💵 Cash on {orderType === 'TAKEAWAY' ? 'Pickup' : 'Delivery'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPayMethod('online')}
+                    className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
+                      payMethod === 'online' ? 'bg-[#EAB308] text-black shadow' : 'bg-white/10 text-white/70'
+                    }`}
+                  >
+                    💳 Online / UPI
+                  </button>
+                </div>
+              </div>
+
+              {/* Bill Breakdown */}
+              <div className="rounded-2xl p-4 space-y-2 text-xs" style={GLASS_CARD_SM}>
+                <div className="flex justify-between text-white/70">
+                  <span>Items Subtotal</span>
+                  <span>₹{cartSubtotal.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-white/70">
+                  <span>Delivery Fee</span>
+                  <span>{cartDeliveryFee === 0 ? <span className="text-emerald-400 font-bold">FREE</span> : `₹${cartDeliveryFee}`}</span>
+                </div>
+                <div className="flex justify-between text-white/70">
+                  <span>GST & Restaurant Taxes (5%)</span>
+                  <span>₹{cartTaxes.toLocaleString()}</span>
+                </div>
+                <div className="pt-2 border-t border-white/10 flex justify-between font-black text-sm text-white">
+                  <span>Total Amount</span>
+                  <span className="text-[#EAB308] text-base">₹{cartTotal.toLocaleString()}</span>
+                </div>
+              </div>
+
+              {/* Submit CTA */}
+              <button
+                type="button"
+                onClick={handlePlaceOrder}
+                disabled={placingOrder}
+                className="w-full py-4 rounded-2xl font-black text-sm uppercase tracking-widest text-black shadow-xl active:scale-[0.98] transition-all disabled:opacity-50"
+                style={{
+                  background: 'linear-gradient(135deg, #FDE047 0%, #EAB308 60%, #CA8A04 100%)',
+                  boxShadow: '0 8px 24px rgba(234,179,8,0.5)'
+                }}
+              >
+                {placingOrder ? 'Placing Order...' : `Confirm Order · ₹${cartTotal.toLocaleString()}`}
+              </button>
+
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ═══ BOTTOM NAV (Frosted Glass Bar) ═══ */}
       <div className="relative z-20 shrink-0 flex items-center justify-around px-2 pt-2 pb-safe"
         style={{
@@ -897,11 +1566,11 @@ const CustomerDashboard = () => {
           WebkitBackdropFilter: 'blur(32px)',
           boxShadow: '0 -10px 40px rgba(0, 0, 0, 0.5)'
         }}>
-        {NAV.map(({ key, Icon, label, gold, dot }) => {
+        {NAV.map(({ key, Icon, label, gold, dot, count }) => {
           const active = tab === key;
           return (
             <button key={key}
-              onClick={() => key==='order' ? navigate('/order') : setTab(key)}
+              onClick={() => setTab(key)}
               className="flex-1 flex flex-col items-center justify-center py-2 gap-1 relative transition-all active:scale-95 group">
               {gold ? (
                 /* Prominent solid gold center reserve button as in mockup */
@@ -919,6 +1588,11 @@ const CustomerDashboard = () => {
                 <div className="relative">
                   <Icon style={{ width: 21, height: 21, color: active ? GOLD : 'rgba(255,255,255,0.6)' }} />
                   {dot && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full" style={{ background: GOLD, boxShadow: `0 0 6px ${GOLD}` }} />}
+                  {count > 0 && (
+                    <span className="absolute -top-1.5 -right-2 px-1.5 py-0.2 rounded-full bg-[#EAB308] text-black text-[9px] font-black shadow-md">
+                      {count}
+                    </span>
+                  )}
                 </div>
               )}
               <span className={`text-[9px] font-bold uppercase tracking-wider transition-colors ${
