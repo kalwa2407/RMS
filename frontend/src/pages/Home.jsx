@@ -54,27 +54,15 @@ const Home = () => {
     '/dynamic_images/img9.jpeg',
   ];
   const [heroIndex, setHeroIndex] = useState(0);
-  const [prevHeroIndex, setPrevHeroIndex] = useState(null);
-  const [transitioning, setTransitioning] = useState(false);
 
-  const goToSlide = (index) => {
-    if (transitioning) return;
-    setPrevHeroIndex(heroIndex);
-    setTransitioning(true);
-    setHeroIndex(index);
-    setTimeout(() => {
-      setPrevHeroIndex(null);
-      setTransitioning(false);
-    }, 1000);
-  };
+  const goToSlide = (index) => setHeroIndex(index);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      const next = (heroIndex + 1) % heroImages.length;
-      goToSlide(next);
+      setHeroIndex(prev => (prev + 1) % heroImages.length);
     }, 4000);
     return () => clearInterval(timer);
-  }, [heroIndex, transitioning]);
+  }, [heroImages.length]);
 
   useEffect(() => {
     const fetchSignatureDishes = async () => {
@@ -98,41 +86,42 @@ const Home = () => {
       {/* Hero Section — Dynamic Slideshow */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
 
-        {/* Background layers — crossfade */}
-        {/* Previous image (fading out) */}
-        {prevHeroIndex !== null && (
+        {/* All images stacked — opacity crossfade, no remount, no blue flash */}
+        {heroImages.map((src, i) => (
           <div
-            className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000 opacity-0"
-            style={{ backgroundImage: `url(${heroImages[prevHeroIndex]})` }}
+            key={i}
+            className="absolute inset-0 bg-cover bg-center"
+            style={{
+              backgroundImage: `url(${src})`,
+              opacity: i === heroIndex ? 1 : 0,
+              transition: 'opacity 1.2s ease-in-out',
+              zIndex: i === heroIndex ? 1 : 0,
+            }}
           />
-        )}
-        {/* Current image (fading in) */}
-        <div
-          key={heroIndex}
-          className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
-          style={{ backgroundImage: `url(${heroImages[heroIndex]})` }}
-        />
-        {/* Dark overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0f2933]/80 via-[#0f2933]/70 to-[#0f2933]/90" />
+        ))}
+        {/* Dark overlay — always on top of images */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0f2933]/80 via-[#0f2933]/70 to-[#0f2933]/90" style={{ zIndex: 2 }} />
 
-        {/* Prev / Next arrows */}
+        {/* Prev / Next arrows — z-index above overlay */}
         <button
           onClick={() => goToSlide((heroIndex - 1 + heroImages.length) % heroImages.length)}
-          className="absolute left-4 md:left-8 z-20 w-10 h-10 rounded-full bg-black/30 border border-[#EAB308]/30 text-[#EAB308] flex items-center justify-center hover:bg-[#EAB308]/20 transition-all"
+          className="absolute left-4 md:left-8 w-10 h-10 rounded-full bg-black/30 border border-[#EAB308]/30 text-[#EAB308] flex items-center justify-center hover:bg-[#EAB308]/20 transition-all"
+          style={{ zIndex: 3 }}
           aria-label="Previous"
         >
           &#8249;
         </button>
         <button
           onClick={() => goToSlide((heroIndex + 1) % heroImages.length)}
-          className="absolute right-4 md:right-8 z-20 w-10 h-10 rounded-full bg-black/30 border border-[#EAB308]/30 text-[#EAB308] flex items-center justify-center hover:bg-[#EAB308]/20 transition-all"
+          className="absolute right-4 md:right-8 w-10 h-10 rounded-full bg-black/30 border border-[#EAB308]/30 text-[#EAB308] flex items-center justify-center hover:bg-[#EAB308]/20 transition-all"
+          style={{ zIndex: 3 }}
           aria-label="Next"
         >
           &#8250;
         </button>
 
         {/* Dot indicators */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2" style={{ zIndex: 3 }}>
           {heroImages.map((_, i) => (
             <button
               key={i}
@@ -147,8 +136,8 @@ const Home = () => {
           ))}
         </div>
 
-        {/* Content */}
-        <div className="relative z-10 text-center text-white px-4 max-w-4xl mx-auto fade-in-up">
+        {/* Content — above everything */}
+        <div className="relative text-center text-white px-4 max-w-4xl mx-auto fade-in-up" style={{ zIndex: 3 }}>
           <div className="mb-8">
             <div className="inline-block border border-[#EAB308] rounded-full px-6 py-2">
               <p className="text-[#EAB308] text-base font-medium">
