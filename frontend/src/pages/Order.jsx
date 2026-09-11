@@ -41,12 +41,13 @@ const Order = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentUser, customerProfile, idToken } = useCustomerAuth();
+  const { currentUser, customerProfile, idToken, refreshProfile } = useCustomerAuth();
 
   const [menu, setMenu] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [applyCoins, setApplyCoins] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [distance, setDistance] = useState(null);
   const [loadingLocation, setLoadingLocation] = useState(false);
@@ -159,6 +160,24 @@ const Order = () => {
   const removeFromCart = (id) => setCart(cart.filter((item) => item._id !== id));
   const calculateSubtotal = () => cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
+  const pdCoins  = customerProfile?.pd_coins || customerProfile?.loyalty_points || 0;
+  const subtotal = calculateSubtotal();
+
+  /* ── PD Coins Rules:
+     - Min ₹300 subtotal
+     - Max burn cap: 25% of subtotal
+     - 1 coin = ₹1 discount
+     - 10% re-earned on net paid amount (subtotal - discount) ── */
+  const maxRedeemableCoins = (subtotal >= 300 && pdCoins > 0)
+    ? Math.min(pdCoins, Math.floor(subtotal * 0.25))
+    : 0;
+  const coinsApplied  = (applyCoins && maxRedeemableCoins > 0) ? maxRedeemableCoins : 0;
+  const coinsDiscount = coinsApplied;
+  const netSubtotal   = Math.max(0, subtotal - coinsDiscount);
+  const taxRate       = 0.05;
+  const taxes         = Math.round(subtotal * taxRate);
+  const coinsEarnable = Math.floor(netSubtotal * 0.10);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (cart.length === 0) return toast({ title: "Cart is empty", variant: "destructive" });
@@ -181,9 +200,7 @@ const Order = () => {
     }
 
     const deliveryFee = distance === null ? 60 : distance <= 10 ? 0 : 60;
-    const taxRate = 0.05;
-    const taxes = subtotal * taxRate;
-    const total = subtotal + deliveryFee + taxes;
+    const calculatedTotal = Math.max(0, netSubtotal + deliveryFee + taxes);
 
     const orderData = {
       customer_uid: currentUser?.uid || null,
@@ -204,10 +221,12 @@ const Order = () => {
         special_instructions: null
       })),
       subtotal,
-      discount: 0.0,
+      discount: coinsDiscount,
+      coins_to_redeem: coinsApplied,
+      coins_discount: coinsDiscount,
       delivery_fee: deliveryFee,
       taxes,
-      total,
+      total: calculatedTotal,
       coupon_code: null,
     };
 
@@ -236,7 +255,9 @@ const Order = () => {
       });
 
       setCart([]);
+      setApplyCoins(false);
       setDistance(null);
+      if (typeof refreshProfile === 'function') refreshProfile();
 
       // Smooth redirect to live tracking
       setTimeout(() => {
@@ -353,11 +374,76 @@ const Order = () => {
                       ))}
                     </div>
 
+                    {/* 🪙 PD Coins Redemption Card (Desktop Cart) */}
+                    {currentUser && pdCoins > 0 ? (
+                      <div className="rounded-xl p-3 bg-[#0f2933] border border-[#EAB308]/30 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <img src="/pd_coin.png" alt="coin" className="w-6 h-6 object-contain" />
+                            <div>
+                              <p className="text-xs font-bold text-white">Redeem PD Coins</p>
+                              <p className="text-[10px] text-[#EAB308] font-bold">Balance: {pdCoins} coins (₹{pdCoins})</p>
+                            </div>
+                          </div>
+                          {subtotal >= 300 && (
+                            <button
+                              type="button"
+                              onClick={() => setApplyCoins(prev => !prev)}
+                              className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+                                applyCoins
+                                  ? 'bg-[#EAB308] text-black shadow-md shadow-[#EAB308]/30 scale-105'
+                                  : 'bg-white/10 text-white/80 hover:bg-white/15'
+                              }`}
+                            >
+                              {applyCoins ? 'Applied ✓' : 'Apply'}
+                            </button>
+                          )}
+                        </div>
+                        {subtotal < 300 ? (
+                          <p className="text-[10px] text-gray-400">
+                            Add items worth ₹{300 - subtotal} more to redeem (Min ₹300 order)
+                          </p>
+                        ) : (
+                          <p className="text-[10px] text-gray-400">
+                            Max 25% bill cap: Save up to <span className="text-[#EAB308] font-bold">₹{maxRedeemableCoins}</span>
+                          </p>
+                        )}
+                        {applyCoins && maxRedeemableCoins > 0 && (
+                          <div className="pt-1.5 border-t border-white/10 flex items-center justify-between text-[11px]">
+                            <span className="text-emerald-400 font-bold flex items-center gap-1">
+                              <Sparkles size={12} /> Saving ₹{coinsDiscount}
+                            </span>
+                            <span className="text-gray-400">+Earn <span className="text-[#EAB308] font-bold">{coinsEarnable}</span> new coins</span>
+                          </div>
+                        )}
+                      </div>
+                    ) : !currentUser ? (
+                      <div className="rounded-xl p-2.5 bg-[#0f2933]/60 border border-[#EAB308]/20 flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <img src="/pd_coin.png" alt="coin" className="w-4 h-4 object-contain" />
+                          <span className="text-white/80 text-[11px]">Earn 10% cashback in PD Coins</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => navigate('/customer/auth')}
+                          className="text-[10px] font-bold text-[#EAB308] hover:underline"
+                        >
+                          Sign In
+                        </button>
+                      </div>
+                    ) : null}
+
                     <div className="border-t border-[#EAB308]/20 pt-4 space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-400">Subtotal</span>
-                        <span className="text-white font-bold">₹{calculateSubtotal()}</span>
+                        <span className="text-white font-bold">₹{subtotal}</span>
                       </div>
+                      {coinsApplied > 0 && (
+                        <div className="flex justify-between text-sm text-emerald-400 font-bold">
+                          <span className="flex items-center gap-1">🪙 PD Coins Discount</span>
+                          <span>-₹{coinsDiscount}</span>
+                        </div>
+                      )}
                       {distance !== null && (
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-400">Delivery</span>
@@ -370,9 +456,15 @@ const Order = () => {
                           )}
                         </div>
                       )}
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-400">GST (5%)</span>
+                        <span className="text-white font-bold">₹{taxes}</span>
+                      </div>
                       <div className="flex justify-between text-lg font-bold border-t border-[#EAB308]/20 pt-2">
                         <span className="text-white">Total</span>
-                        <span className="text-[#EAB308]">₹{calculateSubtotal() + (distance !== null && distance > 10 && distance <= 20 ? 60 : 0)}</span>
+                        <span className="text-[#EAB308]">
+                          ₹{Math.max(0, netSubtotal + (distance !== null && distance > 10 && distance <= 20 ? 60 : 0) + taxes)}
+                        </span>
                       </div>
                     </div>
 
@@ -613,12 +705,63 @@ const Order = () => {
                 ))}
               </div>
 
+              {/* 🪙 PD Coins Redemption Card (Mobile Drawer) */}
+              {currentUser && pdCoins > 0 ? (
+                <div className="rounded-xl p-3 bg-[#0f2933] border border-[#EAB308]/30 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <img src="/pd_coin.png" alt="coin" className="w-6 h-6 object-contain" />
+                      <div>
+                        <p className="text-xs font-bold text-white">Redeem PD Coins</p>
+                        <p className="text-[10px] text-[#EAB308] font-bold">Balance: {pdCoins} coins (₹{pdCoins})</p>
+                      </div>
+                    </div>
+                    {subtotal >= 300 && (
+                      <button
+                        type="button"
+                        onClick={() => setApplyCoins(prev => !prev)}
+                        className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
+                          applyCoins
+                            ? 'bg-[#EAB308] text-black shadow-md shadow-[#EAB308]/30 scale-105'
+                            : 'bg-white/10 text-white/80 hover:bg-white/15'
+                        }`}
+                      >
+                        {applyCoins ? 'Applied ✓' : 'Apply'}
+                      </button>
+                    )}
+                  </div>
+                  {subtotal < 300 ? (
+                    <p className="text-[10px] text-gray-400">
+                      Add items worth ₹{300 - subtotal} more to redeem (Min ₹300 order)
+                    </p>
+                  ) : (
+                    <p className="text-[10px] text-gray-400">
+                      Max 25% bill cap: Save up to <span className="text-[#EAB308] font-bold">₹{maxRedeemableCoins}</span>
+                    </p>
+                  )}
+                  {applyCoins && maxRedeemableCoins > 0 && (
+                    <div className="pt-1.5 border-t border-white/10 flex items-center justify-between text-[11px]">
+                      <span className="text-emerald-400 font-bold flex items-center gap-1">
+                        <Sparkles size={12} /> Saving ₹{coinsDiscount}
+                      </span>
+                      <span className="text-gray-400">+Earn <span className="text-[#EAB308] font-bold">{coinsEarnable}</span> new coins</span>
+                    </div>
+                  )}
+                </div>
+              ) : null}
+
               {/* Price summary */}
               <div className="bg-[#1a4855]/40 rounded-2xl p-4 space-y-2 border border-[#EAB308]/10">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Subtotal</span>
-                  <span className="text-white font-bold">₹{calculateSubtotal()}</span>
+                  <span className="text-white font-bold">₹{subtotal}</span>
                 </div>
+                {coinsApplied > 0 && (
+                  <div className="flex justify-between text-sm text-emerald-400 font-bold">
+                    <span className="flex items-center gap-1">🪙 PD Coins Discount</span>
+                    <span>-₹{coinsDiscount}</span>
+                  </div>
+                )}
                 {distance !== null && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-400">Delivery</span>
@@ -631,10 +774,14 @@ const Order = () => {
                     )}
                   </div>
                 )}
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">GST (5%)</span>
+                  <span className="text-white font-bold">₹{taxes}</span>
+                </div>
                 <div className="flex justify-between border-t border-[#EAB308]/20 pt-2">
                   <span className="text-white font-black">Total</span>
                   <span className="text-[#EAB308] font-black text-xl">
-                    ₹{calculateSubtotal() + (distance !== null && distance > 10 && distance <= 20 ? 60 : 0)}
+                    ₹{Math.max(0, netSubtotal + (distance !== null && distance > 10 && distance <= 20 ? 60 : 0) + taxes)}
                   </span>
                 </div>
               </div>

@@ -180,6 +180,9 @@ class OrderCreate(BaseModel):
     # Dine-in fields
     order_type: str = "DELIVERY"  # 'DELIVERY', 'TAKEAWAY', 'DINE_IN'
     table_number: Optional[int] = None  # Table number for dine-in
+    # PD Coins loyalty redemption (online orders)
+    coins_to_redeem: int = 0        # Number of PD Coins customer wants to apply (1 coin = ₹1)
+    coins_discount: float = 0.0     # Calculated discount value from coins (mirrors coins_to_redeem)
 
 # Table Order Create (simplified for QR ordering)
 class TableOrderCreate(BaseModel):

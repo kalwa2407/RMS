@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCustomerAuth } from '../../context/CustomerAuthContext';
 import API_BASE from '../../lib/config';
@@ -72,7 +72,7 @@ const Dot = ({ status }) => {
    MAIN COMPONENT
 ════════════════════════════════════════════════ */
 const CustomerDashboard = () => {
-  const { currentUser, customerProfile, updateProfile, signOutCustomer, idToken, fetchWithAuth } = useCustomerAuth();
+  const { currentUser, customerProfile, updateProfile, signOutCustomer, idToken, fetchWithAuth, refreshProfile } = useCustomerAuth();
   const navigate   = useNavigate();
   const rzReady    = useRazorpay();
 
@@ -123,6 +123,7 @@ const CustomerDashboard = () => {
   const [payMethod, setPayMethod]         = useState('cod');
   const [placingOrder, setPlacingOrder]   = useState(false);
   const [orderDone, setOrderDone]         = useState(null);
+  const [applyCoins, setApplyCoins]       = useState(false);
 
   /* ── Auto-scroll to top when switching tabs or subtabs (native mobile app behavior) ── */
   useEffect(() => {
@@ -202,6 +203,24 @@ const CustomerDashboard = () => {
   const activeRes    = reservations.filter(r => ['pending','confirmed'].includes(r.status));
   const pdCoins      = customerProfile?.pd_coins || customerProfile?.loyalty_points || 0;
   const fee          = guests * 10;
+
+  /* ── Coins expiring soon (within next 15 days of 45-day policy) ── */
+  const expiringSoonCoins = useMemo(() => {
+    if (!customerProfile?.coins_history) return 0;
+    const now = Date.now();
+    let expiring = 0;
+    for (const txn of customerProfile.coins_history) {
+      if (txn.type === 'earned' && !txn.expired && txn.timestamp) {
+        try {
+          const ageDays = (now - new Date(txn.timestamp).getTime()) / (1000 * 60 * 60 * 24);
+          if (ageDays >= 30 && ageDays < 45) {
+            expiring += (txn.coins || 0);
+          }
+        } catch (e) {}
+      }
+    }
+    return expiring;
+  }, [customerProfile?.coins_history]);
 
   const tAvail = tables.filter(t => t.status?.toLowerCase() === 'available').length;
   const tOccup = tables.filter(t => t.status?.toLowerCase() === 'occupied').length;
@@ -312,7 +331,20 @@ const CustomerDashboard = () => {
   const cartSubtotal    = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const cartDeliveryFee = orderType === 'TAKEAWAY' ? 0 : (distanceKm !== null && distanceKm > 10 ? 60 : 0);
   const cartTaxes       = Math.round(cartSubtotal * 0.05);
-  const cartTotal       = cartSubtotal + cartDeliveryFee + cartTaxes;
+
+  /* ── PD Coins Redemption Rules:
+     - Min ₹300 subtotal
+     - Max burn cap: 25% of subtotal
+     - 1 coin = ₹1 discount
+     - 10% re-earn on net paid amount (subtotal - coin discount) ── */
+  const maxRedeemableCoins = (cartSubtotal >= 300 && pdCoins > 0)
+    ? Math.min(pdCoins, Math.floor(cartSubtotal * 0.25))
+    : 0;
+  const coinsApplied     = (applyCoins && maxRedeemableCoins > 0) ? maxRedeemableCoins : 0;
+  const coinsDiscount    = coinsApplied;
+  const netSubtotal      = Math.max(0, cartSubtotal - coinsDiscount);
+  const cartTotal        = Math.max(0, netSubtotal + cartDeliveryFee + cartTaxes);
+  const coinsEarnable    = Math.floor(netSubtotal * 0.10);
 
   const addToCart = (item) => {
     setCart(prev => {
@@ -399,7 +431,9 @@ const CustomerDashboard = () => {
         special_instructions: null
       })),
       subtotal: cartSubtotal,
-      discount: 0.0,
+      discount: coinsDiscount,
+      coins_to_redeem: coinsApplied,
+      coins_discount: coinsDiscount,
       delivery_fee: cartDeliveryFee,
       taxes: cartTaxes,
       total: cartTotal,
@@ -420,10 +454,12 @@ const CustomerDashboard = () => {
       }
       const data = await res.json();
       setCart([]);
+      setApplyCoins(false);
       setIsCartOpen(false);
       setOrderDone(data);
       setOrderSubTab('history');
       fetchOrders();
+      if (typeof refreshProfile === 'function') refreshProfile();
     } catch (err) {
       alert(err.message || 'Order failed. Please try again.');
     } finally {
@@ -1290,36 +1326,72 @@ const CustomerDashboard = () => {
               ))}
             </div>
 
+            {/* Expiry Alert Warning Banner if any coins are expiring within 15 days */}
+            {expiringSoonCoins > 0 && (
+              <div className="rounded-2xl p-4 bg-gradient-to-r from-amber-500/20 to-amber-600/10 border border-amber-500/40 flex items-center justify-between gap-3 shadow-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/30">
+                    <AlertCircle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-amber-300 font-bold text-xs">
+                      {expiringSoonCoins} PD Coins expire soon!
+                    </p>
+                    <p className="text-white/60 text-[10px] mt-0.5">
+                      Coins expire after 45 days. Order now to redeem them.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setTab('order')}
+                  className="px-3 py-1.5 rounded-xl bg-amber-400 text-black font-black text-[10px] uppercase tracking-wider shrink-0 active:scale-95 transition-transform shadow"
+                >
+                  Order Now →
+                </button>
+              </div>
+            )}
+
             <div className="rounded-3xl p-5" style={GLASS_CARD}>
               <p className="text-xs font-black uppercase tracking-widest mb-3" style={{ color:GOLD }}>Transaction History</p>
               {(!customerProfile?.coins_history || customerProfile.coins_history.length === 0) ? (
                 <div className="py-8 text-center">
                   <img src="/pd_coin.png" alt="" className="w-12 h-12 mx-auto mb-2 opacity-30" />
                   <p className="text-white/60 text-sm">No transactions yet</p>
-                  <p className="text-white/40 text-xs mt-1">Dine in to start earning!</p>
+                  <p className="text-white/40 text-xs mt-1">Dine in or order online to start earning!</p>
                 </div>
               ) : (
                 <div className="space-y-2.5 max-h-[300px] overflow-y-auto pr-1">
                   {[...customerProfile.coins_history].reverse().map((txn, i) => {
-                    const isEarned = txn.type === 'earned';
+                    const isEarned  = txn.type === 'earned';
+                    const isExpired = txn.type === 'expired';
                     return (
                       <div key={i} className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10">
                         <div className="flex items-center gap-3">
                           <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${
-                            isEarned ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                            isEarned
+                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                              : isExpired
+                              ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                              : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                           }`}>
-                            {isEarned ? '▲' : '▼'}
+                            {isEarned ? '▲' : isExpired ? '✕' : '▼'}
                           </div>
                           <div>
                             <p className="text-white text-xs font-bold">
-                              {isEarned ? 'Dine-In Cashback (10%)' : 'Coins Redeemed'}
+                              {isEarned 
+                                ? (txn.note?.includes('online') ? 'Online Order Cashback (10%)' : 'Dine-In Cashback (10%)') 
+                                : isExpired
+                                ? 'Expired (45-Day Policy)'
+                                : 'Coins Redeemed'}
                             </p>
-                            <p className="text-white/50 text-[11px]">{txn.note || (isEarned ? `₹${txn.bill_amount} bill` : 'Discount')}</p>
+                            <p className="text-white/50 text-[11px]">
+                              {txn.note || (isEarned ? `₹${txn.bill_amount} bill` : isExpired ? '45-day auto expiry' : 'Discount')}
+                            </p>
                             <p className="text-white/30 text-[9px] mt-0.5">{txn.timestamp ? new Date(txn.timestamp).toLocaleDateString('en-IN', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : ''}</p>
                           </div>
                         </div>
                         <div className="text-right shrink-0">
-                          <span className={`text-sm font-black ${isEarned ? 'text-emerald-400' : 'text-amber-400'}`}>
+                          <span className={`text-sm font-black ${isEarned ? 'text-emerald-400' : isExpired ? 'text-rose-400' : 'text-amber-400'}`}>
                             {isEarned ? `+${txn.coins}` : `-${txn.coins}`}
                           </span>
                           <p className="text-white/40 text-[9px]">Bal: {txn.balance_after}</p>
@@ -1953,12 +2025,85 @@ const CustomerDashboard = () => {
                 </div>
               </div>
 
+              {/* 🪙 PD Coins Redemption Card */}
+              {pdCoins > 0 && (
+                <div 
+                  className="rounded-2xl p-3.5 transition-all border"
+                  style={{
+                    background: applyCoins && maxRedeemableCoins > 0
+                      ? 'linear-gradient(135deg, rgba(234,179,8,0.18) 0%, rgba(20,20,25,0.6) 100%)'
+                      : 'rgba(255,255,255,0.06)',
+                    borderColor: applyCoins && maxRedeemableCoins > 0
+                      ? 'rgba(234,179,8,0.45)'
+                      : 'rgba(255,255,255,0.12)'
+                  }}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-[#EAB308]/20 flex items-center justify-center shrink-0 border border-[#EAB308]/30">
+                        <img src="/pd_coin.png" alt="coin" className="w-5 h-5 object-contain" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-white text-xs font-bold">Redeem PD Coins</span>
+                          <span className="text-[10px] text-[#EAB308] font-black bg-[#EAB308]/15 px-1.5 py-0.5 rounded-full border border-[#EAB308]/25">
+                            {pdCoins} Bal
+                          </span>
+                        </div>
+                        {cartSubtotal < 300 ? (
+                          <p className="text-white/50 text-[10px] mt-0.5">
+                            Add items worth ₹{300 - cartSubtotal} more to redeem (Min ₹300)
+                          </p>
+                        ) : (
+                          <p className="text-white/60 text-[10px] mt-0.5">
+                            Max 25% bill cap: Save up to <span className="text-[#EAB308] font-bold">₹{maxRedeemableCoins}</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {cartSubtotal >= 300 && (
+                      <button
+                        type="button"
+                        onClick={() => setApplyCoins(prev => !prev)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                          applyCoins
+                            ? 'bg-[#EAB308] text-black shadow-lg shadow-[#EAB308]/30 scale-105'
+                            : 'bg-white/10 text-white/80 hover:bg-white/15'
+                        }`}
+                      >
+                        {applyCoins ? 'Applied ✓' : 'Apply'}
+                      </button>
+                    )}
+                  </div>
+
+                  {applyCoins && maxRedeemableCoins > 0 && (
+                    <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between text-[11px]">
+                      <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                        <Sparkles className="w-3.5 h-3.5" /> Saving ₹{coinsDiscount} on this order!
+                      </span>
+                      <span className="text-white/50">
+                        +Earn <span className="text-[#EAB308] font-bold">{coinsEarnable}</span> new coins
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Bill Breakdown */}
               <div className="rounded-2xl p-4 space-y-2 text-xs" style={GLASS_CARD_SM}>
                 <div className="flex justify-between text-white/70">
                   <span>Items Subtotal</span>
                   <span>₹{cartSubtotal.toLocaleString()}</span>
                 </div>
+                {coinsApplied > 0 && (
+                  <div className="flex justify-between text-emerald-400 font-bold">
+                    <span className="flex items-center gap-1">
+                      🪙 PD Coins Discount
+                    </span>
+                    <span>-₹{coinsDiscount.toLocaleString()}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-white/70">
                   <span>Delivery Fee</span>
                   <span>{cartDeliveryFee === 0 ? <span className="text-emerald-400 font-bold">FREE</span> : `₹${cartDeliveryFee}`}</span>

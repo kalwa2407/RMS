@@ -111,6 +111,61 @@ def get_ist_now():
     """Get current IST datetime"""
     return datetime.now(timezone(timedelta(hours=5, minutes=30)))
 
+
+def apply_coin_expiry(customer: dict) -> dict:
+    """
+    Auto-expire PD Coins that were earned more than 45 days ago.
+    Mutates and returns the customer dict with updated pd_coins and coins_history.
+    Safe to call on every profile read — idempotent (won't double-expire).
+    """
+    EXPIRY_DAYS = 45
+    now = get_ist_now()
+    history = customer.get("coins_history", [])
+    newly_expired = 0
+
+    updated_history = []
+    for entry in history:
+        if entry.get("type") == "earned" and not entry.get("expired"):
+            try:
+                ts_str = entry.get("timestamp", "")
+                # Parse timestamp (handle both tz-aware and naive)
+                if "+" in ts_str or ts_str.endswith("Z"):
+                    from dateutil import parser as dateparser
+                    earned_at = dateparser.parse(ts_str)
+                    if earned_at.tzinfo is None:
+                        earned_at = earned_at.replace(tzinfo=timezone(timedelta(hours=5, minutes=30)))
+                else:
+                    earned_at = datetime.fromisoformat(ts_str).replace(
+                        tzinfo=timezone(timedelta(hours=5, minutes=30))
+                    )
+                age_days = (now - earned_at).days
+                if age_days >= EXPIRY_DAYS:
+                    coins_lost = entry.get("coins", 0)
+                    newly_expired += coins_lost
+                    updated_history.append({**entry, "expired": True})
+                    continue
+            except Exception:
+                pass
+        updated_history.append(entry)
+
+    if newly_expired > 0:
+        # Append a visible expiry record to history
+        updated_history.append({
+            "type": "expired",
+            "coins": newly_expired,
+            "balance_after": max(0, (customer.get("pd_coins", 0) - newly_expired)),
+            "note": f"{newly_expired} coins auto-expired (45-day policy)",
+            "timestamp": now.isoformat(),
+        })
+        # Recalculate fresh balance from non-expired history
+        earned   = sum(e["coins"] for e in updated_history if e.get("type") == "earned" and not e.get("expired"))
+        redeemed = sum(e["coins"] for e in updated_history if e.get("type") in ("redeemed", "expired"))
+        customer["pd_coins"] = max(0, earned - redeemed)
+        customer["coins_history"] = updated_history
+
+    return customer
+
+
 async def create_order_invoice(order_id: str, manager: BaseDataManager):
     """Generate invoice PDF for an order"""
     try:
@@ -383,14 +438,14 @@ async def create_order(
     manager: BaseDataManager = Depends(get_data_manager),
     optional_customer: Optional[dict] = Depends(get_optional_customer)
 ):
-    """Create a new order with validation"""
-    
+    """Create a new order with validation. Handles PD Coins redemption and re-award."""
+
     if order.order_type == "DELIVERY" and order.subtotal < 250:
         raise HTTPException(
             status_code=400,
             detail="Minimum order value is ₹250 for delivery"
         )
-    
+
     # ── Delivery range enforcement ──
     if order.order_type == "DELIVERY":
         km = order.distance_km or 0
@@ -400,20 +455,107 @@ async def create_order(
                 detail="Out of delivery range. We only deliver within 20km."
             )
         elif km > 10:
-            order.delivery_fee = 60.0   # ₹60 flat for 10–20km
+            order.delivery_fee = 60.0
         else:
-            order.delivery_fee = 0.0    # Free within 10km
+            order.delivery_fee = 0.0
 
     now = get_ist_now()
     order_dict = order.dict()
     order_id = generate_order_id()
-    
-    # Auto-link customer if authenticated
+
+    # ── Auto-link customer if authenticated ──
     if not order_dict.get("customer_uid") and optional_customer:
         order_dict["customer_uid"] = optional_customer["uid"]
 
-    # If customer profile exists and phone is empty, update it
-    if optional_customer and order_dict.get("phone"):
+    # ════════════════════════════════════════════════════════════
+    # PD COINS REDEMPTION — server-side validation + wallet debit
+    # ════════════════════════════════════════════════════════════
+    coins_redeemed = 0
+    coins_discount_applied = 0.0
+    coins_earned_back = 0
+
+    requested_coins = int(order_dict.get("coins_to_redeem", 0))
+
+    if requested_coins > 0 and optional_customer:
+        uid = optional_customer["uid"]
+        COINS_MIN_BILL    = 300     # Minimum subtotal to allow redemption
+        COINS_MAX_BURN_PC = 0.25    # Max 25% of subtotal can be paid in coins
+
+        if order.subtotal < COINS_MIN_BILL:
+            # Bill too small — silently ignore coins request
+            requested_coins = 0
+        else:
+            customers = await manager._read("customers")
+            cust_idx = next((i for i, c in enumerate(customers) if c.get("uid") == uid), None)
+
+            if cust_idx is not None:
+                customer = customers[cust_idx]
+
+                # Always sweep expiry before any wallet operation
+                customer = apply_coin_expiry(customer)
+
+                available_coins = customer.get("pd_coins", 0)
+                max_allowed = int(order.subtotal * COINS_MAX_BURN_PC)
+
+                # Enforce caps: can't redeem more than available or more than 25% cap
+                coins_redeemed = min(requested_coins, available_coins, max_allowed)
+
+                if coins_redeemed > 0:
+                    coins_discount_applied = float(coins_redeemed)  # 1 coin = ₹1
+                    new_coin_balance = available_coins - coins_redeemed
+
+                    # Recalculate total with discount applied
+                    net_subtotal = order.subtotal - coins_discount_applied
+                    new_total    = net_subtotal + order_dict.get("delivery_fee", 0.0) + order_dict.get("taxes", 0.0)
+                    new_total    = max(1.0, round(new_total, 2))  # Never go below ₹1
+
+                    # Auto-award 10% on NET paid amount (not on the discounted portion)
+                    coins_earned_back = int(net_subtotal * 0.10)
+
+                    redemption_txn = {
+                        "type": "redeemed",
+                        "coins": coins_redeemed,
+                        "discount_value": coins_discount_applied,
+                        "balance_after": new_coin_balance,
+                        "note": f"Online order #{order_id[-8:]} — ₹{coins_discount_applied:.0f} discount",
+                        "order_id": order_id,
+                        "timestamp": now.isoformat(),
+                    }
+
+                    history = customer.get("coins_history", [])
+                    history.append(redemption_txn)
+
+                    # Immediately re-award 10% on net paid
+                    if coins_earned_back > 0:
+                        earn_balance_after = new_coin_balance + coins_earned_back
+                        earn_txn = {
+                            "type": "earned",
+                            "coins": coins_earned_back,
+                            "bill_amount": net_subtotal,
+                            "balance_after": earn_balance_after,
+                            "note": f"10% cashback on online order #{order_id[-8:]} (net ₹{net_subtotal:.0f})",
+                            "order_id": order_id,
+                            "timestamp": now.isoformat(),
+                        }
+                        history.append(earn_txn)
+                        new_coin_balance = earn_balance_after
+
+                    customer["pd_coins"]      = new_coin_balance
+                    customer["coins_history"] = history
+                    customer["updated_at"]    = now.isoformat()
+                    customers[cust_idx]       = customer
+                    await manager._write("customers", customers)
+
+                    # Patch order financials with server-validated coin discount
+                    order_dict["discount"]          = coins_discount_applied
+                    order_dict["coins_redeemed"]     = coins_redeemed
+                    order_dict["coins_discount"]     = coins_discount_applied
+                    order_dict["coins_earned"]       = coins_earned_back
+                    order_dict["total"]              = new_total
+
+    # ── Phone / address back-fill ──
+    if optional_customer and order_dict.get("phone") and coins_redeemed == 0:
+        # Only do this secondary read if coins didn't already do it above
         try:
             customers = await manager._read("customers")
             for c in customers:
@@ -427,7 +569,25 @@ async def create_order(
                     break
         except Exception:
             pass
-    
+    elif optional_customer and order_dict.get("phone") and coins_redeemed > 0:
+        # We already have customers list in scope — just update phone/address if needed
+        try:
+            customers = await manager._read("customers")
+            for c in customers:
+                if c.get("uid") == optional_customer["uid"]:
+                    changed = False
+                    if not c.get("phone"):
+                        c["phone"] = order_dict["phone"].strip(); changed = True
+                    if order_dict.get("address") and not c.get("address"):
+                        c["address"] = order_dict["address"].strip()
+                        c.setdefault("addresses", []).append(order_dict["address"].strip())
+                        changed = True
+                    if changed:
+                        await manager._write("customers", customers)
+                    break
+        except Exception:
+            pass
+
     order_dict.update({
         "order_id": order_id,
         "payment_status": "pending",
@@ -440,7 +600,7 @@ async def create_order(
         "created_at": now.isoformat(),
         "updated_at": now.isoformat()
     })
-    
+
     if order_dict.get("order_type") == "DINE_IN":
         order_dict["delivery_fee"] = 0.0
         order_dict["payment_method"] = "pay_at_counter"
@@ -450,9 +610,10 @@ async def create_order(
         order_dict["delivery_fee"] = 0.0
     else:
         order_dict["estimated_delivery_time"] = (now + timedelta(minutes=35)).isoformat()
-    
+
     created_order = await manager.create_order(order_dict)
     return created_order
+
 
 @api_router.post("/table-order")
 async def create_table_order(order: TableOrderCreate, manager: BaseDataManager = Depends(get_data_manager)):
@@ -2835,20 +2996,29 @@ async def admin_loyalty_search(
     username: str = Depends(verify_token),
     manager: BaseDataManager = Depends(get_data_manager)
 ):
-    """Search customers by phone number or name for loyalty operations"""
+    """Search customers by phone number or name for loyalty operations. Auto-expires stale coins."""
     if not q or len(q.strip()) < 2:
         return []
 
     query = q.strip().lower()
     customers = await manager._read("customers")
     matched = []
+    customers_modified = False
 
-    for c in customers:
-        name_match = query in (c.get("name") or "").lower()
+    for i, c in enumerate(customers):
+        name_match  = query in (c.get("name") or "").lower()
         phone_match = query in (c.get("phone") or "").replace(" ", "")
         email_match = query in (c.get("email") or "").lower()
 
         if name_match or phone_match or email_match:
+            # Auto-expire coins before surfacing to admin
+            coins_before = c.get("pd_coins", 0)
+            c = apply_coin_expiry(c)
+            if c.get("pd_coins", 0) != coins_before:
+                c["updated_at"] = get_ist_now().isoformat()
+                customers[i] = c
+                customers_modified = True
+
             matched.append({
                 "_id": c.get("_id"),
                 "uid": c.get("uid"),
@@ -2860,6 +3030,9 @@ async def admin_loyalty_search(
                 "coins_history": c.get("coins_history", [])[-20:],  # Last 20 transactions
                 "created_at": c.get("created_at", ""),
             })
+
+    if customers_modified:
+        await manager._write("customers", customers)
 
     return matched[:10]  # Max 10 results
 
@@ -2883,6 +3056,9 @@ async def admin_loyalty_award(
     coins_to_award = int(data.bill_amount * 0.10)  # 10% of bill
     if coins_to_award <= 0:
         raise HTTPException(status_code=400, detail="Bill amount too small to earn coins")
+
+    # Auto-expire stale coins before balance calculation
+    customers[idx] = apply_coin_expiry(customers[idx])
 
     now = get_ist_now().isoformat()
     current_coins = customers[idx].get("pd_coins", 0)
@@ -2932,6 +3108,9 @@ async def admin_loyalty_redeem(
 
     if idx is None:
         raise HTTPException(status_code=404, detail="Customer not found")
+
+    # Auto-expire stale coins before balance check
+    customers[idx] = apply_coin_expiry(customers[idx])
 
     current_coins = customers[idx].get("pd_coins", 0)
     if data.coins_to_redeem > current_coins:
@@ -3005,12 +3184,12 @@ async def get_customer_profile(
     user: dict = Depends(verify_customer_token),
     manager: BaseDataManager = Depends(get_data_manager)
 ):
-    """Fetch logged in customer profile, auto-creating if first time"""
+    """Fetch logged in customer profile, auto-creating if first time. Auto-expires stale coins."""
     uid = user["uid"]
     customers = await manager._read("customers")
-    profile = next((c for c in customers if c.get("uid") == uid), None)
-    
-    if not profile:
+    idx = next((i for i, c in enumerate(customers) if c.get("uid") == uid), None)
+
+    if idx is None:
         now = get_ist_now().isoformat()
         profile = {
             "_id": str(uuid.uuid4()),
@@ -3028,7 +3207,17 @@ async def get_customer_profile(
         }
         customers.append(profile)
         await manager._write("customers", customers)
-        
+        return profile
+
+    profile = customers[idx]
+    # Auto-expire coins older than 45 days on every profile fetch
+    coins_before = profile.get("pd_coins", 0)
+    profile = apply_coin_expiry(profile)
+    if profile.get("pd_coins", 0) != coins_before:
+        profile["updated_at"] = get_ist_now().isoformat()
+        customers[idx] = profile
+        await manager._write("customers", customers)
+
     return profile
 
 @customer_router.put("/profile")

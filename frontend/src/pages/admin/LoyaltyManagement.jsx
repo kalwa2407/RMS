@@ -604,7 +604,8 @@ export default function LoyaltyManagement() {
                   ) : (
                     <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
                       {[...selectedCustomer.coins_history].reverse().map((item, idx) => {
-                        const isEarned = item.type === "earned";
+                        const isEarned  = item.type === "earned";
+                        const isExpired = item.type === "expired";
                         return (
                           <div
                             key={idx}
@@ -615,21 +616,29 @@ export default function LoyaltyManagement() {
                                 className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
                                   isEarned
                                     ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                                    : isExpired
+                                    ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
                                     : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
                                 }`}
                               >
                                 {isEarned ? (
                                   <ArrowUpRight className="w-5 h-5" />
+                                ) : isExpired ? (
+                                  <X className="w-4 h-4" />
                                 ) : (
                                   <ArrowDownRight className="w-5 h-5" />
                                 )}
                               </div>
                               <div>
                                 <p className="text-sm font-bold text-white">
-                                  {isEarned ? "Dine-In Cashback (10%)" : "Bill Discount Redemption"}
+                                  {isEarned
+                                    ? (item.note?.includes("online") ? "Online Order Cashback (10%)" : "Dine-In Cashback (10%)")
+                                    : isExpired
+                                    ? "Expired (45-Day Policy)"
+                                    : "Bill Discount Redemption"}
                                 </p>
                                 <p className="text-xs text-white/60 mt-0.5">
-                                  {item.note || (isEarned ? `Bill: ₹${item.bill_amount}` : `Redeemed ${item.coins} coins`)}
+                                  {item.note || (isEarned ? `Bill: ₹${item.bill_amount}` : isExpired ? "45-day auto expiry" : `Redeemed ${item.coins} coins`)}
                                 </p>
                                 <p className="text-[10px] text-white/40 mt-1">
                                   {item.timestamp ? new Date(item.timestamp).toLocaleString("en-IN") : "Just now"}
@@ -641,7 +650,7 @@ export default function LoyaltyManagement() {
                             <div className="text-right shrink-0">
                               <span
                                 className={`text-base font-black ${
-                                  isEarned ? "text-emerald-400" : "text-amber-400"
+                                  isEarned ? "text-emerald-400" : isExpired ? "text-rose-400" : "text-amber-400"
                                 }`}
                               >
                                 {isEarned ? `+${item.coins}` : `-${item.coins}`}
@@ -738,7 +747,8 @@ export default function LoyaltyManagement() {
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {globalLogs.map((log, idx) => {
-                    const isEarned = log.type === "earned";
+                    const isEarned  = log.type === "earned";
+                    const isExpired = log.type === "expired";
                     return (
                       <tr key={idx} className="hover:bg-white/5 transition-colors">
                         <td className="py-3 px-3 font-mono text-white/60">
@@ -753,14 +763,16 @@ export default function LoyaltyManagement() {
                             className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                               isEarned
                                 ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                                : isExpired
+                                ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
                                 : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
                             }`}
                           >
-                            {isEarned ? "Awarded (10%)" : "Redeemed"}
+                            {isEarned ? "Awarded (10%)" : isExpired ? "Expired (45d)" : "Redeemed"}
                           </span>
                         </td>
                         <td className="py-3 px-3 font-black text-sm">
-                          <span className={isEarned ? "text-emerald-400" : "text-amber-400"}>
+                          <span className={isEarned ? "text-emerald-400" : isExpired ? "text-rose-400" : "text-amber-400"}>
                             {isEarned ? `+${log.coins}` : `-${log.coins}`}
                           </span>
                         </td>
@@ -769,10 +781,12 @@ export default function LoyaltyManagement() {
                             ? `₹${Number(log.bill_amount).toLocaleString()}`
                             : log.discount_value
                             ? `₹${Number(log.discount_value).toLocaleString()} discount`
+                            : isExpired
+                            ? "Auto Expired"
                             : "—"}
                         </td>
                         <td className="py-3 px-3 text-white/60 font-mono">
-                          @{log.awarded_by || log.redeemed_by || "admin"}
+                          {isExpired ? "System (Auto)" : `@${log.awarded_by || log.redeemed_by || "admin"}`}
                         </td>
                         <td className="py-3 px-3 text-white/50 max-w-xs truncate">
                           {log.note || "—"}
