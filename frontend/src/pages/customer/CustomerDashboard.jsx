@@ -1419,7 +1419,7 @@ const CustomerDashboard = () => {
                 className="group relative rounded-3xl p-3.5 text-center transition-all duration-200 active:scale-95"
                 style={GLASS_CARD}
               >
-                <div className="w-10 h-10 rounded-2xl mx-auto mb-1 flex items-center justify-center p-1.5 bg-amber-500/15 border border-amber-500/30">
+                <div className="w-10 h-10 rounded-2xl mx-auto mb-1.5 flex items-center justify-center p-1.5 bg-white/[0.05] border border-white/10">
                   <img src="/pd_coin.png" alt="PD Coin" className="w-7 h-7 drop-shadow" />
                 </div>
                 <p className="text-xl font-black text-white">{pdCoins.toLocaleString()}</p>
@@ -1433,11 +1433,11 @@ const CustomerDashboard = () => {
                 className="group relative rounded-3xl p-3.5 text-center transition-all duration-200 active:scale-95"
                 style={GLASS_CARD}
               >
-                <div className="w-10 h-10 rounded-2xl mx-auto mb-1 flex items-center justify-center bg-blue-500/15 border border-blue-500/30 text-blue-400">
-                  <ShoppingBag className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-2xl mx-auto mb-1.5 flex items-center justify-center bg-white/[0.05] border border-white/10 text-[#EAB308]">
+                  <ShoppingBag className="w-5 h-5 stroke-[1.8]" />
                 </div>
                 <p className="text-xl font-black text-white">{orders.length}</p>
-                <p className="text-[9px] text-blue-300 font-bold uppercase tracking-wider mt-0.5">Orders</p>
+                <p className="text-[9px] text-[#EAB308] font-bold uppercase tracking-wider mt-0.5">Orders</p>
                 <p className="text-[9px] text-white/50 mt-0.5">History ›</p>
               </button>
 
@@ -1447,11 +1447,11 @@ const CustomerDashboard = () => {
                 className="group relative rounded-3xl p-3.5 text-center transition-all duration-200 active:scale-95"
                 style={GLASS_CARD}
               >
-                <div className="w-10 h-10 rounded-2xl mx-auto mb-1 flex items-center justify-center bg-purple-500/15 border border-purple-500/30 text-purple-400">
-                  <Calendar className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-2xl mx-auto mb-1.5 flex items-center justify-center bg-white/[0.05] border border-white/10 text-[#EAB308]">
+                  <Calendar className="w-5 h-5 stroke-[1.8]" />
                 </div>
                 <p className="text-xl font-black text-white">{reservations.length}</p>
-                <p className="text-[9px] text-purple-300 font-bold uppercase tracking-wider mt-0.5">Bookings</p>
+                <p className="text-[9px] text-[#EAB308] font-bold uppercase tracking-wider mt-0.5">Bookings</p>
                 <p className="text-[9px] text-white/50 mt-0.5">Reserve ›</p>
               </button>
             </div>
@@ -1468,8 +1468,8 @@ const CustomerDashboard = () => {
                   className="w-full p-4 flex items-center justify-between text-left hover:bg-white/[0.04] active:bg-white/[0.08] transition-colors"
                 >
                   <div className="flex items-center gap-3.5">
-                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-amber-500/20 text-[#EAB308] border border-amber-500/30">
-                      <Clock className="w-5 h-5" />
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/[0.05] border border-white/10 text-[#EAB308] shrink-0">
+                      <Clock className="w-5 h-5 stroke-[1.8]" />
                     </div>
                     <div>
                       <p className="text-white font-bold text-sm">Past Orders &amp; Receipts</p>
@@ -1480,7 +1480,7 @@ const CustomerDashboard = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     {activeOrders.length > 0 && (
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]" />
                     )}
                     <ChevronRight className="w-4 h-4 text-white/40" />
                   </div>
@@ -1492,8 +1492,8 @@ const CustomerDashboard = () => {
                   className="w-full p-4 flex items-center justify-between text-left hover:bg-white/[0.04] active:bg-white/[0.08] transition-colors"
                 >
                   <div className="flex items-center gap-3.5">
-                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-purple-500/20 text-purple-400 border border-purple-500/30">
-                      <Calendar className="w-5 h-5" />
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/[0.05] border border-white/10 text-[#EAB308] shrink-0">
+                      <Calendar className="w-5 h-5 stroke-[1.8]" />
                     </div>
                     <div>
                       <p className="text-white font-bold text-sm">Royal Table Reservation</p>
@@ -1511,8 +1511,8 @@ const CustomerDashboard = () => {
                   className="w-full p-4 flex items-center justify-between text-left hover:bg-white/[0.04] active:bg-white/[0.08] transition-colors"
                 >
                   <div className="flex items-center gap-3.5">
-                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                      <UtensilsCrossed className="w-5 h-5" />
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/[0.05] border border-white/10 text-[#EAB308] shrink-0">
+                      <UtensilsCrossed className="w-5 h-5 stroke-[1.8]" />
                     </div>
                     <div>
                       <p className="text-white font-bold text-sm">Explore Royal Menu</p>
@@ -1534,8 +1534,8 @@ const CustomerDashboard = () => {
                 <div className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3.5">
-                      <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-amber-500/20 text-[#EAB308] border border-amber-500/30">
-                        <Phone className="w-5 h-5" />
+                      <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/[0.05] border border-white/10 text-[#EAB308] shrink-0">
+                        <Phone className="w-5 h-5 stroke-[1.8]" />
                       </div>
                       <div>
                         <p className="text-white font-bold text-sm">Primary Mobile Number</p>
@@ -1547,9 +1547,10 @@ const CustomerDashboard = () => {
                     {!editPhone && (
                       <button
                         onClick={() => setEditPhone(true)}
-                        className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-[#EAB308] bg-[#EAB308]/15 border border-[#EAB308]/30 active:scale-95 transition-all"
+                        className="flex items-center gap-1.5 text-xs font-semibold text-[#EAB308] hover:text-yellow-300 py-1.5 px-3 rounded-xl hover:bg-white/[0.06] active:scale-95 transition-all"
                       >
-                        {customerProfile?.phone ? 'Edit' : 'Add'}
+                        <Edit2 className="w-3.5 h-3.5" />
+                        <span>{customerProfile?.phone ? 'Edit' : 'Add'}</span>
                       </button>
                     )}
                   </div>
@@ -1595,8 +1596,8 @@ const CustomerDashboard = () => {
                 <div className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3.5">
-                      <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-rose-500/20 text-rose-400 border border-rose-500/30">
-                        <MapPin className="w-5 h-5" />
+                      <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/[0.05] border border-white/10 text-[#EAB308] shrink-0">
+                        <MapPin className="w-5 h-5 stroke-[1.8]" />
                       </div>
                       <div className="max-w-[200px]">
                         <p className="text-white font-bold text-sm">Delivery Address</p>
@@ -1608,9 +1609,10 @@ const CustomerDashboard = () => {
                     {!editAddr && (
                       <button
                         onClick={() => setEditAddr(true)}
-                        className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-[#EAB308] bg-[#EAB308]/15 border border-[#EAB308]/30 active:scale-95 transition-all"
+                        className="flex items-center gap-1.5 text-xs font-semibold text-[#EAB308] hover:text-yellow-300 py-1.5 px-3 rounded-xl hover:bg-white/[0.06] active:scale-95 transition-all"
                       >
-                        {customerProfile?.address ? 'Edit' : 'Add'}
+                        <Edit2 className="w-3.5 h-3.5" />
+                        <span>{customerProfile?.address ? 'Edit' : 'Add'}</span>
                       </button>
                     )}
                   </div>
@@ -1651,16 +1653,17 @@ const CustomerDashboard = () => {
                 {/* Payment Methods */}
                 <div className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3.5">
-                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
-                      <ShieldCheck className="w-5 h-5" />
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/[0.05] border border-white/10 text-[#EAB308] shrink-0">
+                      <ShieldCheck className="w-5 h-5 stroke-[1.8]" />
                     </div>
                     <div>
                       <p className="text-white font-bold text-sm">Payment Methods</p>
                       <p className="text-white/60 text-xs mt-0.5">UPI, Cards &amp; Cash on Delivery</p>
                     </div>
                   </div>
-                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                    Active
+                  <span className="flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]" />
+                    <span>Active</span>
                   </span>
                 </div>
               </div>
@@ -1678,8 +1681,8 @@ const CustomerDashboard = () => {
                   className="w-full p-4 flex items-center justify-between text-left hover:bg-white/[0.04] active:bg-white/[0.08] transition-colors"
                 >
                   <div className="flex items-center gap-3.5">
-                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                      <MessageSquare className="w-5 h-5" />
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/[0.05] border border-white/10 text-[#EAB308] shrink-0">
+                      <MessageSquare className="w-5 h-5 stroke-[1.8]" />
                     </div>
                     <div>
                       <p className="text-white font-bold text-sm">WhatsApp Concierge</p>
@@ -1695,8 +1698,8 @@ const CustomerDashboard = () => {
                   className="w-full p-4 flex items-center justify-between text-left hover:bg-white/[0.04] active:bg-white/[0.08] transition-colors"
                 >
                   <div className="flex items-center gap-3.5">
-                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                      <Phone className="w-5 h-5" />
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/[0.05] border border-white/10 text-[#EAB308] shrink-0">
+                      <Phone className="w-5 h-5 stroke-[1.8]" />
                     </div>
                     <div>
                       <p className="text-white font-bold text-sm">Call Camp, Pune Desk</p>
@@ -1712,8 +1715,8 @@ const CustomerDashboard = () => {
                   className="w-full p-4 flex items-center justify-between text-left hover:bg-white/[0.04] active:bg-white/[0.08] transition-colors"
                 >
                   <div className="flex items-center gap-3.5">
-                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-amber-500/20 text-[#EAB308] border border-amber-500/30">
-                      <Share2 className="w-5 h-5" />
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/[0.05] border border-white/10 text-[#EAB308] shrink-0">
+                      <Share2 className="w-5 h-5 stroke-[1.8]" />
                     </div>
                     <div>
                       <p className="text-white font-bold text-sm">Share Persian Darbar</p>
