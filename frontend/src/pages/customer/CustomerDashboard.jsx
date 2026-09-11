@@ -1252,12 +1252,17 @@ const CustomerDashboard = () => {
               <p className="text-[10px] font-black uppercase tracking-[0.4em] mb-4" style={{ color:GOLD }}>PD Coins</p>
               {/* Brand coin asset */}
               <div className="flex justify-center mb-4">
-                <img
-                  src="/pd_coin.png"
-                  alt="PD Coin"
-                  className="w-28 h-28"
-                  style={{ filter:'drop-shadow(0 0 20px rgba(234,179,8,0.55)) drop-shadow(0 4px 12px rgba(0,0,0,0.6))', animation:'spin 18s linear infinite' }}
-                />
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-full bg-[#EAB308]/20 blur-xl scale-95" />
+                  <img
+                    src="/pd_coin.png"
+                    alt="Persian Darbar Royal PD Coin"
+                    className="w-32 h-32 object-contain relative select-none transition-transform hover:scale-105 duration-300"
+                    style={{
+                      filter: 'drop-shadow(0 10px 24px rgba(234,179,8,0.55)) drop-shadow(0 4px 12px rgba(0,0,0,0.7))'
+                    }}
+                  />
+                </div>
               </div>
               <span className="text-5xl font-black text-white">{pdCoins.toLocaleString()}</span>
               <p className="font-bold text-sm mt-1 mb-3" style={{ color:'rgba(234,179,8,0.85)' }}>₹{pdCoins.toLocaleString()} Value</p>
