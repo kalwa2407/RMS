@@ -276,7 +276,7 @@ async def stream_table_status(request: Request, manager: BaseDataManager = Depen
                 yield f"data: {payload}\n\n"
             except Exception as e:
                 yield f"data: {_json.dumps({'error': str(e)})}\n\n"
-            await asyncio.sleep(3)
+            await asyncio.sleep(60)  # 60s — customer-facing; reduce Firestore reads
 
     return StreamingResponse(
         event_generator(),

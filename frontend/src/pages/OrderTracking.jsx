@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Search, Package, CheckCircle, Clock, Truck, Home, Navigation, ShieldCheck, MapPin, Receipt, Loader2, ArrowLeft } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { Search, Package, CheckCircle, Clock, Truck, Home, Navigation, ShieldCheck, MapPin, Receipt, Loader2, ArrowLeft, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "../hooks/use-toast";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -13,6 +13,7 @@ const OrderTracking = () => {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(false);
   const [lastStatus, setLastStatus] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const statusConfig = {
     placed: { label: "Heralded", icon: Package, color: "text-blue-400", bg: "bg-blue-400/10", message: "Your order has been announced to the royal kitchen." },
@@ -38,12 +39,13 @@ const OrderTracking = () => {
 
   useEffect(() => {
     if (!order || ['delivered', 'cancelled', 'rejected'].includes(order.status)) return;
-    const interval = setInterval(() => fetchOrder(order.order_id, true), 10000);
+    const interval = setInterval(() => fetchOrder(order.order_id, true), 60000); // 60s auto
     return () => clearInterval(interval);
   }, [order]);
 
   const fetchOrder = async (id, silent = false) => {
     if (!silent) setLoading(true);
+    else setRefreshing(true);
     try {
       const res = await fetch(`${API_BASE}/api/orders/${id}`);
       if (!res.ok) throw new Error("Order not found");
@@ -57,6 +59,8 @@ const OrderTracking = () => {
       if (!silent) toast({ title: "Inquiry Failed", description: "This Order ID does not exist in our records.", variant: "destructive" });
     } finally {
       if (!silent) setLoading(false);
+      else setRefreshing(false);
+    }
     }
   };
 
@@ -85,6 +89,16 @@ const OrderTracking = () => {
           >
             <Home className="w-4 h-4" />
           </Link>
+          {order && !['delivered','cancelled','rejected'].includes(order.status) && (
+            <button
+              onClick={() => fetchOrder(order.order_id, true)}
+              disabled={refreshing}
+              title="Refresh order status"
+              className="w-8 h-8 rounded-full bg-white/5 border border-[#EAB308]/20 flex items-center justify-center text-[#EAB308] hover:bg-[#EAB308]/10 transition-all disabled:opacity-50 shrink-0"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+            </button>
+          )}
           <form
             onSubmit={(e) => { e.preventDefault(); fetchOrder(orderId.trim()); }}
             className="flex-1 flex items-center gap-2"

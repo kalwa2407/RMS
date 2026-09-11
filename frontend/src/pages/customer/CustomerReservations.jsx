@@ -45,14 +45,14 @@ const CustomerReservations = () => {
     }
   }, [idToken, fetchReservations]);
 
-  // Real-time polling every 12 seconds for pending reservations
+  // Polling every 60s for pending reservations (customer-side)
   useEffect(() => {
     const hasPending = reservations.some(r => r.status === 'pending');
     if (!hasPending) return;
 
     const interval = setInterval(() => {
       fetchReservations(true);
-    }, 12000);
+    }, 60000); // 60s — customer side
 
     return () => clearInterval(interval);
   }, [reservations, fetchReservations]);

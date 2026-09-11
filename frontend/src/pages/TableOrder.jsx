@@ -27,6 +27,7 @@ const TableOrder = () => {
   const [currentOrder, setCurrentOrder] = useState(null);
   const [orderStatus, setOrderStatus] = useState(null);
   const [showStatusPage, setShowStatusPage] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Mobile cart state
   const [showMobileCart, setShowMobileCart] = useState(false);
@@ -104,50 +105,45 @@ const TableOrder = () => {
     }
   };
 
-  // Poll for order status updates
+  // Poll for order status updates (60s auto + manual refresh)
+  const pollStatus = React.useCallback(async (manual = false) => {
+    if (!session?.session_id) return;
+    if (manual) setRefreshing(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/table/session/${session.session_id}/status`);
+      if (!res.ok) {
+        localStorage.removeItem(`table_${tableNumber}_session`);
+        setSession(null);
+        setSessionLocked(false);
+        setShowStatusPage(false);
+        setShowNameModal(true);
+        return;
+      }
+      const data = await res.json();
+      setSession(data);
+      if (data.status === "closed") {
+        localStorage.removeItem(`table_${tableNumber}_session`);
+        setSession(null);
+        setSessionLocked(false);
+        setShowStatusPage(false);
+        setCart([]);
+        setShowNameModal(true);
+        return;
+      }
+      if (data.orders?.length > 0) {
+        const latestOrder = data.orders[data.orders.length - 1];
+        setOrderStatus(latestOrder.status);
+      }
+    } catch (err) {}
+    finally { if (manual) setRefreshing(false); }
+  }, [session?.session_id, tableNumber]);
+
   useEffect(() => {
     if (!session?.session_id) return;
-    
-    const pollStatus = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/api/table/session/${session.session_id}/status`);
-        
-        if (!res.ok) {
-          // Session no longer exists (404) — reset to welcome screen
-          localStorage.removeItem(`table_${tableNumber}_session`);
-          setSession(null);
-          setSessionLocked(false);
-          setShowStatusPage(false);
-          setShowNameModal(true);
-          return;
-        }
-        
-        const data = await res.json();
-        setSession(data);
-        
-        // Check if session is closed by admin (billing completed)
-        if (data.status === "closed") {
-          localStorage.removeItem(`table_${tableNumber}_session`);
-          setSession(null);
-          setSessionLocked(false);
-          setShowStatusPage(false);
-          setCart([]);
-          setShowNameModal(true);
-          return;
-        }
-        
-        // Check latest order status
-        if (data.orders?.length > 0) {
-          const latestOrder = data.orders[data.orders.length - 1];
-          setOrderStatus(latestOrder.status);
-        }
-      } catch (err) {}
-    };
-
-    const interval = setInterval(pollStatus, 5000);
-    pollStatus(); // Initial call
+    pollStatus();
+    const interval = setInterval(() => pollStatus(), 60000); // 60s auto-refresh
     return () => clearInterval(interval);
-  }, [session?.session_id, tableNumber]);
+  }, [session?.session_id, pollStatus]);
 
   const categories = ["All", ...new Set(menu.map((i) => i.category))];
   const filteredItems = menu.filter((item) => {
@@ -346,12 +342,22 @@ const TableOrder = () => {
                 <p className="text-xs text-gray-300">{customerName}</p>
               </div>
             </div>
-            <button
-              onClick={() => setShowStatusPage(false)}
-              className="bg-primary text-black px-4 py-2 rounded-full font-bold text-sm"
-            >
-              + Order More
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => pollStatus(true)}
+                disabled={refreshing}
+                title="Refresh order status"
+                className="w-8 h-8 rounded-full bg-white/5 border border-primary/20 flex items-center justify-center text-primary hover:bg-primary/20 transition-all disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+              </button>
+              <button
+                onClick={() => setShowStatusPage(false)}
+                className="bg-primary text-black px-4 py-2 rounded-full font-bold text-sm"
+              >
+                + Order More
+              </button>
+            </div>
           </div>
         </div>
 
@@ -448,14 +454,24 @@ const TableOrder = () => {
             </div>
           </div>
           
-          {session?.orders?.length > 0 && (
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => setShowStatusPage(true)}
-              className="bg-primary/20 text-primary px-4 py-2 rounded-full font-bold text-sm border border-primary/20"
+              onClick={() => pollStatus(true)}
+              disabled={refreshing}
+              title="Refresh order status"
+              className="w-8 h-8 rounded-full bg-white/5 border border-primary/20 flex items-center justify-center text-primary hover:bg-primary/20 transition-all disabled:opacity-50"
             >
-              View Orders
+              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
             </button>
-          )}
+            {session?.orders?.length > 0 && (
+              <button
+                onClick={() => setShowStatusPage(true)}
+                className="bg-primary/20 text-primary px-4 py-2 rounded-full font-bold text-sm border border-primary/20"
+              >
+                View Orders
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
