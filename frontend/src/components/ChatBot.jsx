@@ -47,7 +47,7 @@ const ChatBot = () => {
       console.error('Chat error:', error);
       setMessages(prev => [
         ...prev,
-        { role: 'assistant', content: 'Sorry, I encountered an error. Please call us at +91 20 1234 5678 for assistance!' }
+        { role: 'assistant', content: 'Sorry, I encountered an error. Please call us at +91 9594287868 for assistance!' }
       ]);
       setIsLoading(false);
     }
