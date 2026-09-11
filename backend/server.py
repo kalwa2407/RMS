@@ -1096,6 +1096,7 @@ async def download_invoice(
 # Admin File Upload Endpoints
 @admin_router.post("/upload/image")
 async def admin_upload_image(
+    request: Request,
     file: UploadFile = File(...),
     username: str = Depends(verify_token)
 ):
@@ -1137,6 +1138,7 @@ async def admin_upload_image(
             file_path = UPLOAD_DIR / local_filename
             with open(file_path, "wb") as buffer:
                 buffer.write(file_contents)
+            # Return relative path - frontend will prepend API_BASE if needed
             image_url = f"/static/uploads/{local_filename}"
             return {"success": True, "url": image_url, "filename": local_filename, "storage": "local"}
 
@@ -1145,6 +1147,7 @@ async def admin_upload_image(
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
     finally:
         file.file.close()
+
 
 @admin_router.post("/upload/sound")
 async def admin_upload_notification_sound(

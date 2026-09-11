@@ -63,7 +63,7 @@ const GalleryManagement = () => {
       );
 
       if (response.data.success) {
-        const imageUrl = `${API_BASE}${response.data.url}`;
+        const imageUrl = response.data.url.startsWith("http") ? response.data.url : `${API_BASE}${response.data.url}`;
         setFormData({ ...formData, image_url: imageUrl });
         toast({
           title: "Success",

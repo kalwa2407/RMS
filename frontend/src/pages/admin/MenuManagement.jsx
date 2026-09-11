@@ -53,7 +53,9 @@ const MenuManagement = () => {
       if (!response.ok) throw new Error("Upload failed");
       const data = await response.json();
       if (data.success) {
-        setFormData(prev => ({ ...prev, image: `${API_BASE}${data.url}` }));
+        // Firebase Storage returns full URL (https://...), local fallback returns relative path (/static/...)
+        const imageUrl = data.url.startsWith("http") ? data.url : `${API_BASE}${data.url}`;
+        setFormData(prev => ({ ...prev, image: imageUrl }));
         toast({ title: "Uploaded!", description: "Image uploaded successfully" });
       }
     } catch {
