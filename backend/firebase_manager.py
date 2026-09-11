@@ -25,7 +25,8 @@ class FirebaseManager(BaseDataManager):
                     cred_file = Path(__file__).parent / cred_path
                     cred = credentials.Certificate(str(cred_file))
                 
-                firebase_admin.initialize_app(cred)
+                storage_bucket = os.environ.get("FIREBASE_STORAGE_BUCKET", "tasteofhindustanrms.firebasestorage.app")
+                firebase_admin.initialize_app(cred, {"storageBucket": storage_bucket})
             self.db = firestore.client()
         except Exception as e:
             logger.error(f"Error initializing Firebase Admin: {e}")

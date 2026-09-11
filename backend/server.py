@@ -1,7 +1,7 @@
 from fastapi import FastAPI, APIRouter, Depends, HTTPException, status, UploadFile, File, Response, Request
 from datetime import datetime, timezone, timedelta
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -285,6 +285,8 @@ async def stream_table_status(request: Request, manager: BaseDataManager = Depen
             "Cache-Control": "no-cache",
             "X-Accel-Buffering": "no",
             "Connection": "keep-alive",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "*",
         },
     )
 
@@ -2999,13 +3001,10 @@ async def shutdown_event():
 # CORS AND ROUTERS
 # =============================================================================
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# NOTE: CORS is already configured at the top of this file with ALLOWED_ORIGINS.
+# The duplicate wildcard middleware has been removed because allow_origins=["*"]
+# combined with allow_credentials=True is invalid per the CORS spec and causes
+# browsers to block cross-origin requests.
 
 app.include_router(api_router)
 app.include_router(admin_router)

@@ -4,14 +4,17 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "**/*.mp4",
+      "**/*.mov",
+      "**/*.avi"
     ],
     "rewrites": [
       {
         "source": "/api/**",
         "run": {
           "serviceId": "tasteofhindustan-api",
-          "region": "us-central1"
+          "region": "asia-south1"
         }
       },
       {

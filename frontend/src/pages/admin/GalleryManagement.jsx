@@ -87,7 +87,7 @@ const GalleryManagement = () => {
     const token = localStorage.getItem("admin_token");
 
     try {
-      await axios.post(`${API_BASE}/api/gallery`, formData, {
+      await axios.post(`${API_BASE}/api/admin/gallery`, formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
