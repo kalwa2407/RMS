@@ -2816,6 +2816,186 @@ async def admin_delete_captain(captain_id: str,
 
 
 # =============================================================================
+# PD COINS / LOYALTY MANAGEMENT (Admin Panel)
+# =============================================================================
+
+class LoyaltyAwardRequest(BaseModel):
+    customer_id: str  # _id from customers collection
+    bill_amount: float
+    note: Optional[str] = None
+
+class LoyaltyRedeemRequest(BaseModel):
+    customer_id: str  # _id from customers collection
+    coins_to_redeem: int
+    note: Optional[str] = None
+
+@admin_router.get("/loyalty/search")
+async def admin_loyalty_search(
+    q: str = "",
+    username: str = Depends(verify_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Search customers by phone number or name for loyalty operations"""
+    if not q or len(q.strip()) < 2:
+        return []
+
+    query = q.strip().lower()
+    customers = await manager._read("customers")
+    matched = []
+
+    for c in customers:
+        name_match = query in (c.get("name") or "").lower()
+        phone_match = query in (c.get("phone") or "").replace(" ", "")
+        email_match = query in (c.get("email") or "").lower()
+
+        if name_match or phone_match or email_match:
+            matched.append({
+                "_id": c.get("_id"),
+                "uid": c.get("uid"),
+                "name": c.get("name", "Customer"),
+                "phone": c.get("phone", ""),
+                "email": c.get("email", ""),
+                "picture": c.get("picture", ""),
+                "pd_coins": c.get("pd_coins", 0),
+                "coins_history": c.get("coins_history", [])[-20:],  # Last 20 transactions
+                "created_at": c.get("created_at", ""),
+            })
+
+    return matched[:10]  # Max 10 results
+
+
+@admin_router.post("/loyalty/award")
+async def admin_loyalty_award(
+    data: LoyaltyAwardRequest,
+    username: str = Depends(verify_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Award PD Coins to customer (10% of bill amount)"""
+    if data.bill_amount <= 0:
+        raise HTTPException(status_code=400, detail="Bill amount must be positive")
+
+    customers = await manager._read("customers")
+    idx = next((i for i, c in enumerate(customers) if c.get("_id") == data.customer_id), None)
+
+    if idx is None:
+        raise HTTPException(status_code=404, detail="Customer not found")
+
+    coins_to_award = int(data.bill_amount * 0.10)  # 10% of bill
+    if coins_to_award <= 0:
+        raise HTTPException(status_code=400, detail="Bill amount too small to earn coins")
+
+    now = get_ist_now().isoformat()
+    current_coins = customers[idx].get("pd_coins", 0)
+    new_balance = current_coins + coins_to_award
+
+    # Create transaction record
+    txn = {
+        "type": "earned",
+        "coins": coins_to_award,
+        "bill_amount": data.bill_amount,
+        "balance_after": new_balance,
+        "note": data.note or f"10% of ₹{data.bill_amount:,.0f} bill",
+        "awarded_by": username,
+        "timestamp": now,
+    }
+
+    history = customers[idx].get("coins_history", [])
+    history.append(txn)
+
+    customers[idx]["pd_coins"] = new_balance
+    customers[idx]["coins_history"] = history
+    customers[idx]["updated_at"] = now
+
+    await manager._write("customers", customers)
+
+    return {
+        "success": True,
+        "coins_awarded": coins_to_award,
+        "new_balance": new_balance,
+        "customer_name": customers[idx].get("name", "Customer"),
+        "transaction": txn,
+    }
+
+
+@admin_router.post("/loyalty/redeem")
+async def admin_loyalty_redeem(
+    data: LoyaltyRedeemRequest,
+    username: str = Depends(verify_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Redeem PD Coins from customer wallet (1 coin = ₹1 discount)"""
+    if data.coins_to_redeem <= 0:
+        raise HTTPException(status_code=400, detail="Coins to redeem must be positive")
+
+    customers = await manager._read("customers")
+    idx = next((i for i, c in enumerate(customers) if c.get("_id") == data.customer_id), None)
+
+    if idx is None:
+        raise HTTPException(status_code=404, detail="Customer not found")
+
+    current_coins = customers[idx].get("pd_coins", 0)
+    if data.coins_to_redeem > current_coins:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Insufficient coins. Customer has {current_coins} coins, trying to redeem {data.coins_to_redeem}"
+        )
+
+    now = get_ist_now().isoformat()
+    new_balance = current_coins - data.coins_to_redeem
+
+    txn = {
+        "type": "redeemed",
+        "coins": data.coins_to_redeem,
+        "discount_value": data.coins_to_redeem,  # 1 coin = ₹1
+        "balance_after": new_balance,
+        "note": data.note or f"Redeemed ₹{data.coins_to_redeem} discount",
+        "redeemed_by": username,
+        "timestamp": now,
+    }
+
+    history = customers[idx].get("coins_history", [])
+    history.append(txn)
+
+    customers[idx]["pd_coins"] = new_balance
+    customers[idx]["coins_history"] = history
+    customers[idx]["updated_at"] = now
+
+    await manager._write("customers", customers)
+
+    return {
+        "success": True,
+        "coins_redeemed": data.coins_to_redeem,
+        "discount_value": data.coins_to_redeem,
+        "new_balance": new_balance,
+        "customer_name": customers[idx].get("name", "Customer"),
+        "transaction": txn,
+    }
+
+
+@admin_router.get("/loyalty/transactions")
+async def admin_loyalty_transactions(
+    username: str = Depends(verify_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Get recent loyalty transactions across all customers (audit trail)"""
+    customers = await manager._read("customers")
+    all_txns = []
+
+    for c in customers:
+        for txn in c.get("coins_history", []):
+            all_txns.append({
+                **txn,
+                "customer_name": c.get("name", "Customer"),
+                "customer_phone": c.get("phone", ""),
+                "customer_id": c.get("_id"),
+            })
+
+    # Sort by timestamp descending, return last 50
+    all_txns.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+    return all_txns[:50]
+
+
+# =============================================================================
 # CUSTOMER ROUTER (Swiggy/Zomato style public user dashboard & history)
 # =============================================================================
 customer_router = APIRouter(prefix="/api/customer", tags=["customer"])
@@ -2841,6 +3021,8 @@ async def get_customer_profile(
             "picture": user.get("picture", ""),
             "address": "",
             "addresses": [],
+            "pd_coins": 0,
+            "coins_history": [],
             "created_at": now,
             "updated_at": now
         }
@@ -2872,6 +3054,8 @@ async def update_customer_profile(
             "picture": user.get("picture", ""),
             "address": addr,
             "addresses": update_data.addresses or ([addr] if addr else []),
+            "pd_coins": 0,
+            "coins_history": [],
             "created_at": now,
             "updated_at": now
         }

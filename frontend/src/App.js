@@ -35,6 +35,7 @@ import Inventory from "./pages/admin/Inventory";
 import CaptainsManagement from "./pages/admin/CaptainsManagement";
 import DeliveryPartnersManagement from "./pages/admin/DeliveryPartnersManagement";
 import KitchenStaffManagement from "./pages/admin/KitchenStaffManagement";
+import LoyaltyManagement from "./pages/admin/LoyaltyManagement";
 
 // Captain & Delivery Imports
 import CaptainLogin from "./pages/captain/CaptainLogin";
@@ -170,6 +171,7 @@ function App() {
             <Route path="captains" element={<CaptainsManagement />} />
             <Route path="delivery-partners" element={<DeliveryPartnersManagement />} />
             <Route path="kitchen-staff" element={<KitchenStaffManagement />} />
+            <Route path="loyalty" element={<LoyaltyManagement />} />
           </Route>
 
           {/* ---------------- CAPTAIN ROUTES ---------------- */}

@@ -61,7 +61,6 @@ const OrderTracking = () => {
       if (!silent) setLoading(false);
       else setRefreshing(false);
     }
-    }
   };
 
   const getStatusIndex = (status) => ['placed', 'accepted', 'preparing', 'ready', 'out_for_delivery', 'delivered'].indexOf(status);

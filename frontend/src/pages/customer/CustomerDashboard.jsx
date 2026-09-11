@@ -1292,14 +1292,42 @@ const CustomerDashboard = () => {
 
             <div className="rounded-3xl p-5" style={GLASS_CARD}>
               <p className="text-xs font-black uppercase tracking-widest mb-3" style={{ color:GOLD }}>Transaction History</p>
-              {pdCoins === 0 ? (
+              {(!customerProfile?.coins_history || customerProfile.coins_history.length === 0) ? (
                 <div className="py-8 text-center">
                   <img src="/pd_coin.png" alt="" className="w-12 h-12 mx-auto mb-2 opacity-30" />
                   <p className="text-white/60 text-sm">No transactions yet</p>
                   <p className="text-white/40 text-xs mt-1">Dine in to start earning!</p>
                 </div>
               ) : (
-                <p className="text-white/60 text-xs py-4 text-center">Full transaction history coming soon</p>
+                <div className="space-y-2.5 max-h-[300px] overflow-y-auto pr-1">
+                  {[...customerProfile.coins_history].reverse().map((txn, i) => {
+                    const isEarned = txn.type === 'earned';
+                    return (
+                      <div key={i} className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${
+                            isEarned ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                          }`}>
+                            {isEarned ? '▲' : '▼'}
+                          </div>
+                          <div>
+                            <p className="text-white text-xs font-bold">
+                              {isEarned ? 'Dine-In Cashback (10%)' : 'Coins Redeemed'}
+                            </p>
+                            <p className="text-white/50 text-[11px]">{txn.note || (isEarned ? `₹${txn.bill_amount} bill` : 'Discount')}</p>
+                            <p className="text-white/30 text-[9px] mt-0.5">{txn.timestamp ? new Date(txn.timestamp).toLocaleDateString('en-IN', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : ''}</p>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className={`text-sm font-black ${isEarned ? 'text-emerald-400' : 'text-amber-400'}`}>
+                            {isEarned ? `+${txn.coins}` : `-${txn.coins}`}
+                          </span>
+                          <p className="text-white/40 text-[9px]">Bal: {txn.balance_after}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
 

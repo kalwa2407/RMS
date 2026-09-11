@@ -19,6 +19,7 @@ import {
   AlignLeft,
   ShieldCheck,
   Bike,
+  Coins,
 } from "lucide-react";
 import logoImg from "../../assets/logo.png";
 import API_BASE from "../../lib/config";
@@ -43,6 +44,7 @@ const SECTIONS = [
       { name: "Inventory",    path: "/admin/inventory",      icon: Package },
       { name: "Menu",         path: "/admin/menu",           icon: MenuIcon },
       { name: "Reservations", path: "/admin/reservations",   icon: Calendar },
+      { name: "Loyalty (Coins)", path: "/admin/loyalty",     icon: Coins },
     ],
   },
   {
