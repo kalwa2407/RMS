@@ -727,94 +727,63 @@ const CustomerDashboard = () => {
                 </div>
               </div>
 
-              {/* ═══ QUICK ACTIONS (Ultra-Premium Frosted Glass Jewel Tiles) ═══ */}
+              {/* ═══ QUICK ACTIONS (Refined Luxury Frosted Glass Tiles) ═══ */}
               <div className="grid grid-cols-2 gap-3.5">
                 {[
                   {
                     Icon: UtensilsCrossed,
                     label: 'Order Food',
                     sub: 'Biryanis & Kebabs',
-                    badge: 'In-App',
-                    color: GOLD,
-                    glow: 'rgba(234, 179, 8, 0.35)',
-                    border: 'rgba(234, 179, 8, 0.40)',
-                    iconBg: 'radial-gradient(circle at 30% 30%, rgba(234,179,8,0.35) 0%, rgba(202,138,4,0.12) 100%)',
                     action: () => { setTab('order'); setOrderSubTab('menu'); }
                   },
                   {
                     Icon: Calendar,
                     label: 'Reserve Table',
                     sub: 'Book in advance',
-                    badge: 'Instant',
-                    color: '#a78bfa',
-                    glow: 'rgba(167, 139, 250, 0.35)',
-                    border: 'rgba(167, 139, 250, 0.40)',
-                    iconBg: 'radial-gradient(circle at 30% 30%, rgba(167,139,250,0.35) 0%, rgba(139,92,246,0.12) 100%)',
                     action: () => setTab('reserve')
                   },
                   {
                     Icon: Clock,
                     label: 'My Orders',
                     sub: `${orders.length} order${orders.length === 1 ? '' : 's'}`,
-                    badge: activeOrders.length > 0 ? `${activeOrders.length} active` : null,
-                    color: '#60a5fa',
-                    glow: 'rgba(96, 165, 250, 0.35)',
-                    border: 'rgba(96, 165, 250, 0.40)',
-                    iconBg: 'radial-gradient(circle at 30% 30%, rgba(96,165,250,0.35) 0%, rgba(59,130,246,0.12) 100%)',
+                    live: activeOrders.length > 0,
                     action: () => { setTab('order'); setOrderSubTab('history'); }
                   },
                   {
                     Icon: BookOpen,
                     label: 'My Bookings',
                     sub: `${reservations.length} total`,
-                    badge: activeRes.length > 0 ? `${activeRes.length} live` : null,
-                    color: '#34d399',
-                    glow: 'rgba(52, 211, 153, 0.35)',
-                    border: 'rgba(52, 211, 153, 0.40)',
-                    iconBg: 'radial-gradient(circle at 30% 30%, rgba(52,211,153,0.35) 0%, rgba(16,185,129,0.12) 100%)',
+                    live: activeRes.length > 0,
                     action: () => setTab('bookings')
                   },
-                ].map(({ Icon, label, sub, badge, color, glow, border, iconBg, action }) => (
+                ].map(({ Icon, label, sub, live, action }) => (
                   <button
                     key={label}
                     onClick={action}
                     className="group relative rounded-3xl p-4 text-left active:scale-[0.97] transition-all duration-300 overflow-hidden"
                     style={{
-                      background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(18, 22, 28, 0.55) 100%)',
+                      background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.09) 0%, rgba(18, 22, 28, 0.55) 100%)',
                       backdropFilter: 'blur(24px)',
                       WebkitBackdropFilter: 'blur(24px)',
-                      border: '1px solid rgba(255, 255, 255, 0.18)',
-                      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.2)'
+                      border: '1px solid rgba(255, 255, 255, 0.16)',
+                      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.15)'
                     }}
                   >
-                    <div className="flex items-center justify-between mb-3">
-                      <div
-                        className="w-11 h-11 rounded-2xl flex items-center justify-center transition-transform duration-300 group-hover:scale-105"
-                        style={{
-                          background: iconBg,
-                          border: `1.5px solid ${border}`,
-                          boxShadow: `0 0 16px ${glow}`
-                        }}
-                      >
-                        <Icon style={{ color, width: 20, height: 20 }} />
+                    <div className="flex items-center justify-between mb-3.5">
+                      <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-white/[0.05] border border-white/10 text-[#EAB308] shadow-sm transition-transform duration-300 group-hover:scale-105">
+                        <Icon className="w-5 h-5 text-[#EAB308] stroke-[1.8]" />
                       </div>
-                      {badge && (
-                        <span
-                          className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full"
-                          style={{
-                            background: `${color}20`,
-                            color: color,
-                            border: `1px solid ${color}45`
-                          }}
-                        >
-                          {badge}
+                      {live && (
+                        <span className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-400">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]" />
+                          <span>Live</span>
                         </span>
                       )}
                     </div>
                     <p className="text-white font-bold text-[15px] leading-tight drop-shadow-sm mb-1">{label}</p>
                     <div className="flex items-center justify-between">
-                      <p className="text-white/65 text-xs font-medium">{sub}</p>
-                      <ChevronRight className="w-4 h-4 text-white/40 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                      <p className="text-white/60 text-xs font-medium">{sub}</p>
+                      <ChevronRight className="w-4 h-4 text-white/30 group-hover:text-[#EAB308] group-hover:translate-x-0.5 transition-all" />
                     </div>
                   </button>
                 ))}
