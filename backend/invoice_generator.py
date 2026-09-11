@@ -54,7 +54,7 @@ def generate_invoice_pdf(order_data: dict, output_path: str) -> str:
     )
     
     # Header - Restaurant Name
-    header = Paragraph("TASTE OF HINDUSTAN", title_style)
+    header = Paragraph("PERSIAN DARBAR", title_style)
     elements.append(header)
     
     # Restaurant Details

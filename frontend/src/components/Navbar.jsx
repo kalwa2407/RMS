@@ -45,7 +45,7 @@ const Navbar = () => {
           <Link to="/" className="flex items-center py-2">
             <img
               src={logoImg}
-              alt="Taste of Hindustan"
+              alt="Persian Darbar"
               className="h-20 md:h-24 w-auto object-contain drop-shadow-md transition-transform hover:scale-105"
               style={{ mixBlendMode: 'screen' }}
             />

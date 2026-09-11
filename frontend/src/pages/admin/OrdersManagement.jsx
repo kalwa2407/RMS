@@ -167,7 +167,7 @@ const OrdersManagement = () => {
           h2 { font-size:14px; }
         </style>
       </head><body>
-        <div class="center bold"><h2>TASTE OF HINDUSTAN</h2></div>
+        <div class="center bold"><h2>PERSIAN DARBAR</h2></div>
         <div class="center" style="font-size:9px">Camp, Pune | +91 9594287868</div>
         <div class="line"></div>
         <div class="row"><span>Order: ${order.order_id?.slice(-8)}</span><span>${formatOrderTime(order.created_at)}</span></div>

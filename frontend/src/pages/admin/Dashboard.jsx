@@ -154,7 +154,7 @@ const Dashboard = () => {
         >
           Dashboard
         </h2>
-        <p className="text-gray-500 text-xs uppercase tracking-widest" >Welcome to Taste of Hindustan Admin Panel</p>
+        <p className="text-gray-500 text-xs uppercase tracking-widest" >Welcome to Persian Darbar Admin Panel</p>
       </div>
 
       {/* STAT CARDS */}
