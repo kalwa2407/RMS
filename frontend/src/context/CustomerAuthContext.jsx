@@ -274,7 +274,17 @@ export const CustomerAuthProvider = ({ children }) => {
         signOutCustomer,
         updateProfile,
         fetchWithAuth,
-        refreshProfile: () => idToken && currentUser && fetchCustomerProfile(idToken, currentUser)
+        refreshProfile: async () => {
+          if (!currentUser) return null;
+          try {
+            const freshToken = await currentUser.getIdToken(true);
+            setIdToken(freshToken);
+            return await fetchCustomerProfile(freshToken, currentUser);
+          } catch (e) {
+            if (idToken) return await fetchCustomerProfile(idToken, currentUser);
+            return null;
+          }
+        }
       }}
     >
       {children}

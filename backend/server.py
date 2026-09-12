@@ -463,130 +463,137 @@ async def create_order(
     order_dict = order.dict()
     order_id = generate_order_id()
 
-    # ── Auto-link customer if authenticated ──
-    if not order_dict.get("customer_uid") and optional_customer:
-        order_dict["customer_uid"] = optional_customer["uid"]
+    # ── Resolve customer identity: Token -> Payload customer_uid -> Phone -> Email ──
+    customer_uid = (optional_customer.get("uid") if optional_customer else None) or order_dict.get("customer_uid")
+    if customer_uid and not order_dict.get("customer_uid"):
+        order_dict["customer_uid"] = customer_uid
+
+    customer_phone = (order_dict.get("phone") or "").strip().replace(" ", "").replace("-", "")
+    customer_email = (order_dict.get("email") or "").strip().lower()
 
     # ════════════════════════════════════════════════════════════
-    # PD COINS REDEMPTION — server-side validation + wallet debit
+    # PD COINS REDEMPTION & CASHBACK — Server-side validation
     # ════════════════════════════════════════════════════════════
     coins_redeemed = 0
     coins_discount_applied = 0.0
     coins_earned_back = 0
-
     requested_coins = int(order_dict.get("coins_to_redeem", 0))
 
-    if requested_coins > 0 and optional_customer:
-        uid = optional_customer["uid"]
-        COINS_MIN_BILL    = 300     # Minimum subtotal to allow redemption
-        COINS_MAX_BURN_PC = 0.25    # Max 25% of subtotal can be paid in coins
+    try:
+        customers = await manager._read("customers")
+        cust_idx = None
 
-        if order.subtotal < COINS_MIN_BILL:
-            # Bill too small — silently ignore coins request
-            requested_coins = 0
-        else:
-            customers = await manager._read("customers")
-            cust_idx = next((i for i, c in enumerate(customers) if c.get("uid") == uid), None)
+        if customer_uid:
+            cust_idx = next((i for i, c in enumerate(customers) if c.get("uid") == customer_uid or c.get("_id") == customer_uid), None)
 
-            if cust_idx is not None:
-                customer = customers[cust_idx]
+        if cust_idx is None and len(customer_phone) >= 10:
+            last_10 = customer_phone[-10:]
+            cust_idx = next((i for i, c in enumerate(customers) if (c.get("phone") or "").replace(" ", "").replace("-", "").endswith(last_10)), None)
 
-                # Always sweep expiry before any wallet operation
-                customer = apply_coin_expiry(customer)
+        if cust_idx is None and customer_email:
+            cust_idx = next((i for i, c in enumerate(customers) if (c.get("email") or "").lower() == customer_email), None)
 
-                available_coins = customer.get("pd_coins", 0)
+        if cust_idx is not None:
+            customer = customers[cust_idx]
+
+            # Auto-link UID, phone, address if missing
+            if customer_uid and not customer.get("uid"):
+                customer["uid"] = customer_uid
+            if customer_phone and not customer.get("phone"):
+                customer["phone"] = order_dict["phone"].strip()
+            if order_dict.get("address") and not customer.get("address"):
+                customer["address"] = order_dict["address"].strip()
+                customer.setdefault("addresses", []).append(order_dict["address"].strip())
+
+            # Always sweep expiry before any balance operation
+            customer = apply_coin_expiry(customer)
+            available_coins = customer.get("pd_coins", 0)
+
+            COINS_MIN_BILL    = 300     # Minimum subtotal to allow redemption
+            COINS_MAX_BURN_PC = 0.25    # Max 25% of subtotal can be paid in coins
+
+            if requested_coins > 0 and order.subtotal >= COINS_MIN_BILL:
                 max_allowed = int(order.subtotal * COINS_MAX_BURN_PC)
-
-                # Enforce caps: can't redeem more than available or more than 25% cap
                 coins_redeemed = min(requested_coins, available_coins, max_allowed)
 
-                if coins_redeemed > 0:
-                    coins_discount_applied = float(coins_redeemed)  # 1 coin = ₹1
-                    new_coin_balance = available_coins - coins_redeemed
+            new_coin_balance = available_coins
 
-                    # Recalculate total with discount applied
-                    net_subtotal = order.subtotal - coins_discount_applied
-                    new_total    = net_subtotal + order_dict.get("delivery_fee", 0.0) + order_dict.get("taxes", 0.0)
-                    new_total    = max(1.0, round(new_total, 2))  # Never go below ₹1
+            if coins_redeemed > 0:
+                coins_discount_applied = float(coins_redeemed)  # 1 coin = ₹1
+                new_coin_balance -= coins_redeemed
 
-                    # Auto-award 10% on NET paid amount (not on the discounted portion)
-                    coins_earned_back = int(net_subtotal * 0.10)
+                # Recalculate total with discount applied
+                net_subtotal = order.subtotal - coins_discount_applied
+                new_total    = net_subtotal + order_dict.get("delivery_fee", 0.0) + order_dict.get("taxes", 0.0)
+                new_total    = max(1.0, round(new_total, 2))  # Never go below ₹1
 
-                    redemption_txn = {
-                        "type": "redeemed",
-                        "coins": coins_redeemed,
-                        "discount_value": coins_discount_applied,
-                        "balance_after": new_coin_balance,
-                        "note": f"Online order #{order_id[-8:]} — ₹{coins_discount_applied:.0f} discount",
+                # Auto-award 10% on NET paid amount
+                coins_earned_back = int(net_subtotal * 0.10)
+
+                redemption_txn = {
+                    "type": "redeemed",
+                    "coins": coins_redeemed,
+                    "discount_value": coins_discount_applied,
+                    "balance_after": new_coin_balance,
+                    "note": f"Online order #{order_id[-8:]} — ₹{coins_discount_applied:.0f} discount",
+                    "order_id": order_id,
+                    "timestamp": now.isoformat(),
+                }
+                customer.setdefault("coins_history", []).append(redemption_txn)
+
+                if coins_earned_back > 0:
+                    earn_balance_after = new_coin_balance + coins_earned_back
+                    earn_txn = {
+                        "type": "earned",
+                        "coins": coins_earned_back,
+                        "bill_amount": net_subtotal,
+                        "balance_after": earn_balance_after,
+                        "note": f"10% cashback on online order #{order_id[-8:]} (net ₹{net_subtotal:.0f})",
                         "order_id": order_id,
                         "timestamp": now.isoformat(),
                     }
+                    customer["coins_history"].append(earn_txn)
+                    new_coin_balance = earn_balance_after
 
-                    history = customer.get("coins_history", [])
-                    history.append(redemption_txn)
+                customer["pd_coins"]   = new_coin_balance
+                customer["updated_at"] = now.isoformat()
+                customers[cust_idx]    = customer
+                await manager._write("customers", customers)
 
-                    # Immediately re-award 10% on net paid
+                # Patch order financials with server-validated coin discount
+                order_dict["discount"]       = coins_discount_applied
+                order_dict["coins_redeemed"] = coins_redeemed
+                order_dict["coins_discount"] = coins_discount_applied
+                order_dict["coins_earned"]   = coins_earned_back
+                order_dict["total"]          = new_total
+            else:
+                # No coins redeemed, but award 10% cashback on order subtotal for registered customer
+                if order.subtotal >= 100:
+                    coins_earned_back = int(order.subtotal * 0.10)
                     if coins_earned_back > 0:
                         earn_balance_after = new_coin_balance + coins_earned_back
                         earn_txn = {
                             "type": "earned",
                             "coins": coins_earned_back,
-                            "bill_amount": net_subtotal,
+                            "bill_amount": order.subtotal,
                             "balance_after": earn_balance_after,
-                            "note": f"10% cashback on online order #{order_id[-8:]} (net ₹{net_subtotal:.0f})",
+                            "note": f"10% cashback on online order #{order_id[-8:]}",
                             "order_id": order_id,
                             "timestamp": now.isoformat(),
                         }
-                        history.append(earn_txn)
-                        new_coin_balance = earn_balance_after
-
-                    customer["pd_coins"]      = new_coin_balance
-                    customer["coins_history"] = history
-                    customer["updated_at"]    = now.isoformat()
-                    customers[cust_idx]       = customer
-                    await manager._write("customers", customers)
-
-                    # Patch order financials with server-validated coin discount
-                    order_dict["discount"]          = coins_discount_applied
-                    order_dict["coins_redeemed"]     = coins_redeemed
-                    order_dict["coins_discount"]     = coins_discount_applied
-                    order_dict["coins_earned"]       = coins_earned_back
-                    order_dict["total"]              = new_total
-
-    # ── Phone / address back-fill ──
-    if optional_customer and order_dict.get("phone") and coins_redeemed == 0:
-        # Only do this secondary read if coins didn't already do it above
-        try:
-            customers = await manager._read("customers")
-            for c in customers:
-                if c.get("uid") == optional_customer["uid"]:
-                    if not c.get("phone"):
-                        c["phone"] = order_dict["phone"].strip()
-                    if order_dict.get("address") and not c.get("address"):
-                        c["address"] = order_dict["address"].strip()
-                        c.setdefault("addresses", []).append(order_dict["address"].strip())
-                    await manager._write("customers", customers)
-                    break
-        except Exception:
-            pass
-    elif optional_customer and order_dict.get("phone") and coins_redeemed > 0:
-        # We already have customers list in scope — just update phone/address if needed
-        try:
-            customers = await manager._read("customers")
-            for c in customers:
-                if c.get("uid") == optional_customer["uid"]:
-                    changed = False
-                    if not c.get("phone"):
-                        c["phone"] = order_dict["phone"].strip(); changed = True
-                    if order_dict.get("address") and not c.get("address"):
-                        c["address"] = order_dict["address"].strip()
-                        c.setdefault("addresses", []).append(order_dict["address"].strip())
-                        changed = True
-                    if changed:
+                        customer.setdefault("coins_history", []).append(earn_txn)
+                        customer["pd_coins"]   = earn_balance_after
+                        customer["updated_at"] = now.isoformat()
+                        customers[cust_idx]    = customer
                         await manager._write("customers", customers)
-                    break
-        except Exception:
-            pass
+                        order_dict["coins_earned"] = coins_earned_back
+                else:
+                    # Just update customer profile if address/phone was updated
+                    customer["updated_at"] = now.isoformat()
+                    customers[cust_idx]    = customer
+                    await manager._write("customers", customers)
+    except Exception as e:
+        print(f"Error processing customer loyalty for order {order_id}: {e}")
 
     order_dict.update({
         "order_id": order_id,

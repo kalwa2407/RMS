@@ -441,8 +441,15 @@ const CustomerDashboard = () => {
     };
 
     try {
+      let activeToken = idToken;
+      if (currentUser) {
+        try {
+          activeToken = await currentUser.getIdToken();
+          setIdToken(activeToken);
+        } catch (e) {}
+      }
       const headers = { 'Content-Type': 'application/json' };
-      if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
+      if (activeToken) headers['Authorization'] = `Bearer ${activeToken}`;
       const res = await fetch(`${API_BASE}/api/orders`, {
         method: 'POST',
         headers,
@@ -459,7 +466,9 @@ const CustomerDashboard = () => {
       setOrderDone(data);
       setOrderSubTab('history');
       fetchOrders();
-      if (typeof refreshProfile === 'function') refreshProfile();
+      if (typeof refreshProfile === 'function') {
+        await refreshProfile();
+      }
     } catch (err) {
       alert(err.message || 'Order failed. Please try again.');
     } finally {

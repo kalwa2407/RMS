@@ -231,9 +231,15 @@ const Order = () => {
     };
 
     try {
+      let activeToken = idToken;
+      if (currentUser) {
+        try {
+          activeToken = await currentUser.getIdToken();
+        } catch (e) {}
+      }
       const headers = { "Content-Type": "application/json" };
-      if (idToken) {
-        headers["Authorization"] = `Bearer ${idToken}`;
+      if (activeToken) {
+        headers["Authorization"] = `Bearer ${activeToken}`;
       }
 
       const res = await fetch(`${API_BASE}/api/orders`, {
@@ -257,7 +263,9 @@ const Order = () => {
       setCart([]);
       setApplyCoins(false);
       setDistance(null);
-      if (typeof refreshProfile === 'function') refreshProfile();
+      if (typeof refreshProfile === 'function') {
+        await refreshProfile();
+      }
 
       // Smooth redirect to live tracking
       setTimeout(() => {
