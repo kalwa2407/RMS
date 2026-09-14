@@ -3416,7 +3416,7 @@ async def startup_event():
             logger.info("DataManager and Firebase pre-initialized successfully.")
 
             # ----------------------------------------------------------------
-            # CACHE WARMUP — preload hot data so the very first visitor gets
+            # CACHE WARMUP -- preload hot data so the very first visitor gets
             # a fast (~2ms) response instead of a cold Firestore round-trip.
             # ----------------------------------------------------------------
             try:

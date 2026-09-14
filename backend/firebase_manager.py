@@ -8,7 +8,7 @@ from pathlib import Path
 from data_manager import BaseDataManager
 
 # ---------------------------------------------------------------------------
-# Simple in-memory TTL cache — eliminates repeat Firestore round-trips.
+# Simple in-memory TTL cache -- eliminates repeat Firestore round-trips.
 # A single process-level instance is shared across all requests.
 # ---------------------------------------------------------------------------
 class _SimpleCache:
@@ -20,7 +20,7 @@ class _SimpleCache:
         entry = self._store.get(key)
         if entry and time.monotonic() < entry[1]:
             return entry[0]          # cache HIT
-        self._store.pop(key, None)   # expired — remove
+        self._store.pop(key, None)   # expired -- remove
         return None                  # cache MISS
 
     def set(self, key: str, value, ttl_seconds: int):
@@ -37,8 +37,8 @@ class _SimpleCache:
 _menu_cache = _SimpleCache()
 
 # TTL constants (seconds)
-_TTL_MENU_PUBLIC     = 300   # 5 min  — public menu changes rarely during service
-_TTL_MENU_ADMIN      = 30    # 30 sec — admin needs near-real-time view
+_TTL_MENU_PUBLIC     = 300   # 5 min  -- public menu changes rarely during service
+_TTL_MENU_ADMIN      = 30    # 30 sec -- admin needs near-real-time view
 _TTL_CATEGORIES      = 300   # 5 min
 _TTL_REVIEWS         = 120   # 2 min
 _TTL_GALLERY         = 600   # 10 min
@@ -135,7 +135,7 @@ class FirebaseManager(BaseDataManager):
     async def get_menu(self, category: Optional[str] = None) -> List[Dict[str, Any]]:
         cached = _menu_cache.get(_KEY_MENU_PUBLIC)
         if cached is None:
-            logger.debug("Cache MISS: menu_public — fetching from Firestore")
+            logger.debug("Cache MISS: menu_public -- fetching from Firestore")
             menu_ref = self.db.collection('menu_items')
             docs = menu_ref.where('available', '==', True).stream()
             cached = [doc.to_dict() for doc in docs]
@@ -150,7 +150,7 @@ class FirebaseManager(BaseDataManager):
         """Get ALL menu items including unavailable (for admin panel)"""
         cached = _menu_cache.get(_KEY_MENU_ADMIN)
         if cached is None:
-            logger.debug("Cache MISS: menu_admin — fetching from Firestore")
+            logger.debug("Cache MISS: menu_admin -- fetching from Firestore")
             docs = self.db.collection('menu_items').stream()
             cached = [doc.to_dict() for doc in docs]
             _menu_cache.set(_KEY_MENU_ADMIN, cached, _TTL_MENU_ADMIN)
@@ -165,7 +165,7 @@ class FirebaseManager(BaseDataManager):
     async def get_menu_categories(self) -> List[str]:
         cached = _menu_cache.get(_KEY_CATEGORIES)
         if cached is None:
-            logger.debug("Cache MISS: menu_categories — deriving from menu_public cache")
+            logger.debug("Cache MISS: menu_categories -- deriving from menu_public cache")
             # Re-use the public menu cache to avoid a separate Firestore read
             menu = await self.get_menu()   # will HIT cache if already loaded
             cached = sorted(list(set(item.get("category") for item in menu if item.get("category"))))
@@ -198,7 +198,7 @@ class FirebaseManager(BaseDataManager):
     async def get_gallery(self) -> List[Dict[str, Any]]:
         cached = _menu_cache.get(_KEY_GALLERY)
         if cached is None:
-            logger.debug("Cache MISS: gallery — fetching from Firestore")
+            logger.debug("Cache MISS: gallery -- fetching from Firestore")
             docs = self.db.collection('gallery_images').stream()
             cached = [doc.to_dict() for doc in docs]
             _menu_cache.set(_KEY_GALLERY, cached, _TTL_GALLERY)
@@ -209,7 +209,7 @@ class FirebaseManager(BaseDataManager):
     async def get_reviews(self) -> List[Dict[str, Any]]:
         cached = _menu_cache.get(_KEY_REVIEWS)
         if cached is None:
-            logger.debug("Cache MISS: reviews — fetching from Firestore")
+            logger.debug("Cache MISS: reviews -- fetching from Firestore")
             try:
                 docs = self.db.collection('reviews').order_by('created_at', direction=firestore.Query.DESCENDING).stream()
                 cached = [doc.to_dict() for doc in docs]
