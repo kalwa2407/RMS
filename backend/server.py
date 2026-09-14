@@ -3402,7 +3402,7 @@ async def get_customer_reservations_list(
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize database on startup"""
+    """Initialize database and warm cache on startup"""
     db_mode = os.environ.get("DB_MODE", "POSTGRES")
     if db_mode == "POSTGRES":
         logger.info("Initializing PostgreSQL database...")
@@ -3412,8 +3412,26 @@ async def startup_event():
     else:
         logger.info(f"Running in {db_mode} mode. Bypassing PostgreSQL initialization.")
         try:
-            get_data_manager()
+            manager = get_data_manager()
             logger.info("DataManager and Firebase pre-initialized successfully.")
+
+            # ----------------------------------------------------------------
+            # CACHE WARMUP — preload hot data so the very first visitor gets
+            # a fast (~2ms) response instead of a cold Firestore round-trip.
+            # ----------------------------------------------------------------
+            try:
+                logger.info("Warming cache: fetching menu, reviews, gallery from Firestore...")
+                import asyncio
+                await asyncio.gather(
+                    manager.get_menu(),            # warms menu_public cache
+                    manager.get_all_menu_items(),  # warms menu_admin cache
+                    manager.get_reviews(),         # warms reviews cache
+                    manager.get_gallery(),         # warms gallery cache
+                )
+                logger.info("Cache warmup complete. First user will get fast responses.")
+            except Exception as warm_err:
+                logger.warning(f"Cache warmup failed (non-fatal): {warm_err}")
+
         except Exception as e:
             logger.warning(f"Could not pre-initialize DataManager on startup: {e}")
 

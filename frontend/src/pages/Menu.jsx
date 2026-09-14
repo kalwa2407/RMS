@@ -2,9 +2,31 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import API_BASE from "../lib/config";
 
+/* Skeleton card shown while menu data is loading */
+const MenuSkeleton = () => (
+  <div className="bg-[#1a4855] border-2 border-[#EAB308]/10 rounded-xl overflow-hidden animate-pulse">
+    {/* Image placeholder */}
+    <div className="h-48 bg-[#0f2933]/80" />
+    <div className="p-5 space-y-3">
+      {/* Title */}
+      <div className="h-5 bg-[#0f2933] rounded-full w-3/4" />
+      {/* Description lines */}
+      <div className="h-3 bg-[#0f2933] rounded-full w-full" />
+      <div className="h-3 bg-[#0f2933] rounded-full w-5/6" />
+      {/* Button */}
+      <div className="h-9 bg-[#0f2933] rounded-full w-full mt-2" />
+    </div>
+  </div>
+);
+
+/* Skeleton pill for category filters */
+const CategorySkeleton = () => (
+  <div className="h-9 w-24 bg-[#1a4855] rounded-full animate-pulse" />
+);
+
 const Menu = () => {
   const [menuItems, setMenuItems] = useState([]);
-  const [menuCategories, setMenuCategories] = useState(["All"]);
+  const [menuCategories, setMenuCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -17,9 +39,9 @@ const Menu = () => {
         setMenuItems(data);
         const categories = ["All", ...new Set(data.map((item) => item.category))];
         setMenuCategories(categories);
-        setLoading(false);
       } catch (err) {
         console.error("Menu fetch failed:", err);
+      } finally {
         setLoading(false);
       }
     };
@@ -28,8 +50,9 @@ const Menu = () => {
 
   const filteredItems = menuItems.filter((item) => {
     const matchesCategory = selectedCategory === "All" || item.category === selectedCategory;
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          item.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch =
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.description.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch && item.available;
   });
 
@@ -37,6 +60,7 @@ const Menu = () => {
     <div className="min-h-screen bg-gradient-to-b from-[#184956] to-[#0f2933] pt-28 pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
+        {/* Header */}
         <div className="text-center mb-12">
           <h1
             className="text-5xl md:text-6xl font-bold text-[#EAB308] mb-4"
@@ -49,82 +73,75 @@ const Menu = () => {
           </p>
         </div>
 
-        {/* Search Bar */}
+        {/* Search Bar — always visible */}
         <div className="max-w-md mx-auto mb-8">
           <input
             type="text"
             placeholder="Search menu..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#1a4855] text-white px-6 py-3 rounded-full border-2 border-[#EAB308]/30 focus:border-[#EAB308] outline-none placeholder-gray-400 text-sm"
+            className="w-full bg-[#1a4855] text-white px-6 py-3 rounded-full border-2 border-[#EAB308]/30 focus:border-[#EAB308] outline-none placeholder-gray-400 text-sm transition-colors"
           />
         </div>
 
-        {/* Loading State */}
-        {loading && (
-          <p className="text-center text-yellow-400 text-xl">Loading menu...</p>
-        )}
-
-        {/* Category Filters */}
-        {!loading && (
-          <div className="flex flex-wrap justify-center gap-3 mb-12">
-            {menuCategories.map((category) => (
-              <button
-                key={category}
-                onClick={() => {
-                  setSelectedCategory(category);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                className={`px-6 py-2 text-sm font-bold rounded-full transition-all duration-300 ${
-                  selectedCategory === category
-                    ? "bg-[#EAB308] text-black shadow-lg"
-                    : "bg-transparent border-2 border-[#EAB308] text-[#EAB308] hover:bg-[#EAB308] hover:text-black"
-                }`}
-              >
-                {category}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Menu Items Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredItems.map((item) => (
-            <div
-              key={item._id}
-              className="bg-[#1a4855] border-2 border-[#EAB308]/30 rounded-xl overflow-hidden hover:border-[#EAB308] hover:shadow-xl transition-all duration-300"
-            >
-              <div className="relative h-48 overflow-hidden border-b-2 border-[#EAB308]/30">
-                <img
-                  src={item.image}
-                  alt={item.name}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = "/no-image.png";
+        {/* Category Filters — skeleton while loading, real pills after */}
+        <div className="flex flex-wrap justify-center gap-3 mb-12">
+          {loading
+            ? Array.from({ length: 6 }).map((_, i) => <CategorySkeleton key={i} />)
+            : menuCategories.map((category) => (
+                <button
+                  key={category}
+                  onClick={() => {
+                    setSelectedCategory(category);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
-                />
-                <div className="absolute top-3 right-3 bg-[#EAB308] text-black px-3 py-1 rounded-full text-sm font-bold">
-                  â‚¹{item.price}
+                  className={`px-6 py-2 text-sm font-bold rounded-full transition-all duration-300 ${
+                    selectedCategory === category
+                      ? "bg-[#EAB308] text-black shadow-lg"
+                      : "bg-transparent border-2 border-[#EAB308] text-[#EAB308] hover:bg-[#EAB308] hover:text-black"
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+        </div>
+
+        {/* Menu Items Grid — skeletons while loading, real cards after */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {loading
+            ? Array.from({ length: 9 }).map((_, i) => <MenuSkeleton key={i} />)
+            : filteredItems.map((item) => (
+                <div
+                  key={item._id}
+                  className="bg-[#1a4855] border-2 border-[#EAB308]/30 rounded-xl overflow-hidden hover:border-[#EAB308] hover:shadow-xl transition-all duration-300"
+                >
+                  <div className="relative h-48 overflow-hidden border-b-2 border-[#EAB308]/30">
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = "/no-image.png";
+                      }}
+                    />
+                    <div className="absolute top-3 right-3 bg-[#EAB308] text-black px-3 py-1 rounded-full text-sm font-bold">
+                      ?{item.price}
+                    </div>
+                  </div>
+
+                  <div className="p-5">
+                    <h3 className="text-lg font-bold text-white mb-1">{item.name}</h3>
+                    <p className="text-gray-400 text-xs mb-3 leading-relaxed">{item.description}</p>
+
+                    <Link to="/order">
+                      <button className="w-full bg-[#EAB308] hover:bg-[#CA8A04] text-black py-2 rounded-full font-bold text-sm transition-all duration-300">
+                        Order Now
+                      </button>
+                    </Link>
+                  </div>
                 </div>
-              </div>
-
-              <div className="p-5">
-                <h3 className="text-lg font-bold text-white mb-1">
-                  {item.name}
-                </h3>
-                <p className="text-gray-400 text-xs mb-3 leading-relaxed">
-                  {item.description}
-                </p>
-
-                <Link to="/order">
-                  <button className="w-full bg-[#EAB308] hover:bg-[#CA8A04] text-black py-2 rounded-full font-bold text-sm transition-all duration-300">
-                    Order Now
-                  </button>
-                </Link>
-              </div>
-            </div>
-          ))}
+              ))}
         </div>
 
         {!loading && filteredItems.length === 0 && (
