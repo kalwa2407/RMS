@@ -922,18 +922,18 @@ const CustomerDashboard = () => {
                 )}
 
                 {/* Search Bar */}
-                <div className="relative rounded-2xl flex items-center px-4 py-3"
-                  style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.16)', backdropFilter: 'blur(16px)' }}>
-                  <Search className="w-4 h-4 text-white/50 mr-2.5 shrink-0" />
+                <div className="relative flex items-center">
+                  <Search className="absolute left-4 w-4 h-4 text-gray-400 pointer-events-none" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
-                    placeholder="Search Biryanis, Kebabs, Desserts..."
-                    className="w-full bg-transparent text-white text-sm focus:outline-none placeholder-white/40"
+                    placeholder="Search biryani, kebabs, desserts..."
+                    className="w-full bg-[#1a4855] border border-[#EAB308]/20 text-white pl-10 pr-10 py-3 rounded-2xl outline-none focus:border-[#EAB308]/60 placeholder-gray-500 text-sm transition-colors"
+                    style={{ fontSize: '16px' }}
                   />
                   {searchQuery && (
-                    <button onClick={() => setSearchQuery('')} className="text-white/50 hover:text-white">
+                    <button onClick={() => setSearchQuery('')} className="absolute right-3 text-gray-400 hover:text-white transition-colors">
                       <X className="w-4 h-4" />
                     </button>
                   )}
@@ -948,16 +948,23 @@ const CustomerDashboard = () => {
                         setSelectedCat(cat);
                         if (mainScrollRef.current) mainScrollRef.current.scrollTop = 0;
                       }}
-                      className={`px-4 py-2 rounded-2xl text-xs font-bold whitespace-nowrap transition-all active:scale-95 ${
+                      className={`shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all active:scale-95 ${
                         selectedCat === cat
-                          ? 'bg-[#EAB308] text-black shadow-[0_0_15px_rgba(234,179,8,0.4)]'
-                          : 'bg-white/[0.08] text-white/80 border border-white/15 hover:bg-white/15'
+                          ? 'bg-[#EAB308] text-black shadow-md shadow-[#EAB308]/30'
+                          : 'bg-[#1a4855] text-gray-300 border border-[#EAB308]/20 hover:border-[#EAB308]/50 hover:text-white'
                       }`}
-                      style={{ backdropFilter: 'blur(12px)' }}
                     >
                       {cat}
                     </button>
                   ))}
+                </div>
+
+                {/* Result count */}
+                <div className="flex items-center gap-2 px-1">
+                  <p className="text-white/80 text-xs font-bold">
+                    {searchQuery ? `Results for "${searchQuery}"` : selectedCat === 'All' ? 'All Items' : selectedCat}
+                  </p>
+                  <span className="bg-[#EAB308] text-black text-[10px] font-black px-2 py-0.5 rounded-full">{filteredMenuItems.length}</span>
                 </div>
 
                 {/* Menu Items List */}
@@ -973,69 +980,60 @@ const CustomerDashboard = () => {
                     <p className="text-white/50 text-xs mt-1">Try another category or search term</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {filteredMenuItems.map(item => {
                       const inCart = cart.find(c => c._id === item._id);
                       const qty = inCart ? inCart.quantity : 0;
+                      const isVeg = item.is_veg !== false && !item.category?.toLowerCase().includes('non');
                       return (
                         <div
                           key={item._id}
-                          className="rounded-3xl p-3.5 flex gap-3.5 items-center transition-all group"
-                          style={GLASS_CARD}
+                          className="flex items-center gap-3 p-3 rounded-2xl border border-[#EAB308]/10 bg-[#1a4855]/60 transition-colors hover:bg-[#EAB308]/5"
                         >
-                          {/* Dish Image */}
-                          <div className="w-20 h-20 rounded-2xl overflow-hidden shrink-0 relative bg-black/40 border border-white/15">
+                          {/* Thumbnail */}
+                          <div className="relative shrink-0 w-[72px] h-[72px] rounded-xl overflow-hidden bg-[#0f2933]">
                             <img
                               src={item.image || '/no-image.png'}
                               alt={item.name}
-                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                              className="w-full h-full object-cover"
                               onError={e => { e.target.src = '/no-image.png'; }}
                             />
-                            {item.popular && (
-                              <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded-md bg-[#EAB308] text-black font-black text-[8px] uppercase tracking-wider">
-                                Star
-                              </div>
-                            )}
+                            {/* Veg/Non-veg indicator */}
+                            <div className={`absolute top-1 left-1 w-3.5 h-3.5 rounded-sm border-2 flex items-center justify-center ${isVeg ? 'border-green-500 bg-[#0f2933]' : 'border-red-500 bg-[#0f2933]'}`}>
+                              <div className={`w-1.5 h-1.5 rounded-full ${isVeg ? 'bg-green-500' : 'bg-red-500'}`} />
+                            </div>
                           </div>
 
                           {/* Info */}
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5 mb-0.5">
-                              <span className={`w-2 h-2 rounded-full ${item.category?.toLowerCase().includes('veg') && !item.category?.toLowerCase().includes('non') ? 'bg-emerald-400' : 'bg-red-400'}`} />
-                              <h3 className="text-white font-bold text-sm leading-snug truncate" style={{ fontFamily: "'Playfair Display',serif" }}>
-                                {item.name}
-                              </h3>
-                            </div>
-                            <p className="text-white/60 text-xs line-clamp-1 mb-1.5">{item.description || item.category}</p>
-                            <p className="text-[#EAB308] font-black text-sm">₹{item.price}</p>
+                            <h3 className="text-white font-black text-sm leading-snug truncate">{item.name}</h3>
+                            {(item.description || item.category) && (
+                              <p className="text-gray-400 text-[11px] mt-0.5 line-clamp-2 leading-relaxed">{item.description || item.category}</p>
+                            )}
+                            <p className="text-[#EAB308] font-black text-sm mt-1.5">₹{item.price}</p>
                           </div>
 
-                          {/* Add / Stepper CTA */}
-                          <div className="shrink-0 flex items-center">
+                          {/* ADD / qty stepper */}
+                          <div className="shrink-0">
                             {qty === 0 ? (
                               <button
                                 onClick={() => addToCart(item)}
-                                className="px-3.5 py-2 rounded-2xl text-xs font-black uppercase tracking-wider text-black shadow-md transition-all active:scale-95 flex items-center gap-1"
-                                style={{
-                                  background: 'linear-gradient(135deg, #FDE047 0%, #EAB308 60%, #CA8A04 100%)',
-                                  boxShadow: '0 4px 12px rgba(234,179,8,0.35)'
-                                }}
+                                className="border-2 border-[#EAB308] text-[#EAB308] font-black text-xs px-3.5 py-1.5 rounded-xl flex items-center gap-1 bg-transparent hover:bg-[#EAB308] hover:text-black transition-all active:scale-95"
                               >
-                                <Plus className="w-3.5 h-3.5 stroke-[2.5]" /> Add
+                                <Plus className="w-3.5 h-3.5" /> ADD
                               </button>
                             ) : (
-                              <div className="flex items-center gap-1.5 rounded-2xl p-1"
-                                style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(234,179,8,0.4)' }}>
+                              <div className="flex items-center gap-1 bg-[#EAB308] rounded-xl px-1 py-1" style={{ animation: 'popIn 0.18s ease' }}>
                                 <button
                                   onClick={() => updateCartQty(item._id, -1)}
-                                  className="w-7 h-7 rounded-xl flex items-center justify-center bg-white/10 hover:bg-white/20 text-white active:scale-90 transition-all"
+                                  className="w-6 h-6 flex items-center justify-center text-black hover:bg-black/15 rounded-lg transition-colors"
                                 >
                                   <Minus className="w-3 h-3" />
                                 </button>
-                                <span className="text-white font-black text-xs px-1.5 min-w-[18px] text-center">{qty}</span>
+                                <span className="text-black font-black text-sm w-5 text-center">{qty}</span>
                                 <button
                                   onClick={() => updateCartQty(item._id, 1)}
-                                  className="w-7 h-7 rounded-xl flex items-center justify-center bg-[#EAB308] text-black font-black active:scale-90 transition-all"
+                                  className="w-6 h-6 flex items-center justify-center text-black hover:bg-black/15 rounded-lg transition-colors"
                                 >
                                   <Plus className="w-3 h-3" />
                                 </button>
@@ -1103,32 +1101,25 @@ const CustomerDashboard = () => {
               </div>
             )}
 
-            {/* ── FLOATING CART PILL ── */}
+            {/* ── FLOATING CART FAB ── */}
             {orderSubTab === 'menu' && cart.length > 0 && !isCartOpen && (
               <div className="sticky bottom-2 z-30 pt-2">
-                <div
+                <button
                   onClick={() => setIsCartOpen(true)}
-                  className="rounded-3xl p-4 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-all shadow-2xl"
-                  style={{
-                    background: 'linear-gradient(135deg, #FDE047 0%, #EAB308 60%, #CA8A04 100%)',
-                    border: '1.5px solid rgba(255,255,255,0.5)',
-                    boxShadow: '0 12px 36px rgba(0,0,0,0.6), 0 0 24px rgba(234,179,8,0.6)'
-                  }}
+                  className="w-full flex items-center justify-between bg-[#EAB308] text-black rounded-2xl px-5 py-3.5 active:scale-[0.97] transition-transform"
+                  style={{ boxShadow: '0 8px 32px rgba(234,179,8,0.45)' }}
                 >
-                  <div className="flex items-center gap-3 text-black">
-                    <div className="w-10 h-10 rounded-2xl bg-black/15 flex items-center justify-center font-black text-sm">
+                  <div className="flex items-center gap-3">
+                    <span className="bg-black/20 text-black font-black text-sm w-8 h-8 rounded-xl flex items-center justify-center">
                       {cartItemCount}
-                    </div>
-                    <div>
-                      <p className="font-black text-base leading-tight">₹{cartSubtotal.toLocaleString()}</p>
-                      <p className="text-[10px] font-bold text-black/75 uppercase tracking-wider">{cart.length} dish{cart.length === 1 ? '' : 'es'} in cart</p>
-                    </div>
+                    </span>
+                    <span className="font-black text-sm uppercase tracking-widest">View Cart</span>
                   </div>
-                  <div className="flex items-center gap-2 text-black font-black text-xs uppercase tracking-wider bg-black/10 px-3.5 py-2 rounded-xl">
-                    <span>Checkout</span>
-                    <ArrowRight className="w-4 h-4" />
+                  <div className="flex items-center gap-2">
+                    <span className="font-black text-lg">₹{cartSubtotal.toLocaleString()}</span>
+                    <ChevronRight className="w-4 h-4" />
                   </div>
-                </div>
+                </button>
               </div>
             )}
 

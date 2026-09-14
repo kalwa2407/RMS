@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { Plus, Minus, Trash2, ShoppingCart, MapPin, Loader2, CreditCard, Wallet, Lock, Crown, Sparkles, X } from "lucide-react";
+import {
+  Plus, Minus, Trash2, ShoppingCart, MapPin, Loader2,
+  CreditCard, Wallet, Sparkles, X, Search, ChevronRight, UtensilsCrossed
+} from "lucide-react";
 import { useToast } from "../hooks/use-toast";
 import API_BASE from "../lib/config";
 import { useCustomerAuth } from "../context/CustomerAuthContext";
@@ -45,6 +48,7 @@ const Order = () => {
 
   const [menu, setMenu] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [applyCoins, setApplyCoins] = useState(false);
@@ -52,18 +56,13 @@ const Order = () => {
   const [distance, setDistance] = useState(null);
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const categoryBarRef = useRef(null);
 
   // Persian Darbar location (Camp, Pune)
-  const RESTAURANT_LOCATION = {
-    lat: 18.5204,
-    lng: 73.8567
-  };
+  const RESTAURANT_LOCATION = { lat: 18.5204, lng: 73.8567 };
 
   const [customerInfo, setCustomerInfo] = useState({
-    name: "",
-    phone: "",
-    address: "",
-    paymentMethod: "cod",
+    name: "", phone: "", address: "", paymentMethod: "cod",
   });
 
   // Pre-fill customer details if logged in
@@ -78,19 +77,14 @@ const Order = () => {
     }
   }, [currentUser, customerProfile]);
 
-  // ─── Auth check — sign-in only needed at checkout ─────────────────
-
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
     const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    const dist = R * c;
-    return dist.toFixed(1);
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(1);
   };
 
   const getUserLocation = () => {
@@ -100,24 +94,20 @@ const Order = () => {
       setLoadingLocation(false);
       return;
     }
-
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const userLat = position.coords.latitude;
-        const userLng = position.coords.longitude;
+        const { latitude: userLat, longitude: userLng } = position.coords;
         setUserLocation({ lat: userLat, lng: userLng });
         const dist = calculateDistance(userLat, userLng, RESTAURANT_LOCATION.lat, RESTAURANT_LOCATION.lng);
         const distNum = parseFloat(dist);
         setDistance(distNum);
         setLoadingLocation(false);
-        
-        // Show delivery tier in toast
         let feeMsg = "Free delivery!";
-        if (distNum > 20)  feeMsg = "Out of delivery range (>20km).";
+        if (distNum > 20) feeMsg = "Out of delivery range (>20km).";
         else if (distNum > 10) feeMsg = "₹60 delivery fee (10-20km).";
         toast({ title: `📍 ${dist} km away`, description: feeMsg });
       },
-      (error) => {
+      () => {
         setLoadingLocation(false);
         toast({ title: "Location Error", description: "Could not detect location. Please allow access.", variant: "destructive" });
       }
@@ -139,8 +129,11 @@ const Order = () => {
 
   const categories = ["All", ...new Set(menu.map((i) => i.category))];
   const filteredItems = menu.filter((item) => {
-    const matchesCategory = selectedCategory === "All" || item.category === selectedCategory;
-    return matchesCategory && item.available;
+    const matchCat = selectedCategory === "All" || item.category === selectedCategory;
+    const matchSearch = !searchQuery ||
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.description || "").toLowerCase().includes(searchQuery.toLowerCase());
+    return matchCat && matchSearch && item.available;
   });
 
   const addToCart = (item) => {
@@ -153,55 +146,40 @@ const Order = () => {
     toast({ title: "Added to cart", description: `${item.name} added.` });
   };
 
-  const updateQuantity = (id, change) => {
+  const updateQuantity = (id, change) =>
     setCart(cart.map((item) => item._id === id ? { ...item, quantity: Math.max(0, item.quantity + change) } : item).filter(i => i.quantity > 0));
-  };
 
   const removeFromCart = (id) => setCart(cart.filter((item) => item._id !== id));
   const calculateSubtotal = () => cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  const pdCoins  = customerProfile?.pd_coins || customerProfile?.loyalty_points || 0;
+  const pdCoins = customerProfile?.pd_coins || customerProfile?.loyalty_points || 0;
   const subtotal = calculateSubtotal();
-
-  /* ── PD Coins Rules:
-     - Min ₹300 subtotal
-     - Max burn cap: 25% of subtotal
-     - 1 coin = ₹1 discount
-     - 10% re-earned on net paid amount (subtotal - discount) ── */
-  const maxRedeemableCoins = (subtotal >= 300 && pdCoins > 0)
-    ? Math.min(pdCoins, Math.floor(subtotal * 0.25))
-    : 0;
-  const coinsApplied  = (applyCoins && maxRedeemableCoins > 0) ? maxRedeemableCoins : 0;
+  const maxRedeemableCoins = (subtotal >= 300 && pdCoins > 0) ? Math.min(pdCoins, Math.floor(subtotal * 0.25)) : 0;
+  const coinsApplied = (applyCoins && maxRedeemableCoins > 0) ? maxRedeemableCoins : 0;
   const coinsDiscount = coinsApplied;
-  const netSubtotal   = Math.max(0, subtotal - coinsDiscount);
-  const taxRate       = 0.05;
-  const taxes         = Math.round(subtotal * taxRate);
+  const netSubtotal = Math.max(0, subtotal - coinsDiscount);
+  const taxRate = 0.05;
+  const taxes = Math.round(subtotal * taxRate);
   const coinsEarnable = Math.floor(netSubtotal * 0.10);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (cart.length === 0) return toast({ title: "Cart is empty", variant: "destructive" });
-
-    const subtotal = calculateSubtotal();
-    if (subtotal < 250) return toast({ title: "Minimum order value: ₹250", variant: "destructive" });
-
+    const sub = calculateSubtotal();
+    if (sub < 250) return toast({ title: "Minimum order value: ₹250", variant: "destructive" });
     setIsPlacingOrder(true);
-    // If location not detected and user hasn't skipped, block order
     if (distance === null) {
-      toast({ title: "Location Required", description: "Please detect your location or choose standard delivery before placing order.", variant: "destructive" });
+      toast({ title: "Location Required", description: "Please detect your location before placing order.", variant: "destructive" });
       setIsPlacingOrder(false);
       return;
     }
-    // ── 3-tier delivery rule ──
-    if (distance !== null && distance > 20) {
-      toast({ title: "Out of delivery range", description: "We only deliver within 20km. Try takeaway or dine-in.", variant: "destructive" });
+    if (distance > 20) {
+      toast({ title: "Out of delivery range", description: "We only deliver within 20km.", variant: "destructive" });
       setIsPlacingOrder(false);
       return;
     }
-
-    const deliveryFee = distance === null ? 60 : distance <= 10 ? 0 : 60;
+    const deliveryFee = distance <= 10 ? 0 : 60;
     const calculatedTotal = Math.max(0, netSubtotal + deliveryFee + taxes);
-
     const orderData = {
       customer_uid: currentUser?.uid || null,
       email: currentUser?.email || null,
@@ -211,68 +189,27 @@ const Order = () => {
       distance_km: distance || 0,
       payment_method: customerInfo.paymentMethod,
       items: cart.map((i) => ({
-        item_id: String(i._id),
-        name: i.name,
-        price: i.price,
-        quantity: i.quantity,
-        variant: null,
-        variant_price: 0.0,
-        addons: [],
-        special_instructions: null
+        item_id: String(i._id), name: i.name, price: i.price, quantity: i.quantity,
+        variant: null, variant_price: 0.0, addons: [], special_instructions: null
       })),
-      subtotal,
-      discount: coinsDiscount,
-      coins_to_redeem: coinsApplied,
-      coins_discount: coinsDiscount,
-      delivery_fee: deliveryFee,
-      taxes,
-      total: calculatedTotal,
-      coupon_code: null,
+      subtotal: sub, discount: coinsDiscount, coins_to_redeem: coinsApplied,
+      coins_discount: coinsDiscount, delivery_fee: deliveryFee, taxes, total: calculatedTotal, coupon_code: null,
     };
-
     try {
       let activeToken = idToken;
-      if (currentUser) {
-        try {
-          activeToken = await currentUser.getIdToken();
-        } catch (e) {}
-      }
+      if (currentUser) { try { activeToken = await currentUser.getIdToken(); } catch (e) {} }
       const headers = { "Content-Type": "application/json" };
-      if (activeToken) {
-        headers["Authorization"] = `Bearer ${activeToken}`;
-      }
-
-      const res = await fetch(`${API_BASE}/api/orders`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(orderData),
-      });
-
+      if (activeToken) headers["Authorization"] = `Bearer ${activeToken}`;
+      const res = await fetch(`${API_BASE}/api/orders`, { method: "POST", headers, body: JSON.stringify(orderData) });
       if (!res.ok) throw new Error("Invalid order");
       const data = await res.json();
-
-      if (data.order_id) {
-        localStorage.setItem("lastOrderId", data.order_id);
-      }
-
-      toast({ 
-        title: "Order Placed! 🎉", 
-        description: `Your order is being prepared. ID: ${data.order_id?.slice(-8)}` 
-      });
-
+      if (data.order_id) localStorage.setItem("lastOrderId", data.order_id);
+      toast({ title: "Order Placed! 🎉", description: `Your order is being prepared. ID: ${data.order_id?.slice(-8)}` });
       setCart([]);
       setApplyCoins(false);
       setDistance(null);
-      if (typeof refreshProfile === 'function') {
-        await refreshProfile();
-      }
-
-      // Smooth redirect to live tracking
-      setTimeout(() => {
-        if (data.order_id) {
-          navigate(`/track?order_id=${data.order_id}`);
-        }
-      }, 1200);
+      if (typeof refreshProfile === 'function') await refreshProfile();
+      setTimeout(() => { if (data.order_id) navigate(`/track?order_id=${data.order_id}`); }, 1200);
     } catch (err) {
       toast({ title: "Order failed", description: "Something went wrong. Please try again.", variant: "destructive" });
     } finally {
@@ -280,397 +217,421 @@ const Order = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-[#184956] to-[#0f2933] pt-28 pb-32 lg:pb-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h1 className="text-5xl md:text-6xl font-bold text-[#EAB308] mb-4" style={{ fontFamily: "Playfair Display, serif" }}>
-            Order Online
-          </h1>
-          <p className="text-lg text-gray-300">
-            Enjoy authentic Persian & Mughlai cuisine delivered to your door
-          </p>
-        </div>
+  // ─── Reusable cart total display ───────────────────────────────────────────
+  const cartTotal = Math.max(0, netSubtotal + (distance !== null && distance > 10 && distance <= 20 ? 60 : 0) + taxes);
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Menu Selection */}
-          <div className="lg:col-span-2">
-            <div className="flex flex-wrap gap-3 mb-8 justify-center lg:justify-start">
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => {
-                    setSelectedCategory(category);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                  className={`px-6 py-2 text-sm font-bold rounded-full transition-all duration-300 ${
-                    selectedCategory === category
-                      ? "bg-[#EAB308] text-black shadow-lg"
-                      : "bg-transparent border-2 border-[#EAB308] text-[#EAB308] hover:bg-[#EAB308] hover:text-black"
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
+  // ─── Cart inner content (shared desktop + mobile drawer) ───────────────────
+  const CartContent = ({ isMobile = false }) => (
+    <div className="flex flex-col">
+
+      {/* Items list */}
+      <div className={`space-y-2 overflow-y-auto ${isMobile ? 'max-h-[28vh]' : 'max-h-[24vh]'}`} style={{ WebkitOverflowScrolling: 'touch' }}>
+        {cart.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 gap-3 opacity-60">
+            <UtensilsCrossed size={32} className="text-[#EAB308]" />
+            <p className="text-gray-400 text-sm text-center">Your cart is empty<br /><span className="text-xs text-gray-500">Add items to get started</span></p>
+          </div>
+        ) : cart.map((item) => (
+          <div key={item._id} className="flex items-center justify-between bg-[#0f2933] rounded-xl p-2.5 border border-[#EAB308]/10">
+            <div className="flex-1 min-w-0 mr-2">
+              <h4 className="text-white font-bold text-sm truncate">{item.name}</h4>
+              <p className="text-[#EAB308] text-xs font-bold mt-0.5">₹{item.price * item.quantity}</p>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {filteredItems.map((item) => (
-                <div key={item._id} className="bg-[#1a4855] rounded-xl overflow-hidden border-2 border-[#EAB308]/20 hover:border-[#EAB308] transition-all duration-300 card-hover">
-                  <div className="relative h-40 overflow-hidden">
-                    <img src={item.image} alt={item.name} className="w-full h-full object-cover"
-                      onError={(e) => { e.target.src = "/no-image.png"; }}
-                    />
-                    <div className="absolute top-3 right-3 bg-[#EAB308] text-black px-3 py-1 rounded-full text-sm font-bold">
-                      ₹{item.price}
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <h3 className="text-white font-bold mb-1">{item.name}</h3>
-                    <p className="text-gray-400 text-xs mb-3 line-clamp-2">{item.description}</p>
-                    <button
-                      onClick={() => addToCart(item)}
-                      className="w-full bg-[#EAB308] hover:bg-[#CA8A04] text-black py-2 rounded-full font-bold text-sm transition-all duration-300 flex items-center justify-center space-x-2"
-                    >
-                      <Plus size={16} />
-                      <span>Add to Cart</span>
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button onClick={() => updateQuantity(item._id, -1)} className="w-6 h-6 rounded-lg bg-[#184956] text-white flex items-center justify-center hover:bg-[#EAB308] hover:text-black transition-colors">
+                <Minus size={11} />
+              </button>
+              <span className="text-white font-black text-sm w-5 text-center">{item.quantity}</span>
+              <button onClick={() => updateQuantity(item._id, 1)} className="w-6 h-6 rounded-lg bg-[#184956] text-white flex items-center justify-center hover:bg-[#EAB308] hover:text-black transition-colors">
+                <Plus size={11} />
+              </button>
+              <button onClick={() => removeFromCart(item._id)} className="w-6 h-6 rounded-lg bg-red-900/20 text-red-400 flex items-center justify-center hover:bg-red-900/40 transition-colors ml-1">
+                <Trash2 size={11} />
+              </button>
             </div>
           </div>
+        ))}
+      </div>
 
-          {/* Cart */}
-          <div className="hidden lg:block lg:sticky lg:top-28">
-            <div className="bg-[#1a4855] rounded-xl border-2 border-[#EAB308]/30 overflow-hidden">
-              <div className="bg-[#EAB308] p-4 flex justify-between items-center">
-                <div className="flex items-center space-x-3">
-                  <ShoppingCart className="h-5 w-5 text-black" />
-                  <h2 className="text-black font-bold text-lg">Your Cart</h2>
+      {cart.length > 0 && (<>
+
+        {/* PD Coins */}
+        {currentUser && pdCoins > 0 ? (
+          <div className="mt-3 rounded-xl p-3 bg-[#0f2933] border border-[#EAB308]/30 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <img src="/pd_coin.png" alt="coin" className="w-5 h-5 object-contain" />
+                <div>
+                  <p className="text-xs font-bold text-white leading-none">Redeem PD Coins</p>
+                  <p className="text-[10px] text-[#EAB308] font-bold mt-0.5">Balance: {pdCoins} coins (₹{pdCoins})</p>
                 </div>
-                <span className="bg-black text-[#EAB308] px-3 py-1 rounded-full text-xs font-bold">
-                  {cart.reduce((s, i) => s + i.quantity, 0)} items
+              </div>
+              {subtotal >= 300 && (
+                <button type="button" onClick={() => setApplyCoins(p => !p)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all ${applyCoins ? 'bg-[#EAB308] text-black scale-105' : 'bg-white/10 text-white/80 hover:bg-white/15'}`}>
+                  {applyCoins ? 'Applied ✓' : 'Apply'}
+                </button>
+              )}
+            </div>
+            {subtotal < 300
+              ? <p className="text-[10px] text-gray-500">Add ₹{300 - subtotal} more to redeem (min ₹300)</p>
+              : <p className="text-[10px] text-gray-500">Save up to <span className="text-[#EAB308] font-bold">₹{maxRedeemableCoins}</span> (25% cap)</p>}
+            {applyCoins && maxRedeemableCoins > 0 && (
+              <div className="pt-1.5 border-t border-white/10 flex items-center justify-between text-[10px]">
+                <span className="text-emerald-400 font-bold flex items-center gap-1"><Sparkles size={10} /> Saving ₹{coinsDiscount}</span>
+                <span className="text-gray-500">+Earn <span className="text-[#EAB308] font-bold">{coinsEarnable}</span> coins</span>
+              </div>
+            )}
+          </div>
+        ) : !currentUser ? (
+          <div className="mt-3 rounded-xl p-2.5 bg-[#0f2933] border border-[#EAB308]/20 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <img src="/pd_coin.png" alt="coin" className="w-4 h-4 object-contain" />
+              <span className="text-white/70 text-[11px]">Earn 10% cashback in PD Coins</span>
+            </div>
+            <button type="button" onClick={() => navigate('/customer/auth')} className="text-[10px] font-bold text-[#EAB308] hover:underline">Sign In</button>
+          </div>
+        ) : null}
+
+        {/* Price summary */}
+        <div className="mt-3 bg-[#0f2933] rounded-xl p-3 space-y-1.5 border border-[#EAB308]/10">
+          <div className="flex justify-between text-sm"><span className="text-gray-400">Subtotal</span><span className="text-white font-bold">₹{subtotal}</span></div>
+          {coinsApplied > 0 && <div className="flex justify-between text-sm text-emerald-400 font-bold"><span>🪙 PD Coins</span><span>-₹{coinsDiscount}</span></div>}
+          {distance !== null && (
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-400">Delivery</span>
+              {distance > 20 ? <span className="text-red-400 font-bold text-xs">OUT OF RANGE</span>
+                : distance > 10 ? <span className="text-orange-400 font-bold">₹60</span>
+                  : <span className="text-green-400 font-bold">FREE</span>}
+            </div>
+          )}
+          <div className="flex justify-between text-sm"><span className="text-gray-400">GST (5%)</span><span className="text-white font-bold">₹{taxes}</span></div>
+          <div className="flex justify-between text-base font-black border-t border-[#EAB308]/20 pt-2 mt-1">
+            <span className="text-white">Total</span>
+            <span className="text-[#EAB308]">₹{cartTotal}</span>
+          </div>
+        </div>
+
+        {/* Checkout form */}
+        <form onSubmit={(e) => { handleSubmit(e); if (isMobile) setIsCartOpen(false); }} className="space-y-2.5 mt-3">
+          <input required value={customerInfo.name}
+            onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
+            placeholder="Your Name"
+            className="w-full bg-[#0f2933] text-white px-4 py-3 rounded-xl border border-[#EAB308]/30 focus:border-[#EAB308] outline-none placeholder-gray-500 transition-colors"
+            style={{ fontSize: '16px' }} />
+          <input required value={customerInfo.phone}
+            onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
+            placeholder="Phone Number" type="tel"
+            className="w-full bg-[#0f2933] text-white px-4 py-3 rounded-xl border border-[#EAB308]/30 focus:border-[#EAB308] outline-none placeholder-gray-500 transition-colors"
+            style={{ fontSize: '16px' }} />
+          <textarea required value={customerInfo.address}
+            onChange={(e) => setCustomerInfo({ ...customerInfo, address: e.target.value })}
+            placeholder="Delivery Address" rows={2}
+            className="w-full bg-[#0f2933] text-white px-4 py-3 rounded-xl border border-[#EAB308]/30 focus:border-[#EAB308] outline-none placeholder-gray-500 resize-none transition-colors"
+            style={{ fontSize: '16px' }} />
+
+          {/* Location */}
+          <div className="bg-[#0f2933] rounded-xl p-3 border border-[#EAB308]/20 text-center">
+            {!distance ? (
+              <div className="space-y-2">
+                <button type="button" onClick={getUserLocation}
+                  className="flex items-center justify-center gap-2 w-full text-[#EAB308] hover:text-white transition-colors text-sm font-bold py-1">
+                  {loadingLocation ? <Loader2 className="animate-spin" size={15} /> : <MapPin size={15} />}
+                  <span>{loadingLocation ? 'Detecting...' : 'Detect My Location'}</span>
+                </button>
+                <div className="text-[11px] text-gray-600 space-y-0.5">
+                  <p>0–10 km — <span className="text-green-500">Free delivery</span></p>
+                  <p>10–20 km — <span className="text-orange-400">₹60 flat fee</span></p>
+                  <p>&gt;20 km — <span className="text-red-500">Not accepted</span></p>
+                </div>
+              </div>
+            ) : distance > 20
+              ? <p className="text-red-400 text-sm font-bold">❌ {distance} km — Out of delivery range</p>
+              : <p className="text-green-400 text-sm font-bold">✓ {distance} km · {distance <= 10 ? 'Free Delivery!' : '₹60 Delivery Fee'}</p>}
+          </div>
+
+          {/* Leaflet Map */}
+          {userLocation && (
+            <div className="rounded-xl overflow-hidden border border-[#EAB308]/20" style={{ height: 180 }}>
+              <MapContainer center={[userLocation.lat, userLocation.lng]} zoom={12} style={{ height: "100%", width: "100%" }} zoomControl={false}>
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' />
+                <Marker position={[RESTAURANT_LOCATION.lat, RESTAURANT_LOCATION.lng]} icon={restaurantIcon}><Popup>🍽️ Persian Darbar (Restaurant)</Popup></Marker>
+                <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon}><Popup>📍 Your Location ({distance} km away)</Popup></Marker>
+                <Polyline positions={[[RESTAURANT_LOCATION.lat, RESTAURANT_LOCATION.lng], [userLocation.lat, userLocation.lng]]}
+                  color={distance > 20 ? "#ef4444" : distance > 10 ? "#f97316" : "#22c55e"} weight={2} dashArray="6 4" />
+                <MapFitBounds positions={[[RESTAURANT_LOCATION.lat, RESTAURANT_LOCATION.lng], [userLocation.lat, userLocation.lng]]} />
+              </MapContainer>
+            </div>
+          )}
+
+          {/* Payment Method */}
+          <div className="grid grid-cols-2 gap-2">
+            {[['cod', 'Cash', <Wallet size={15} />], ['online', 'Online', <CreditCard size={15} />]].map(([val, label, icon]) => (
+              <button key={val} type="button"
+                onClick={() => setCustomerInfo({ ...customerInfo, paymentMethod: val })}
+                className={`p-3 rounded-xl border text-sm font-bold transition-all flex items-center justify-center gap-2 ${customerInfo.paymentMethod === val
+                  ? 'bg-[#EAB308] border-[#EAB308] text-black'
+                  : 'bg-[#0f2933] border-[#EAB308]/30 text-gray-400 hover:border-[#EAB308]/60'}`}>
+                {icon}<span>{label}</span>
+              </button>
+            ))}
+          </div>
+
+          <button type="submit" disabled={isPlacingOrder}
+            className="w-full bg-[#EAB308] hover:bg-[#CA8A04] text-black py-3.5 rounded-2xl font-black text-base transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2"
+            style={{ boxShadow: '0 6px 28px rgba(234,179,8,0.30)' }}>
+            {isPlacingOrder ? <Loader2 className="animate-spin" size={18} /> : <span>Place Order 🎉</span>}
+          </button>
+          <p className="text-center text-gray-600 text-xs">Minimum order value: ₹250</p>
+        </form>
+      </>)}
+    </div>
+  );
+
+  // ─── JSX ───────────────────────────────────────────────────────────────────
+  return (
+    <>
+      <style>{`
+        @keyframes slideUpCart {
+          from { transform: translateY(100%); opacity: 0.7; }
+          to   { transform: translateY(0);    opacity: 1; }
+        }
+        @keyframes popIn {
+          from { transform: scale(0.8); opacity: 0; }
+          to   { transform: scale(1);   opacity: 1; }
+        }
+        .pills-scroll::-webkit-scrollbar { display: none; }
+        .pills-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        .menu-row { transition: background 0.15s ease; }
+        .menu-row:hover { background: rgba(234,179,8,0.05); }
+        .add-btn-pill { transition: all 0.15s ease; }
+        .add-btn-pill:hover { background: #EAB308 !important; color: #000 !important; }
+        .qty-inline { animation: popIn 0.18s ease; }
+      `}</style>
+
+      {/* ── Page shell ────────────────────────────────────────────────────── */}
+      <div className="min-h-screen bg-gradient-to-b from-[#184956] to-[#0f2933] pt-24 pb-28 lg:pb-10">
+        <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-8">
+
+          {/* ── Header row ─────────────────────────────────────── */}
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#EAB308] flex items-center justify-center text-black font-black text-lg shrink-0">
+                {currentUser?.displayName?.[0] || customerProfile?.name?.[0] || 'G'}
+              </div>
+              <div>
+                <p className="text-[#EAB308] text-[11px] font-bold uppercase tracking-widest">Persian Darbar</p>
+                <p className="text-white font-black text-sm leading-none">
+                  {customerProfile?.name || currentUser?.displayName || 'Guest'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate(currentUser ? '/customer/dashboard' : '/customer/login')}
+              className="text-xs font-bold border border-[#EAB308]/50 text-[#EAB308] px-4 py-1.5 rounded-full hover:bg-[#EAB308] hover:text-black transition-all duration-200">
+              {currentUser ? 'My Profile' : 'Sign In'}
+            </button>
+          </div>
+
+          {/* ── Tab buttons (ORDER MENU / MY ORDERS) ──────────── */}
+          <div className="flex gap-3 mb-5">
+            <div className="flex-1 py-3 rounded-2xl font-black text-sm flex items-center justify-center gap-2 bg-[#EAB308] text-black shadow-lg" style={{ boxShadow: '0 4px 20px rgba(234,179,8,0.25)' }}>
+              <UtensilsCrossed size={16} /> ORDER MENU
+            </div>
+            <button
+              onClick={() => navigate('/track')}
+              className="flex-1 py-3 rounded-2xl font-black text-sm flex items-center justify-center gap-2 bg-[#1a4855] text-white/70 border border-[#EAB308]/20 hover:border-[#EAB308]/50 hover:text-white transition-all duration-200">
+              <ShoppingCart size={16} />
+              MY ORDERS
+              {cart.length > 0 && (
+                <span className="bg-[#EAB308] text-black text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center ml-1">
+                  {cart.reduce((s, i) => s + i.quantity, 0)}
                 </span>
+              )}
+            </button>
+          </div>
+
+          {/* ── Main content: menu list + sticky cart ─────────── */}
+          <div className="flex gap-6 items-start">
+
+            {/* ── LEFT / FULL: Menu area ──────────────────────── */}
+            <div className="flex-1 min-w-0">
+
+              {/* Search bar */}
+              <div className="relative mb-4">
+                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search biryani, kebabs, desserts..."
+                  className="w-full bg-[#1a4855] border border-[#EAB308]/20 text-white pl-10 pr-10 py-3 rounded-2xl outline-none focus:border-[#EAB308]/60 placeholder-gray-500 text-sm transition-colors"
+                  style={{ fontSize: '16px' }}
+                />
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+                    <X size={15} />
+                  </button>
+                )}
               </div>
 
-              <div className="p-4 space-y-4">
-                {cart.length === 0 ? (
-                  <p className="text-center text-gray-400 py-8">Your cart is empty</p>
-                ) : (
-                  <>
-                    <div className="space-y-3 max-h-[30vh] overflow-y-auto">
-                      {cart.map((item) => (
-                        <div key={item._id} className="flex items-center justify-between bg-[#0f2933] rounded-lg p-3">
-                          <div className="flex-1">
-                            <h4 className="text-white font-bold text-sm">{item.name}</h4>
-                            <p className="text-[#EAB308] text-xs">₹{item.price * item.quantity}</p>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <button onClick={() => updateQuantity(item._id, -1)} className="w-7 h-7 rounded-full bg-[#1a4855] text-white flex items-center justify-center hover:bg-[#EAB308] hover:text-black transition-colors">
-                              <Minus size={14} />
-                            </button>
-                            <span className="text-white font-bold text-sm w-6 text-center">{item.quantity}</span>
-                            <button onClick={() => updateQuantity(item._id, 1)} className="w-7 h-7 rounded-full bg-[#1a4855] text-white flex items-center justify-center hover:bg-[#EAB308] hover:text-black transition-colors">
-                              <Plus size={14} />
-                            </button>
-                            <button onClick={() => removeFromCart(item._id)} className="text-red-400 hover:text-red-300 ml-2">
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+              {/* Category pills — horizontally scrollable */}
+              <div ref={categoryBarRef} className="pills-scroll flex gap-2 overflow-x-auto pb-2 mb-4">
+                {categories.map((cat) => {
+                  const active = selectedCategory === cat;
+                  return (
+                    <button key={cat}
+                      onClick={() => { setSelectedCategory(cat); setSearchQuery(''); }}
+                      className={`shrink-0 px-4 py-2 rounded-full text-sm font-bold transition-all duration-200 ${active
+                        ? 'bg-[#EAB308] text-black shadow-md'
+                        : 'bg-[#1a4855] text-gray-300 border border-[#EAB308]/20 hover:border-[#EAB308]/50 hover:text-white'}`}>
+                      {cat}
+                    </button>
+                  );
+                })}
+              </div>
 
-                    {/* 🪙 PD Coins Redemption Card (Desktop Cart) */}
-                    {currentUser && pdCoins > 0 ? (
-                      <div className="rounded-xl p-3 bg-[#0f2933] border border-[#EAB308]/30 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <img src="/pd_coin.png" alt="coin" className="w-6 h-6 object-contain" />
-                            <div>
-                              <p className="text-xs font-bold text-white">Redeem PD Coins</p>
-                              <p className="text-[10px] text-[#EAB308] font-bold">Balance: {pdCoins} coins (₹{pdCoins})</p>
-                            </div>
-                          </div>
-                          {subtotal >= 300 && (
-                            <button
-                              type="button"
-                              onClick={() => setApplyCoins(prev => !prev)}
-                              className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
-                                applyCoins
-                                  ? 'bg-[#EAB308] text-black shadow-md shadow-[#EAB308]/30 scale-105'
-                                  : 'bg-white/10 text-white/80 hover:bg-white/15'
-                              }`}
-                            >
-                              {applyCoins ? 'Applied ✓' : 'Apply'}
-                            </button>
-                          )}
+              {/* Result label */}
+              <div className="flex items-center gap-2 mb-3 px-1">
+                <p className="text-white/80 text-sm font-bold">
+                  {searchQuery ? `Results for "${searchQuery}"` : selectedCategory === 'All' ? 'All Items' : selectedCategory}
+                </p>
+                <span className="bg-[#EAB308] text-black text-[11px] font-black px-2 py-0.5 rounded-full">{filteredItems.length}</span>
+              </div>
+
+              {/* ── Menu rows ──────────────────────────────────── */}
+              <div className="space-y-2">
+                {filteredItems.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 gap-4 opacity-60">
+                    <UtensilsCrossed size={48} className="text-[#EAB308]" />
+                    <p className="text-gray-400 text-center text-sm">
+                      {searchQuery ? `No items found for "${searchQuery}"` : 'No items in this category'}
+                    </p>
+                  </div>
+                ) : filteredItems.map((item) => {
+                  const cartItem = cart.find(c => c._id === item._id);
+                  const qty = cartItem?.quantity || 0;
+                  return (
+                    <div key={item._id}
+                      className="menu-row flex items-center gap-3 p-3 rounded-2xl border border-[#EAB308]/10 bg-[#1a4855]/60">
+
+                      {/* Thumbnail */}
+                      <div className="relative shrink-0 w-[72px] h-[72px] sm:w-[88px] sm:h-[88px] rounded-xl overflow-hidden bg-[#0f2933]">
+                        <img src={item.image} alt={item.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => { e.target.src = "/no-image.png"; }} />
+                        {/* Veg indicator */}
+                        <div className={`absolute top-1 left-1 w-3.5 h-3.5 rounded-sm border-2 flex items-center justify-center ${item.is_veg !== false ? 'border-green-500 bg-[#0f2933]' : 'border-red-500 bg-[#0f2933]'}`}>
+                          <div className={`w-1.5 h-1.5 rounded-full ${item.is_veg !== false ? 'bg-green-500' : 'bg-red-500'}`} />
                         </div>
-                        {subtotal < 300 ? (
-                          <p className="text-[10px] text-gray-400">
-                            Add items worth ₹{300 - subtotal} more to redeem (Min ₹300 order)
-                          </p>
+                      </div>
+
+                      {/* Item text */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-white font-black text-sm sm:text-[15px] leading-snug">{item.name}</h3>
+                        {item.description && (
+                          <p className="text-gray-400 text-[11px] sm:text-xs mt-0.5 line-clamp-2 leading-relaxed">{item.description}</p>
+                        )}
+                        <p className="text-[#EAB308] font-black text-sm mt-1.5">₹{item.price}</p>
+                      </div>
+
+                      {/* ADD / qty stepper */}
+                      <div className="shrink-0">
+                        {qty === 0 ? (
+                          <button onClick={() => addToCart(item)}
+                            className="add-btn-pill border-2 border-[#EAB308] text-[#EAB308] font-black text-xs px-3.5 py-1.5 rounded-xl flex items-center gap-1 bg-transparent">
+                            <Plus size={13} /> ADD
+                          </button>
                         ) : (
-                          <p className="text-[10px] text-gray-400">
-                            Max 25% bill cap: Save up to <span className="text-[#EAB308] font-bold">₹{maxRedeemableCoins}</span>
-                          </p>
-                        )}
-                        {applyCoins && maxRedeemableCoins > 0 && (
-                          <div className="pt-1.5 border-t border-white/10 flex items-center justify-between text-[11px]">
-                            <span className="text-emerald-400 font-bold flex items-center gap-1">
-                              <Sparkles size={12} /> Saving ₹{coinsDiscount}
-                            </span>
-                            <span className="text-gray-400">+Earn <span className="text-[#EAB308] font-bold">{coinsEarnable}</span> new coins</span>
+                          <div className="qty-inline flex items-center gap-1 bg-[#EAB308] rounded-xl px-1 py-1">
+                            <button onClick={() => updateQuantity(item._id, -1)}
+                              className="w-6 h-6 flex items-center justify-center text-black hover:bg-black/15 rounded-lg transition-colors">
+                              <Minus size={12} />
+                            </button>
+                            <span className="text-black font-black text-sm w-5 text-center">{qty}</span>
+                            <button onClick={() => updateQuantity(item._id, 1)}
+                              className="w-6 h-6 flex items-center justify-center text-black hover:bg-black/15 rounded-lg transition-colors">
+                              <Plus size={12} />
+                            </button>
                           </div>
                         )}
-                      </div>
-                    ) : !currentUser ? (
-                      <div className="rounded-xl p-2.5 bg-[#0f2933]/60 border border-[#EAB308]/20 flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-2">
-                          <img src="/pd_coin.png" alt="coin" className="w-4 h-4 object-contain" />
-                          <span className="text-white/80 text-[11px]">Earn 10% cashback in PD Coins</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => navigate('/customer/auth')}
-                          className="text-[10px] font-bold text-[#EAB308] hover:underline"
-                        >
-                          Sign In
-                        </button>
-                      </div>
-                    ) : null}
-
-                    <div className="border-t border-[#EAB308]/20 pt-4 space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">Subtotal</span>
-                        <span className="text-white font-bold">₹{subtotal}</span>
-                      </div>
-                      {coinsApplied > 0 && (
-                        <div className="flex justify-between text-sm text-emerald-400 font-bold">
-                          <span className="flex items-center gap-1">🪙 PD Coins Discount</span>
-                          <span>-₹{coinsDiscount}</span>
-                        </div>
-                      )}
-                      {distance !== null && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-400">Delivery</span>
-                          {distance > 20 ? (
-                            <span className="text-red-400 font-bold text-xs">OUT OF RANGE</span>
-                          ) : distance > 10 ? (
-                            <span className="text-orange-400 font-bold">₹60</span>
-                          ) : (
-                            <span className="text-green-400 font-bold">FREE</span>
-                          )}
-                        </div>
-                      )}
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">GST (5%)</span>
-                        <span className="text-white font-bold">₹{taxes}</span>
-                      </div>
-                      <div className="flex justify-between text-lg font-bold border-t border-[#EAB308]/20 pt-2">
-                        <span className="text-white">Total</span>
-                        <span className="text-[#EAB308]">
-                          ₹{Math.max(0, netSubtotal + (distance !== null && distance > 10 && distance <= 20 ? 60 : 0) + taxes)}
-                        </span>
                       </div>
                     </div>
+                  );
+                })}
+              </div>
+            </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-3">
-                      <input required value={customerInfo.name}
-                        onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
-                        placeholder="Your Name"
-                        className="w-full bg-[#0f2933] text-white px-4 py-3 rounded-lg border border-[#EAB308]/30 focus:border-[#EAB308] outline-none placeholder-gray-400"
-                        style={{ fontSize: '16px' }}
-                      />
-                      <input required value={customerInfo.phone}
-                        onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})}
-                        placeholder="Phone Number"
-                        type="tel"
-                        className="w-full bg-[#0f2933] text-white px-4 py-3 rounded-lg border border-[#EAB308]/30 focus:border-[#EAB308] outline-none placeholder-gray-400"
-                        style={{ fontSize: '16px' }}
-                      />
-                      <textarea required value={customerInfo.address}
-                        onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})}
-                        placeholder="Delivery Address"
-                        className="w-full bg-[#0f2933] text-white px-4 py-3 rounded-lg border border-[#EAB308]/30 focus:border-[#EAB308] outline-none placeholder-gray-400 resize-none"
-                        rows={2}
-                        style={{ fontSize: '16px' }}
-                      />
+            {/* ── RIGHT: Sticky cart panel (desktop only) ──────── */}
+            <div className="hidden lg:block w-80 xl:w-[22rem] shrink-0 sticky top-24">
+              <div className="bg-[#1a4855] rounded-2xl border border-[#EAB308]/25 overflow-hidden"
+                style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
 
-                      {/* Location Detection */}
-                      <div className="bg-[#0f2933] rounded-lg p-3 text-center">
-                        {!distance ? (
-                          <div className="space-y-2">
-                            <button type="button" onClick={getUserLocation}
-                              className="flex items-center justify-center space-x-2 w-full text-[#EAB308] hover:text-white transition-colors text-sm font-bold"
-                            >
-                              {loadingLocation ? <Loader2 className="animate-spin" size={16} /> : <MapPin size={16} />}
-                              <span>{loadingLocation ? 'Detecting...' : 'Detect My Location'}</span>
-                            </button>
-                            {/* Delivery range hint */}
-                            <div className="text-xs text-gray-600 space-y-0.5">
-                              <p>0–10 km — <span className="text-green-500">Free delivery</span></p>
-                              <p>10–20 km — <span className="text-orange-400">₹60 flat fee</span></p>
-                              <p>&gt;20 km — <span className="text-red-500">Not accepted</span></p>
-                            </div>
-                          </div>
-                        ) : distance > 20 ? (
-                          <p className="text-red-400 text-sm font-bold">
-                            ❌ {distance} km — Out of delivery range (max 20 km)
-                          </p>
-                        ) : (
-                          <p className="text-green-400 text-sm font-bold">
-                            ✓ {distance} km away · {distance <= 10 ? 'Free Delivery!' : '₹60 Delivery Fee'}
-                          </p>
-                        )}
-                      </div>
+                {/* Cart header */}
+                <div className="bg-[#EAB308] flex items-center justify-between px-4 py-3.5">
+                  <div className="flex items-center gap-2.5">
+                    <ShoppingCart size={18} className="text-black" />
+                    <h2 className="text-black font-black text-base" style={{ fontFamily: 'Playfair Display, serif' }}>Your Cart</h2>
+                  </div>
+                  <span className="bg-black text-[#EAB308] text-[11px] font-black px-2.5 py-0.5 rounded-full">
+                    {cart.reduce((s, i) => s + i.quantity, 0)} items
+                  </span>
+                </div>
 
-                      {/* Leaflet Map — shows once GPS is detected */}
-                      {userLocation && (
-                        <div className="rounded-xl overflow-hidden border border-[#EAB308]/20" style={{ height: 200 }}>
-                          <MapContainer
-                            center={[userLocation.lat, userLocation.lng]}
-                            zoom={12}
-                            style={{ height: "100%", width: "100%" }}
-                            zoomControl={false}
-                          >
-                            <TileLayer
-                              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                            />
-                            {/* Restaurant marker */}
-                            <Marker
-                              position={[RESTAURANT_LOCATION.lat, RESTAURANT_LOCATION.lng]}
-                              icon={restaurantIcon}
-                            >
-                              <Popup>🍽️ Persian Darbar (Restaurant)</Popup>
-                            </Marker>
-                            {/* User marker */}
-                            <Marker
-                              position={[userLocation.lat, userLocation.lng]}
-                              icon={userIcon}
-                            >
-                              <Popup>📍 Your Location ({distance} km away)</Popup>
-                            </Marker>
-                            {/* Line between */}
-                            <Polyline
-                              positions={[
-                                [RESTAURANT_LOCATION.lat, RESTAURANT_LOCATION.lng],
-                                [userLocation.lat, userLocation.lng]
-                              ]}
-                              color={distance > 20 ? "#ef4444" : distance > 10 ? "#f97316" : "#22c55e"}
-                              weight={2}
-                              dashArray="6 4"
-                            />
-                            <MapFitBounds positions={[
-                              [RESTAURANT_LOCATION.lat, RESTAURANT_LOCATION.lng],
-                              [userLocation.lat, userLocation.lng]
-                            ]} />
-                          </MapContainer>
-                        </div>
-                      )}
-
-                      {/* Payment Method */}
-                      <div className="grid grid-cols-2 gap-3">
-                        <button type="button"
-                          onClick={() => setCustomerInfo({...customerInfo, paymentMethod: 'cod'})}
-                          className={`p-3 rounded-lg border text-sm font-bold transition-all flex items-center justify-center space-x-2 ${
-                            customerInfo.paymentMethod === 'cod'
-                              ? 'bg-[#EAB308] border-[#EAB308] text-black'
-                              : 'bg-[#0f2933] border-[#EAB308]/30 text-gray-400'
-                          }`}
-                        >
-                          <Wallet size={16} />
-                          <span>Cash</span>
-                        </button>
-                        <button type="button"
-                          onClick={() => setCustomerInfo({...customerInfo, paymentMethod: 'online'})}
-                          className={`p-3 rounded-lg border text-sm font-bold transition-all flex items-center justify-center space-x-2 ${
-                            customerInfo.paymentMethod === 'online'
-                              ? 'bg-[#EAB308] border-[#EAB308] text-black'
-                              : 'bg-[#0f2933] border-[#EAB308]/30 text-gray-400'
-                          }`}
-                        >
-                          <CreditCard size={16} />
-                          <span>Online</span>
-                        </button>
-                      </div>
-
-                      <button type="submit" disabled={isPlacingOrder}
-                        className="w-full bg-[#EAB308] hover:bg-[#CA8A04] text-black py-3 rounded-full font-bold text-base transition-all duration-300 disabled:opacity-50 flex items-center justify-center space-x-2"
-                      >
-                        {isPlacingOrder ? <Loader2 className="animate-spin" /> : <span>Place Order</span>}
-                      </button>
-                    </form>
-
-                    <p className="text-center text-gray-500 text-xs">Minimum order value: ₹250</p>
-                  </>
-                )}
+                <div className="p-4 overflow-y-auto max-h-[80vh]" style={{ WebkitOverflowScrolling: 'touch' }}>
+                  <CartContent isMobile={false} />
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── Floating Cart FAB — Mobile only (Swiggy/Zomato style) ── */}
+      {/* ── Mobile floating cart FAB ──────────────────────────────────────── */}
       {cart.length > 0 && (
-        <div
-          className="fixed bottom-0 left-0 right-0 z-50 lg:hidden px-4"
-          style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
-        >
-          <button
-            onClick={() => setIsCartOpen(true)}
-            className="w-full flex items-center justify-between bg-[#EAB308] text-black rounded-2xl px-5 py-4 active:scale-[0.97] transition-transform"
-            style={{ boxShadow: '0 8px 40px rgba(234,179,8,0.45)' }}
-          >
+        <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden px-4"
+          style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}>
+          <button onClick={() => setIsCartOpen(true)}
+            className="w-full flex items-center justify-between bg-[#EAB308] text-black rounded-2xl px-5 py-3.5 active:scale-[0.97] transition-transform"
+            style={{ boxShadow: '0 8px 32px rgba(234,179,8,0.45)' }}>
             <div className="flex items-center gap-3">
-              <span className="bg-black/20 text-black font-black text-sm w-8 h-8 rounded-xl flex items-center justify-center leading-none">
+              <span className="bg-black/20 text-black font-black text-sm w-8 h-8 rounded-xl flex items-center justify-center">
                 {cart.reduce((s, i) => s + i.quantity, 0)}
               </span>
               <span className="font-black text-sm uppercase tracking-widest">View Cart</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="font-black text-lg">₹{calculateSubtotal()}</span>
-              <ShoppingCart size={18} />
+              <ChevronRight size={18} />
             </div>
           </button>
         </div>
       )}
 
-      {/* ── Mobile Cart Drawer ── */}
+      {/* ── Mobile cart drawer ────────────────────────────────────────────── */}
       {isCartOpen && (
         <div className="fixed inset-0 z-[70] lg:hidden flex flex-col justify-end">
-          <style>{`
-            @keyframes slideUpCart {
-              from { transform: translateY(100%); opacity: 0.7; }
-              to   { transform: translateY(0);    opacity: 1; }
-            }
-          `}</style>
-
           {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/60"
+          <div className="absolute inset-0 bg-black/60"
             style={{ backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
-            onClick={() => setIsCartOpen(false)}
-          />
+            onClick={() => setIsCartOpen(false)} />
 
-          {/* Drawer panel */}
-          <div
-            className="relative bg-[#0b1a24] rounded-t-3xl flex flex-col overflow-hidden border-t border-[#EAB308]/20"
+          {/* Drawer */}
+          <div className="relative bg-[#0b1e28] rounded-t-3xl flex flex-col overflow-hidden border-t border-[#EAB308]/25"
             style={{
               maxHeight: '92dvh',
-              animation: 'slideUpCart 0.35s cubic-bezier(0.32, 0.72, 0, 1)',
+              animation: 'slideUpCart 0.35s cubic-bezier(0.32,0.72,0,1)',
               paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-            }}
-          >
-            {/* Handle bar */}
+              boxShadow: '0 -16px 48px rgba(0,0,0,0.6)',
+            }}>
+
+            {/* Handle */}
             <div className="flex justify-center pt-3 pb-2 shrink-0">
               <div className="w-12 h-1.5 rounded-full bg-white/20" />
             </div>
 
             {/* Drawer header */}
-            <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 shrink-0">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-[#EAB308]/15 shrink-0">
               <div className="flex items-center gap-2.5">
                 <ShoppingCart className="h-5 w-5 text-[#EAB308]" />
                 <h2 className="text-white font-black text-lg" style={{ fontFamily: 'Playfair Display, serif' }}>Your Cart</h2>
@@ -678,204 +639,20 @@ const Order = () => {
                   {cart.reduce((s, i) => s + i.quantity, 0)} items
                 </span>
               </div>
-              <button
-                onClick={() => setIsCartOpen(false)}
-                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-gray-300 active:bg-white/20 transition-colors"
-              >
+              <button onClick={() => setIsCartOpen(false)}
+                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-gray-300 active:bg-white/20 transition-colors">
                 <X size={16} />
               </button>
             </div>
 
-            {/* Scrollable content */}
-            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5" style={{ WebkitOverflowScrolling: 'touch' }}>
-
-              {/* Cart items */}
-              <div className="space-y-3">
-                {cart.map((item) => (
-                  <div key={item._id} className="flex items-center justify-between bg-[#1a4855]/50 rounded-2xl p-3 border border-[#EAB308]/10">
-                    <div className="flex-1 min-w-0 mr-3">
-                      <h4 className="text-white font-bold text-sm truncate">{item.name}</h4>
-                      <p className="text-[#EAB308] text-xs font-bold mt-0.5">₹{item.price * item.quantity}</p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button onClick={() => updateQuantity(item._id, -1)} className="w-7 h-7 rounded-full bg-[#0f2933] border border-[#EAB308]/20 text-white flex items-center justify-center active:bg-[#EAB308] active:text-black transition-colors">
-                        <Minus size={13} />
-                      </button>
-                      <span className="text-white font-black text-sm w-5 text-center">{item.quantity}</span>
-                      <button onClick={() => updateQuantity(item._id, 1)} className="w-7 h-7 rounded-full bg-[#0f2933] border border-[#EAB308]/20 text-white flex items-center justify-center active:bg-[#EAB308] active:text-black transition-colors">
-                        <Plus size={13} />
-                      </button>
-                      <button onClick={() => removeFromCart(item._id)} className="w-7 h-7 rounded-full bg-red-900/20 text-red-400 flex items-center justify-center active:bg-red-900/40 transition-colors">
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* 🪙 PD Coins Redemption Card (Mobile Drawer) */}
-              {currentUser && pdCoins > 0 ? (
-                <div className="rounded-xl p-3 bg-[#0f2933] border border-[#EAB308]/30 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <img src="/pd_coin.png" alt="coin" className="w-6 h-6 object-contain" />
-                      <div>
-                        <p className="text-xs font-bold text-white">Redeem PD Coins</p>
-                        <p className="text-[10px] text-[#EAB308] font-bold">Balance: {pdCoins} coins (₹{pdCoins})</p>
-                      </div>
-                    </div>
-                    {subtotal >= 300 && (
-                      <button
-                        type="button"
-                        onClick={() => setApplyCoins(prev => !prev)}
-                        className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
-                          applyCoins
-                            ? 'bg-[#EAB308] text-black shadow-md shadow-[#EAB308]/30 scale-105'
-                            : 'bg-white/10 text-white/80 hover:bg-white/15'
-                        }`}
-                      >
-                        {applyCoins ? 'Applied ✓' : 'Apply'}
-                      </button>
-                    )}
-                  </div>
-                  {subtotal < 300 ? (
-                    <p className="text-[10px] text-gray-400">
-                      Add items worth ₹{300 - subtotal} more to redeem (Min ₹300 order)
-                    </p>
-                  ) : (
-                    <p className="text-[10px] text-gray-400">
-                      Max 25% bill cap: Save up to <span className="text-[#EAB308] font-bold">₹{maxRedeemableCoins}</span>
-                    </p>
-                  )}
-                  {applyCoins && maxRedeemableCoins > 0 && (
-                    <div className="pt-1.5 border-t border-white/10 flex items-center justify-between text-[11px]">
-                      <span className="text-emerald-400 font-bold flex items-center gap-1">
-                        <Sparkles size={12} /> Saving ₹{coinsDiscount}
-                      </span>
-                      <span className="text-gray-400">+Earn <span className="text-[#EAB308] font-bold">{coinsEarnable}</span> new coins</span>
-                    </div>
-                  )}
-                </div>
-              ) : null}
-
-              {/* Price summary */}
-              <div className="bg-[#1a4855]/40 rounded-2xl p-4 space-y-2 border border-[#EAB308]/10">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Subtotal</span>
-                  <span className="text-white font-bold">₹{subtotal}</span>
-                </div>
-                {coinsApplied > 0 && (
-                  <div className="flex justify-between text-sm text-emerald-400 font-bold">
-                    <span className="flex items-center gap-1">🪙 PD Coins Discount</span>
-                    <span>-₹{coinsDiscount}</span>
-                  </div>
-                )}
-                {distance !== null && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Delivery</span>
-                    {distance > 20 ? (
-                      <span className="text-red-400 font-bold text-xs">OUT OF RANGE</span>
-                    ) : distance > 10 ? (
-                      <span className="text-orange-400 font-bold">₹60</span>
-                    ) : (
-                      <span className="text-green-400 font-bold">FREE</span>
-                    )}
-                  </div>
-                )}
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">GST (5%)</span>
-                  <span className="text-white font-bold">₹{taxes}</span>
-                </div>
-                <div className="flex justify-between border-t border-[#EAB308]/20 pt-2">
-                  <span className="text-white font-black">Total</span>
-                  <span className="text-[#EAB308] font-black text-xl">
-                    ₹{Math.max(0, netSubtotal + (distance !== null && distance > 10 && distance <= 20 ? 60 : 0) + taxes)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Checkout form inside drawer */}
-              <form onSubmit={(e) => { handleSubmit(e); setIsCartOpen(false); }} className="space-y-3 pb-2">
-                <input required value={customerInfo.name}
-                  onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
-                  placeholder="Your Name"
-                  className="w-full bg-[#0f2933] text-white px-4 py-3 rounded-xl border border-[#EAB308]/30 focus:border-[#EAB308] outline-none placeholder-gray-500"
-                  style={{ fontSize: '16px' }}
-                />
-                <input required value={customerInfo.phone}
-                  onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})}
-                  placeholder="Phone Number" type="tel"
-                  className="w-full bg-[#0f2933] text-white px-4 py-3 rounded-xl border border-[#EAB308]/30 focus:border-[#EAB308] outline-none placeholder-gray-500"
-                  style={{ fontSize: '16px' }}
-                />
-                <textarea required value={customerInfo.address}
-                  onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})}
-                  placeholder="Delivery Address"
-                  className="w-full bg-[#0f2933] text-white px-4 py-3 rounded-xl border border-[#EAB308]/30 focus:border-[#EAB308] outline-none placeholder-gray-500 resize-none"
-                  rows={2} style={{ fontSize: '16px' }}
-                />
-
-                {/* Location detect */}
-                <div className="bg-[#0f2933] rounded-xl p-3 text-center border border-[#EAB308]/15">
-                  {!distance ? (
-                    <div className="space-y-2">
-                      <button type="button" onClick={getUserLocation}
-                        className="flex items-center justify-center gap-2 w-full text-[#EAB308] transition-colors font-bold py-1"
-                        style={{ fontSize: '15px' }}
-                      >
-                        {loadingLocation ? <Loader2 className="animate-spin" size={16} /> : <MapPin size={16} />}
-                        <span>{loadingLocation ? 'Detecting...' : 'Detect My Location'}</span>
-                      </button>
-                      <div className="text-xs text-gray-600 space-y-0.5">
-                        <p>0–10 km — <span className="text-green-500">Free delivery</span></p>
-                        <p>10–20 km — <span className="text-orange-400">₹60 flat fee</span></p>
-                        <p>&gt;20 km — <span className="text-red-500">Not accepted</span></p>
-                      </div>
-                    </div>
-                  ) : distance > 20 ? (
-                    <p className="text-red-400 text-sm font-bold">❌ {distance} km — Out of range</p>
-                  ) : (
-                    <p className="text-green-400 text-sm font-bold">✓ {distance} km · {distance <= 10 ? 'Free Delivery!' : '₹60 Fee'}</p>
-                  )}
-                </div>
-
-                {/* Payment method */}
-                <div className="grid grid-cols-2 gap-3">
-                  <button type="button"
-                    onClick={() => setCustomerInfo({...customerInfo, paymentMethod: 'cod'})}
-                    className={`p-3 rounded-xl border font-bold transition-all flex items-center justify-center gap-2 ${
-                      customerInfo.paymentMethod === 'cod'
-                        ? 'bg-[#EAB308] border-[#EAB308] text-black'
-                        : 'bg-[#0f2933] border-[#EAB308]/30 text-gray-400'
-                    }`} style={{ fontSize: '14px' }}
-                  >
-                    <Wallet size={16} /><span>Cash</span>
-                  </button>
-                  <button type="button"
-                    onClick={() => setCustomerInfo({...customerInfo, paymentMethod: 'online'})}
-                    className={`p-3 rounded-xl border font-bold transition-all flex items-center justify-center gap-2 ${
-                      customerInfo.paymentMethod === 'online'
-                        ? 'bg-[#EAB308] border-[#EAB308] text-black'
-                        : 'bg-[#0f2933] border-[#EAB308]/30 text-gray-400'
-                    }`} style={{ fontSize: '14px' }}
-                  >
-                    <CreditCard size={16} /><span>Online</span>
-                  </button>
-                </div>
-
-                <button type="submit" disabled={isPlacingOrder}
-                  className="w-full bg-[#EAB308] hover:bg-[#CA8A04] text-black py-4 rounded-2xl font-black transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                  style={{ fontSize: '16px', boxShadow: '0 8px 32px rgba(234,179,8,0.35)' }}
-                >
-                  {isPlacingOrder ? <Loader2 className="animate-spin" size={18} /> : <span>Place Order 🎉</span>}
-                </button>
-                <p className="text-center text-gray-600 text-xs">Minimum order value: ₹250</p>
-              </form>
+            {/* Scrollable body */}
+            <div className="flex-1 overflow-y-auto px-5 py-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+              <CartContent isMobile={true} />
             </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 
