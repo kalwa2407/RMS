@@ -1,10 +1,58 @@
 import os
 import uuid
 import logging
+import time
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from pathlib import Path
 from data_manager import BaseDataManager
+
+# ---------------------------------------------------------------------------
+# Simple in-memory TTL cache — eliminates repeat Firestore round-trips.
+# A single process-level instance is shared across all requests.
+# ---------------------------------------------------------------------------
+class _SimpleCache:
+    """Lightweight dict-based TTL cache. No external dependencies."""
+    def __init__(self):
+        self._store: dict = {}   # key ? (value, expires_at)
+
+    def get(self, key: str):
+        entry = self._store.get(key)
+        if entry and time.monotonic() < entry[1]:
+            return entry[0]          # cache HIT
+        self._store.pop(key, None)   # expired — remove
+        return None                  # cache MISS
+
+    def set(self, key: str, value, ttl_seconds: int):
+        self._store[key] = (value, time.monotonic() + ttl_seconds)
+
+    def invalidate(self, *keys: str):
+        for k in keys:
+            self._store.pop(k, None)
+
+    def clear(self):
+        self._store.clear()
+
+# One shared cache instance for the whole process
+_menu_cache = _SimpleCache()
+
+# TTL constants (seconds)
+_TTL_MENU_PUBLIC     = 300   # 5 min  — public menu changes rarely during service
+_TTL_MENU_ADMIN      = 30    # 30 sec — admin needs near-real-time view
+_TTL_CATEGORIES      = 300   # 5 min
+_TTL_REVIEWS         = 120   # 2 min
+_TTL_GALLERY         = 600   # 10 min
+
+# Keys
+_KEY_MENU_PUBLIC  = "menu_public"
+_KEY_MENU_ADMIN   = "menu_admin"
+_KEY_CATEGORIES   = "menu_categories"
+_KEY_REVIEWS      = "reviews"
+_KEY_GALLERY      = "gallery"
+
+def _invalidate_menu_cache():
+    """Call this after any menu write (create / update / delete / toggle)."""
+    _menu_cache.invalidate(_KEY_MENU_PUBLIC, _KEY_MENU_ADMIN, _KEY_CATEGORIES)
 
 import firebase_admin
 from firebase_admin import credentials, firestore
@@ -38,6 +86,13 @@ class FirebaseManager(BaseDataManager):
         return [doc.to_dict() for doc in docs]
 
     async def _write(self, collection: str, data: List[Dict[str, Any]]):
+        # Invalidate cache for affected collection
+        if collection == "reviews":
+            _menu_cache.invalidate(_KEY_REVIEWS)
+        elif collection == "menu_items":
+            _invalidate_menu_cache()
+        elif collection == "gallery_images":
+            _menu_cache.invalidate(_KEY_GALLERY)
         # A hacky but effective way to emulate JSON array replacement in Firestore
         # 1. Fetch current docs
         existing_docs = self.db.collection(collection).stream()
@@ -78,25 +133,46 @@ class FirebaseManager(BaseDataManager):
         return True
 
     async def get_menu(self, category: Optional[str] = None) -> List[Dict[str, Any]]:
-        menu_ref = self.db.collection('menu_items')
-        docs = menu_ref.where('available', '==', True).stream()
-        menu = [doc.to_dict() for doc in docs]
+        cached = _menu_cache.get(_KEY_MENU_PUBLIC)
+        if cached is None:
+            logger.debug("Cache MISS: menu_public — fetching from Firestore")
+            menu_ref = self.db.collection('menu_items')
+            docs = menu_ref.where('available', '==', True).stream()
+            cached = [doc.to_dict() for doc in docs]
+            _menu_cache.set(_KEY_MENU_PUBLIC, cached, _TTL_MENU_PUBLIC)
+        else:
+            logger.debug("Cache HIT: menu_public")
         if category and category != "All":
-            menu = [item for item in menu if item.get("category") == category]
-        return menu
+            return [item for item in cached if item.get("category") == category]
+        return cached
 
     async def get_all_menu_items(self) -> List[Dict[str, Any]]:
         """Get ALL menu items including unavailable (for admin panel)"""
-        docs = self.db.collection('menu_items').stream()
-        return [doc.to_dict() for doc in docs]
+        cached = _menu_cache.get(_KEY_MENU_ADMIN)
+        if cached is None:
+            logger.debug("Cache MISS: menu_admin — fetching from Firestore")
+            docs = self.db.collection('menu_items').stream()
+            cached = [doc.to_dict() for doc in docs]
+            _menu_cache.set(_KEY_MENU_ADMIN, cached, _TTL_MENU_ADMIN)
+        else:
+            logger.debug("Cache HIT: menu_admin")
+        return cached
 
     async def get_menu_item(self, item_id: str) -> Optional[Dict[str, Any]]:
         doc = self.db.collection('menu_items').document(item_id).get()
         return doc.to_dict() if doc.exists else None
 
     async def get_menu_categories(self) -> List[str]:
-        menu = await self.get_menu()
-        return list(set(item.get("category") for item in menu if item.get("category")))
+        cached = _menu_cache.get(_KEY_CATEGORIES)
+        if cached is None:
+            logger.debug("Cache MISS: menu_categories — deriving from menu_public cache")
+            # Re-use the public menu cache to avoid a separate Firestore read
+            menu = await self.get_menu()   # will HIT cache if already loaded
+            cached = sorted(list(set(item.get("category") for item in menu if item.get("category"))))
+            _menu_cache.set(_KEY_CATEGORIES, cached, _TTL_CATEGORIES)
+        else:
+            logger.debug("Cache HIT: menu_categories")
+        return cached
 
     async def get_tables(self) -> List[Dict[str, Any]]:
         docs = self.db.collection('tables').stream()
@@ -120,19 +196,32 @@ class FirebaseManager(BaseDataManager):
         return False
 
     async def get_gallery(self) -> List[Dict[str, Any]]:
-        docs = self.db.collection('gallery_images').stream()
-        return [doc.to_dict() for doc in docs]
+        cached = _menu_cache.get(_KEY_GALLERY)
+        if cached is None:
+            logger.debug("Cache MISS: gallery — fetching from Firestore")
+            docs = self.db.collection('gallery_images').stream()
+            cached = [doc.to_dict() for doc in docs]
+            _menu_cache.set(_KEY_GALLERY, cached, _TTL_GALLERY)
+        else:
+            logger.debug("Cache HIT: gallery")
+        return cached
 
     async def get_reviews(self) -> List[Dict[str, Any]]:
-        try:
-            docs = self.db.collection('reviews').order_by('created_at', direction=firestore.Query.DESCENDING).stream()
-            return [doc.to_dict() for doc in docs]
-        except Exception as e:
-            logger.warning(f"Fallback to memory sort for reviews: {e}")
-            docs = self.db.collection('reviews').stream()
-            items = [doc.to_dict() for doc in docs]
-            items.sort(key=lambda x: str(x.get('created_at', '')), reverse=True)
-            return items
+        cached = _menu_cache.get(_KEY_REVIEWS)
+        if cached is None:
+            logger.debug("Cache MISS: reviews — fetching from Firestore")
+            try:
+                docs = self.db.collection('reviews').order_by('created_at', direction=firestore.Query.DESCENDING).stream()
+                cached = [doc.to_dict() for doc in docs]
+            except Exception as e:
+                logger.warning(f"Fallback to memory sort for reviews: {e}")
+                docs = self.db.collection('reviews').stream()
+                cached = [doc.to_dict() for doc in docs]
+                cached.sort(key=lambda x: str(x.get('created_at', '')), reverse=True)
+            _menu_cache.set(_KEY_REVIEWS, cached, _TTL_REVIEWS)
+        else:
+            logger.debug("Cache HIT: reviews")
+        return cached
 
     async def get_settings(self) -> Dict[str, Any]:
         docs = self.db.collection('settings').stream()
@@ -268,6 +357,7 @@ class FirebaseManager(BaseDataManager):
         item_data["_id"] = doc_id
         item_data["created_at"] = datetime.utcnow().isoformat()
         self.db.collection('menu_items').document(doc_id).set(item_data)
+        _invalidate_menu_cache()   # flush stale cache
         return item_data
 
     async def update_menu_item_full(self, item_id: str, update_data: Dict[str, Any]) -> bool:
@@ -275,6 +365,7 @@ class FirebaseManager(BaseDataManager):
         if doc_ref.get().exists:
             update_data['updated_at'] = datetime.utcnow().isoformat()
             doc_ref.update(update_data)
+            _invalidate_menu_cache()   # flush stale cache
             return True
         return False
 
@@ -282,6 +373,7 @@ class FirebaseManager(BaseDataManager):
         doc_ref = self.db.collection('menu_items').document(item_id)
         if doc_ref.get().exists:
             doc_ref.delete()
+            _invalidate_menu_cache()   # flush stale cache
             return True
         return False
 
@@ -290,12 +382,14 @@ class FirebaseManager(BaseDataManager):
         image_data["_id"] = doc_id
         image_data["created_at"] = datetime.utcnow().isoformat()
         self.db.collection('gallery_images').document(doc_id).set(image_data)
+        _menu_cache.invalidate(_KEY_GALLERY)   # flush gallery cache
         return image_data
 
     async def delete_gallery_image(self, image_id: str) -> bool:
         doc_ref = self.db.collection('gallery_images').document(image_id)
         if doc_ref.get().exists:
             doc_ref.delete()
+            _menu_cache.invalidate(_KEY_GALLERY)   # flush gallery cache
             return True
         return False
 
