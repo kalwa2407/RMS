@@ -107,13 +107,6 @@ const Menu = () => {
                 <div className="absolute top-3 right-3 bg-[#EAB308] text-black px-3 py-1 rounded-full text-sm font-bold">
                   ₹{item.price}
                 </div>
-                {item.veg !== undefined && (
-                  <div className={`absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-bold ${
-                    item.veg ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
-                  }`}>
-                    {item.veg ? '🌿 Veg' : '🍖 Non-Veg'}
-                  </div>
-                )}
               </div>
 
               <div className="p-5">

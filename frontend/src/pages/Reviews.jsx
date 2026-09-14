@@ -317,7 +317,13 @@ const Reviews = () => {
                       </p>
 
                       <div className="pt-5 border-t border-[#EAB308]/20 flex items-center justify-between">
-                        <span className="text-primary text-[9px] font-black uppercase tracking-widest">Imperial Patron</span>
+                        {(() => {
+                          const src = review.source;
+                          if (src === "google")  return <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-red-400">?? Google Maps</span>;
+                          if (src === "zomato")  return <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-orange-400">??? Zomato</span>;
+                          if (src === "swiggy")  return <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-amber-300">?? Swiggy</span>;
+                          return <span className="text-primary text-[9px] font-black uppercase tracking-widest">? Direct Review</span>;
+                        })()}
                         <Sparkles className="text-primary/20" size={14} />
                       </div>
                     </div>

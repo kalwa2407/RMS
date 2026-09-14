@@ -1478,6 +1478,43 @@ async def admin_get_reviews(username: str = Depends(verify_token), manager: Base
     reviews = await manager._read("reviews")
     return sorted(reviews, key=lambda x: x.get("created_at", ""), reverse=True)
 
+@admin_router.post("/reviews")
+async def admin_create_review(
+    review_data: dict,
+    username: str = Depends(verify_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Admin creates a pre-approved review from an external platform (Google Maps, Zomato, Swiggy)"""
+    name = str(review_data.get("name", "")).strip()
+    text = str(review_data.get("text", "")).strip()
+    rating = int(review_data.get("rating", 5))
+    source = str(review_data.get("source", "website")).strip()  # google | zomato | swiggy | website
+    date_str = review_data.get("date", datetime.utcnow().isoformat())
+
+    if not name:
+        raise HTTPException(status_code=400, detail="Reviewer name is required")
+    if not text or len(text) < 5:
+        raise HTTPException(status_code=400, detail="Review text must be at least 5 characters")
+    if rating < 1 or rating > 5:
+        raise HTTPException(status_code=400, detail="Rating must be between 1 and 5")
+
+    review = {
+        "_id": str(uuid.uuid4()),
+        "name": name,
+        "text": text,
+        "rating": rating,
+        "source": source,
+        "date": date_str,
+        "created_at": datetime.utcnow().isoformat(),
+        "pending": True,   # Requires admin approval before going live
+        "admin_added": True,
+    }
+
+    reviews = await manager._read("reviews")
+    reviews.append(review)
+    await manager._write("reviews", reviews)
+    return {"message": "Review added successfully", "id": review["_id"]}
+
 @admin_router.post("/reviews/{review_id}/approve")
 async def admin_approve_review(
     review_id: str,

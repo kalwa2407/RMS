@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Plus, Edit2, Trash2, Save, X, Eye, EyeOff, AlertCircle, Star, Info } from "lucide-react";
+import { Plus, Edit2, Trash2, Save, X, Eye, EyeOff, AlertCircle, Star, Info, Search } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
 import API_BASE from "../../lib/config";
@@ -14,6 +14,8 @@ const MenuManagement = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
   const [filterAvail, setFilterAvail] = useState("all"); // all | available | unavailable
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterCategory, setFilterCategory] = useState("All");
 
   const [formData, setFormData] = useState({
     name: "", category: "Biryani", description: "", price: "", image: "", popular: false, available: true,
@@ -135,11 +137,18 @@ const MenuManagement = () => {
     setShowAddForm(false);
   };
 
-  const filteredItems = menuItems.filter(item => {
-    if (filterAvail === "available") return item.available !== false;
-    if (filterAvail === "unavailable") return item.available === false;
-    return true;
-  });
+  const filteredItems = menuItems
+    .filter(item => {
+      if (filterAvail === "available") return item.available !== false;
+      if (filterAvail === "unavailable") return item.available === false;
+      return true;
+    })
+    .filter(item => filterCategory === "All" || item.category === filterCategory)
+    .filter(item => {
+      const q = searchQuery.toLowerCase();
+      return item.name.toLowerCase().includes(q) || item.description.toLowerCase().includes(q);
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const unavailableCount = menuItems.filter(i => i.available === false).length;
   const signatureCount = menuItems.filter(i => i.popular === true).length;
@@ -180,8 +189,25 @@ const MenuManagement = () => {
         </button>
       </div>
 
+      {/* Search Bar */}
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          placeholder="Search food items..."
+          className="w-full pl-9 pr-9 py-2.5 bg-[#0f2933] border border-[#EAB308]/20 focus:border-[#EAB308]/60 rounded-xl text-white text-sm outline-none placeholder-gray-500 transition-colors"
+        />
+        {searchQuery && (
+          <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
       {/* Filter tabs */}
-      <div className="flex gap-2 mb-5">
+      <div className="flex gap-2 mb-4">
         {[
           { label: "All Items", value: "all" },
           { label: "Available", value: "available" },
@@ -192,6 +218,20 @@ const MenuManagement = () => {
               filterAvail === f.value ? "bg-primary text-black" : "bg-[#1a4855] text-gray-300 hover:bg-[#2a5865]"
             }`}>
             {f.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Category tabs */}
+      <div className="flex gap-2 mb-5 overflow-x-auto pb-1 scrollbar-hide">
+        {["All", ...categories].map(cat => (
+          <button key={cat} onClick={() => setFilterCategory(cat)}
+            className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border ${
+              filterCategory === cat
+                ? "bg-primary text-black border-primary shadow-md"
+                : "bg-transparent border-[#EAB308]/30 text-[#EAB308] hover:bg-[#EAB308]/10"
+            }`}>
+            {cat}
           </button>
         ))}
       </div>
