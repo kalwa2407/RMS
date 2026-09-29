@@ -732,9 +732,6 @@ const OrdersManagement = () => {
           </div>
         </div>
       )}
-    </div>
-  );
-};
 
       {/* ===== Porter Booking Modal ===== */}
       {porterModal && (
@@ -874,5 +871,8 @@ const OrdersManagement = () => {
           </div>
         </div>
       )}
+    </div>
+  );
+};
 
 export default OrdersManagement;
