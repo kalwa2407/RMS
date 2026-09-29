@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, Depends, HTTPException, status, UploadFile, File, Response, Request
+﻿from fastapi import FastAPI, APIRouter, Depends, HTTPException, status, UploadFile, File, Response, Request
 from datetime import datetime, timezone, timedelta
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
@@ -116,7 +116,7 @@ def apply_coin_expiry(customer: dict) -> dict:
     """
     Auto-expire PD Coins that were earned more than 45 days ago.
     Mutates and returns the customer dict with updated pd_coins and coins_history.
-    Safe to call on every profile read — idempotent (won't double-expire).
+    Safe to call on every profile read â€” idempotent (won't double-expire).
     """
     EXPIRY_DAYS = 45
     now = get_ist_now()
@@ -294,8 +294,12 @@ async def seed_database():
 # Menu Endpoints
 @api_router.get("/menu")
 async def get_menu(category: str = None, manager: BaseDataManager = Depends(get_data_manager)):
-    """Get all available menu items, optionally filtered by category"""
-    return await manager.get_menu(category)
+    """Get all available menu items â€” cached 10 min"""
+    items = await manager.get_menu(category)
+    return JSONResponse(
+        content=items,
+        headers={"Cache-Control": "public, max-age=600, stale-while-revalidate=60"}
+    )
 
 @api_router.get("/menu/categories")
 async def get_menu_categories(manager: BaseDataManager = Depends(get_data_manager)):
@@ -318,7 +322,7 @@ async def get_tables(manager: BaseDataManager = Depends(get_data_manager)):
 
 @api_router.get("/tables/stream")
 async def stream_table_status(request: Request, manager: BaseDataManager = Depends(get_data_manager)):
-    """SSE stream — pushes live table status every 3 seconds to customer dashboard"""
+    """SSE stream â€” pushes live table status every 3 seconds to customer dashboard"""
     import asyncio, json as _json
 
     async def event_generator():
@@ -331,7 +335,7 @@ async def stream_table_status(request: Request, manager: BaseDataManager = Depen
                 yield f"data: {payload}\n\n"
             except Exception as e:
                 yield f"data: {_json.dumps({'error': str(e)})}\n\n"
-            await asyncio.sleep(60)  # 60s — customer-facing; reduce Firestore reads
+            await asyncio.sleep(60)  # 60s â€” customer-facing; reduce Firestore reads
 
     return StreamingResponse(
         event_generator(),
@@ -349,8 +353,12 @@ async def stream_table_status(request: Request, manager: BaseDataManager = Depen
 # Gallery Endpoints
 @api_router.get("/gallery")
 async def get_gallery(manager: BaseDataManager = Depends(get_data_manager)):
-    """Get all gallery images"""
-    return await manager.get_gallery()
+    """Get all gallery images â€” cached 5 min"""
+    images = await manager.get_gallery()
+    return JSONResponse(
+        content=images,
+        headers={"Cache-Control": "public, max-age=300, stale-while-revalidate=60"}
+    )
 
 # Reviews Endpoints
 @api_router.get("/reviews")
@@ -362,7 +370,7 @@ async def get_reviews(manager: BaseDataManager = Depends(get_data_manager)):
 
 @api_router.post("/reviews")
 async def submit_review(review_data: dict, manager: BaseDataManager = Depends(get_data_manager)):
-    """Submit a public review — saved as pending for admin approval"""
+    """Submit a public review â€” saved as pending for admin approval"""
     import uuid, datetime
     name = str(review_data.get("name", "")).strip()
     text = str(review_data.get("text", "")).strip()
@@ -411,7 +419,7 @@ async def validate_coupon(coupon_validation: CouponValidation, manager: BaseData
     if coupon_validation.order_value < coupon.get("min_order_value", 0):
         raise HTTPException(
             status_code=400,
-            detail=f"Minimum order value of ₹{coupon.get('min_order_value')} required"
+            detail=f"Minimum order value of â‚¹{coupon.get('min_order_value')} required"
         )
     
     # In Mock mode, we'll assume basic validation for now to keep it simple
@@ -443,10 +451,10 @@ async def create_order(
     if order.order_type == "DELIVERY" and order.subtotal < 250:
         raise HTTPException(
             status_code=400,
-            detail="Minimum order value is ₹250 for delivery"
+            detail="Minimum order value is â‚¹250 for delivery"
         )
 
-    # ── Delivery range enforcement ──
+    # â”€â”€ Delivery range enforcement â”€â”€
     if order.order_type == "DELIVERY":
         km = order.distance_km or 0
         if km > 20:
@@ -463,7 +471,7 @@ async def create_order(
     order_dict = order.dict()
     order_id = generate_order_id()
 
-    # ── Resolve customer identity: Token -> Payload customer_uid -> Phone -> Email ──
+    # â”€â”€ Resolve customer identity: Token -> Payload customer_uid -> Phone -> Email â”€â”€
     customer_uid = (optional_customer.get("uid") if optional_customer else None) or order_dict.get("customer_uid")
     if customer_uid and not order_dict.get("customer_uid"):
         order_dict["customer_uid"] = customer_uid
@@ -471,9 +479,9 @@ async def create_order(
     customer_phone = (order_dict.get("phone") or "").strip().replace(" ", "").replace("-", "")
     customer_email = (order_dict.get("email") or "").strip().lower()
 
-    # ════════════════════════════════════════════════════════════
-    # PD COINS REDEMPTION & CASHBACK — Server-side validation
-    # ════════════════════════════════════════════════════════════
+    # â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    # PD COINS REDEMPTION & CASHBACK â€” Server-side validation
+    # â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     coins_redeemed = 0
     coins_discount_applied = 0.0
     coins_earned_back = 0
@@ -519,13 +527,13 @@ async def create_order(
             new_coin_balance = available_coins
 
             if coins_redeemed > 0:
-                coins_discount_applied = float(coins_redeemed)  # 1 coin = ₹1
+                coins_discount_applied = float(coins_redeemed)  # 1 coin = â‚¹1
                 new_coin_balance -= coins_redeemed
 
                 # Recalculate total with discount applied
                 net_subtotal = order.subtotal - coins_discount_applied
                 new_total    = net_subtotal + order_dict.get("delivery_fee", 0.0) + order_dict.get("taxes", 0.0)
-                new_total    = max(1.0, round(new_total, 2))  # Never go below ₹1
+                new_total    = max(1.0, round(new_total, 2))  # Never go below â‚¹1
 
                 # Auto-award 10% on NET paid amount
                 coins_earned_back = int(net_subtotal * 0.10)
@@ -535,7 +543,7 @@ async def create_order(
                     "coins": coins_redeemed,
                     "discount_value": coins_discount_applied,
                     "balance_after": new_coin_balance,
-                    "note": f"Online order #{order_id[-8:]} — ₹{coins_discount_applied:.0f} discount",
+                    "note": f"Online order #{order_id[-8:]} â€” â‚¹{coins_discount_applied:.0f} discount",
                     "order_id": order_id,
                     "timestamp": now.isoformat(),
                 }
@@ -548,7 +556,7 @@ async def create_order(
                         "coins": coins_earned_back,
                         "bill_amount": net_subtotal,
                         "balance_after": earn_balance_after,
-                        "note": f"10% cashback on online order #{order_id[-8:]} (net ₹{net_subtotal:.0f})",
+                        "note": f"10% cashback on online order #{order_id[-8:]} (net â‚¹{net_subtotal:.0f})",
                         "order_id": order_id,
                         "timestamp": now.isoformat(),
                     }
@@ -706,7 +714,7 @@ async def start_table_session(data: TableSessionCreate, manager: BaseDataManager
         if existing.get("customer_name", "").lower() == data.customer_name.lower():
             return {"session": existing, "message": "Session already exists"}
         
-        # Different customer — TABLE IS LOCKED: reject with 409 Conflict
+        # Different customer â€” TABLE IS LOCKED: reject with 409 Conflict
         raise HTTPException(
             status_code=409,
             detail=f"Table {data.table_number} is currently occupied. Please wait until the current bill is settled before seating."
@@ -918,8 +926,8 @@ async def get_reservation(reservation_id: str, manager: BaseDataManager = Depend
 # =============================================================================
 
 @api_router.get("/events")
-async def get_events(manager: BaseDataManager = Depends(get_data_manager)):
-    """Get all published events (public)"""
+    active = [e for e in events if e.get("status", "active") != "archived"]
+    return JSONResponse(content=active, headers={"Cache-Control": "public, max-age=300, stale-while-revalidate=60"})
     events = await manager._read("events")
     # Only return active/upcoming events for public
     return [e for e in events if e.get("status", "active") != "archived"]
@@ -1020,7 +1028,7 @@ async def chat_with_vijay(message: ChatMessage):
         
         client_openai = OpenAI(api_key=openai_api_key)
         
-        system_prompt = """You are Vijay, the friendly and warm virtual manager of Persian Darbar — a legendary chain of authentic Persian and Mughlai restaurants. You speak in a welcoming, professional tone with a touch of royal hospitality.
+        system_prompt = """You are Vijay, the friendly and warm virtual manager of Persian Darbar â€” a legendary chain of authentic Persian and Mughlai restaurants. You speak in a welcoming, professional tone with a touch of royal hospitality.
 
 Restaurant Details:
 - Name: Persian Darbar
@@ -1037,21 +1045,21 @@ Restaurant Details:
 - Known for: Royal ambience, generous portions, family dining, late-night service
 
 App Features (Persian Darbar RMS):
-- Online Ordering at /order — minimum order Rs.250
+- Online Ordering at /order â€” minimum order Rs.250
 - Delivery: FREE within 5 km. Rs.60 flat fee for 5-20 km. Not available beyond 20 km
-- Table Booking at /reservation — book by date, time, and party size
+- Table Booking at /reservation â€” book by date, time, and party size
 - Full digital Menu at /menu with all categories including Mocktails
-- Reviews page at /reviews — write and read customer reviews
-- Gallery page at /gallery — view restaurant photos
-- Events page at /events — special events, contact us to book
-- Order Tracking — real-time tracking after placing order
+- Reviews page at /reviews â€” write and read customer reviews
+- Gallery page at /gallery â€” view restaurant photos
+- Events page at /events â€” special events, contact us to book
+- Order Tracking â€” real-time tracking after placing order
 - PD Coins Loyalty: Earn 10% cashback in PD Coins. Redeem up to 25% of order value on orders Rs.300+
 - Payment: Cash on Delivery (COD) or Online payment
 - WhatsApp Notifications: Order confirmation and delivery bill sent to customer WhatsApp
 - Customer Login: Sign up to track orders, earn PD Coins, manage reservations
 
 Guidelines:
-- Always be warm, friendly and hospitable — like a true Darbar host
+- Always be warm, friendly and hospitable â€” like a true Darbar host
 - Recommend signature dishes when asked about food
 - Talk proudly about Persian Darbar's rich legacy and authentic flavors
 - Keep responses concise (2-3 sentences max) but full of personality
@@ -1061,9 +1069,9 @@ Guidelines:
 - If asked about events, guide them to /events
 - If asked about loyalty/coins, explain the PD Coins program
 - Delivery charges: FREE within 5 km, Rs.60 for 5-20 km, not available beyond 20 km
-- Don't make up prices or dishes — stick to what you know about Persian Darbar
+- Don't make up prices or dishes â€” stick to what you know about Persian Darbar
 - If you don't know something, politely say you'll connect them with the team
-- Refer to yourself as "Vijay" — the virtual manager
+- Refer to yourself as "Vijay" â€” the virtual manager
 - Use occasional food emojis to make the conversation lively
 - Always end responses by mentioning: For more queries, contact us at 9594287868
 """
@@ -1173,7 +1181,7 @@ async def admin_toggle_menu_availability(
     username: str = Depends(verify_token),
     manager: BaseDataManager = Depends(get_data_manager)
 ):
-    """Quick toggle: available ↔ unavailable without full edit form"""
+    """Quick toggle: available â†” unavailable without full edit form"""
     item = await manager.get_menu_item(item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Menu item not found")
@@ -1474,7 +1482,7 @@ async def admin_porter_book(
     history.append({
         "status": order.get("status"),
         "timestamp": now.isoformat(),
-        "note": f"Porter booked — ID: {result['porter_order_id']} | Rider: {result.get('rider_name') or 'Searching...'}"
+        "note": f"Porter booked â€” ID: {result['porter_order_id']} | Rider: {result.get('rider_name') or 'Searching...'}"
     })
 
     porter_update = {
@@ -1522,7 +1530,7 @@ async def admin_porter_cancel(
     if order.get("porter_status") in ("order_picked_up", "started_for_delivery", "delivered"):
         raise HTTPException(
             status_code=400,
-            detail="Porter rider has already picked up the order — cannot cancel"
+            detail="Porter rider has already picked up the order â€” cannot cancel"
         )
 
     result = await cancel_porter_order(porter_order_id, body.reason)
@@ -1534,7 +1542,7 @@ async def admin_porter_cancel(
     history.append({
         "status": order.get("status"),
         "timestamp": now.isoformat(),
-        "note": f"Porter booking cancelled — Reason: {body.reason}"
+        "note": f"Porter booking cancelled â€” Reason: {body.reason}"
     })
 
     await manager.update_order(order_id, {
@@ -1613,7 +1621,7 @@ async def admin_porter_config(username: str = Depends(verify_token)):
     }
 
 
-# Porter Webhook — public endpoint, Porter POSTs updates here
+# Porter Webhook â€” public endpoint, Porter POSTs updates here
 @api_router.post("/porter/webhook")
 async def porter_webhook(
     request: Request,
@@ -1700,7 +1708,7 @@ async def download_invoice(
     username: str = Depends(verify_token),
     manager: BaseDataManager = Depends(get_data_manager)
 ):
-    """Download invoice PDF — auto-generate if not already stored"""
+    """Download invoice PDF â€” auto-generate if not already stored"""
     invoice_path = INVOICE_DIR / f"invoice_{order_id}.pdf"
     
     # Auto-generate if not found
@@ -1976,7 +1984,7 @@ async def admin_approve_review(
     username: str = Depends(verify_token),
     manager: BaseDataManager = Depends(get_data_manager)
 ):
-    """Approve a pending review — makes it visible on the public site"""
+    """Approve a pending review â€” makes it visible on the public site"""
     reviews = await manager._read("reviews")
     updated = False
     for r in reviews:
@@ -2998,7 +3006,7 @@ async def delivery_get_assigned_orders(
     partner_id = partner.get("id") or partner.get("_id")
     orders = await manager.get_orders_by_partner(partner_id)
 
-    # Include all relevant statuses — active AND completed
+    # Include all relevant statuses â€” active AND completed
     visible_statuses = {"accepted", "preparing", "ready", "out_for_delivery", "delivered", "cancelled"}
     return sorted(
         [o for o in orders if o.get("status") in visible_statuses],
@@ -3139,7 +3147,7 @@ async def kitchen_login(data: dict, manager: BaseDataManager = Depends(get_data_
 @kitchen_router.get("/orders")
 async def kitchen_get_orders(staff_id: str = Depends(verify_kitchen_token),
                              manager: BaseDataManager = Depends(get_data_manager)):
-    """Get active kitchen orders (accepted + preparing) — same logic as admin kitchen view"""
+    """Get active kitchen orders (accepted + preparing) â€” same logic as admin kitchen view"""
     orders = await manager._read("orders")
     active = sorted(
         [o for o in orders if o.get("status") in ["accepted", "preparing"]],
@@ -3167,7 +3175,7 @@ async def kitchen_get_orders(staff_id: str = Depends(verify_kitchen_token),
 async def kitchen_update_order_status(order_id: str, data: dict,
                                       staff_id: str = Depends(verify_kitchen_token),
                                       manager: BaseDataManager = Depends(get_data_manager)):
-    """Update order status from kitchen (accepted→preparing, preparing→ready)"""
+    """Update order status from kitchen (acceptedâ†’preparing, preparingâ†’ready)"""
     order = await manager.get_order_by_id(order_id)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -3277,7 +3285,7 @@ async def captain_get_table_session(table_number: int,
 async def captain_place_order(data: CaptainOrderCreate,
                                captain_id: str = Depends(verify_captain_token),
                                manager: BaseDataManager = Depends(get_data_manager)):
-    """Captain places/adds order for a table — creates session if needed"""
+    """Captain places/adds order for a table â€” creates session if needed"""
     now = get_ist_now()
     
     # Find or create session
@@ -3335,7 +3343,7 @@ async def captain_place_order(data: CaptainOrderCreate,
         "status_history": [{
             "status": "accepted",
             "timestamp": now.isoformat(),
-            "note": f"Order taken by Captain {captain_id} — KOT#{kot_num}"
+            "note": f"Order taken by Captain {captain_id} â€” KOT#{kot_num}"
         }],
         "created_at": now.isoformat(),
         "updated_at": now.isoformat(),
@@ -3408,7 +3416,7 @@ async def captain_close_session(session_id: str,
 
 
 # =============================================================================
-# ADMIN — CAPTAIN MANAGEMENT
+# ADMIN â€” CAPTAIN MANAGEMENT
 # =============================================================================
 
 @admin_router.get("/captains")
@@ -3569,7 +3577,7 @@ async def admin_loyalty_award(
         "coins": coins_to_award,
         "bill_amount": data.bill_amount,
         "balance_after": new_balance,
-        "note": data.note or f"10% of ₹{data.bill_amount:,.0f} bill",
+        "note": data.note or f"10% of â‚¹{data.bill_amount:,.0f} bill",
         "awarded_by": username,
         "timestamp": now,
     }
@@ -3598,7 +3606,7 @@ async def admin_loyalty_redeem(
     username: str = Depends(verify_token),
     manager: BaseDataManager = Depends(get_data_manager)
 ):
-    """Redeem PD Coins from customer wallet (1 coin = ₹1 discount)"""
+    """Redeem PD Coins from customer wallet (1 coin = â‚¹1 discount)"""
     if data.coins_to_redeem <= 0:
         raise HTTPException(status_code=400, detail="Coins to redeem must be positive")
 
@@ -3624,9 +3632,9 @@ async def admin_loyalty_redeem(
     txn = {
         "type": "redeemed",
         "coins": data.coins_to_redeem,
-        "discount_value": data.coins_to_redeem,  # 1 coin = ₹1
+        "discount_value": data.coins_to_redeem,  # 1 coin = â‚¹1
         "balance_after": new_balance,
-        "note": data.note or f"Redeemed ₹{data.coins_to_redeem} discount",
+        "note": data.note or f"Redeemed â‚¹{data.coins_to_redeem} discount",
         "redeemed_by": username,
         "timestamp": now,
     }

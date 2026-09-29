@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Clock, MapPin, Users, Phone, Mail, Send, Sparkles, ChevronRight, Star, X, CheckCircle2, Loader2 } from "lucide-react";
+import { Calendar, Clock, MapPin, Users, Phone, Mail, Send, Sparkles, ChevronRight, Star, X, CheckCircle2, Loader2, Camera, ZoomIn } from "lucide-react";
 import API_BASE from "../lib/config";
 
 const EventContactForm = ({ event, onClose }) => {
@@ -170,6 +170,84 @@ const DEFAULT_EVENTS = [
   }
 ];
 
+const EventGallery = () => {
+  const [photos, setPhotos] = useState([]);
+  const [lightbox, setLightbox] = useState(null);
+  const CACHE_KEY = "pd_event_gallery_v1";
+  const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
+  useEffect(() => {
+    const cached = (() => {
+      try {
+        const c = localStorage.getItem(CACHE_KEY);
+        if (!c) return null;
+        const { data, ts } = JSON.parse(c);
+        if (Date.now() - ts < CACHE_TTL) return data;
+        return null;
+      } catch { return null; }
+    })();
+
+    if (cached) { setPhotos(cached); return; }
+
+    fetch(`${API_BASE}/api/events`)
+      .then(r => r.json())
+      .then(events => {
+        const imgs = (Array.isArray(events) ? events : [])
+          .filter(e => e.image)
+          .map(e => ({ url: e.image, caption: e.title, date: e.date }));
+        setPhotos(imgs);
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify({ data: imgs, ts: Date.now() })); } catch {}
+      })
+      .catch(() => {});
+  }, []);
+
+  if (photos.length === 0) return (
+    <div className="text-center py-10 text-gray-600">
+      <Camera className="w-12 h-12 mx-auto mb-3 opacity-20"/>
+      <p className="text-sm">Event photos will appear here</p>
+    </div>
+  );
+
+  return (
+    <>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        {photos.map((photo, i) => (
+          <motion.div key={i} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}
+            className="relative rounded-2xl overflow-hidden cursor-pointer group aspect-square"
+            style={{ border: "1px solid rgba(234,179,8,0.15)" }}
+            onClick={() => setLightbox(photo)}>
+            <img src={photo.url} alt={photo.caption} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              onError={e => { e.target.parentElement.style.display = "none"; }}/>
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all duration-300 flex items-center justify-center">
+              <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-all duration-300"/>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-all duration-300"
+              style={{ background: "linear-gradient(to top, rgba(0,0,0,0.8), transparent)" }}>
+              <p className="text-white text-xs font-bold truncate">{photo.caption}</p>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      <AnimatePresence>
+        {lightbox && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+            onClick={() => setLightbox(null)}>
+            <button className="absolute top-4 right-4 text-white p-2 rounded-xl bg-white/10 hover:bg-white/20">
+              <X className="w-6 h-6"/>
+            </button>
+            <motion.div initial={{ scale: 0.85 }} animate={{ scale: 1 }} exit={{ scale: 0.85 }}
+              className="max-w-3xl w-full" onClick={e => e.stopPropagation()}>
+              <img src={lightbox.url} alt={lightbox.caption} className="w-full rounded-2xl object-contain max-h-[80vh]"/>
+              <p className="text-white text-center mt-3 font-bold text-sm">{lightbox.caption}</p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+};
 const Events = () => {
   const [events, setEvents] = useState(DEFAULT_EVENTS);
   const [loading, setLoading] = useState(true);
@@ -260,6 +338,18 @@ const Events = () => {
           </div>
         )}
 
+
+        {/* ── EVENTS GALLERY ── */}
+        <section className="mb-12">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="h-px flex-1 bg-[#EAB308]/20"/>
+            <h2 className="text-[#EAB308] font-black uppercase tracking-widest text-sm flex items-center gap-2">
+              <Camera className="w-4 h-4"/> Event Highlights
+            </h2>
+            <div className="h-px flex-1 bg-[#EAB308]/20"/>
+          </div>
+          <EventGallery />
+        </section>
         <div className="mt-12 bg-gradient-to-r from-[#1a4855] to-[#0f2f3d] border border-[#EAB308]/20 rounded-3xl p-6 md:p-8 text-center">
           <h3 className="text-white font-bold text-xl mb-2">Host Your Event at Persian Darbar</h3>
           <p className="text-gray-400 text-sm mb-4 max-w-xl mx-auto">Corporate events, birthdays, anniversaries, private dining — we create unforgettable experiences.</p>

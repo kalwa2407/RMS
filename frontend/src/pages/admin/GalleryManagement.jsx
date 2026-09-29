@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { Plus, Trash2, X } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
@@ -115,7 +115,7 @@ const GalleryManagement = () => {
     try {
       const token = localStorage.getItem("admin_token");
 
-      await axios.delete(`${API_BASE}/api/gallery/${id}`, {
+      await axios.delete(`${API_BASE}/api/admin/gallery/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

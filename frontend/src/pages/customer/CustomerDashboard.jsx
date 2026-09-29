@@ -2,6 +2,8 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useCustomerAuth } from '../../context/CustomerAuthContext';
 import API_BASE from '../../lib/config';
+import { lsCache, memCache } from '../../lib/cache';
+
 import {
   ShoppingBag, Calendar, Clock, Phone,
   Edit2, Check, ArrowRight, LogOut, AlertCircle,
@@ -140,25 +142,31 @@ const CustomerDashboard = () => {
     }
   }, [customerProfile]);
 
-  /* â”€â”€ Fetch Menu items â”€â”€ */
-  const fetchMenu = useCallback(async () => {
+  /* ─── Fetch Menu items (cached 10 min to reduce reads) ─── */
+  const fetchMenu = useCallback(async (forceRefresh = false) => {
+    const MENU_KEY = 'menu_v1';
+    const MENU_TTL = 10 * 60 * 1000;
+    if (!forceRefresh) {
+      const memHit = memCache.get(MENU_KEY);
+      if (memHit) { setMenu(memHit); setMenuLoading(false); return; }
+      const lsHit = lsCache.get(MENU_KEY);
+      if (lsHit) { setMenu(lsHit); setMenuLoading(false); memCache.set(MENU_KEY, lsHit, 2 * 60 * 1000); return; }
+    }
     setMenuLoading(true);
     try {
       const res = await fetch(`${API_BASE}/api/menu`);
       if (res.ok) {
         const data = await res.json();
-        setMenu(Array.isArray(data) ? data : []);
+        const items = Array.isArray(data) ? data : [];
+        setMenu(items);
+        lsCache.set(MENU_KEY, items, MENU_TTL);
+        memCache.set(MENU_KEY, items, 2 * 60 * 1000);
       }
-    } catch (err) {
-      console.error('Failed to load menu:', err);
-    } finally {
-      setMenuLoading(false);
-    }
+    } catch (err) { console.error('Menu load error:', err); }
+    finally { setMenuLoading(false); }
   }, []);
 
-  useEffect(() => {
-    fetchMenu();
-  }, [fetchMenu]);
+  useEffect(() => { fetchMenu(); }, [fetchMenu]);
 
   useEffect(() => { if (customerProfile?.phone) setPhoneVal(customerProfile.phone); }, [customerProfile]);
 
@@ -178,22 +186,26 @@ const CustomerDashboard = () => {
     catch(e) { console.error(e); } finally { setLoadR(false); }
   }, [idToken, fetchWithAuth]);
 
-  /* â”€â”€ SSE: real-time table stream â”€â”€ */
+  /* ─── Table polling every 90s (replaces SSE — saves ~95% reads) ─── */
   useEffect(() => {
-    const connect = () => {
-      const es = new EventSource(`${API_BASE}/api/tables/stream`);
-      es.onmessage = (e) => {
-        try { const d = JSON.parse(e.data); if (Array.isArray(d)) { setTables(d); setLoadT(false); } } catch(_) {}
-      };
-      es.onerror = () => {
-        es.close();
-        fetch(`${API_BASE}/api/tables`).then(r=>r.json()).then(d=>{ if(Array.isArray(d)){setTables(d);setLoadT(false);} }).catch(()=>{});
-        setTimeout(connect, 5000);
-      };
-      sseRef.current = es;
+    const TABLE_KEY = 'tables_v1';
+    const TABLE_TTL = 90 * 1000;
+    const fetchTables = async (useCache = false) => {
+      if (useCache) {
+        const cached = lsCache.get(TABLE_KEY);
+        if (cached) { setTables(cached); setLoadT(false); return; }
+      }
+      try {
+        const r = await fetch(`${API_BASE}/api/tables`);
+        if (r.ok) {
+          const d = await r.json();
+          if (Array.isArray(d)) { setTables(d); lsCache.set(TABLE_KEY, d, TABLE_TTL); }
+        }
+      } catch {} finally { setLoadT(false); }
     };
-    connect();
-    return () => sseRef.current?.close();
+    fetchTables(true);
+    const t = setInterval(() => fetchTables(false), TABLE_TTL);
+    return () => clearInterval(t);
   }, []);
 
   useEffect(() => { if (idToken) { fetchOrders(); fetchRes(); } }, [idToken, fetchOrders, fetchRes]);
@@ -333,9 +345,9 @@ const CustomerDashboard = () => {
   const cartTaxes       = Math.round(cartSubtotal * 0.05);
 
   /* â”€â”€ PD Coins Redemption Rules:
-     - Min â‚¹300 subtotal
+     - Min ₹300 subtotal
      - Max burn cap: 25% of subtotal
-     - 1 coin = â‚¹1 discount
+     - 1 coin = ₹1 discount
      - 10% re-earn on net paid amount (subtotal - coin discount) â”€â”€ */
   const maxRedeemableCoins = (cartSubtotal >= 300 && pdCoins > 0)
     ? Math.min(pdCoins, Math.floor(cartSubtotal * 0.25))
@@ -393,7 +405,7 @@ const CustomerDashboard = () => {
   const handlePlaceOrder = async () => {
     if (cart.length === 0) return;
     if (orderType === 'DELIVERY' && cartSubtotal < 250) {
-      alert('Minimum order value for delivery is â‚¹250. Or choose Takeaway Pickup (no minimum)!');
+      alert('Minimum order value for delivery is ₹250. Or choose Takeaway Pickup (no minimum)!');
       return;
     }
     const phone = phoneVal || customerProfile?.phone;
@@ -605,7 +617,7 @@ const CustomerDashboard = () => {
                     Book Your Royal Table
                   </p>
                   <p className="text-xs mt-1 text-white/75">
-                    â‚¹10/person <span style={{ color: GOLD }}>Â·</span> Earn 10% PD Coins on bill
+                    ₹10/person <span style={{ color: GOLD }}>Â·</span> Earn 10% PD Coins on bill
                   </p>
                 </div>
                 {/* Glass squircle button with Calendar icon as shown in mockup */}
@@ -751,7 +763,7 @@ const CustomerDashboard = () => {
                       <span className="text-4xl font-black text-white">{pdCoins.toLocaleString()}</span>
                       <span className="text-base font-bold" style={{ color: GOLD }}>PD Coins</span>
                     </div>
-                    <p className="text-xs text-white/75 mt-1">â‚¹{pdCoins.toLocaleString()} value <span style={{ color: GOLD }}>Â·</span> Earn 10% on dine-in</p>
+                    <p className="text-xs text-white/75 mt-1">₹{pdCoins.toLocaleString()} value <span style={{ color: GOLD }}>Â·</span> Earn 10% on dine-in</p>
                   </div>
                   <div className="flex flex-col items-end gap-2.5">
                     <div className="w-14 h-14 rounded-2xl flex items-center justify-center p-2 transition-transform hover:scale-105"
@@ -865,7 +877,7 @@ const CustomerDashboard = () => {
 
         {/* â•â• ORDER (In-App Food Ordering & History) â•â• */}
         {tab === 'order' && (
-          <div className="p-4 space-y-4 pb-24">
+          <div className="p-4 space-y-4 pb-24 md:max-w-2xl md:mx-auto lg:max-w-3xl">
 
             {/* Sub-tab switcher */}
             <div className="flex items-center gap-2 p-1.5 rounded-2xl"
@@ -1016,7 +1028,7 @@ const CustomerDashboard = () => {
                             {(item.description || item.category) && (
                               <p className="text-gray-400 text-[11px] mt-0.5 line-clamp-2 leading-relaxed">{item.description || item.category}</p>
                             )}
-                            <p className="text-[#EAB308] font-black text-sm mt-1.5">â‚¹{item.price}</p>
+                            <p className="text-[#EAB308] font-black text-sm mt-1.5">₹{item.price}</p>
                           </div>
 
                           {/* ADD / qty stepper */}
@@ -1088,7 +1100,7 @@ const CustomerDashboard = () => {
                           <span className="text-white/50 text-xs font-mono">#{o.order_id?.slice(-8)}</span>
                           {badge(o.status)}
                         </div>
-                        <span className="text-white font-bold text-sm">â‚¹{o.total?.toFixed(0)}</span>
+                        <span className="text-white font-bold text-sm">₹{o.total?.toFixed(0)}</span>
                       </div>
                       <div className="px-4 py-3 flex items-center justify-between">
                         <div>
@@ -1122,7 +1134,7 @@ const CustomerDashboard = () => {
                     <span className="font-black text-sm uppercase tracking-widest">View Cart</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="font-black text-lg">â‚¹{cartSubtotal.toLocaleString()}</span>
+                    <span className="font-black text-lg">₹{cartSubtotal.toLocaleString()}</span>
                     <ChevronRight className="w-4 h-4" />
                   </div>
                 </button>
@@ -1146,7 +1158,7 @@ const CustomerDashboard = () => {
                   <p className="text-gray-400 text-sm">Camp, Pune</p>
                 </div>
                 <div className="w-full rounded-2xl p-4 space-y-2.5" style={{ background:CARD, border:`1px solid ${GB}` }}>
-                  {[['Guests',`${success.guests} Persons`],['Amount Paid',`â‚¹${success.fee}`],['Payment ID',success.payment_id?.slice(-10)||'â€”']].map(([k,v])=>(
+                  {[['Guests',`${success.guests} Persons`],['Amount Paid',`₹${success.fee}`],['Payment ID',success.payment_id?.slice(-10)||'â€”']].map(([k,v])=>(
                     <div key={k} className="flex items-center justify-between">
                       <span className="text-gray-500 text-xs">{k}</span>
                       <span className="text-white font-bold text-sm">{v}</span>
@@ -1207,7 +1219,7 @@ const CustomerDashboard = () => {
                 {/* Summary */}
                 <div className="rounded-3xl p-5" style={GLASS_CARD}>
                   <p className="text-[#EAB308] text-xs font-black uppercase tracking-widest mb-3">Reservation Summary</p>
-                  {[['Guests',`${guests} Ã— â‚¹10`],['Reservation Fee',`â‚¹${fee}`],['PD Coins Reward','After eligible dine-in']].map(([k,v])=>(
+                  {[['Guests',`${guests} Ã— ₹10`],['Reservation Fee',`₹${fee}`],['PD Coins Reward','After eligible dine-in']].map(([k,v])=>(
                     <div key={k} className="flex items-center justify-between py-2" style={{ borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
                       <span className="text-white/60 text-xs">{k}</span>
                       <span className={`font-bold text-sm ${k==='Reservation Fee'?'text-white text-base':'text-white/80'}`}>{v}</span>
@@ -1225,7 +1237,7 @@ const CustomerDashboard = () => {
                 <button onClick={handlePay} disabled={paying}
                   className="w-full py-4 rounded-3xl font-black text-sm uppercase tracking-[0.15em] text-black active:scale-[0.98] transition-all disabled:opacity-50 shadow-xl"
                   style={{ background:GOLD, boxShadow:`0 8px 30px rgba(234,179,8,0.45)` }}>
-                  {paying ? 'Opening Payment...' : `Reserve & Pay â‚¹${fee}`}
+                  {paying ? 'Opening Payment...' : `Reserve & Pay ₹${fee}`}
                 </button>
 
                 <div className="text-center">
@@ -1278,7 +1290,7 @@ const CustomerDashboard = () => {
                   <div className="flex items-center gap-4 text-xs text-white/65">
                     <span><UtensilsCrossed className="w-3.5 h-3.5 inline mr-1 text-white/80" />{r.guests} guests</span>
                     {r.occasion && <span>{r.occasion}</span>}
-                    {r.amount_paid && <span style={{ color:GOLD }} className="font-bold">â‚¹{r.amount_paid} paid</span>}
+                    {r.amount_paid && <span style={{ color:GOLD }} className="font-bold">₹{r.amount_paid} paid</span>}
                   </div>
                   {r.special_requests && <p className="text-white/60 text-xs italic">"{r.special_requests}"</p>}
                 </div>
@@ -1307,7 +1319,7 @@ const CustomerDashboard = () => {
                 </div>
               </div>
               <span className="text-5xl font-black text-white">{pdCoins.toLocaleString()}</span>
-              <p className="font-bold text-sm mt-1 mb-3" style={{ color:'rgba(234,179,8,0.85)' }}>â‚¹{pdCoins.toLocaleString()} Value</p>
+              <p className="font-bold text-sm mt-1 mb-3" style={{ color:'rgba(234,179,8,0.85)' }}>₹{pdCoins.toLocaleString()} Value</p>
               <div className="w-16 h-px mx-auto mb-3" style={{ background:GB }} />
               <div className="flex items-center justify-center gap-3 text-[9px] font-black uppercase tracking-[0.3em] text-white/60">
                 <span>Dine</span><span style={{color:GOLD}}>â—†</span><span>Earn</span><span style={{color:GOLD}}>â—†</span><span>Redeem</span><span style={{color:GOLD}}>â—†</span><span>Revisit</span>
@@ -1317,10 +1329,10 @@ const CustomerDashboard = () => {
             <div className="rounded-3xl p-5" style={GLASS_CARD}>
               <p className="text-xs font-black uppercase tracking-widest mb-3" style={{ color:GOLD }}>How It Works</p>
               {[
-                [Calendar,    'Reserve a table (â‚¹10/person)', 'Required'],
+                [Calendar,    'Reserve a table (₹10/person)', 'Required'],
                 [UtensilsCrossed,'Dine at Persian Darbar',    'Eligible bill'],
                 [TrendingUp,  'Earn 10% as PD Coins',        'Auto-credited'],
-                [Gift,        'Redeem on next visit',         'â‚¹1 = 1 Coin'],
+                [Gift,        'Redeem on next visit',         '₹1 = 1 Coin'],
               ].map(([Icon,text,note])=>(
                 <div key={text} className="flex items-center gap-3 py-2.5" style={{ borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background:GF }}>
@@ -1391,7 +1403,7 @@ const CustomerDashboard = () => {
                                 : 'Coins Redeemed'}
                             </p>
                             <p className="text-white/50 text-[11px]">
-                              {txn.note || (isEarned ? `â‚¹${txn.bill_amount} bill` : isExpired ? '45-day auto expiry' : 'Discount')}
+                              {txn.note || (isEarned ? `₹${txn.bill_amount} bill` : isExpired ? '45-day auto expiry' : 'Discount')}
                             </p>
                             <p className="text-white/30 text-[9px] mt-0.5">{txn.timestamp ? new Date(txn.timestamp).toLocaleDateString('en-IN', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : ''}</p>
                           </div>
@@ -1504,7 +1516,7 @@ const CustomerDashboard = () => {
                 </div>
                 <p className="text-xl font-black text-white">{pdCoins.toLocaleString()}</p>
                 <p className="text-[9px] text-[#EAB308] font-bold uppercase tracking-wider mt-0.5">PD Coins</p>
-                <p className="text-[9px] text-white/50 mt-0.5">â‚¹{pdCoins} value â€º</p>
+                <p className="text-[9px] text-white/50 mt-0.5">₹{pdCoins} value â€º</p>
               </button>
 
               {/* Orders */}
@@ -1904,7 +1916,7 @@ const CustomerDashboard = () => {
                     style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
                     <div className="flex-1 min-w-0">
                       <p className="text-white font-bold text-sm truncate">{item.name}</p>
-                      <p className="text-[#EAB308] text-xs font-semibold">â‚¹{item.price} each</p>
+                      <p className="text-[#EAB308] text-xs font-semibold">₹{item.price} each</p>
                     </div>
                     <div className="flex items-center gap-2.5">
                       <div className="flex items-center gap-1 bg-white/10 rounded-xl p-0.5 border border-white/15">
@@ -1923,7 +1935,7 @@ const CustomerDashboard = () => {
                         </button>
                       </div>
                       <span className="text-white font-bold text-sm min-w-[50px] text-right">
-                        â‚¹{(item.price * item.quantity).toLocaleString()}
+                        ₹{(item.price * item.quantity).toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -1978,7 +1990,7 @@ const CustomerDashboard = () => {
                       <span>{detectingLoc ? 'Detecting...' : distanceKm ? `ðŸ“ ${distanceKm} km away` : 'Detect Range'}</span>
                     </button>
                     <span className="text-[11px] text-white/60">
-                      {distanceKm === null ? 'Within 5km: Free' : distanceKm <= 5 ? 'âœ… Free Delivery' : distanceKm <= 20 ? 'â‚¹60 Delivery Fee' : 'âŒ Out of range (>20km)'}
+                      {distanceKm === null ? 'Within 5km: Free' : distanceKm <= 5 ? 'âœ… Free Delivery' : distanceKm <= 20 ? '₹60 Delivery Fee' : 'âŒ Out of range (>20km)'}
                     </span>
                   </div>
                 </div>
@@ -2058,11 +2070,11 @@ const CustomerDashboard = () => {
                         </div>
                         {cartSubtotal < 300 ? (
                           <p className="text-white/50 text-[10px] mt-0.5">
-                            Add items worth â‚¹{300 - cartSubtotal} more to redeem (Min â‚¹300)
+                            Add items worth ₹{300 - cartSubtotal} more to redeem (Min ₹300)
                           </p>
                         ) : (
                           <p className="text-white/60 text-[10px] mt-0.5">
-                            Max 25% bill cap: Save up to <span className="text-[#EAB308] font-bold">â‚¹{maxRedeemableCoins}</span>
+                            Max 25% bill cap: Save up to <span className="text-[#EAB308] font-bold">₹{maxRedeemableCoins}</span>
                           </p>
                         )}
                       </div>
@@ -2086,7 +2098,7 @@ const CustomerDashboard = () => {
                   {applyCoins && maxRedeemableCoins > 0 && (
                     <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between text-[11px]">
                       <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                        <Sparkles className="w-3.5 h-3.5" /> Saving â‚¹{coinsDiscount} on this order!
+                        <Sparkles className="w-3.5 h-3.5" /> Saving ₹{coinsDiscount} on this order!
                       </span>
                       <span className="text-white/50">
                         +Earn <span className="text-[#EAB308] font-bold">{coinsEarnable}</span> new coins
@@ -2100,27 +2112,27 @@ const CustomerDashboard = () => {
               <div className="rounded-2xl p-4 space-y-2 text-xs" style={GLASS_CARD_SM}>
                 <div className="flex justify-between text-white/70">
                   <span>Items Subtotal</span>
-                  <span>â‚¹{cartSubtotal.toLocaleString()}</span>
+                  <span>₹{cartSubtotal.toLocaleString()}</span>
                 </div>
                 {coinsApplied > 0 && (
                   <div className="flex justify-between text-emerald-400 font-bold">
                     <span className="flex items-center gap-1">
                       ðŸª™ PD Coins Discount
                     </span>
-                    <span>-â‚¹{coinsDiscount.toLocaleString()}</span>
+                    <span>-₹{coinsDiscount.toLocaleString()}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-white/70">
                   <span>Delivery Fee</span>
-                  <span>{cartDeliveryFee === 0 ? <span className="text-emerald-400 font-bold">FREE</span> : `â‚¹${cartDeliveryFee}`}</span>
+                  <span>{cartDeliveryFee === 0 ? <span className="text-emerald-400 font-bold">FREE</span> : `₹${cartDeliveryFee}`}</span>
                 </div>
                 <div className="flex justify-between text-white/70">
                   <span>GST & Restaurant Taxes (5%)</span>
-                  <span>â‚¹{cartTaxes.toLocaleString()}</span>
+                  <span>₹{cartTaxes.toLocaleString()}</span>
                 </div>
                 <div className="pt-2 border-t border-white/10 flex justify-between font-black text-sm text-white">
                   <span>Total Amount</span>
-                  <span className="text-[#EAB308] text-base">â‚¹{cartTotal.toLocaleString()}</span>
+                  <span className="text-[#EAB308] text-base">₹{cartTotal.toLocaleString()}</span>
                 </div>
               </div>
 
@@ -2135,7 +2147,7 @@ const CustomerDashboard = () => {
                   boxShadow: '0 8px 24px rgba(234,179,8,0.5)'
                 }}
               >
-                {placingOrder ? 'Placing Order...' : `Confirm Order Â· â‚¹${cartTotal.toLocaleString()}`}
+                {placingOrder ? 'Placing Order...' : `Confirm Order Â· ₹${cartTotal.toLocaleString()}`}
               </button>
 
             </div>

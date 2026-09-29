@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from "react";
+﻿﻿import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import {
   Plus,
@@ -546,14 +546,14 @@ const TableOrder = () => {
                   {order.items?.map((item, i) => (
                     <div key={i} className="flex justify-between text-sm text-gray-300">
                       <span>{item.quantity}Ã— {item.name}</span>
-                      <span className="font-semibold text-white">â‚¹{item.price * item.quantity}</span>
+                      <span className="font-semibold text-white">₹{item.price * item.quantity}</span>
                     </div>
                   ))}
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-[#EAB308]/15 flex justify-between items-center">
                   <span className="text-xs text-gray-400">Order Subtotal</span>
-                  <span className="text-[#EAB308] font-bold text-base">â‚¹{order.total}</span>
+                  <span className="text-[#EAB308] font-bold text-base">₹{order.total}</span>
                 </div>
               </div>
             );
@@ -566,7 +566,7 @@ const TableOrder = () => {
                 <span className="text-[10px] uppercase tracking-widest text-[#EAB308] font-bold block">Grand Total</span>
                 <span className="text-white text-lg font-['Playfair_Display',serif]">Table Session Total</span>
               </div>
-              <span className="text-3xl font-bold font-['Playfair_Display',serif] text-[#EAB308]">â‚¹{session.total || 0}</span>
+              <span className="text-3xl font-bold font-['Playfair_Display',serif] text-[#EAB308]">₹{session.total || 0}</span>
             </div>
             <p className="text-gray-400 text-xs mt-3 flex items-center gap-1.5">
               <Info className="w-3.5 h-3.5 text-[#EAB308]" />
@@ -884,7 +884,7 @@ const TableOrder = () => {
                         {/* Price & Action */}
                         <div className="flex justify-between items-center mt-2.5 pt-2 border-t border-[#EAB308]/10">
                           <span className="text-[#EAB308] font-bold text-sm tracking-wide font-['Outfit',sans-serif]">
-                            â‚¹{item.price}
+                            ₹{item.price}
                           </span>
 
                           {/* Stepper / ADD Button */}
@@ -965,7 +965,7 @@ const TableOrder = () => {
                       >
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-bold text-white truncate">{item.name}</p>
-                          <p className="text-xs text-[#EAB308] font-mono">â‚¹{item.price * item.quantity}</p>
+                          <p className="text-xs text-[#EAB308] font-mono">₹{item.price * item.quantity}</p>
                         </div>
 
                         <div className="flex items-center gap-1.5 shrink-0">
@@ -999,15 +999,15 @@ const TableOrder = () => {
                   <div className="mt-4 pt-3 border-t border-[#EAB308]/20 space-y-1.5 text-xs text-gray-300">
                     <div className="flex justify-between">
                       <span>Items Subtotal</span>
-                      <span className="font-semibold text-white">â‚¹{cartTotal}</span>
+                      <span className="font-semibold text-white">₹{cartTotal}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Restaurant GST (5%)</span>
-                      <span className="text-white">â‚¹{gstAmount}</span>
+                      <span className="text-white">₹{gstAmount}</span>
                     </div>
                     <div className="flex justify-between pt-2 border-t border-[#EAB308]/15 text-sm font-bold">
                       <span className="text-white font-['Playfair_Display',serif]">Table Bill Total</span>
-                      <span className="text-[#EAB308] text-lg font-mono">â‚¹{grandTotal}</span>
+                      <span className="text-[#EAB308] text-lg font-mono">₹{grandTotal}</span>
                     </div>
                   </div>
 
@@ -1068,7 +1068,7 @@ const TableOrder = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-base font-black font-mono">â‚¹{grandTotal}</span>
+              <span className="text-base font-black font-mono">₹{grandTotal}</span>
               <div className="w-6 h-6 rounded-full bg-black/15 flex items-center justify-center">
                 <ChevronRight className="w-4 h-4" />
               </div>
@@ -1114,7 +1114,7 @@ const TableOrder = () => {
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold text-white truncate">{item.name}</p>
-                    <p className="text-xs text-[#EAB308] font-mono mt-0.5">â‚¹{item.price * item.quantity}</p>
+                    <p className="text-xs text-[#EAB308] font-mono mt-0.5">₹{item.price * item.quantity}</p>
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
@@ -1147,15 +1147,15 @@ const TableOrder = () => {
               <div className="space-y-1.5 text-xs text-gray-300 mb-4">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span className="font-semibold text-white">â‚¹{cartTotal}</span>
+                  <span className="font-semibold text-white">₹{cartTotal}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>GST (5%)</span>
-                  <span className="text-white">â‚¹{gstAmount}</span>
+                  <span className="text-white">₹{gstAmount}</span>
                 </div>
                 <div className="flex justify-between pt-2 border-t border-[#EAB308]/15 text-base font-bold">
                   <span className="text-white font-['Playfair_Display',serif]">Grand Total</span>
-                  <span className="text-[#EAB308] font-mono text-xl">â‚¹{grandTotal}</span>
+                  <span className="text-[#EAB308] font-mono text-xl">₹{grandTotal}</span>
                 </div>
               </div>
 
@@ -1266,7 +1266,7 @@ const TableOrder = () => {
                 <div>
                   <span className="text-[10px] uppercase tracking-wider text-gray-400 block font-semibold">Portion Price</span>
                   <span className="font-['Playfair_Display',serif] text-3xl font-extrabold text-[#EAB308]">
-                    â‚¹{selectedDish.price}
+                    ₹{selectedDish.price}
                   </span>
                 </div>
 

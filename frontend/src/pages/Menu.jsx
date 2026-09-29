@@ -1,7 +1,9 @@
-﻿import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, X, Plus, UtensilsCrossed, ShoppingCart } from "lucide-react";
 import API_BASE from "../lib/config";
+import { lsCache, memCache } from "../lib/cache";
+
 
 const RowSkeleton = () => (
   <div className="flex items-center gap-3 p-3 rounded-2xl border border-[#EAB308]/10 bg-[#1a4855]/40 animate-pulse">
@@ -30,12 +32,23 @@ const Menu = () => {
   const pillsRef = useRef(null);
 
   useEffect(() => {
+    const MENU_KEY = 'menu_v1';
+    const MENU_TTL = 10 * 60 * 1000;
     const fetchMenu = async () => {
+      // Check memory cache
+      const memHit = memCache.get(MENU_KEY);
+      if (memHit) { setMenuItems(memHit); setMenuCategories(["All", ...new Set(memHit.map(i => i.category))]); setLoading(false); return; }
+      // Check localStorage cache
+      const lsHit = lsCache.get(MENU_KEY);
+      if (lsHit) { setMenuItems(lsHit); setMenuCategories(["All", ...new Set(lsHit.map(i => i.category))]); setLoading(false); memCache.set(MENU_KEY, lsHit, 2 * 60 * 1000); return; }
+      // Network fetch
       try {
         const res = await fetch(`${API_BASE}/api/menu`);
         const data = await res.json();
         setMenuItems(data);
         setMenuCategories(["All", ...new Set(data.map((item) => item.category))]);
+        lsCache.set(MENU_KEY, data, MENU_TTL);
+        memCache.set(MENU_KEY, data, 2 * 60 * 1000);
       } catch (err) {
         console.error("Menu fetch failed:", err);
       } finally {
@@ -44,6 +57,7 @@ const Menu = () => {
     };
     fetchMenu();
   }, []);
+
 
   const filteredItems = menuItems.filter((item) => {
     const matchCat = selectedCategory === "All" || item.category === selectedCategory;

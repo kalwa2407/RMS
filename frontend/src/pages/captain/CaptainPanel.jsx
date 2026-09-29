@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useRef } from "react";
+﻿﻿import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   UtensilsCrossed, RefreshCw, LogOut, ChefHat, Plus, X, Minus,
@@ -40,7 +40,7 @@ const orderStatusLabel = (s) => ({
   delivered: "âœ” Served",
 }[s] || s);
 
-const fmt = (n) => `â‚¹${Number(n || 0).toFixed(0)}`;
+const fmt = (n) => `₹${Number(n || 0).toFixed(0)}`;
 
 const getGreeting = () => {
   const h = new Date().getHours();
@@ -356,7 +356,7 @@ const CaptainPanel = () => {
                       {(order.items || []).map((item, i) => (
                         <div key={i} className="flex justify-between text-sm">
                           <span className="text-gray-300">{item.quantity}Ã— {item.name}</span>
-                          <span className="text-emerald-400 font-medium">â‚¹{(item.price * item.quantity).toFixed(0)}</span>
+                          <span className="text-emerald-400 font-medium">₹{(item.price * item.quantity).toFixed(0)}</span>
                         </div>
                       ))}
                     </div>
