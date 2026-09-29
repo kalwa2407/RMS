@@ -39,6 +39,8 @@ const KitchenPanel = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("kitchen_token");
   const staffName = localStorage.getItem("kitchen_name") || "Chef";
+  const [shiftStart] = useState(() => new Date());
+  const [clockNow, setClockNow] = useState(new Date());
 
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -62,6 +64,7 @@ const KitchenPanel = () => {
     return () => document.removeEventListener("click", prime);
   }, []);
 
+    useEffect(() => { const c = setInterval(() => setClockNow(new Date()), 30000); return () => clearInterval(c); }, []);
   useEffect(() => { const t = setInterval(() => setTick(n => n + 1), 30000); return () => clearInterval(t); }, []);
 
   const playAlert = () => {
@@ -133,6 +136,45 @@ const KitchenPanel = () => {
         </div>
       </div>
 
+
+      {/* GREETING + PERFORMANCE CARDS */}
+      <div className="px-4 pt-4 pb-0 space-y-3">
+        {/* Greeting Card */}
+        <div className="rounded-2xl px-4 py-3 flex items-center justify-between"
+          style={{ background:"linear-gradient(135deg,rgba(249,115,22,0.1) 0%,rgba(8,12,8,0.85) 100%)", border:"1px solid rgba(249,115,22,0.22)", backdropFilter:"blur(16px)" }}>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color:"#f97316" }}>
+              {clockNow.getHours()<12?"☀️ Good Morning":clockNow.getHours()<17?"🌤️ Good Afternoon":clockNow.getHours()<21?"🌆 Good Evening":"🌙 Good Night"}
+            </p>
+            <p className="text-white font-bold text-base leading-tight mt-0.5" style={{ fontFamily:"'Playfair Display',serif" }}>{staffName}</p>
+            <p className="text-gray-600 text-[10px] mt-0.5">Shift started · {shiftStart.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true})}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-white font-black text-xl leading-none" style={{ fontFamily:"'Playfair Display',serif" }}>
+              {clockNow.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true})}
+            </p>
+            <p className="text-gray-600 text-[9px] mt-0.5 uppercase tracking-wider">
+              {clockNow.toLocaleDateString("en-IN",{day:"2-digit",month:"short",weekday:"short"})}
+            </p>
+          </div>
+        </div>
+
+        {/* Performance cards */}
+        <div className="grid grid-cols-2 gap-2.5">
+          <div className="rounded-2xl p-3.5" style={{ background:"rgba(249,115,22,0.08)",border:"1px solid rgba(249,115,22,0.2)" }}>
+            <p className="text-[9px] font-black uppercase tracking-[0.18em] mb-1" style={{ color:"#f97316" }}>🔥 Queue Pressure</p>
+            <p className="text-white font-black text-2xl">{orders.length > 5 ? "HIGH" : orders.length > 2 ? "MED" : "LOW"}</p>
+            <p className="text-gray-600 text-[9px] mt-0.5">{orders.length} active · {newOrders.length} new</p>
+          </div>
+          <div className="rounded-2xl p-3.5" style={{ background:"rgba(234,179,8,0.06)",border:"1px solid rgba(234,179,8,0.18)" }}>
+            <p className="text-[9px] font-black uppercase tracking-[0.18em] mb-1" style={{ color:GOLD }}>⏱️ Oldest Order</p>
+            <p className="text-white font-black text-2xl">
+              {orders.length > 0 ? `${Math.floor((Date.now()-new Date(orders[orders.length-1]?.accepted_at||orders[orders.length-1]?.created_at))/60000)}m` : "—"}
+            </p>
+            <p className="text-gray-600 text-[9px] mt-0.5">time in queue</p>
+          </div>
+        </div>
+      </div>
       <div className="p-4 md:p-6 relative z-10">
         {/* STATS */}
         <div className="grid grid-cols-3 gap-3 mb-5">
@@ -283,3 +325,4 @@ const KitchenPanel = () => {
 };
 
 export default KitchenPanel;
+

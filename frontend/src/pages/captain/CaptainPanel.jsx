@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+﻿import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   UtensilsCrossed, RefreshCw, LogOut, ChefHat, Plus, X, Minus,
-  Check, Clock, Receipt, ShoppingBag, Users, Bell, AlertCircle, CheckCircle, Search
+  Check, Clock, Receipt, ShoppingBag, Users, Bell, AlertCircle, CheckCircle, Search, Sparkles, TrendingUp, Coffee
 } from "lucide-react";
 import axios from "axios";
 import API_BASE from "../../lib/config";
 
-/* ── Helpers ── */
+/* â”€â”€ Helpers â”€â”€ */
 const tableColor = (status) => {
   if (status === "free") return { bg: "rgba(34,197,94,0.1)", border: "rgba(34,197,94,0.4)", text: "#22c55e", label: "Free" };
   if (status === "occupied") return { bg: "rgba(239,68,68,0.1)", border: "rgba(239,68,68,0.4)", text: "#ef4444", label: "Occupied" };
@@ -15,14 +15,14 @@ const tableColor = (status) => {
 };
 
 const formatTime = (ts) => {
-  if (!ts) return "—";
+  if (!ts) return "â€”";
   try {
     const d = new Date(ts);
     const now = new Date();
     const isToday = d.toDateString() === now.toDateString();
     const time = d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
     return isToday ? time : d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }) + " " + time;
-  } catch { return "—"; }
+  } catch { return "â€”"; }
 };
 
 const timeSince = (ts) => {
@@ -34,14 +34,25 @@ const timeSince = (ts) => {
 };
 
 const orderStatusLabel = (s) => ({
-  accepted: "⏳ Sent to Kitchen",
-  preparing: "🔥 Preparing",
-  ready: "✅ READY — Serve Now!",
-  delivered: "✔ Served",
+  accepted: "â³ Sent to Kitchen",
+  preparing: "ðŸ”¥ Preparing",
+  ready: "âœ… READY â€” Serve Now!",
+  delivered: "âœ” Served",
 }[s] || s);
 
-const fmt = (n) => `₹${Number(n || 0).toFixed(0)}`;
+const fmt = (n) => `â‚¹${Number(n || 0).toFixed(0)}`;
 
+const getGreeting = () => {
+  const h = new Date().getHours();
+  if (h < 12) return { g: "Good Morning", e: "☀️" };
+  if (h < 17) return { g: "Good Afternoon", e: "🌤️" };
+  if (h < 21) return { g: "Good Evening", e: "🌆" };
+  return { g: "Good Night", e: "🌙" };
+};
+const getShiftTime = () => {
+  const now = new Date();
+  return now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+};
 const CaptainPanel = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("captain_token");
@@ -61,8 +72,16 @@ const CaptainPanel = () => {
   const [placing, setPlacing] = useState(false);
   const [closingBill, setClosingBill] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [shiftStart] = useState(() => new Date());
+  const [clockTime, setClockTime] = useState(getShiftTime());
 
   const audioRef = useRef(null);
+  // Live clock
+  useEffect(() => {
+    const t = setInterval(() => setClockTime(getShiftTime()), 10000);
+    return () => clearInterval(t);
+  }, []);
+
 
   useEffect(() => {
     if (!token) navigate("/staff-entry", { replace: true });
@@ -227,7 +246,7 @@ const CaptainPanel = () => {
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: "#0a1628" }}>
 
-      {/* ── HEADER ── */}
+      {/* â”€â”€ HEADER â”€â”€ */}
       <div className="shrink-0 flex items-center justify-between px-4 py-3"
         style={{ background: "rgba(15,30,60,0.98)", borderBottom: "1.5px solid rgba(234,179,8,0.25)", backdropFilter: "blur(12px)" }}>
         <div className="flex items-center gap-3">
@@ -258,15 +277,52 @@ const CaptainPanel = () => {
         </div>
       </div>
 
-      {/* ── CONTENT ── */}
+      {/* GREETING + STATS CARDS */}
+      <div className="shrink-0 px-3 pt-3 pb-2 space-y-2.5">
+        <div className="rounded-2xl px-4 py-3 flex items-center justify-between"
+          style={{ background:"linear-gradient(135deg,rgba(234,179,8,0.12) 0%,rgba(10,22,40,0.85) 100%)", border:"1px solid rgba(234,179,8,0.22)", backdropFilter:"blur(16px)" }}>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color:"#EAB308" }}>
+              {getGreeting().e} {getGreeting().g}
+            </p>
+            <p className="text-white font-bold text-base leading-tight mt-0.5" style={{ fontFamily:"'Playfair Display',serif" }}>
+              {captainName}
+            </p>
+            <p className="text-gray-500 text-[10px] mt-0.5">
+              Shift started at {shiftStart.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true})}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-white font-black text-2xl leading-none" style={{ fontFamily:"'Playfair Display',serif" }}>{clockTime}</p>
+            <p className="text-gray-600 text-[9px] mt-0.5 uppercase tracking-wider">
+              {new Date().toLocaleDateString("en-IN",{day:"2-digit",month:"short",weekday:"short"})}
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { label:"Tables", value:tables.length, sub:`${tables.filter(t=>t.status==="free").length} free`, color:"#EAB308", bg:"rgba(234,179,8,0.08)", border:"rgba(234,179,8,0.2)" },
+            { label:"Occupied", value:tables.filter(t=>t.status==="occupied").length, sub:"active tables", color:"#ef4444", bg:"rgba(239,68,68,0.08)", border:"rgba(239,68,68,0.2)" },
+            { label:"Ready", value:readyOrders.length, sub:"to serve now", color:"#22c55e", bg:"rgba(34,197,94,0.08)", border:"rgba(34,197,94,0.2)" },
+          ].map(s => (
+            <div key={s.label} className="rounded-2xl px-2 py-2.5 text-center"
+              style={{ background:s.bg, border:`1px solid ${s.border}` }}>
+              <p className="font-black text-2xl leading-none" style={{ color:s.color }}>{s.value}</p>
+              <p className="text-[9px] font-bold uppercase tracking-wider mt-0.5" style={{ color:s.color }}>{s.label}</p>
+              <p className="text-gray-600 text-[9px] mt-0.5">{s.sub}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* â”€â”€ CONTENT â”€â”€ */}
       <div className="flex-1 overflow-y-auto pb-20">
 
-        {/* ── READY ORDERS ALERT TAB ── */}
+        {/* â”€â”€ READY ORDERS ALERT TAB â”€â”€ */}
         {tab === "ready" && (
           <div className="p-4 space-y-3">
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-white font-bold text-lg" style={{ fontFamily: "'Playfair Display', serif" }}>
-                🔔 Ready to Serve
+                ðŸ”” Ready to Serve
               </h2>
               <button onClick={() => setTab("tables")} className="text-gray-500 hover:text-white transition-colors">
                 <X className="h-5 w-5" />
@@ -299,13 +355,13 @@ const CaptainPanel = () => {
                     <div className="space-y-1">
                       {(order.items || []).map((item, i) => (
                         <div key={i} className="flex justify-between text-sm">
-                          <span className="text-gray-300">{item.quantity}× {item.name}</span>
-                          <span className="text-emerald-400 font-medium">₹{(item.price * item.quantity).toFixed(0)}</span>
+                          <span className="text-gray-300">{item.quantity}Ã— {item.name}</span>
+                          <span className="text-emerald-400 font-medium">â‚¹{(item.price * item.quantity).toFixed(0)}</span>
                         </div>
                       ))}
                     </div>
                     <div className="mt-3 p-2 rounded-xl text-center" style={{ background: "rgba(34,197,94,0.1)" }}>
-                      <p className="text-emerald-400 font-bold text-sm">✅ Food is ready — Please serve Table {order.table_number || "—"}</p>
+                      <p className="text-emerald-400 font-bold text-sm">âœ… Food is ready â€” Please serve Table {order.table_number || "â€”"}</p>
                     </div>
                   </div>
                 </div>
@@ -314,7 +370,7 @@ const CaptainPanel = () => {
           </div>
         )}
 
-        {/* ── TABLES TAB ── */}
+        {/* â”€â”€ TABLES TAB â”€â”€ */}
         {tab === "tables" && (
           <div className="p-3">
             {loading ? (
@@ -368,7 +424,7 @@ const CaptainPanel = () => {
           </div>
         )}
 
-        {/* ── ORDERS TAB ── */}
+        {/* â”€â”€ ORDERS TAB â”€â”€ */}
         {tab === "orders" && (
           <div className="p-3 space-y-3">
             {occupiedTables.length === 0 ? (
@@ -395,11 +451,11 @@ const CaptainPanel = () => {
                         <div>
                           <p className="text-white font-semibold text-sm">Table {t.table_number}</p>
                           <p className={`text-xs capitalize ${hasReady ? "text-emerald-400 font-bold" : "text-gray-400"}`}>
-                            {hasReady ? "✅ Ready to serve!" : t.status}
+                            {hasReady ? "âœ… Ready to serve!" : t.status}
                           </p>
                         </div>
                       </div>
-                      <div className="text-[#EAB308] text-xs font-bold uppercase tracking-wider">View →</div>
+                      <div className="text-[#EAB308] text-xs font-bold uppercase tracking-wider">View â†’</div>
                     </div>
                   </button>
                 );
@@ -409,7 +465,7 @@ const CaptainPanel = () => {
         )}
       </div>
 
-      {/* ── BOTTOM TAB BAR ── */}
+      {/* â”€â”€ BOTTOM TAB BAR â”€â”€ */}
       <div className="fixed bottom-0 left-0 right-0 z-40 flex"
         style={{ background: "rgba(15,30,60,0.98)", borderTop: "1.5px solid rgba(234,179,8,0.2)", paddingBottom: "env(safe-area-inset-bottom)" }}>
         {[
@@ -438,7 +494,7 @@ const CaptainPanel = () => {
         })}
       </div>
 
-      {/* ══════════ TABLE SHEET ══════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â• TABLE SHEET â•â•â•â•â•â•â•â•â•â• */}
       {sheet && (
         <div className="fixed inset-0 z-50 flex flex-col">
           <div className="absolute inset-0 bg-black/70" onClick={() => setSheet(null)} />
@@ -475,7 +531,7 @@ const CaptainPanel = () => {
                     <Check className="h-4 w-4 text-white" />
                   </div>
                   <div>
-                    <p className="text-emerald-400 font-bold text-sm">Food is Ready! 🎉</p>
+                    <p className="text-emerald-400 font-bold text-sm">Food is Ready! ðŸŽ‰</p>
                     <p className="text-emerald-600 text-xs">Kitchen has marked this order ready. Please serve.</p>
                   </div>
                 </div>
@@ -497,10 +553,10 @@ const CaptainPanel = () => {
                           {orderStatusLabel(o.status)}
                         </span>
                       </div>
-                      {o.created_at && <p className="text-gray-600 text-[10px] mb-1.5">{formatTime(o.created_at)} · {timeSince(o.created_at)}</p>}
+                      {o.created_at && <p className="text-gray-600 text-[10px] mb-1.5">{formatTime(o.created_at)} Â· {timeSince(o.created_at)}</p>}
                       {o.items?.map((item, j) => (
                         <div key={j} className="flex justify-between text-xs text-gray-400 mt-0.5">
-                          <span>{item.quantity}× {item.name}</span>
+                          <span>{item.quantity}Ã— {item.name}</span>
                           <span>{fmt(item.price * item.quantity)}</span>
                         </div>
                       ))}
@@ -630,7 +686,7 @@ const CaptainPanel = () => {
                     className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm text-white disabled:opacity-60 active:scale-[0.98]"
                     style={{ background: "rgba(239,68,68,0.2)", border: "1px solid rgba(239,68,68,0.35)" }}>
                     <Receipt className="h-4 w-4" />
-                    {closingBill ? "Closing..." : `Close Bill — ${fmt(sheet.session.total)}`}
+                    {closingBill ? "Closing..." : `Close Bill â€” ${fmt(sheet.session.total)}`}
                   </button>
                 </div>
               )}
@@ -643,3 +699,4 @@ const CaptainPanel = () => {
 };
 
 export default CaptainPanel;
+

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Bike, LogOut, RefreshCw, MapPin, Package,
@@ -46,6 +46,8 @@ const DeliveryPanel = () => {
   const [loading, setLoading]  = useState(true);
   const [updating, setUpdating]= useState(null);
   const [tab, setTab]          = useState("active");
+  const [shiftStart]           = useState(() => new Date());
+  const [clockNow, setClockNow]= useState(new Date());
 
   const statsKey = `rider_stats_${riderId}`;
   const [cumulativeStats, setCumulativeStats] = useState(() => {
@@ -53,6 +55,11 @@ const DeliveryPanel = () => {
   });
 
   useEffect(() => { if (!token) navigate("/staff-entry",{replace:true}); }, [token,navigate]);
+
+  useEffect(() => {
+    const c = setInterval(() => setClockNow(new Date()), 30000);
+    return () => clearInterval(c);
+  }, []);
 
   const fetchProfile = useCallback(async () => {
     try {
@@ -106,26 +113,31 @@ const DeliveryPanel = () => {
 
       {/* HEADER */}
       <div className="shrink-0 z-40 relative" style={{ background:"rgba(6,8,16,0.98)",borderBottom:"1px solid rgba(255,255,255,0.07)",backdropFilter:"blur(20px)" }}>
-        {/* Top bar */}
+        {/* Greeting card */}
         <div className="flex items-center justify-between px-4 pt-4 pb-3">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-xl" style={{ background:"linear-gradient(135deg,#16a34a,#059669)" }}>
-                <Bike className="h-6 w-6 text-white"/>
-              </div>
-              <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-400 rounded-full border-2" style={{ borderColor:"#06080f" }}/>
-            </div>
-            <div>
-              <p className="text-white font-bold text-sm leading-tight" style={{ fontFamily:"'Playfair Display',serif" }}>{profile?.name || "Delivery Partner"}</p>
-              <p className="text-green-400 text-[10px] font-medium mt-0.5 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-green-400 rounded-full inline-block animate-pulse"/>
-                Online · {profile?.vehicle_type || "Delivery"}
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color:"#4ade80" }}>
+              {clockNow.getHours()<12?"☀️ Good Morning":clockNow.getHours()<17?"🌤️ Good Afternoon":clockNow.getHours()<21?"🌆 Good Evening":"🌙 Good Night"}
+            </p>
+            <p className="text-white font-bold text-base leading-tight" style={{ fontFamily:"'Playfair Display',serif" }}>{profile?.name || "Delivery Partner"}</p>
+            <p className="text-green-400 text-[10px] font-medium mt-0.5 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 bg-green-400 rounded-full inline-block animate-pulse"/>
+              Online · Shift since {shiftStart.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true})}
+            </p>
+          </div>
+          <div className="flex items-end gap-3">
+            <div className="text-right">
+              <p className="text-white font-black text-2xl leading-none" style={{ fontFamily:"'Playfair Display',serif" }}>
+                {clockNow.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true})}
+              </p>
+              <p className="text-gray-600 text-[9px] uppercase tracking-wider mt-0.5">
+                {clockNow.toLocaleDateString("en-IN",{day:"2-digit",month:"short",weekday:"short"})}
               </p>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={fetchOrders} className="p-2 rounded-xl active:scale-90" style={{ background:"rgba(255,255,255,0.05)" }}><RotateCw className="h-4 w-4 text-gray-400"/></button>
-            <button onClick={logout} className="p-2 rounded-xl active:scale-90" style={{ background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.2)" }}><LogOut className="h-4 w-4 text-red-400"/></button>
+            <div className="flex items-center gap-1.5">
+              <button onClick={fetchOrders} className="p-2 rounded-xl active:scale-90" style={{ background:"rgba(255,255,255,0.05)" }}><RotateCw className="h-4 w-4 text-gray-400"/></button>
+              <button onClick={logout} className="p-2 rounded-xl active:scale-90" style={{ background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.2)" }}><LogOut className="h-4 w-4 text-red-400"/></button>
+            </div>
           </div>
         </div>
 
