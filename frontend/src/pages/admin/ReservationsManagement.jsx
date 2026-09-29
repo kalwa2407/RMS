@@ -557,9 +557,9 @@ const ReservationsManagement = () => {
       </div>
 
       {/* ── SEARCH, FILTER TABS & CALENDAR SELECTOR ── */}
-      <div className="p-3 rounded-2xl bg-[#0f2933]/90 border border-white/10 flex flex-col md:flex-row items-center justify-between gap-3 shadow-lg">
-        {/* Filter Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
+      <div className="p-3.5 sm:p-4 rounded-3xl bg-[#0f2933]/95 border border-[#EAB308]/20 shadow-xl space-y-3">
+        {/* Row 1: Filter Pills (Smooth scroll with touch, NO scrollbar, shrink-0) */}
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 -mx-1 px-1">
           {[
             { id: "today", label: `Today 🔥 (${todayCount})` },
             { id: "pending", label: `Pending ⏳ (${pendingCount})` },
@@ -570,10 +570,10 @@ const ReservationsManagement = () => {
             <button
               key={t.id}
               onClick={() => { setActiveTab(t.id); setSelectedDate(""); }}
-              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold uppercase tracking-wider transition-all whitespace-nowrap ${
+              className={`shrink-0 px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all select-none ${
                 activeTab === t.id && !selectedDate
-                  ? "bg-[#EAB308] text-black shadow-md"
-                  : "text-gray-400 hover:text-white hover:bg-white/5"
+                  ? "bg-[#EAB308] text-black shadow-lg shadow-amber-500/25 scale-[1.02]"
+                  : "text-gray-300 hover:text-white bg-[#1a4855]/60 hover:bg-[#1a4855] border border-white/10"
               }`}
             >
               {t.label}
@@ -581,52 +581,66 @@ const ReservationsManagement = () => {
           ))}
         </div>
 
-        {/* Search & Date Filter */}
-        <div className="flex items-center gap-2 w-full md:w-auto">
+        {/* Row 2: Search Bar & Date Picker */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-2 border-t border-white/5">
           {/* Search Bar */}
-          <div className="relative flex-1 md:w-60">
-            <Search className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search name, phone, table..."
-              className="w-full bg-[#1a4855]/70 border border-[#EAB308]/20 focus:border-[#EAB308] rounded-xl pl-9 pr-7 py-2 text-xs text-white placeholder-gray-500 outline-none transition-all"
+              placeholder="Search by customer name, phone number, table..."
+              className="w-full bg-[#1a4855]/60 border border-[#EAB308]/20 focus:border-[#EAB308] rounded-2xl pl-10 pr-8 py-2.5 text-xs text-white placeholder-gray-400 outline-none transition-all"
             />
             {searchQuery && (
-              <button onClick={() => setSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
+              <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white p-0.5">
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
 
-          {/* Date Picker Button */}
-          <div className="relative">
-            <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-              selectedDate
-                ? "bg-[#EAB308]/20 border-[#EAB308] text-[#EAB308]"
-                : "bg-[#1a4855] border-white/10 text-gray-300 hover:border-[#EAB308]/40"
-            }`}>
-              <Calendar className="w-4 h-4 text-[#EAB308] shrink-0" />
-              <span>{selectedDate ? formatDateShort(selectedDate) : "Pick Date"}</span>
-            </div>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={e => setSelectedDate(e.target.value)}
-              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
-            />
-          </div>
+          {/* Quick Date Filters & Calendar Picker */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Today quick toggle */}
+            {!selectedDate ? (
+              <button
+                onClick={() => setSelectedDate(getTodayDateString())}
+                className="px-3.5 py-2.5 rounded-2xl bg-[#1a4855]/70 hover:bg-[#1a4855] border border-white/10 text-gray-300 hover:text-[#EAB308] text-xs font-bold transition-all flex items-center gap-1.5"
+              >
+                <CalendarDays className="w-3.5 h-3.5 text-[#EAB308]" />
+                <span>Today</span>
+              </button>
+            ) : null}
 
-          {selectedDate && (
-            <button
-              onClick={() => setSelectedDate("")}
-              className="p-2 rounded-xl bg-[#1a4855] text-red-400 hover:bg-red-500/20 border border-white/10"
-              title="Clear date filter"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
+            {/* Calendar Date Picker Button */}
+            <div className="relative">
+              <div className={`flex items-center gap-2 px-3.5 py-2.5 rounded-2xl border text-xs font-bold transition-all cursor-pointer ${
+                selectedDate
+                  ? "bg-[#EAB308]/20 border-[#EAB308] text-[#EAB308] shadow-[0_0_15px_rgba(234,179,8,0.2)]"
+                  : "bg-[#1a4855] border-white/10 text-gray-200 hover:border-[#EAB308]/50"
+              }`}>
+                <Calendar className="w-3.5 h-3.5 text-[#EAB308] shrink-0" />
+                <span>{selectedDate ? formatDateShort(selectedDate) : "Pick Date"}</span>
+              </div>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={e => setSelectedDate(e.target.value)}
+                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+              />
+            </div>
+
+            {selectedDate && (
+              <button
+                onClick={() => setSelectedDate("")}
+                className="p-2.5 rounded-2xl bg-[#1a4855] text-red-400 hover:bg-red-500/20 border border-white/10 transition-colors"
+                title="Clear date filter"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -794,7 +808,7 @@ const ReservationsManagement = () => {
               >
                 {/* ── CARD HEADER: DATE & EXACT BOOKING TIMING ── */}
                 <div
-                  className="px-5 py-4 flex items-center justify-between border-b border-white/5"
+                  className="px-4 sm:px-5 py-3.5 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5"
                   style={{
                     background: timing?.isUrgent
                       ? "linear-gradient(90deg, rgba(249,115,22,0.2) 0%, rgba(249,115,22,0.03) 100%)"
@@ -807,7 +821,7 @@ const ReservationsManagement = () => {
                 >
                   <div className="flex items-center gap-3.5">
                     {/* Day Block */}
-                    <div className="text-center rounded-2xl px-3 py-2 min-w-[58px] bg-black/40 border border-[#EAB308]/30 shadow-inner">
+                    <div className="text-center rounded-2xl px-3 py-2 min-w-[56px] sm:min-w-[58px] bg-black/40 border border-[#EAB308]/30 shadow-inner shrink-0">
                       <p className="text-[10px] font-black uppercase tracking-wider leading-none text-[#EAB308]">
                         {res.date ? new Date(+res.date.split(/[-/]/)[0], +res.date.split(/[-/]/)[1]-1, +res.date.split(/[-/]/)[2]).toLocaleDateString("en-IN",{month:"short"}) : "—"}
                       </p>
@@ -823,7 +837,7 @@ const ReservationsManagement = () => {
                     <div>
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4 text-[#EAB308]" />
-                        <span className="text-white font-black text-2xl tracking-tight leading-none">
+                        <span className="text-white font-black text-xl sm:text-2xl tracking-tight leading-none">
                           {res.time}
                         </span>
                       </div>
@@ -834,7 +848,7 @@ const ReservationsManagement = () => {
                   </div>
 
                   {/* Status & Relative Countdown */}
-                  <div className="flex flex-col items-end gap-1.5">
+                  <div className="flex items-center sm:flex-col sm:items-end justify-between sm:justify-center gap-1.5 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5">
                     {timing && (
                       <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${timing.color}`}>
                         {timing.label}
@@ -938,9 +952,9 @@ const ReservationsManagement = () => {
                 </div>
 
                 {/* ── CARD FOOTER: ACTION BUTTONS ── */}
-                <div className="px-5 pb-5 pt-1">
+                <div className="px-4 sm:px-5 pb-4 sm:pb-5 pt-1">
                   {res.status === "pending" ? (
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <button
                         onClick={() => updateStatus(id, "confirmed", res)}
                         disabled={isSending}
@@ -952,13 +966,13 @@ const ReservationsManagement = () => {
                       <button
                         onClick={() => updateStatus(id, "rejected", res)}
                         disabled={isSending}
-                        className="px-4 flex items-center justify-center gap-1.5 bg-red-600/80 hover:bg-red-600 text-white py-3 rounded-2xl text-xs font-bold transition-colors disabled:opacity-60"
+                        className="px-4 py-3 flex items-center justify-center gap-1.5 bg-red-600/80 hover:bg-red-600 text-white rounded-2xl text-xs font-bold transition-colors disabled:opacity-60"
                       >
                         <X className="h-4 w-4"/> Reject
                       </button>
                     </div>
                   ) : res.status === "confirmed" ? (
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <button
                         onClick={() => setWhatsappModal(res)}
                         className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-xs font-black uppercase tracking-wider text-white transition-all hover:opacity-95"
@@ -971,20 +985,20 @@ const ReservationsManagement = () => {
                       </button>
                       <button
                         onClick={() => updateStatus(id, "seated", res)}
-                        className="px-4 py-3 rounded-2xl text-xs font-bold text-cyan-300 bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 transition-colors flex items-center gap-1.5"
+                        className="px-4 py-3 rounded-2xl text-xs font-bold text-cyan-300 bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 transition-colors flex items-center justify-center gap-1.5"
                         title="Mark guests as arrived and seated at table"
                       >
                         <UserCheck className="w-3.5 h-3.5" /> Mark Seated
                       </button>
                       <button
                         onClick={() => updateStatus(id, "rejected", res)}
-                        className="px-3.5 py-3 rounded-2xl text-xs font-bold text-red-400 border border-red-500/20 hover:bg-red-500/10 transition-colors"
+                        className="px-3.5 py-3 rounded-2xl text-xs font-bold text-red-400 border border-red-500/20 hover:bg-red-500/10 transition-colors flex items-center justify-center"
                       >
                         Cancel
                       </button>
                     </div>
                   ) : res.status === "seated" ? (
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <button
                         onClick={() => updateStatus(id, "completed", res)}
                         className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-xs font-black uppercase tracking-wider text-black bg-[#EAB308] hover:bg-[#ca9a07] transition-all shadow-lg shadow-amber-900/20"
@@ -993,7 +1007,7 @@ const ReservationsManagement = () => {
                       </button>
                       <button
                         onClick={() => setWhatsappModal(res)}
-                        className="px-4 py-3 rounded-2xl text-xs font-bold text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/10 transition-colors"
+                        className="px-4 py-3 rounded-2xl text-xs font-bold text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/10 transition-colors flex items-center justify-center"
                       >
                         <MessageCircle className="w-4 h-4" />
                       </button>
