@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+﻿import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCustomerAuth } from '../../context/CustomerAuthContext';
 import API_BASE from '../../lib/config';
@@ -12,12 +12,12 @@ import {
   ShieldCheck, MessageSquare, ExternalLink, Share2
 } from 'lucide-react';
 
-/* ─── Design tokens ─── */
+/* â”€â”€â”€ Design tokens â”€â”€â”€ */
 const GOLD = '#EAB308';
 const GF   = 'rgba(234,179,8,0.12)';
 const GB   = 'rgba(234,179,8,0.30)';
 
-/* ─── Premium Glassmorphism Design Tokens ─── */
+/* â”€â”€â”€ Premium Glassmorphism Design Tokens â”€â”€â”€ */
 const GLASS_CARD = {
   background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.10) 0%, rgba(20, 20, 25, 0.45) 100%)',
   backdropFilter: 'blur(24px)',
@@ -44,11 +44,11 @@ const GLASS_GOLD_CARD = {
 
 const CARD = 'rgba(255, 255, 255, 0.08)';
 
-/* ─── Helpers ─── */
+/* â”€â”€â”€ Helpers â”€â”€â”€ */
 const fmt = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day:'numeric', month:'short' }) : '';
 const fmtT = (d) => d ? new Date(d).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }) : '';
 
-/* ─── Razorpay script loader ─── */
+/* â”€â”€â”€ Razorpay script loader â”€â”€â”€ */
 const useRazorpay = () => {
   const [ready, setReady] = useState(!!window.Razorpay);
   useEffect(() => {
@@ -61,16 +61,16 @@ const useRazorpay = () => {
   return ready;
 };
 
-/* ─── Table status dot ─── */
+/* â”€â”€â”€ Table status dot â”€â”€â”€ */
 const Dot = ({ status }) => {
   const m = { available:'#22c55e', held:'#f59e0b', reserved:'#3b82f6', occupied:'#ef4444', cleaning:'#a78bfa', unavailable:'#374151' };
   const c = m[status?.toLowerCase()] || m.unavailable;
   return <span className="inline-block w-2 h-2 rounded-full" style={{ background: c, boxShadow:`0 0 5px ${c}` }} />;
 };
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    MAIN COMPONENT
-════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 const CustomerDashboard = () => {
   const { currentUser, customerProfile, updateProfile, signOutCustomer, idToken, fetchWithAuth, refreshProfile } = useCustomerAuth();
   const navigate   = useNavigate();
@@ -108,7 +108,7 @@ const CustomerDashboard = () => {
   const sseRef = useRef(null);
   const mainScrollRef = useRef(null);
 
-  /* ── In-App Ordering State ── */
+  /* â”€â”€ In-App Ordering State â”€â”€ */
   const [menu, setMenu]                   = useState([]);
   const [menuLoading, setMenuLoading]     = useState(true);
   const [selectedCat, setSelectedCat]     = useState('All');
@@ -125,7 +125,7 @@ const CustomerDashboard = () => {
   const [orderDone, setOrderDone]         = useState(null);
   const [applyCoins, setApplyCoins]       = useState(false);
 
-  /* ── Auto-scroll to top when switching tabs or subtabs (native mobile app behavior) ── */
+  /* â”€â”€ Auto-scroll to top when switching tabs or subtabs (native mobile app behavior) â”€â”€ */
   useEffect(() => {
     if (mainScrollRef.current) {
       mainScrollRef.current.scrollTop = 0;
@@ -140,7 +140,7 @@ const CustomerDashboard = () => {
     }
   }, [customerProfile]);
 
-  /* ── Fetch Menu items ── */
+  /* â”€â”€ Fetch Menu items â”€â”€ */
   const fetchMenu = useCallback(async () => {
     setMenuLoading(true);
     try {
@@ -162,7 +162,7 @@ const CustomerDashboard = () => {
 
   useEffect(() => { if (customerProfile?.phone) setPhoneVal(customerProfile.phone); }, [customerProfile]);
 
-  /* ── Fetch orders ── */
+  /* â”€â”€ Fetch orders â”€â”€ */
   const fetchOrders = useCallback(async () => {
     if (!idToken) return;
     setLoadO(true);
@@ -170,7 +170,7 @@ const CustomerDashboard = () => {
     catch(e) { console.error(e); } finally { setLoadO(false); }
   }, [idToken, fetchWithAuth]);
 
-  /* ── Fetch reservations ── */
+  /* â”€â”€ Fetch reservations â”€â”€ */
   const fetchRes = useCallback(async () => {
     if (!idToken) return;
     setLoadR(true);
@@ -178,7 +178,7 @@ const CustomerDashboard = () => {
     catch(e) { console.error(e); } finally { setLoadR(false); }
   }, [idToken, fetchWithAuth]);
 
-  /* ── SSE: real-time table stream ── */
+  /* â”€â”€ SSE: real-time table stream â”€â”€ */
   useEffect(() => {
     const connect = () => {
       const es = new EventSource(`${API_BASE}/api/tables/stream`);
@@ -198,13 +198,13 @@ const CustomerDashboard = () => {
 
   useEffect(() => { if (idToken) { fetchOrders(); fetchRes(); } }, [idToken, fetchOrders, fetchRes]);
 
-  /* ── Computed ── */
+  /* â”€â”€ Computed â”€â”€ */
   const activeOrders = orders.filter(o => ['placed','accepted','preparing','ready','out_for_delivery'].includes(o.status));
   const activeRes    = reservations.filter(r => ['pending','confirmed'].includes(r.status));
   const pdCoins      = customerProfile?.pd_coins || customerProfile?.loyalty_points || 0;
   const fee          = guests * 10;
 
-  /* ── Coins expiring soon (within next 15 days of 45-day policy) ── */
+  /* â”€â”€ Coins expiring soon (within next 15 days of 45-day policy) â”€â”€ */
   const expiringSoonCoins = useMemo(() => {
     if (!customerProfile?.coins_history) return 0;
     const now = Date.now();
@@ -222,22 +222,22 @@ const CustomerDashboard = () => {
     return expiring;
   }, [customerProfile?.coins_history]);
 
-  const tAvail = tables.filter(t => t.status?.toLowerCase() === 'available').length;
+  const tAvail = tables.filter(t => ['available','free'].includes(t.status?.toLowerCase())).length;
   const tOccup = tables.filter(t => t.status?.toLowerCase() === 'occupied').length;
   const tResvd = tables.filter(t => ['reserved','held'].includes(t.status?.toLowerCase())).length;
 
-  /* ── Status badge ── */
+  /* â”€â”€ Status badge â”€â”€ */
   const badge = (s) => ({
     placed:           <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse">Placed</span>,
     accepted:         <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">Accepted</span>,
-    preparing:        <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30 animate-pulse">Preparing 🔥</span>,
+    preparing:        <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30 animate-pulse">Preparing ðŸ”¥</span>,
     ready:            <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">Ready</span>,
-    out_for_delivery: <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 animate-pulse">On way 🛵</span>,
-    delivered:        <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-green-500/20 text-green-300 border border-green-500/30">Delivered ✓</span>,
+    out_for_delivery: <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 animate-pulse">On way ðŸ›µ</span>,
+    delivered:        <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-green-500/20 text-green-300 border border-green-500/30">Delivered âœ“</span>,
     cancelled:        <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30">Cancelled</span>,
   }[s] || <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-gray-500/20 text-gray-300 border border-gray-500/30">{s}</span>);
 
-  /* ── Razorpay ── */
+  /* â”€â”€ Razorpay â”€â”€ */
   const handlePay = async () => {
     if (!rzReady) { alert('Payment loading...'); return; }
     setPaying(true);
@@ -246,7 +246,7 @@ const CustomerDashboard = () => {
       amount: fee * 100,
       currency: 'INR',
       name: 'Persian Darbar',
-      description: `Table Reservation — ${guests} Guest${guests>1?'s':''}`,
+      description: `Table Reservation â€” ${guests} Guest${guests>1?'s':''}`,
       theme: { color: GOLD },
       prefill: { name: currentUser?.displayName||'', email: currentUser?.email||'', contact: customerProfile?.phone ? `91${customerProfile.phone}`:'' },
       handler: async (response) => {
@@ -273,7 +273,7 @@ const CustomerDashboard = () => {
     new window.Razorpay(opts).open();
   };
 
-  /* ── Phone save ── */
+  /* â”€â”€ Phone save â”€â”€ */
   const savePhone = async (e) => {
     e.preventDefault(); setPhoneErr('');
     const c = phoneVal.replace(/[^0-9]/g,'');
@@ -285,7 +285,7 @@ const CustomerDashboard = () => {
     else setPhoneErr(r.warning || 'Failed');
   };
 
-  /* ── Address save ── */
+  /* â”€â”€ Address save â”€â”€ */
   const saveAddress = async (e) => {
     e.preventDefault(); setAddrErr('');
     if (!addrVal.trim()) { setAddrErr('Enter a valid delivery address'); return; }
@@ -302,7 +302,7 @@ const CustomerDashboard = () => {
     }
   };
 
-  /* ── Share App ── */
+  /* â”€â”€ Share App â”€â”€ */
   const handleShareApp = () => {
     if (navigator.share) {
       navigator.share({
@@ -317,7 +317,7 @@ const CustomerDashboard = () => {
     }
   };
 
-  /* ── In-App Cart & Ordering Calculations ── */
+  /* â”€â”€ In-App Cart & Ordering Calculations â”€â”€ */
   const menuCategories = ['All', ...new Set(menu.map(i => i.category).filter(Boolean))];
   const filteredMenuItems = menu.filter(item => {
     const matchesCat = selectedCat === 'All' || item.category === selectedCat;
@@ -332,11 +332,11 @@ const CustomerDashboard = () => {
   const cartDeliveryFee = orderType === 'TAKEAWAY' ? 0 : (distanceKm !== null && distanceKm > 10 ? 60 : 0);
   const cartTaxes       = Math.round(cartSubtotal * 0.05);
 
-  /* ── PD Coins Redemption Rules:
-     - Min ₹300 subtotal
+  /* â”€â”€ PD Coins Redemption Rules:
+     - Min â‚¹300 subtotal
      - Max burn cap: 25% of subtotal
-     - 1 coin = ₹1 discount
-     - 10% re-earn on net paid amount (subtotal - coin discount) ── */
+     - 1 coin = â‚¹1 discount
+     - 10% re-earn on net paid amount (subtotal - coin discount) â”€â”€ */
   const maxRedeemableCoins = (cartSubtotal >= 300 && pdCoins > 0)
     ? Math.min(pdCoins, Math.floor(cartSubtotal * 0.25))
     : 0;
@@ -393,7 +393,7 @@ const CustomerDashboard = () => {
   const handlePlaceOrder = async () => {
     if (cart.length === 0) return;
     if (orderType === 'DELIVERY' && cartSubtotal < 250) {
-      alert('Minimum order value for delivery is ₹250. Or choose Takeaway Pickup (no minimum)!');
+      alert('Minimum order value for delivery is â‚¹250. Or choose Takeaway Pickup (no minimum)!');
       return;
     }
     const phone = phoneVal || customerProfile?.phone;
@@ -476,7 +476,7 @@ const CustomerDashboard = () => {
     }
   };
 
-  /* ── Bottom nav ── */
+  /* â”€â”€ Bottom nav â”€â”€ */
   const NAV = [
     { key:'home',     Icon:Home,          label:'Home' },
     { key:'order',    Icon:UtensilsCrossed,label:'Order', count: cartItemCount },
@@ -485,13 +485,13 @@ const CustomerDashboard = () => {
     { key:'profile',  Icon:User,          label:'Profile' },
   ];
 
-  /* ══════════════════════════════════════════
+  /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
      RENDER
-  ══════════════════════════════════════════ */
+  â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
   return (
     <div className="relative h-[100dvh] flex flex-col overflow-hidden text-white" style={{ fontFamily:"'Inter',system-ui,sans-serif" }}>
 
-      {/* ═══ FULLSCREEN HEAVILY BLURRED RESTAURANT INTERIOR BACKGROUND ═══ */}
+      {/* â•â•â• FULLSCREEN HEAVILY BLURRED RESTAURANT INTERIOR BACKGROUND â•â•â• */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden select-none">
         <img
           src="/dynamic_images/img1.jpeg"
@@ -507,7 +507,7 @@ const CustomerDashboard = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-black/70" />
       </div>
 
-      {/* ═══ HEADER (Glassmorphic) ═══ */}
+      {/* â•â•â• HEADER (Glassmorphic) â•â•â• */}
       <div className="relative z-10 shrink-0 px-4 py-3 flex items-center justify-between"
         style={{
           background: 'rgba(15, 18, 24, 0.45)',
@@ -546,10 +546,10 @@ const CustomerDashboard = () => {
         </button>
       </div>
 
-      {/* ═══ SCROLLABLE BODY ═══ */}
+      {/* â•â•â• SCROLLABLE BODY â•â•â• */}
       <div ref={mainScrollRef} className="relative z-10 flex-1 overflow-y-auto overscroll-contain">
 
-        {/* ══ HOME ══ */}
+        {/* â•â• HOME â•â• */}
         {tab === 'home' && (
           <div className="pb-6">
             {/* Hero banner card (Frosted Glass) */}
@@ -575,7 +575,7 @@ const CustomerDashboard = () => {
               </h1>
 
               <p className="text-[10px] font-bold tracking-[0.3em] uppercase mt-2.5" style={{ color: 'rgba(234,179,8,0.8)' }}>
-                Reserve · Dine · Earn · Revisit
+                Reserve Â· Dine Â· Earn Â· Revisit
               </p>
 
               {/* Dots indicator */}
@@ -605,7 +605,7 @@ const CustomerDashboard = () => {
                     Book Your Royal Table
                   </p>
                   <p className="text-xs mt-1 text-white/75">
-                    ₹10/person <span style={{ color: GOLD }}>·</span> Earn 10% PD Coins on bill
+                    â‚¹10/person <span style={{ color: GOLD }}>Â·</span> Earn 10% PD Coins on bill
                   </p>
                 </div>
                 {/* Glass squircle button with Calendar icon as shown in mockup */}
@@ -656,23 +656,29 @@ const CustomerDashboard = () => {
                         </div>
                       ))}
                     </div>
-                    {/* Table chips */}
-                    <div className="flex flex-wrap gap-1.5 justify-between">
-                      {tables.slice(0, 20).map((t, i) => {
-                        const s = t.status?.toLowerCase() || 'unavailable';
-                        const cm = { available:'#22c55e', held:'#f59e0b', reserved:'#3b82f6', occupied:'#ef4444', cleaning:'#a78bfa', unavailable:'#374151' };
+                    {/* Full 44-Table Grid */}
+                    <div className="grid grid-cols-8 gap-1.5 mt-1">
+                      {Array.from({length: 44}, (_, i) => i + 1).map(tNum => {
+                        const t = tables.find(x => x.table_number === tNum);
+                        const s = t ? (t.status?.toLowerCase() || 'unavailable') : 'unavailable';
+                        const isOccupied = s === 'occupied';
+                        const isFree = s === 'available' || s === 'free';
+                        const cm = { available:'#22c55e', free:'#22c55e', held:'#f59e0b', reserved:'#3b82f6', occupied:'#ef4444', cleaning:'#a78bfa', unavailable:'#374151' };
                         const c = cm[s] || cm.unavailable;
                         return (
-                          <div key={t._id || i} title={`${t.table_number} — ${s}`}
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black transition-all"
+                          <div key={tNum}
+                            title={`Table ${tNum} â€” ${isOccupied ? 'Occupied (locked)' : s}`}
+                            className="aspect-square rounded-xl flex flex-col items-center justify-center text-[8px] font-black transition-all relative"
                             style={{
-                              background: `${c}18`,
-                              border: `1.5px solid ${c}55`,
+                              background: `${c}15`,
+                              border: `1.5px solid ${c}${isOccupied ? '70' : '40'}`,
                               color: c,
-                              boxShadow: `0 2px 6px ${c}22`,
-                              backdropFilter: 'blur(8px)'
+                              boxShadow: isOccupied ? `0 0 8px ${c}25` : isFree ? `0 0 6px ${c}18` : 'none',
                             }}>
-                            {String(t.table_number || i + 1).replace('T', '').slice(-2)}
+                            <span className="text-[9px] font-black" style={{color:c}}>{tNum}</span>
+                            {isOccupied && (
+                              <span style={{fontSize:'6px', color:c, opacity:0.7, letterSpacing:'0.05em', marginTop:'1px'}}>BUSY</span>
+                            )}
                           </div>
                         );
                       })}
@@ -686,7 +692,7 @@ const CustomerDashboard = () => {
                         ['#a78bfa', 'Cleaning']
                       ].map(([c, l]) => (
                         <span key={l} className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full" style={{ background: c, boxShadow:`0 0 6px ${c}` }} />
+                          <span className="w-2 h-2 rounded-full" style={{ background: c, boxShadow:`0 0 5px ${c}` }} />
                           <span className="text-[10px] text-white/70 font-medium">{l}</span>
                         </span>
                       ))}
@@ -724,7 +730,7 @@ const CustomerDashboard = () => {
                   <div>
                     <p className="text-emerald-400 font-black text-[10px] uppercase tracking-widest">Upcoming Reservation</p>
                     <p className="text-white font-bold text-sm">{activeRes[0].date} at {activeRes[0].time}</p>
-                    <p className="text-white/70 text-xs">{activeRes[0].guests} guests · {activeRes[0].status === 'confirmed' ? '✅ Confirmed' : '⏳ Pending'}</p>
+                    <p className="text-white/70 text-xs">{activeRes[0].guests} guests Â· {activeRes[0].status === 'confirmed' ? 'âœ… Confirmed' : 'â³ Pending'}</p>
                   </div>
                 </div>
               )}
@@ -745,7 +751,7 @@ const CustomerDashboard = () => {
                       <span className="text-4xl font-black text-white">{pdCoins.toLocaleString()}</span>
                       <span className="text-base font-bold" style={{ color: GOLD }}>PD Coins</span>
                     </div>
-                    <p className="text-xs text-white/75 mt-1">₹{pdCoins.toLocaleString()} value <span style={{ color: GOLD }}>·</span> Earn 10% on dine-in</p>
+                    <p className="text-xs text-white/75 mt-1">â‚¹{pdCoins.toLocaleString()} value <span style={{ color: GOLD }}>Â·</span> Earn 10% on dine-in</p>
                   </div>
                   <div className="flex flex-col items-end gap-2.5">
                     <div className="w-14 h-14 rounded-2xl flex items-center justify-center p-2 transition-transform hover:scale-105"
@@ -772,7 +778,7 @@ const CustomerDashboard = () => {
                 </div>
               </div>
 
-              {/* ═══ QUICK ACTIONS (Refined Luxury Frosted Glass Tiles) ═══ */}
+              {/* â•â•â• QUICK ACTIONS (Refined Luxury Frosted Glass Tiles) â•â•â• */}
               <div className="grid grid-cols-2 gap-3.5">
                 {[
                   {
@@ -857,7 +863,7 @@ const CustomerDashboard = () => {
           </div>
         )}
 
-        {/* ══ ORDER (In-App Food Ordering & History) ══ */}
+        {/* â•â• ORDER (In-App Food Ordering & History) â•â• */}
         {tab === 'order' && (
           <div className="p-4 space-y-4 pb-24">
 
@@ -891,7 +897,7 @@ const CustomerDashboard = () => {
               </button>
             </div>
 
-            {/* ── SUB-TAB: MENU & IN-APP CART ── */}
+            {/* â”€â”€ SUB-TAB: MENU & IN-APP CART â”€â”€ */}
             {orderSubTab === 'menu' && (
               <div className="space-y-4">
 
@@ -1010,7 +1016,7 @@ const CustomerDashboard = () => {
                             {(item.description || item.category) && (
                               <p className="text-gray-400 text-[11px] mt-0.5 line-clamp-2 leading-relaxed">{item.description || item.category}</p>
                             )}
-                            <p className="text-[#EAB308] font-black text-sm mt-1.5">₹{item.price}</p>
+                            <p className="text-[#EAB308] font-black text-sm mt-1.5">â‚¹{item.price}</p>
                           </div>
 
                           {/* ADD / qty stepper */}
@@ -1049,7 +1055,7 @@ const CustomerDashboard = () => {
               </div>
             )}
 
-            {/* ── SUB-TAB: ORDER HISTORY ── */}
+            {/* â”€â”€ SUB-TAB: ORDER HISTORY â”€â”€ */}
             {orderSubTab === 'history' && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between pb-1">
@@ -1082,12 +1088,12 @@ const CustomerDashboard = () => {
                           <span className="text-white/50 text-xs font-mono">#{o.order_id?.slice(-8)}</span>
                           {badge(o.status)}
                         </div>
-                        <span className="text-white font-bold text-sm">₹{o.total?.toFixed(0)}</span>
+                        <span className="text-white font-bold text-sm">â‚¹{o.total?.toFixed(0)}</span>
                       </div>
                       <div className="px-4 py-3 flex items-center justify-between">
                         <div>
                           <p className="text-white/90 text-sm font-medium">{o.items?.map(i=>`${i.quantity}x ${i.name}`).slice(0,2).join(', ')}{o.items?.length>2?` +${o.items.length-2}`:''}</p>
-                          <p className="text-white/50 text-xs mt-0.5">{fmt(o.created_at)} · {fmtT(o.created_at)}</p>
+                          <p className="text-white/50 text-xs mt-0.5">{fmt(o.created_at)} Â· {fmtT(o.created_at)}</p>
                         </div>
                         <Link to={`/track?order_id=${o.order_id}`}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold active:scale-95 transition-all shadow-sm"
@@ -1101,7 +1107,7 @@ const CustomerDashboard = () => {
               </div>
             )}
 
-            {/* ── FLOATING CART FAB ── */}
+            {/* â”€â”€ FLOATING CART FAB â”€â”€ */}
             {orderSubTab === 'menu' && cart.length > 0 && !isCartOpen && (
               <div className="sticky bottom-2 z-30 pt-2">
                 <button
@@ -1116,7 +1122,7 @@ const CustomerDashboard = () => {
                     <span className="font-black text-sm uppercase tracking-widest">View Cart</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="font-black text-lg">₹{cartSubtotal.toLocaleString()}</span>
+                    <span className="font-black text-lg">â‚¹{cartSubtotal.toLocaleString()}</span>
                     <ChevronRight className="w-4 h-4" />
                   </div>
                 </button>
@@ -1126,7 +1132,7 @@ const CustomerDashboard = () => {
           </div>
         )}
 
-        {/* ══ RESERVE ══ */}
+        {/* â•â• RESERVE â•â• */}
         {tab === 'reserve' && (
           <div className="p-4 space-y-4">
             {success ? (
@@ -1140,7 +1146,7 @@ const CustomerDashboard = () => {
                   <p className="text-gray-400 text-sm">Camp, Pune</p>
                 </div>
                 <div className="w-full rounded-2xl p-4 space-y-2.5" style={{ background:CARD, border:`1px solid ${GB}` }}>
-                  {[['Guests',`${success.guests} Persons`],['Amount Paid',`₹${success.fee}`],['Payment ID',success.payment_id?.slice(-10)||'—']].map(([k,v])=>(
+                  {[['Guests',`${success.guests} Persons`],['Amount Paid',`â‚¹${success.fee}`],['Payment ID',success.payment_id?.slice(-10)||'â€”']].map(([k,v])=>(
                     <div key={k} className="flex items-center justify-between">
                       <span className="text-gray-500 text-xs">{k}</span>
                       <span className="text-white font-bold text-sm">{v}</span>
@@ -1148,7 +1154,7 @@ const CustomerDashboard = () => {
                   ))}
                 </div>
                 <div className="w-full rounded-2xl p-4 text-center" style={{ background:'rgba(34,197,94,0.06)', border:'1px solid rgba(34,197,94,0.25)' }}>
-                  <p className="text-emerald-400 font-black text-sm">✅ CONFIRMED</p>
+                  <p className="text-emerald-400 font-black text-sm">âœ… CONFIRMED</p>
                   <p className="text-gray-500 text-xs mt-1">Show this screen at the host desk</p>
                 </div>
                 <button onClick={()=>{ setSuccess(null); setTab('bookings'); }}
@@ -1162,7 +1168,7 @@ const CustomerDashboard = () => {
                 <div className="pt-2">
                   <p className="text-[10px] font-black uppercase tracking-[0.4em] mb-1" style={{ color:GOLD }}>Reserve Your Table</p>
                   <h2 className="text-white text-xl font-black" style={{ fontFamily:"'Playfair Display',serif" }}>Persian Darbar</h2>
-                  <p className="text-gray-500 text-xs mt-0.5">Camp, Pune · Instant Confirmation</p>
+                  <p className="text-gray-500 text-xs mt-0.5">Camp, Pune Â· Instant Confirmation</p>
                 </div>
 
                 {/* Guest stepper */}
@@ -1201,7 +1207,7 @@ const CustomerDashboard = () => {
                 {/* Summary */}
                 <div className="rounded-3xl p-5" style={GLASS_CARD}>
                   <p className="text-[#EAB308] text-xs font-black uppercase tracking-widest mb-3">Reservation Summary</p>
-                  {[['Guests',`${guests} × ₹10`],['Reservation Fee',`₹${fee}`],['PD Coins Reward','After eligible dine-in']].map(([k,v])=>(
+                  {[['Guests',`${guests} Ã— â‚¹10`],['Reservation Fee',`â‚¹${fee}`],['PD Coins Reward','After eligible dine-in']].map(([k,v])=>(
                     <div key={k} className="flex items-center justify-between py-2" style={{ borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
                       <span className="text-white/60 text-xs">{k}</span>
                       <span className={`font-bold text-sm ${k==='Reservation Fee'?'text-white text-base':'text-white/80'}`}>{v}</span>
@@ -1219,12 +1225,12 @@ const CustomerDashboard = () => {
                 <button onClick={handlePay} disabled={paying}
                   className="w-full py-4 rounded-3xl font-black text-sm uppercase tracking-[0.15em] text-black active:scale-[0.98] transition-all disabled:opacity-50 shadow-xl"
                   style={{ background:GOLD, boxShadow:`0 8px 30px rgba(234,179,8,0.45)` }}>
-                  {paying ? 'Opening Payment...' : `Reserve & Pay ₹${fee}`}
+                  {paying ? 'Opening Payment...' : `Reserve & Pay â‚¹${fee}`}
                 </button>
 
                 <div className="text-center">
                   <Link to="/reservation" className="text-xs underline" style={{ color:'rgba(234,179,8,0.45)' }}>
-                    Schedule for a future date →
+                    Schedule for a future date â†’
                   </Link>
                 </div>
               </>
@@ -1232,7 +1238,7 @@ const CustomerDashboard = () => {
           </div>
         )}
 
-        {/* ══ BOOKINGS ══ */}
+        {/* â•â• BOOKINGS â•â• */}
         {tab === 'bookings' && (
           <div className="p-4 space-y-3">
             <div className="flex items-center justify-between">
@@ -1263,16 +1269,16 @@ const CustomerDashboard = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <Calendar className="w-4 h-4" style={{ color:GOLD }} />
-                      <span className="text-white font-bold text-sm">{r.date} · {r.time}</span>
+                      <span className="text-white font-bold text-sm">{r.date} Â· {r.time}</span>
                     </div>
                     <span className={`text-[9px] font-black px-2.5 py-1 rounded-full border ${ok?'bg-emerald-500/20 text-emerald-300 border-emerald-500/40':bad?'bg-red-500/20 text-red-300 border-red-500/40':'bg-amber-500/20 text-amber-300 border-amber-500/40 animate-pulse'}`}>
-                      {ok?'✅ Confirmed':bad?'Unavailable':'⏳ Pending'}
+                      {ok?'âœ… Confirmed':bad?'Unavailable':'â³ Pending'}
                     </span>
                   </div>
                   <div className="flex items-center gap-4 text-xs text-white/65">
                     <span><UtensilsCrossed className="w-3.5 h-3.5 inline mr-1 text-white/80" />{r.guests} guests</span>
                     {r.occasion && <span>{r.occasion}</span>}
-                    {r.amount_paid && <span style={{ color:GOLD }} className="font-bold">₹{r.amount_paid} paid</span>}
+                    {r.amount_paid && <span style={{ color:GOLD }} className="font-bold">â‚¹{r.amount_paid} paid</span>}
                   </div>
                   {r.special_requests && <p className="text-white/60 text-xs italic">"{r.special_requests}"</p>}
                 </div>
@@ -1281,7 +1287,7 @@ const CustomerDashboard = () => {
           </div>
         )}
 
-        {/* ══ COINS ══ */}
+        {/* â•â• COINS â•â• */}
         {tab === 'coins' && (
           <div className="p-4 space-y-4">
             <div className="rounded-3xl p-6 text-center" style={GLASS_GOLD_CARD}>
@@ -1301,20 +1307,20 @@ const CustomerDashboard = () => {
                 </div>
               </div>
               <span className="text-5xl font-black text-white">{pdCoins.toLocaleString()}</span>
-              <p className="font-bold text-sm mt-1 mb-3" style={{ color:'rgba(234,179,8,0.85)' }}>₹{pdCoins.toLocaleString()} Value</p>
+              <p className="font-bold text-sm mt-1 mb-3" style={{ color:'rgba(234,179,8,0.85)' }}>â‚¹{pdCoins.toLocaleString()} Value</p>
               <div className="w-16 h-px mx-auto mb-3" style={{ background:GB }} />
               <div className="flex items-center justify-center gap-3 text-[9px] font-black uppercase tracking-[0.3em] text-white/60">
-                <span>Dine</span><span style={{color:GOLD}}>◆</span><span>Earn</span><span style={{color:GOLD}}>◆</span><span>Redeem</span><span style={{color:GOLD}}>◆</span><span>Revisit</span>
+                <span>Dine</span><span style={{color:GOLD}}>â—†</span><span>Earn</span><span style={{color:GOLD}}>â—†</span><span>Redeem</span><span style={{color:GOLD}}>â—†</span><span>Revisit</span>
               </div>
             </div>
 
             <div className="rounded-3xl p-5" style={GLASS_CARD}>
               <p className="text-xs font-black uppercase tracking-widest mb-3" style={{ color:GOLD }}>How It Works</p>
               {[
-                [Calendar,    'Reserve a table (₹10/person)', 'Required'],
+                [Calendar,    'Reserve a table (â‚¹10/person)', 'Required'],
                 [UtensilsCrossed,'Dine at Persian Darbar',    'Eligible bill'],
                 [TrendingUp,  'Earn 10% as PD Coins',        'Auto-credited'],
-                [Gift,        'Redeem on next visit',         '₹1 = 1 Coin'],
+                [Gift,        'Redeem on next visit',         'â‚¹1 = 1 Coin'],
               ].map(([Icon,text,note])=>(
                 <div key={text} className="flex items-center gap-3 py-2.5" style={{ borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background:GF }}>
@@ -1346,7 +1352,7 @@ const CustomerDashboard = () => {
                   onClick={() => setTab('order')}
                   className="px-3 py-1.5 rounded-xl bg-amber-400 text-black font-black text-[10px] uppercase tracking-wider shrink-0 active:scale-95 transition-transform shadow"
                 >
-                  Order Now →
+                  Order Now â†’
                 </button>
               </div>
             )}
@@ -1374,7 +1380,7 @@ const CustomerDashboard = () => {
                               ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
                               : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                           }`}>
-                            {isEarned ? '▲' : isExpired ? '✕' : '▼'}
+                            {isEarned ? 'â–²' : isExpired ? 'âœ•' : 'â–¼'}
                           </div>
                           <div>
                             <p className="text-white text-xs font-bold">
@@ -1385,7 +1391,7 @@ const CustomerDashboard = () => {
                                 : 'Coins Redeemed'}
                             </p>
                             <p className="text-white/50 text-[11px]">
-                              {txn.note || (isEarned ? `₹${txn.bill_amount} bill` : isExpired ? '45-day auto expiry' : 'Discount')}
+                              {txn.note || (isEarned ? `â‚¹${txn.bill_amount} bill` : isExpired ? '45-day auto expiry' : 'Discount')}
                             </p>
                             <p className="text-white/30 text-[9px] mt-0.5">{txn.timestamp ? new Date(txn.timestamp).toLocaleDateString('en-IN', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : ''}</p>
                           </div>
@@ -1411,7 +1417,7 @@ const CustomerDashboard = () => {
           </div>
         )}
 
-        {/* ══ PROFILE (Swiggy / Zomato Luxury Persian Darbar VIP Experience) ══ */}
+        {/* â•â• PROFILE (Swiggy / Zomato Luxury Persian Darbar VIP Experience) â•â• */}
         {tab === 'profile' && (
           <div className="p-4 space-y-4 pb-14">
 
@@ -1468,7 +1474,7 @@ const CustomerDashboard = () => {
                   </h2>
                   <div className="flex items-center gap-1.5 mt-1">
                     <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-[#EAB308]/25 text-[#EAB308] border border-[#EAB308]/40">
-                      {pdCoins > 500 ? '⭐ Royal Elite Member' : '👑 Royal Patron'}
+                      {pdCoins > 500 ? 'â­ Royal Elite Member' : 'ðŸ‘‘ Royal Patron'}
                     </span>
                   </div>
                   <p className="text-white/65 text-xs mt-1 truncate">{currentUser?.email}</p>
@@ -1498,7 +1504,7 @@ const CustomerDashboard = () => {
                 </div>
                 <p className="text-xl font-black text-white">{pdCoins.toLocaleString()}</p>
                 <p className="text-[9px] text-[#EAB308] font-bold uppercase tracking-wider mt-0.5">PD Coins</p>
-                <p className="text-[9px] text-white/50 mt-0.5">₹{pdCoins} value ›</p>
+                <p className="text-[9px] text-white/50 mt-0.5">â‚¹{pdCoins} value â€º</p>
               </button>
 
               {/* Orders */}
@@ -1512,7 +1518,7 @@ const CustomerDashboard = () => {
                 </div>
                 <p className="text-xl font-black text-white">{orders.length}</p>
                 <p className="text-[9px] text-[#EAB308] font-bold uppercase tracking-wider mt-0.5">Orders</p>
-                <p className="text-[9px] text-white/50 mt-0.5">History ›</p>
+                <p className="text-[9px] text-white/50 mt-0.5">History â€º</p>
               </button>
 
               {/* Bookings */}
@@ -1526,7 +1532,7 @@ const CustomerDashboard = () => {
                 </div>
                 <p className="text-xl font-black text-white">{reservations.length}</p>
                 <p className="text-[9px] text-[#EAB308] font-bold uppercase tracking-wider mt-0.5">Bookings</p>
-                <p className="text-[9px] text-white/50 mt-0.5">Reserve ›</p>
+                <p className="text-[9px] text-white/50 mt-0.5">Reserve â€º</p>
               </button>
             </div>
 
@@ -1777,7 +1783,7 @@ const CustomerDashboard = () => {
                     </div>
                     <div>
                       <p className="text-white font-bold text-sm">Call Camp, Pune Desk</p>
-                      <p className="text-white/60 text-xs mt-0.5">+91 20 2613 0000 · Open 11:00 AM - 1:00 AM</p>
+                      <p className="text-white/60 text-xs mt-0.5">+91 20 2613 0000 Â· Open 11:00 AM - 1:00 AM</p>
                     </div>
                   </div>
                   <ChevronRight className="w-4 h-4 text-white/40" />
@@ -1795,7 +1801,7 @@ const CustomerDashboard = () => {
                     <div>
                       <p className="text-white font-bold text-sm">Share Persian Darbar</p>
                       <p className="text-white/60 text-xs mt-0.5">
-                        {copiedLink ? '✓ Link copied to clipboard!' : 'Invite friends & family to the royal experience'}
+                        {copiedLink ? 'âœ“ Link copied to clipboard!' : 'Invite friends & family to the royal experience'}
                       </p>
                     </div>
                   </div>
@@ -1847,7 +1853,7 @@ const CustomerDashboard = () => {
                 PERSIAN DARBAR
               </p>
               <p className="text-[9px] text-white/40 tracking-wider">
-                Serving Royal Mughlai Cuisine Since 1976 · Camp, Pune
+                Serving Royal Mughlai Cuisine Since 1976 Â· Camp, Pune
               </p>
               <p className="text-[8px] text-white/30 font-mono pt-1">
                 Version 2.4.0 (Privilege Edition)
@@ -1859,7 +1865,7 @@ const CustomerDashboard = () => {
 
       </div>
 
-      {/* ═══ IN-APP CART & CHECKOUT DRAWER (Glassmorphism) ═══ */}
+      {/* â•â•â• IN-APP CART & CHECKOUT DRAWER (Glassmorphism) â•â•â• */}
       {isCartOpen && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/70 backdrop-blur-md">
           <div
@@ -1898,7 +1904,7 @@ const CustomerDashboard = () => {
                     style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
                     <div className="flex-1 min-w-0">
                       <p className="text-white font-bold text-sm truncate">{item.name}</p>
-                      <p className="text-[#EAB308] text-xs font-semibold">₹{item.price} each</p>
+                      <p className="text-[#EAB308] text-xs font-semibold">â‚¹{item.price} each</p>
                     </div>
                     <div className="flex items-center gap-2.5">
                       <div className="flex items-center gap-1 bg-white/10 rounded-xl p-0.5 border border-white/15">
@@ -1917,7 +1923,7 @@ const CustomerDashboard = () => {
                         </button>
                       </div>
                       <span className="text-white font-bold text-sm min-w-[50px] text-right">
-                        ₹{(item.price * item.quantity).toLocaleString()}
+                        â‚¹{(item.price * item.quantity).toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -1969,10 +1975,10 @@ const CustomerDashboard = () => {
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/15 text-[#EAB308] border border-[#EAB308]/30 active:scale-95 transition-all"
                     >
                       <MapPin className="w-3.5 h-3.5" />
-                      <span>{detectingLoc ? 'Detecting...' : distanceKm ? `📍 ${distanceKm} km away` : 'Detect Range'}</span>
+                      <span>{detectingLoc ? 'Detecting...' : distanceKm ? `ðŸ“ ${distanceKm} km away` : 'Detect Range'}</span>
                     </button>
                     <span className="text-[11px] text-white/60">
-                      {distanceKm === null ? 'Within 5km: Free' : distanceKm <= 5 ? '✅ Free Delivery' : distanceKm <= 20 ? '₹60 Delivery Fee' : '❌ Out of range (>20km)'}
+                      {distanceKm === null ? 'Within 5km: Free' : distanceKm <= 5 ? 'âœ… Free Delivery' : distanceKm <= 20 ? 'â‚¹60 Delivery Fee' : 'âŒ Out of range (>20km)'}
                     </span>
                   </div>
                 </div>
@@ -2011,7 +2017,7 @@ const CustomerDashboard = () => {
                       payMethod === 'cod' ? 'bg-[#EAB308] text-black shadow' : 'bg-white/10 text-white/70'
                     }`}
                   >
-                    💵 Cash on {orderType === 'TAKEAWAY' ? 'Pickup' : 'Delivery'}
+                    ðŸ’µ Cash on {orderType === 'TAKEAWAY' ? 'Pickup' : 'Delivery'}
                   </button>
                   <button
                     type="button"
@@ -2020,12 +2026,12 @@ const CustomerDashboard = () => {
                       payMethod === 'online' ? 'bg-[#EAB308] text-black shadow' : 'bg-white/10 text-white/70'
                     }`}
                   >
-                    💳 Online / UPI
+                    ðŸ’³ Online / UPI
                   </button>
                 </div>
               </div>
 
-              {/* 🪙 PD Coins Redemption Card */}
+              {/* ðŸª™ PD Coins Redemption Card */}
               {pdCoins > 0 && (
                 <div 
                   className="rounded-2xl p-3.5 transition-all border"
@@ -2052,11 +2058,11 @@ const CustomerDashboard = () => {
                         </div>
                         {cartSubtotal < 300 ? (
                           <p className="text-white/50 text-[10px] mt-0.5">
-                            Add items worth ₹{300 - cartSubtotal} more to redeem (Min ₹300)
+                            Add items worth â‚¹{300 - cartSubtotal} more to redeem (Min â‚¹300)
                           </p>
                         ) : (
                           <p className="text-white/60 text-[10px] mt-0.5">
-                            Max 25% bill cap: Save up to <span className="text-[#EAB308] font-bold">₹{maxRedeemableCoins}</span>
+                            Max 25% bill cap: Save up to <span className="text-[#EAB308] font-bold">â‚¹{maxRedeemableCoins}</span>
                           </p>
                         )}
                       </div>
@@ -2072,7 +2078,7 @@ const CustomerDashboard = () => {
                             : 'bg-white/10 text-white/80 hover:bg-white/15'
                         }`}
                       >
-                        {applyCoins ? 'Applied ✓' : 'Apply'}
+                        {applyCoins ? 'Applied âœ“' : 'Apply'}
                       </button>
                     )}
                   </div>
@@ -2080,7 +2086,7 @@ const CustomerDashboard = () => {
                   {applyCoins && maxRedeemableCoins > 0 && (
                     <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between text-[11px]">
                       <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                        <Sparkles className="w-3.5 h-3.5" /> Saving ₹{coinsDiscount} on this order!
+                        <Sparkles className="w-3.5 h-3.5" /> Saving â‚¹{coinsDiscount} on this order!
                       </span>
                       <span className="text-white/50">
                         +Earn <span className="text-[#EAB308] font-bold">{coinsEarnable}</span> new coins
@@ -2094,27 +2100,27 @@ const CustomerDashboard = () => {
               <div className="rounded-2xl p-4 space-y-2 text-xs" style={GLASS_CARD_SM}>
                 <div className="flex justify-between text-white/70">
                   <span>Items Subtotal</span>
-                  <span>₹{cartSubtotal.toLocaleString()}</span>
+                  <span>â‚¹{cartSubtotal.toLocaleString()}</span>
                 </div>
                 {coinsApplied > 0 && (
                   <div className="flex justify-between text-emerald-400 font-bold">
                     <span className="flex items-center gap-1">
-                      🪙 PD Coins Discount
+                      ðŸª™ PD Coins Discount
                     </span>
-                    <span>-₹{coinsDiscount.toLocaleString()}</span>
+                    <span>-â‚¹{coinsDiscount.toLocaleString()}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-white/70">
                   <span>Delivery Fee</span>
-                  <span>{cartDeliveryFee === 0 ? <span className="text-emerald-400 font-bold">FREE</span> : `₹${cartDeliveryFee}`}</span>
+                  <span>{cartDeliveryFee === 0 ? <span className="text-emerald-400 font-bold">FREE</span> : `â‚¹${cartDeliveryFee}`}</span>
                 </div>
                 <div className="flex justify-between text-white/70">
                   <span>GST & Restaurant Taxes (5%)</span>
-                  <span>₹{cartTaxes.toLocaleString()}</span>
+                  <span>â‚¹{cartTaxes.toLocaleString()}</span>
                 </div>
                 <div className="pt-2 border-t border-white/10 flex justify-between font-black text-sm text-white">
                   <span>Total Amount</span>
-                  <span className="text-[#EAB308] text-base">₹{cartTotal.toLocaleString()}</span>
+                  <span className="text-[#EAB308] text-base">â‚¹{cartTotal.toLocaleString()}</span>
                 </div>
               </div>
 
@@ -2129,7 +2135,7 @@ const CustomerDashboard = () => {
                   boxShadow: '0 8px 24px rgba(234,179,8,0.5)'
                 }}
               >
-                {placingOrder ? 'Placing Order...' : `Confirm Order · ₹${cartTotal.toLocaleString()}`}
+                {placingOrder ? 'Placing Order...' : `Confirm Order Â· â‚¹${cartTotal.toLocaleString()}`}
               </button>
 
             </div>
@@ -2137,7 +2143,7 @@ const CustomerDashboard = () => {
         </div>
       )}
 
-      {/* ═══ BOTTOM NAV (Frosted Glass Bar) ═══ */}
+      {/* â•â•â• BOTTOM NAV (Frosted Glass Bar) â•â•â• */}
       <div className="relative z-20 shrink-0 flex items-center justify-around px-2 pt-2 pb-safe"
         style={{
           background: 'rgba(12, 14, 18, 0.70)',

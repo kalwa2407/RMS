@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+﻿import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import {
   Plus,
@@ -153,6 +153,16 @@ const TableOrder = () => {
         body: JSON.stringify({ table_number: tableNumber, customer_name: customerName })
       });
       const data = await res.json();
+
+      if (res.status === 409) {
+        toast({ title: "Table Occupied", description: data.detail || "This table is occupied. Please wait for the bill.", variant: "destructive" });
+        return;
+      }
+
+      if (!res.ok) {
+        toast({ title: "Error", description: data.detail || "Failed to start session", variant: "destructive" });
+        return;
+      }
 
       if (data.session) {
         localStorage.setItem(`table_${tableNumber}_session`, data.session.session_id);
@@ -403,7 +413,7 @@ const TableOrder = () => {
             </div>
 
             <span className="text-[#EAB308] text-[11px] font-bold uppercase tracking-[0.3em] block mb-1">
-              Table {tableNumber} · Royal Dining
+              Table {tableNumber} Â· Royal Dining
             </span>
             <h1 className="text-3xl text-white font-['Playfair_Display',serif] font-bold mb-2">
               Persian Darbar
@@ -535,15 +545,15 @@ const TableOrder = () => {
                 <div className="space-y-2 py-2">
                   {order.items?.map((item, i) => (
                     <div key={i} className="flex justify-between text-sm text-gray-300">
-                      <span>{item.quantity}× {item.name}</span>
-                      <span className="font-semibold text-white">₹{item.price * item.quantity}</span>
+                      <span>{item.quantity}Ã— {item.name}</span>
+                      <span className="font-semibold text-white">â‚¹{item.price * item.quantity}</span>
                     </div>
                   ))}
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-[#EAB308]/15 flex justify-between items-center">
                   <span className="text-xs text-gray-400">Order Subtotal</span>
-                  <span className="text-[#EAB308] font-bold text-base">₹{order.total}</span>
+                  <span className="text-[#EAB308] font-bold text-base">â‚¹{order.total}</span>
                 </div>
               </div>
             );
@@ -556,7 +566,7 @@ const TableOrder = () => {
                 <span className="text-[10px] uppercase tracking-widest text-[#EAB308] font-bold block">Grand Total</span>
                 <span className="text-white text-lg font-['Playfair_Display',serif]">Table Session Total</span>
               </div>
-              <span className="text-3xl font-bold font-['Playfair_Display',serif] text-[#EAB308]">₹{session.total || 0}</span>
+              <span className="text-3xl font-bold font-['Playfair_Display',serif] text-[#EAB308]">â‚¹{session.total || 0}</span>
             </div>
             <p className="text-gray-400 text-xs mt-3 flex items-center gap-1.5">
               <Info className="w-3.5 h-3.5 text-[#EAB308]" />
@@ -571,9 +581,9 @@ const TableOrder = () => {
   // 5. Main Royal Menu & Ordering UI
   return (
     <div className="min-h-screen bg-[#081a22] text-white font-['Outfit',sans-serif] pb-28 lg:pb-12">
-      {/* ══════════════════════════════════════════════════
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
           COMPACT ROYAL HEADER (Inspired by Blue Nile)
-      ══════════════════════════════════════════════════ */}
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <header className="relative bg-gradient-to-b from-[#0a232c] via-[#0f2933] to-[#081a22] pt-8 pb-6 px-4 border-b border-[#EAB308]/20 overflow-hidden">
         {/* Soft Ambient Gold Aura */}
         <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,rgba(234,179,8,0.12),transparent_70%)]" />
@@ -583,7 +593,7 @@ const TableOrder = () => {
           <div className="flex items-center justify-between gap-2 mb-4">
             <div className="inline-flex items-center gap-2 bg-white/5 border border-[#EAB308]/30 px-3.5 py-1.5 rounded-full text-[11px] font-semibold tracking-wider text-gray-300">
               <span className="w-2 h-2 rounded-full bg-[#EAB308] shadow-[0_0_8px_#EAB308] animate-pulse" />
-              <span>Table {tableNumber} · Dine-In</span>
+              <span>Table {tableNumber} Â· Dine-In</span>
             </div>
 
             <div className="flex items-center gap-2">
@@ -633,9 +643,9 @@ const TableOrder = () => {
         <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#EAB308] to-transparent" />
       </header>
 
-      {/* ══════════════════════════════════════════════════
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
           STICKY PILL NAVIGATION BAR
-      ══════════════════════════════════════════════════ */}
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <div className="sticky top-0 z-30 bg-[#081a22]/95 backdrop-blur-xl border-b border-[#EAB308]/20 shadow-xl">
         <div className="max-w-6xl mx-auto px-4 py-2.5">
           {/* Top Controls: Search & Diet toggle */}
@@ -710,9 +720,9 @@ const TableOrder = () => {
       </div>
 
       <main className="max-w-6xl mx-auto px-4 py-6">
-        {/* ══════════════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             BENTO GRID (Category Showcase when 'All' selected)
-        ══════════════════════════════════════════════════ */}
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         {selectedCategory === "All" && !searchQuery.trim() && (
           <section className="mb-10">
             <div className="text-center mb-6">
@@ -780,9 +790,9 @@ const TableOrder = () => {
           </section>
         )}
 
-        {/* ══════════════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             DISHES GRID & DESKTOP CART LAYOUT
-        ══════════════════════════════════════════════════ */}
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <div ref={dishesSectionRef} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Dishes Column (Span 2 on Desktop) */}
           <div className="lg:col-span-2 space-y-4">
@@ -874,7 +884,7 @@ const TableOrder = () => {
                         {/* Price & Action */}
                         <div className="flex justify-between items-center mt-2.5 pt-2 border-t border-[#EAB308]/10">
                           <span className="text-[#EAB308] font-bold text-sm tracking-wide font-['Outfit',sans-serif]">
-                            ₹{item.price}
+                            â‚¹{item.price}
                           </span>
 
                           {/* Stepper / ADD Button */}
@@ -916,9 +926,9 @@ const TableOrder = () => {
             )}
           </div>
 
-          {/* ══════════════════════════════════════════════════
+          {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
               DESKTOP CART FOLIO (Sticky Right Column)
-          ══════════════════════════════════════════════════ */}
+          â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
           <div className="hidden lg:block">
             <div className="bg-[#0f2933] border border-[#EAB308]/30 rounded-3xl p-5 sticky top-28 shadow-2xl overflow-hidden">
               {/* Gold Top Accent Line */}
@@ -931,7 +941,7 @@ const TableOrder = () => {
                   </div>
                   <div>
                     <h3 className="font-['Playfair_Display',serif] text-base font-bold text-white">Your Table Order</h3>
-                    <p className="text-[10px] text-gray-400">Table {tableNumber} · {customerName}</p>
+                    <p className="text-[10px] text-gray-400">Table {tableNumber} Â· {customerName}</p>
                   </div>
                 </div>
                 <span className="text-xs font-bold bg-[#EAB308]/10 text-[#EAB308] px-2.5 py-0.5 rounded-full border border-[#EAB308]/30">
@@ -955,7 +965,7 @@ const TableOrder = () => {
                       >
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-bold text-white truncate">{item.name}</p>
-                          <p className="text-xs text-[#EAB308] font-mono">₹{item.price * item.quantity}</p>
+                          <p className="text-xs text-[#EAB308] font-mono">â‚¹{item.price * item.quantity}</p>
                         </div>
 
                         <div className="flex items-center gap-1.5 shrink-0">
@@ -989,15 +999,15 @@ const TableOrder = () => {
                   <div className="mt-4 pt-3 border-t border-[#EAB308]/20 space-y-1.5 text-xs text-gray-300">
                     <div className="flex justify-between">
                       <span>Items Subtotal</span>
-                      <span className="font-semibold text-white">₹{cartTotal}</span>
+                      <span className="font-semibold text-white">â‚¹{cartTotal}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Restaurant GST (5%)</span>
-                      <span className="text-white">₹{gstAmount}</span>
+                      <span className="text-white">â‚¹{gstAmount}</span>
                     </div>
                     <div className="flex justify-between pt-2 border-t border-[#EAB308]/15 text-sm font-bold">
                       <span className="text-white font-['Playfair_Display',serif]">Table Bill Total</span>
-                      <span className="text-[#EAB308] text-lg font-mono">₹{grandTotal}</span>
+                      <span className="text-[#EAB308] text-lg font-mono">â‚¹{grandTotal}</span>
                     </div>
                   </div>
 
@@ -1036,9 +1046,9 @@ const TableOrder = () => {
         </div>
       </main>
 
-      {/* ══════════════════════════════════════════════════
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
           MOBILE FLOATING CART BAR
-      ══════════════════════════════════════════════════ */}
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       {cart.length > 0 && (
         <div className="lg:hidden fixed bottom-3 left-3 right-3 z-40">
           <button
@@ -1058,7 +1068,7 @@ const TableOrder = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-base font-black font-mono">₹{grandTotal}</span>
+              <span className="text-base font-black font-mono">â‚¹{grandTotal}</span>
               <div className="w-6 h-6 rounded-full bg-black/15 flex items-center justify-center">
                 <ChevronRight className="w-4 h-4" />
               </div>
@@ -1067,9 +1077,9 @@ const TableOrder = () => {
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════════
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
           MOBILE CART BOTTOM SHEET
-      ══════════════════════════════════════════════════ */}
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       {showMobileCart && (
         <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end">
           <div
@@ -1104,7 +1114,7 @@ const TableOrder = () => {
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold text-white truncate">{item.name}</p>
-                    <p className="text-xs text-[#EAB308] font-mono mt-0.5">₹{item.price * item.quantity}</p>
+                    <p className="text-xs text-[#EAB308] font-mono mt-0.5">â‚¹{item.price * item.quantity}</p>
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
@@ -1137,15 +1147,15 @@ const TableOrder = () => {
               <div className="space-y-1.5 text-xs text-gray-300 mb-4">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span className="font-semibold text-white">₹{cartTotal}</span>
+                  <span className="font-semibold text-white">â‚¹{cartTotal}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>GST (5%)</span>
-                  <span className="text-white">₹{gstAmount}</span>
+                  <span className="text-white">â‚¹{gstAmount}</span>
                 </div>
                 <div className="flex justify-between pt-2 border-t border-[#EAB308]/15 text-base font-bold">
                   <span className="text-white font-['Playfair_Display',serif]">Grand Total</span>
-                  <span className="text-[#EAB308] font-mono text-xl">₹{grandTotal}</span>
+                  <span className="text-[#EAB308] font-mono text-xl">â‚¹{grandTotal}</span>
                 </div>
               </div>
 
@@ -1174,9 +1184,9 @@ const TableOrder = () => {
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════════
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
           MODAL 2: DISH DETAIL MODAL (With Animated Cloche)
-      ══════════════════════════════════════════════════ */}
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       {selectedDish && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
@@ -1256,7 +1266,7 @@ const TableOrder = () => {
                 <div>
                   <span className="text-[10px] uppercase tracking-wider text-gray-400 block font-semibold">Portion Price</span>
                   <span className="font-['Playfair_Display',serif] text-3xl font-extrabold text-[#EAB308]">
-                    ₹{selectedDish.price}
+                    â‚¹{selectedDish.price}
                   </span>
                 </div>
 
@@ -1315,3 +1325,4 @@ const TableOrder = () => {
 };
 
 export default TableOrder;
+

@@ -706,9 +706,11 @@ async def start_table_session(data: TableSessionCreate, manager: BaseDataManager
         if existing.get("customer_name", "").lower() == data.customer_name.lower():
             return {"session": existing, "message": "Session already exists"}
         
-        # Different customer — auto-close the stale old session
-        logger.info(f"Auto-closing stale session {existing.get('session_id')} for table {data.table_number} (was: {existing.get('customer_name')}, new: {data.customer_name})")
-        await manager.update_table_session(existing["session_id"], {"status": "closed"})
+        # Different customer — TABLE IS LOCKED: reject with 409 Conflict
+        raise HTTPException(
+            status_code=409,
+            detail=f"Table {data.table_number} is currently occupied. Please wait until the current bill is settled before seating."
+        )
     
     now = datetime.utcnow()
     session_id = generate_session_id()
