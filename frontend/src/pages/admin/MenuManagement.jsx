@@ -4,7 +4,7 @@ import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
 import API_BASE from "../../lib/config";
 
-const categories = ["Biryani", "Kebabs", "Mughlai", "Starters", "Main Course", "Breads", "Desserts", "Beverages"];
+const categories = ["Biryani", "Kebabs", "Mughlai", "Starters", "Main Course", "Breads", "Desserts", "Beverages", "Mocktails"];
 
 const MenuManagement = () => {
   const { toast } = useToast();

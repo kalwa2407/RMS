@@ -14,6 +14,7 @@ import Reservation from "./pages/Reservation";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import TableOrder from "./pages/TableOrder";
+import Events from "./pages/Events";
 import { Toaster } from "./components/ui/toaster";
 
 // Admin Imports
@@ -36,6 +37,7 @@ import CaptainsManagement from "./pages/admin/CaptainsManagement";
 import DeliveryPartnersManagement from "./pages/admin/DeliveryPartnersManagement";
 import KitchenStaffManagement from "./pages/admin/KitchenStaffManagement";
 import LoyaltyManagement from "./pages/admin/LoyaltyManagement";
+import EventsManagement from "./pages/admin/EventsManagement";
 
 // Captain & Delivery Imports
 import CaptainLogin from "./pages/captain/CaptainLogin";
@@ -144,6 +146,10 @@ function App() {
             path="/contact"
             element={<><Navbar /><Contact /><Footer /><ChatBot /></>}
           />
+          <Route
+            path="/events"
+            element={<><Navbar /><Events /><Footer /><ChatBot /></>}
+          />
 
           {/* ---------------- TABLE ORDERING (QR CODE) ---------------- */}
           <Route path="/table-order" element={<TableOrder />} />
@@ -166,6 +172,7 @@ function App() {
             <Route path="reports" element={<Reports />} />
             <Route path="reservations" element={<ReservationsManagement />} />
             <Route path="reviews" element={<ReviewsManagement />} />
+            <Route path="events" element={<EventsManagement />} />
             <Route path="sound-settings" element={<SoundSettings />} />
             <Route path="settings" element={<Settings />} />
             <Route path="captains" element={<CaptainsManagement />} />

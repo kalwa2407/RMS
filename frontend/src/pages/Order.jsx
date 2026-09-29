@@ -104,7 +104,7 @@ const Order = () => {
         setLoadingLocation(false);
         let feeMsg = "Free delivery!";
         if (distNum > 20) feeMsg = "Out of delivery range (>20km).";
-        else if (distNum > 10) feeMsg = "₹60 delivery fee (10-20km).";
+        else if (distNum > 5) feeMsg = "₹60 delivery fee (5-20km).";
         toast({ title: `📍 ${dist} km away`, description: feeMsg });
       },
       () => {
@@ -178,7 +178,7 @@ const Order = () => {
       setIsPlacingOrder(false);
       return;
     }
-    const deliveryFee = distance <= 10 ? 0 : 60;
+    const deliveryFee = distance <= 5 ? 0 : 60;
     const calculatedTotal = Math.max(0, netSubtotal + deliveryFee + taxes);
     const orderData = {
       customer_uid: currentUser?.uid || null,
@@ -218,7 +218,7 @@ const Order = () => {
   };
 
   // ─── Reusable cart total display ───────────────────────────────────────────
-  const cartTotal = Math.max(0, netSubtotal + (distance !== null && distance > 10 && distance <= 20 ? 60 : 0) + taxes);
+  const cartTotal = Math.max(0, netSubtotal + (distance !== null && distance > 5 && distance <= 20 ? 60 : 0) + taxes);
 
   // ─── Cart inner content (shared desktop + mobile drawer) ───────────────────
   const CartContent = ({ isMobile = false }) => (
@@ -301,7 +301,7 @@ const Order = () => {
             <div className="flex justify-between text-sm">
               <span className="text-gray-400">Delivery</span>
               {distance > 20 ? <span className="text-red-400 font-bold text-xs">OUT OF RANGE</span>
-                : distance > 10 ? <span className="text-orange-400 font-bold">₹60</span>
+                : distance > 5 ? <span className="text-orange-400 font-bold">₹60</span>
                   : <span className="text-green-400 font-bold">FREE</span>}
             </div>
           )}
@@ -340,14 +340,14 @@ const Order = () => {
                   <span>{loadingLocation ? 'Detecting...' : 'Detect My Location'}</span>
                 </button>
                 <div className="text-[11px] text-gray-600 space-y-0.5">
-                  <p>0–10 km — <span className="text-green-500">Free delivery</span></p>
-                  <p>10–20 km — <span className="text-orange-400">₹60 flat fee</span></p>
+                  <p>0–5 km — <span className="text-green-500">Free delivery</span></p>
+                  <p>5–20 km — <span className="text-orange-400">₹60 flat fee</span></p>
                   <p>&gt;20 km — <span className="text-red-500">Not accepted</span></p>
                 </div>
               </div>
             ) : distance > 20
               ? <p className="text-red-400 text-sm font-bold">❌ {distance} km — Out of delivery range</p>
-              : <p className="text-green-400 text-sm font-bold">✓ {distance} km · {distance <= 10 ? 'Free Delivery!' : '₹60 Delivery Fee'}</p>}
+              : <p className="text-green-400 text-sm font-bold">✓ {distance} km · {distance <= 5 ? 'Free Delivery!' : '₹60 Delivery Fee'}</p>}
           </div>
 
           {/* Leaflet Map */}
@@ -358,7 +358,7 @@ const Order = () => {
                 <Marker position={[RESTAURANT_LOCATION.lat, RESTAURANT_LOCATION.lng]} icon={restaurantIcon}><Popup>🍽️ Persian Darbar (Restaurant)</Popup></Marker>
                 <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon}><Popup>📍 Your Location ({distance} km away)</Popup></Marker>
                 <Polyline positions={[[RESTAURANT_LOCATION.lat, RESTAURANT_LOCATION.lng], [userLocation.lat, userLocation.lng]]}
-                  color={distance > 20 ? "#ef4444" : distance > 10 ? "#f97316" : "#22c55e"} weight={2} dashArray="6 4" />
+                  color={distance > 20 ? "#ef4444" : distance > 5 ? "#f97316" : "#22c55e"} weight={2} dashArray="6 4" />
                 <MapFitBounds positions={[[RESTAURANT_LOCATION.lat, RESTAURANT_LOCATION.lng], [userLocation.lat, userLocation.lng]]} />
               </MapContainer>
             </div>

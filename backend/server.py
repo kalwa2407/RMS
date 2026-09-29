@@ -910,6 +910,101 @@ async def get_reservation(reservation_id: str, manager: BaseDataManager = Depend
         raise HTTPException(status_code=404, detail="Reservation not found")
     return reservation
 
+
+# =============================================================================
+# EVENTS ENDPOINTS
+# =============================================================================
+
+@api_router.get("/events")
+async def get_events(manager: BaseDataManager = Depends(get_data_manager)):
+    """Get all published events (public)"""
+    events = await manager._read("events")
+    # Only return active/upcoming events for public
+    return [e for e in events if e.get("status", "active") != "archived"]
+
+@api_router.post("/events/contact")
+async def event_contact_request(request: dict, manager: BaseDataManager = Depends(get_data_manager)):
+    """Submit a contact request for an event"""
+    contact_entry = {
+        "_id": str(uuid.uuid4()),
+        "event_id": request.get("event_id", ""),
+        "event_title": request.get("event_title", "General Inquiry"),
+        "name": request.get("name", ""),
+        "phone": request.get("phone", ""),
+        "email": request.get("email", ""),
+        "message": request.get("message", ""),
+        "guests": request.get("guests", 1),
+        "status": "pending",
+        "created_at": datetime.now().isoformat()
+    }
+    contacts = await manager._read("event_contacts")
+    contacts.append(contact_entry)
+    await manager._write("event_contacts", contacts)
+    return {"success": True, "message": "Your inquiry has been received! We will contact you shortly."}
+
+@admin_router.get("/events")
+async def admin_get_events(username: str = Depends(verify_token), manager: BaseDataManager = Depends(get_data_manager)):
+    """Admin: Get all events"""
+    return await manager._read("events")
+
+@admin_router.post("/events")
+async def admin_create_event(event_data: dict, username: str = Depends(verify_token), manager: BaseDataManager = Depends(get_data_manager)):
+    """Admin: Create a new event"""
+    event = {
+        "_id": str(uuid.uuid4()),
+        "title": event_data.get("title", ""),
+        "description": event_data.get("description", ""),
+        "date": event_data.get("date", ""),
+        "time": event_data.get("time", ""),
+        "venue": event_data.get("venue", "Persian Darbar, Camp Pune"),
+        "image": event_data.get("image", ""),
+        "category": event_data.get("category", "Special Event"),
+        "status": event_data.get("status", "active"),
+        "max_guests": event_data.get("max_guests", 0),
+        "price": event_data.get("price", ""),
+        "highlights": event_data.get("highlights", []),
+        "created_at": datetime.now().isoformat()
+    }
+    events = await manager._read("events")
+    events.append(event)
+    await manager._write("events", events)
+    return event
+
+@admin_router.put("/events/{event_id}")
+async def admin_update_event(event_id: str, event_data: dict, username: str = Depends(verify_token), manager: BaseDataManager = Depends(get_data_manager)):
+    """Admin: Update an event"""
+    events = await manager._read("events")
+    for i, e in enumerate(events):
+        if e.get("_id") == event_id:
+            events[i] = {**e, **event_data, "_id": event_id}
+            await manager._write("events", events)
+            return events[i]
+    raise HTTPException(status_code=404, detail="Event not found")
+
+@admin_router.delete("/events/{event_id}")
+async def admin_delete_event(event_id: str, username: str = Depends(verify_token), manager: BaseDataManager = Depends(get_data_manager)):
+    """Admin: Delete an event"""
+    events = await manager._read("events")
+    events = [e for e in events if e.get("_id") != event_id]
+    await manager._write("events", events)
+    return {"success": True}
+
+@admin_router.get("/events/contacts")
+async def admin_get_event_contacts(username: str = Depends(verify_token), manager: BaseDataManager = Depends(get_data_manager)):
+    """Admin: Get all event contact requests"""
+    return await manager._read("event_contacts")
+
+@admin_router.put("/events/contacts/{contact_id}")
+async def admin_update_event_contact(contact_id: str, update_data: dict, username: str = Depends(verify_token), manager: BaseDataManager = Depends(get_data_manager)):
+    """Admin: Update event contact status"""
+    contacts = await manager._read("event_contacts")
+    for i, c in enumerate(contacts):
+        if c.get("_id") == contact_id:
+            contacts[i] = {**c, **update_data}
+            await manager._write("event_contacts", contacts)
+            return contacts[i]
+    raise HTTPException(status_code=404, detail="Contact not found")
+
 # Chatbot Endpoint
 @api_router.post("/chat", response_model=ChatResponse)
 async def chat_with_vijay(message: ChatMessage):
@@ -934,21 +1029,41 @@ Restaurant Details:
 - Phone: +91 9594287868
 - Website: persiandarbar.in
 - Cuisine: Authentic Persian, Mughlai, North Indian, Tandoor, Biryani
+- Menu Categories: Biryani, Kebabs, Mughlai, Starters, Main Course, Breads, Desserts, Beverages, Mocktails
 - Signature Dishes: Chicken Biryani, Mutton Raan, Chicken Tandoori Mumtaz, Murgh Jalandhari Tikka, Paneer Tikka, Kunafa, Mutton Kabsa Rice, Hara Bhara Kebab
+- Mocktails: Fresh non-alcoholic mocktails crafted with fruits and herbs
 - Known for: Royal ambience, generous portions, family dining, late-night service
+
+App Features (Persian Darbar RMS):
+- Online Ordering at /order — minimum order Rs.250
+- Delivery: FREE within 5 km. Rs.60 flat fee for 5-20 km. Not available beyond 20 km
+- Table Booking at /reservation — book by date, time, and party size
+- Full digital Menu at /menu with all categories including Mocktails
+- Reviews page at /reviews — write and read customer reviews
+- Gallery page at /gallery — view restaurant photos
+- Events page at /events — special events, contact us to book
+- Order Tracking — real-time tracking after placing order
+- PD Coins Loyalty: Earn 10% cashback in PD Coins. Redeem up to 25% of order value on orders Rs.300+
+- Payment: Cash on Delivery (COD) or Online payment
+- WhatsApp Notifications: Order confirmation and delivery bill sent to customer WhatsApp
+- Customer Login: Sign up to track orders, earn PD Coins, manage reservations
 
 Guidelines:
 - Always be warm, friendly and hospitable — like a true Darbar host
 - Recommend signature dishes when asked about food
 - Talk proudly about Persian Darbar's rich legacy and authentic flavors
 - Keep responses concise (2-3 sentences max) but full of personality
-- If asked about bookings/reservations, guide them to the Table Booking page
-- If asked about orders/delivery, guide them to Order Online
-- If asked about the menu, guide them to the Menu page
+- If asked about bookings/reservations, guide them to /reservation
+- If asked about orders/delivery, guide them to /order
+- If asked about the menu, guide them to /menu
+- If asked about events, guide them to /events
+- If asked about loyalty/coins, explain the PD Coins program
+- Delivery charges: FREE within 5 km, Rs.60 for 5-20 km, not available beyond 20 km
 - Don't make up prices or dishes — stick to what you know about Persian Darbar
 - If you don't know something, politely say you'll connect them with the team
 - Refer to yourself as "Vijay" — the virtual manager
-- Use occasional food emojis to make the conversation lively 🍗🔥
+- Use occasional food emojis to make the conversation lively
+- Always end responses by mentioning: For more queries, contact us at 9594287868
 """
         
         response = client_openai.chat.completions.create(
@@ -1237,6 +1352,344 @@ async def admin_assign_delivery_partner(
     await manager._write("delivery_partners", partners)
     
     return await manager.get_order_by_id(order_id)
+
+# =============================================================================
+# PORTER DELIVERY INTEGRATION ENDPOINTS
+# =============================================================================
+
+@admin_router.post("/orders/{order_id}/porter/quote")
+async def admin_porter_quote(
+    order_id: str,
+    body: PorterBookRequest,
+    username: str = Depends(verify_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """
+    Get a Porter delivery quote (fare estimate + ETA) for a DELIVERY order.
+    Admin calls this before confirming the Porter booking.
+    """
+    from porter_service import get_porter_quote, is_porter_configured
+
+    if not is_porter_configured():
+        raise HTTPException(
+            status_code=503,
+            detail="Porter is not configured. Please set PORTER_API_KEY in backend/.env"
+        )
+
+    order = await manager.get_order_by_id(order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    if order.get("order_type") != "DELIVERY":
+        raise HTTPException(status_code=400, detail="Porter only applies to DELIVERY orders")
+    if order.get("porter_order_id"):
+        raise HTTPException(status_code=400, detail="Porter already booked for this order")
+
+    result = await get_porter_quote(
+        drop_lat=body.drop_lat,
+        drop_lng=body.drop_lng,
+        drop_address=order.get("address", ""),
+        vehicle_type=body.vehicle_type,
+    )
+
+    if not result.get("success"):
+        raise HTTPException(status_code=502, detail=result.get("error", "Porter quote failed"))
+
+    return {
+        "order_id":        order_id,
+        "estimated_fare":  result["estimated_fare"],
+        "eta_minutes":     result["eta_minutes"],
+        "vehicle_type":    result["vehicle_type"],
+        "porter_quote_id": result.get("porter_quote_id", ""),
+        "distance_km":     order.get("distance_km"),
+        "customer_name":   order.get("customer_name"),
+        "address":         order.get("address"),
+        "note": (
+            "Free delivery for customer (<=10km). Porter cost is restaurant's expense."
+            if (order.get("distance_km") or 0) <= 10
+            else "Delivery fee of Rs60 charged to customer (10-20km)."
+        )
+    }
+
+
+@admin_router.post("/orders/{order_id}/porter/book")
+async def admin_porter_book(
+    order_id: str,
+    body: PorterBookRequest,
+    request: Request,
+    username: str = Depends(verify_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """
+    Book a Porter rider for a DELIVERY order.
+    Admin triggers this from OrdersManagement after reviewing the quote.
+    """
+    from porter_service import create_porter_order, is_porter_configured
+
+    if not is_porter_configured():
+        raise HTTPException(
+            status_code=503,
+            detail="Porter is not configured. Please set PORTER_API_KEY in backend/.env"
+        )
+
+    order = await manager.get_order_by_id(order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    if order.get("order_type") != "DELIVERY":
+        raise HTTPException(status_code=400, detail="Porter only applies to DELIVERY orders")
+    if order.get("porter_order_id"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Porter already booked: {order.get('porter_order_id')}"
+        )
+    if order.get("delivery_partner_id"):
+        raise HTTPException(
+            status_code=400,
+            detail="An in-house rider is already assigned. Remove them first."
+        )
+
+    base_url = str(request.base_url).rstrip("/")
+    webhook_url = f"{base_url}/api/porter/webhook"
+    pm = "cash" if order.get("payment_method") == "cod" else "prepaid"
+
+    result = await create_porter_order(
+        rms_order_id=order_id,
+        customer_name=order.get("customer_name", "Customer"),
+        customer_phone=order.get("phone", ""),
+        drop_lat=body.drop_lat,
+        drop_lng=body.drop_lng,
+        drop_address=order.get("address", ""),
+        amount=order.get("total", 0.0),
+        payment_method=pm,
+        vehicle_type=body.vehicle_type,
+        webhook_url=webhook_url,
+    )
+
+    if not result.get("success"):
+        raise HTTPException(status_code=502, detail=result.get("error", "Porter booking failed"))
+
+    now = get_ist_now()
+    history = order.get("status_history", [])
+    history.append({
+        "status": order.get("status"),
+        "timestamp": now.isoformat(),
+        "note": f"Porter booked — ID: {result['porter_order_id']} | Rider: {result.get('rider_name') or 'Searching...'}"
+    })
+
+    porter_update = {
+        "porter_order_id":     result["porter_order_id"],
+        "porter_status":       result.get("status", "open"),
+        "porter_tracking_url": result.get("tracking_url", ""),
+        "porter_rider_name":   result.get("rider_name", ""),
+        "porter_rider_phone":  result.get("rider_phone", ""),
+        "porter_booked_at":    now.isoformat(),
+        "status_history":      history,
+        "updated_at":          now.isoformat(),
+    }
+    await manager.update_order(order_id, porter_update)
+    logger.info(f"Porter booked for order {order_id}: porter_id={result['porter_order_id']}")
+
+    return {
+        "message":         "Porter rider booked successfully!",
+        "porter_order_id": result["porter_order_id"],
+        "tracking_url":    result.get("tracking_url", ""),
+        "rider_name":      result.get("rider_name", "Searching for rider..."),
+        "rider_phone":     result.get("rider_phone", ""),
+        "eta_minutes":     result.get("estimated_pickup_eta", 0),
+        "status":          result.get("status", "open"),
+    }
+
+
+@admin_router.post("/orders/{order_id}/porter/cancel")
+async def admin_porter_cancel(
+    order_id: str,
+    body: PorterCancelRequest,
+    username: str = Depends(verify_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Cancel the Porter booking for an order (only before pickup)."""
+    from porter_service import cancel_porter_order
+
+    order = await manager.get_order_by_id(order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    porter_order_id = order.get("porter_order_id")
+    if not porter_order_id:
+        raise HTTPException(status_code=400, detail="No Porter booking found for this order")
+
+    if order.get("porter_status") in ("order_picked_up", "started_for_delivery", "delivered"):
+        raise HTTPException(
+            status_code=400,
+            detail="Porter rider has already picked up the order — cannot cancel"
+        )
+
+    result = await cancel_porter_order(porter_order_id, body.reason)
+    if not result.get("success"):
+        raise HTTPException(status_code=502, detail=result.get("error", "Porter cancellation failed"))
+
+    now = get_ist_now()
+    history = order.get("status_history", [])
+    history.append({
+        "status": order.get("status"),
+        "timestamp": now.isoformat(),
+        "note": f"Porter booking cancelled — Reason: {body.reason}"
+    })
+
+    await manager.update_order(order_id, {
+        "porter_order_id":     None,
+        "porter_status":       "cancelled",
+        "porter_tracking_url": None,
+        "porter_rider_name":   None,
+        "porter_rider_phone":  None,
+        "status_history":      history,
+        "updated_at":          now.isoformat(),
+    })
+    logger.info(f"Porter booking cancelled for order {order_id}")
+    return {"message": "Porter booking cancelled. You can now assign an in-house rider."}
+
+
+@admin_router.get("/orders/{order_id}/porter/status")
+async def admin_porter_status(
+    order_id: str,
+    username: str = Depends(verify_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Poll latest Porter status for an order and sync to RMS."""
+    from porter_service import get_porter_order_status, map_porter_status_to_rms
+
+    order = await manager.get_order_by_id(order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    porter_order_id = order.get("porter_order_id")
+    if not porter_order_id:
+        raise HTTPException(status_code=400, detail="No Porter booking for this order")
+
+    result = await get_porter_order_status(porter_order_id)
+    if not result.get("success"):
+        raise HTTPException(status_code=502, detail=result.get("error", "Porter status fetch failed"))
+
+    now = get_ist_now()
+    update_data = {
+        "porter_status":       result["status"],
+        "porter_tracking_url": result.get("tracking_url", order.get("porter_tracking_url", "")),
+        "porter_rider_name":   result.get("rider_name", order.get("porter_rider_name", "")),
+        "porter_rider_phone":  result.get("rider_phone", order.get("porter_rider_phone", "")),
+        "updated_at":          now.isoformat(),
+    }
+
+    rms_status = map_porter_status_to_rms(result["status"])
+    if rms_status and order.get("status") != rms_status:
+        history = order.get("status_history", [])
+        history.append({
+            "status": rms_status,
+            "timestamp": now.isoformat(),
+            "note": f"Auto-synced from Porter status: {result['status']}"
+        })
+        update_data["status"] = rms_status
+        update_data["status_history"] = history
+
+    await manager.update_order(order_id, update_data)
+    return {**result, "order_id": order_id, "synced_rms_status": rms_status}
+
+
+@admin_router.get("/porter/config")
+async def admin_porter_config(username: str = Depends(verify_token)):
+    """Check Porter integration config status for the Settings page."""
+    from porter_service import (
+        is_porter_configured, PORTER_API_BASE, RESTAURANT_LAT,
+        RESTAURANT_LNG, RESTAURANT_ADDRESS, RESTAURANT_NAME
+    )
+    return {
+        "configured":         is_porter_configured(),
+        "environment":        "sandbox" if "uat" in PORTER_API_BASE else "production",
+        "api_base":           PORTER_API_BASE,
+        "restaurant_name":    RESTAURANT_NAME,
+        "restaurant_lat":     RESTAURANT_LAT,
+        "restaurant_lng":     RESTAURANT_LNG,
+        "restaurant_address": RESTAURANT_ADDRESS,
+    }
+
+
+# Porter Webhook — public endpoint, Porter POSTs updates here
+@api_router.post("/porter/webhook")
+async def porter_webhook(
+    request: Request,
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """
+    Receive Porter delivery status webhook updates.
+    Porter POSTs here when rider status changes.
+    Verified via X-Porter-Signature header.
+    """
+    from porter_service import verify_porter_webhook, map_porter_status_to_rms
+
+    body = await request.body()
+    signature = request.headers.get("X-Porter-Signature", "")
+
+    if not verify_porter_webhook(body, signature):
+        logger.warning("Porter webhook signature verification FAILED")
+        raise HTTPException(status_code=401, detail="Invalid webhook signature")
+
+    try:
+        import json as _json
+        payload = _json.loads(body)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON payload")
+
+    logger.info(f"Porter webhook received: {payload}")
+
+    porter_order_id = payload.get("order_id") or payload.get("data", {}).get("order_id", "")
+    porter_status   = payload.get("status")   or payload.get("data", {}).get("status", "")
+    tracking_url    = payload.get("tracking_url") or payload.get("data", {}).get("tracking_url", "")
+    rider_data      = payload.get("delivery_executive") or payload.get("data", {}).get("delivery_executive") or {}
+    rider_name      = rider_data.get("name", "")
+    rider_phone_raw = rider_data.get("mobile", {})
+    rider_phone     = rider_phone_raw.get("number", "") if isinstance(rider_phone_raw, dict) else str(rider_phone_raw)
+
+    if not porter_order_id or not porter_status:
+        return {"received": True}
+
+    all_orders = await manager._read("orders")
+    target = next(
+        (o for o in all_orders if o.get("porter_order_id") == porter_order_id),
+        None
+    )
+    if not target:
+        target = next(
+            (o for o in all_orders if o.get("order_id") == porter_order_id),
+            None
+        )
+
+    if not target:
+        logger.warning(f"Porter webhook: no RMS order for porter_id={porter_order_id}")
+        return {"received": True, "matched": False}
+
+    rms_order_id = target.get("order_id")
+    now = get_ist_now()
+    update_data = {
+        "porter_status":       porter_status,
+        "porter_rider_name":   rider_name or target.get("porter_rider_name", ""),
+        "porter_rider_phone":  rider_phone or target.get("porter_rider_phone", ""),
+        "porter_tracking_url": tracking_url or target.get("porter_tracking_url", ""),
+        "updated_at":          now.isoformat(),
+    }
+
+    rms_status = map_porter_status_to_rms(porter_status)
+    if rms_status and target.get("status") != rms_status:
+        history = target.get("status_history", [])
+        history.append({
+            "status":    rms_status,
+            "timestamp": now.isoformat(),
+            "note":      f"Porter: {porter_status} | Rider: {rider_name or 'N/A'}"
+        })
+        update_data["status"] = rms_status
+        update_data["status_history"] = history
+        logger.info(f"Order {rms_order_id} updated to '{rms_status}' via Porter webhook")
+
+    await manager.update_order(rms_order_id, update_data)
+    return {"received": True, "matched": True, "rms_order_id": rms_order_id}
+
 
 # Invoice Download Endpoint
 @admin_router.get("/invoice/{order_id}")

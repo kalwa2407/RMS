@@ -24,6 +24,7 @@ const Navbar = () => {
     { name: 'Menu', path: '/menu' },
     { name: 'Order Online', path: '/order' },
     { name: 'Table Booking', path: '/reservation' },
+    { name: 'Events', path: '/events' },
     { name: 'Gallery', path: '/gallery' },
     { name: 'Reviews', path: '/reviews' },
     { name: 'About Us', path: '/about' },

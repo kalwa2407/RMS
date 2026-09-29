@@ -1972,7 +1972,7 @@ const CustomerDashboard = () => {
                       <span>{detectingLoc ? 'Detecting...' : distanceKm ? `📍 ${distanceKm} km away` : 'Detect Range'}</span>
                     </button>
                     <span className="text-[11px] text-white/60">
-                      {distanceKm === null ? 'Within 10km: Free' : distanceKm <= 10 ? '✅ Free Delivery' : distanceKm <= 20 ? '₹60 Delivery Fee' : '❌ Out of range (>20km)'}
+                      {distanceKm === null ? 'Within 5km: Free' : distanceKm <= 5 ? '✅ Free Delivery' : distanceKm <= 20 ? '₹60 Delivery Fee' : '❌ Out of range (>20km)'}
                     </span>
                   </div>
                 </div>

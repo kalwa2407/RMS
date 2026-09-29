@@ -156,6 +156,16 @@ class Order(BaseModel):
     accepted_at: Optional[datetime] = None  # When order was accepted
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+    # ── Porter Delivery Integration ──────────────────────────────────────────
+    porter_order_id: Optional[str] = None          # Porter's internal order ID
+    porter_status: Optional[str] = None            # Latest Porter status string
+    porter_tracking_url: Optional[str] = None      # Live tracking link for customer
+    porter_rider_name: Optional[str] = None        # Assigned Porter rider name
+    porter_rider_phone: Optional[str] = None       # Porter rider contact number
+    porter_estimated_cost: Optional[float] = None  # Quoted cost from Porter (₹)
+    porter_actual_cost: Optional[float] = None     # Final charged amount (₹)
+    porter_booked_at: Optional[datetime] = None    # Timestamp when Porter was booked
+    # ─────────────────────────────────────────────────────────────────────────
 
     class Config:
         allow_population_by_field_name = True
@@ -428,6 +438,16 @@ class DeliveryPartnerLogin(BaseModel):
 
 class OrderAssignment(BaseModel):
     delivery_partner_id: str
+
+# Porter Booking Models
+class PorterBookRequest(BaseModel):
+    """Admin request to book a Porter rider for a DELIVERY order"""
+    vehicle_type: str = "2-wheeler"   # '2-wheeler', '4-wheeler'
+    drop_lat: float                    # Customer delivery latitude
+    drop_lng: float                    # Customer delivery longitude
+
+class PorterCancelRequest(BaseModel):
+    reason: str = "Cancelled by restaurant"
 
 # Analytics Models
 class SalesAnalytics(BaseModel):

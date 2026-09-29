@@ -150,6 +150,47 @@ const OrderTracking = () => {
                  ))}
               </div>
 
+              {/* Porter Rider Info — shown when Porter is handling delivery */}
+              {order.porter_order_id && (order.porter_rider_name || order.porter_tracking_url) && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-gradient-to-br from-orange-900/20 to-orange-800/10 border border-orange-500/30 rounded-2xl p-4"
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-6 h-6 rounded-lg bg-orange-500/20 flex items-center justify-center">
+                      <Truck size={12} className="text-orange-400" />
+                    </div>
+                    <p className="text-[9px] font-black text-orange-400 uppercase tracking-[0.3em]">Porter Delivery Rider</p>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div>
+                      {order.porter_rider_name && (
+                        <p className="text-white font-bold text-sm">{order.porter_rider_name}</p>
+                      )}
+                      {order.porter_rider_phone && (
+                        <a href={`tel:${order.porter_rider_phone}`} className="text-orange-400 text-xs font-medium flex items-center gap-1 mt-0.5 hover:text-orange-300 transition-colors">
+                          📞 {order.porter_rider_phone}
+                        </a>
+                      )}
+                      {!order.porter_rider_name && (
+                        <p className="text-gray-400 text-xs animate-pulse">Searching for rider...</p>
+                      )}
+                    </div>
+                    {order.porter_tracking_url && (
+                      <a
+                        href={order.porter_tracking_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-2 bg-orange-500/10 border border-orange-500/30 text-orange-400 hover:text-orange-300 hover:bg-orange-500/20 px-3 py-2 rounded-xl text-xs font-bold transition-all"
+                      >
+                        🛵 Track Live
+                      </a>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+
               {/* Status Timeline */}
               <div className="bg-[#111c24] border border-[#EAB308]/20 rounded-3xl p-5 relative">
                  <div className="flex flex-col space-y-5">

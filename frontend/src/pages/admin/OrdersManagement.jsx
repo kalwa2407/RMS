@@ -1,10 +1,21 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Check, X, Clock, Package, Truck, Home, Printer, Eye, Bell, Trash2, Bike, UtensilsCrossed, ShoppingBag } from "lucide-react";
+import { Check, X, Clock, Package, Truck, Home, Printer, Eye, Bell, Trash2, Bike, UtensilsCrossed, ShoppingBag, MapPin, Phone, ExternalLink, RefreshCw, Zap, AlertTriangle } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
 import API_BASE from "../../lib/config";
 
-/* ── helpers ── */
+/* Porter status → display config */
+const PORTER_STATUS_DISPLAY = {
+  open:                  { label: "Searching Rider",     color: "text-yellow-400", bg: "bg-yellow-400/10 border-yellow-400/30" },
+  accepted:              { label: "Rider Assigned",      color: "text-blue-400",   bg: "bg-blue-400/10 border-blue-400/30" },
+  reached_for_pickup:    { label: "Rider at Restaurant", color: "text-purple-400", bg: "bg-purple-400/10 border-purple-400/30" },
+  order_picked_up:       { label: "Picked Up",           color: "text-orange-400", bg: "bg-orange-400/10 border-orange-400/30" },
+  started_for_delivery:  { label: "On the Way",          color: "text-orange-400", bg: "bg-orange-400/10 border-orange-400/30" },
+  reached_for_delivery:  { label: "At Destination",      color: "text-green-400",  bg: "bg-green-400/10 border-green-400/30" },
+  delivered:             { label: "Delivered ✓",         color: "text-emerald-400",bg: "bg-emerald-400/10 border-emerald-400/30" },
+  cancelled:             { label: "Porter Cancelled",    color: "text-red-400",    bg: "bg-red-400/10 border-red-400/30" },
+};
+
 const formatOrderTime = (ts) => {
   if (!ts) return "—";
   try {
@@ -33,6 +44,13 @@ const OrdersManagement = () => {
   const [deliveryPartners, setDeliveryPartners] = useState([]);
   const [assigningOrder, setAssigningOrder] = useState(null);
   const audioRef = useRef(null);
+
+  // ── Porter state ───────────────────────────────────────────────────────────
+  // porterModal = { order, step: 'idle'|'quoting'|'quoted'|'booking', quote: null|{...} }
+  const [porterModal, setPorterModal] = useState(null);
+  const [porterCancelling, setPorterCancelling] = useState(null); // order_id being cancelled
+  const [porterRefreshing, setPorterRefreshing] = useState(null); // order_id being refreshed
+
 
   useEffect(() => {
     const loadSound = async () => {
@@ -119,6 +137,84 @@ const OrdersManagement = () => {
       toast({ title: "Error", description: err.response?.data?.detail || "Failed to assign", variant: "destructive" });
     }
   };
+  // -- Porter Handlers ----------------------------------------------------------
+
+  const openPorterModal = async (order) => {
+    const drop_lat = order.drop_lat || null;
+    const drop_lng = order.drop_lng || null;
+    if (!drop_lat || !drop_lng) {
+      setPorterModal({ order, step: "no_coords", quote: null, tempLat: "", tempLng: "" });
+      return;
+    }
+    setPorterModal({ order, step: "quoting", quote: null });
+    await _fetchPorterQuote(order, drop_lat, drop_lng);
+  };
+
+  const _fetchPorterQuote = async (order, drop_lat, drop_lng) => {
+    try {
+      const token = localStorage.getItem("admin_token");
+      const { data } = await axios.post(
+        `${API_BASE}/api/admin/orders/${order.order_id}/porter/quote`,
+        { drop_lat: parseFloat(drop_lat), drop_lng: parseFloat(drop_lng), vehicle_type: "2-wheeler" },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setPorterModal(prev => ({ ...prev, step: "quoted", quote: data, drop_lat: parseFloat(drop_lat), drop_lng: parseFloat(drop_lng) }));
+    } catch (err) {
+      toast({ title: "Porter Quote Failed", description: err.response?.data?.detail || "Could not get quote", variant: "destructive" });
+      setPorterModal(null);
+    }
+  };
+
+  const confirmPorterBook = async () => {
+    if (!porterModal) return;
+    const { order, drop_lat, drop_lng } = porterModal;
+    setPorterModal(prev => ({ ...prev, step: "booking" }));
+    try {
+      const token = localStorage.getItem("admin_token");
+      const { data } = await axios.post(
+        `${API_BASE}/api/admin/orders/${order.order_id}/porter/book`,
+        { drop_lat, drop_lng, vehicle_type: "2-wheeler" },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast({ title: "Porter Booked!", description: `Rider: ${data.rider_name || "Searching..."}` });
+      setPorterModal(null);
+      fetchOrders();
+    } catch (err) {
+      toast({ title: "Booking Failed", description: err.response?.data?.detail || "Porter booking error", variant: "destructive" });
+      setPorterModal(prev => ({ ...prev, step: "quoted" }));
+    }
+  };
+
+  const cancelPorterBooking = async (order) => {
+    if (!window.confirm("Cancel Porter booking? You can assign an in-house rider after.")) return;
+    setPorterCancelling(order.order_id);
+    try {
+      const token = localStorage.getItem("admin_token");
+      await axios.post(
+        `${API_BASE}/api/admin/orders/${order.order_id}/porter/cancel`,
+        { reason: "Cancelled by admin" },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast({ title: "Porter Cancelled", description: "You can now assign an in-house rider." });
+      fetchOrders();
+    } catch (err) {
+      toast({ title: "Cancel Failed", description: err.response?.data?.detail || "Could not cancel", variant: "destructive" });
+    } finally { setPorterCancelling(null); }
+  };
+
+  const refreshPorterStatus = async (order) => {
+    setPorterRefreshing(order.order_id);
+    try {
+      const token = localStorage.getItem("admin_token");
+      await axios.get(`${API_BASE}/api/admin/orders/${order.order_id}/porter/status`, { headers: { Authorization: `Bearer ${token}` } });
+      toast({ title: "Porter Status Refreshed" });
+      fetchOrders();
+    } catch (err) {
+      toast({ title: "Refresh Failed", description: err.response?.data?.detail || "Could not refresh", variant: "destructive" });
+    } finally { setPorterRefreshing(null); }
+  };
+
+
 
   const updateStatus = async (order, newStatus) => {
     try {
@@ -452,40 +548,115 @@ const OrdersManagement = () => {
                       </button>
                     )}
 
-                    {/* Assign Delivery Partner */}
-                    {order.order_type === "DELIVERY" && order.status === "ready" && (
-                      <div className="relative">
-                        {order.delivery_partner_name ? (
-                          <div className="flex items-center gap-2 bg-green-900/30 border border-green-500/30 px-3 py-2 rounded-lg">
-                            <Bike className="w-4 h-4 text-green-400" />
-                            <span className="text-green-400 text-sm font-medium">{order.delivery_partner_name}</span>
-                          </div>
-                        ) : (
-                          <>
-                            <button onClick={() => setAssigningOrder(assigningOrder === order.order_id ? null : order.order_id)}
-                              className="bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm font-medium flex items-center gap-2 transition-colors">
-                              <Bike className="w-4 h-4" /> Assign Rider
-                            </button>
-                            {assigningOrder === order.order_id && (
-                              <div className="absolute bottom-full left-0 mb-1 bg-[#0f2933] border border-[#EAB308]/25 rounded-xl shadow-2xl z-20 w-56 overflow-hidden">
-                                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider px-3 pt-3 pb-1">Select Partner</p>
-                                {deliveryPartners.length === 0 ? (
-                                  <p className="text-gray-400 text-sm px-3 py-2">No active partners</p>
-                                ) : (
-                                  deliveryPartners.map(p => (
-                                    <button key={p.id} onClick={() => assignDelivery(order.order_id, p.id)}
-                                      className="w-full text-left px-3 py-2.5 text-sm text-gray-200 hover:bg-[#1a4855] transition-colors flex items-center gap-2">
-                                      <Bike className="w-3.5 h-3.5 text-[#EAB308]" />
-                                      <div>
-                                        <p className="font-medium">{p.name}</p>
-                                        <p className="text-gray-500 text-xs">{p.vehicle_type} · {p.phone}</p>
-                                      </div>
-                                    </button>
-                                  ))
+                    {/* ── Delivery Assignment (In-House OR Porter) ── */}
+                    {order.order_type === "DELIVERY" && ["accepted","preparing","ready","out_for_delivery"].includes(order.status) && (
+                      <div className="w-full mt-1">
+
+                        {/* Porter Status Banner — shown when Porter is active */}
+                        {order.porter_order_id && (
+                          <div className="mb-2 rounded-xl border overflow-hidden" style={{ background: "rgba(15,41,51,0.8)" }}>
+                            <div className={`flex items-center justify-between px-3 py-2 border-b ${(PORTER_STATUS_DISPLAY[order.porter_status] || PORTER_STATUS_DISPLAY["open"]).bg}`}>
+                              <div className="flex items-center gap-2">
+                                <Zap className={`w-3.5 h-3.5 ${(PORTER_STATUS_DISPLAY[order.porter_status] || PORTER_STATUS_DISPLAY["open"]).color}`} />
+                                <span className={`text-xs font-bold ${(PORTER_STATUS_DISPLAY[order.porter_status] || PORTER_STATUS_DISPLAY["open"]).color}`}>
+                                  Porter: {(PORTER_STATUS_DISPLAY[order.porter_status] || { label: order.porter_status || "Booked" }).label}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                {/* Refresh Porter Status */}
+                                <button
+                                  onClick={() => refreshPorterStatus(order)}
+                                  disabled={porterRefreshing === order.order_id}
+                                  title="Refresh Porter status"
+                                  className="w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+                                >
+                                  <RefreshCw className={`w-3 h-3 ${porterRefreshing === order.order_id ? "animate-spin" : ""}`} />
+                                </button>
+                                {/* Cancel Porter */}
+                                {!["order_picked_up","started_for_delivery","delivered"].includes(order.porter_status) && (
+                                  <button
+                                    onClick={() => cancelPorterBooking(order)}
+                                    disabled={porterCancelling === order.order_id}
+                                    title="Cancel Porter"
+                                    className="w-6 h-6 rounded-full bg-red-900/30 border border-red-500/30 flex items-center justify-center text-red-400 hover:text-red-300 transition-colors"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                            {/* Rider Info */}
+                            {(order.porter_rider_name || order.porter_rider_phone || order.porter_tracking_url) && (
+                              <div className="px-3 py-2 flex items-center justify-between gap-2 flex-wrap">
+                                <div className="flex items-center gap-3">
+                                  {order.porter_rider_name && (
+                                    <div className="flex items-center gap-1.5">
+                                      <Bike className="w-3.5 h-3.5 text-gray-400" />
+                                      <span className="text-white text-xs font-semibold">{order.porter_rider_name}</span>
+                                    </div>
+                                  )}
+                                  {order.porter_rider_phone && (
+                                    <div className="flex items-center gap-1.5">
+                                      <Phone className="w-3 h-3 text-gray-400" />
+                                      <a href={`tel:${order.porter_rider_phone}`} className="text-[#EAB308] text-xs">{order.porter_rider_phone}</a>
+                                    </div>
+                                  )}
+                                </div>
+                                {order.porter_tracking_url && (
+                                  <a href={order.porter_tracking_url} target="_blank" rel="noreferrer"
+                                    className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors">
+                                    <MapPin className="w-3 h-3" /> Live Track <ExternalLink className="w-3 h-3" />
+                                  </a>
                                 )}
                               </div>
                             )}
-                          </>
+                          </div>
+                        )}
+
+                        {/* Assignment choice — only show if NOT already assigned */}
+                        {!order.delivery_partner_name && !order.porter_order_id && (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {/* In-House Rider Button */}
+                            <div className="relative">
+                              <button onClick={() => setAssigningOrder(assigningOrder === order.order_id ? null : order.order_id)}
+                                className="bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                                <Bike className="w-3.5 h-3.5" /> In-House Rider
+                              </button>
+                              {assigningOrder === order.order_id && (
+                                <div className="absolute bottom-full left-0 mb-1 bg-[#0f2933] border border-[#EAB308]/25 rounded-xl shadow-2xl z-20 w-56 overflow-hidden">
+                                  <p className="text-xs text-gray-500 font-bold uppercase tracking-wider px-3 pt-3 pb-1">Select Partner</p>
+                                  {deliveryPartners.length === 0 ? (
+                                    <p className="text-gray-400 text-sm px-3 py-2">No active partners</p>
+                                  ) : (
+                                    deliveryPartners.map(p => (
+                                      <button key={p.id} onClick={() => assignDelivery(order.order_id, p.id)}
+                                        className="w-full text-left px-3 py-2.5 text-sm text-gray-200 hover:bg-[#1a4855] transition-colors flex items-center gap-2">
+                                        <Bike className="w-3.5 h-3.5 text-[#EAB308]" />
+                                        <div>
+                                          <p className="font-medium">{p.name}</p>
+                                          <p className="text-gray-500 text-xs">{p.vehicle_type} · {p.phone}</p>
+                                        </div>
+                                      </button>
+                                    ))
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            {/* Porter Button */}
+                            <button onClick={() => openPorterModal(order)}
+                              className="bg-gradient-to-r from-orange-600 to-orange-500 text-white px-3 py-2 rounded-lg hover:from-orange-700 hover:to-orange-600 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md shadow-orange-900/30">
+                              <Zap className="w-3.5 h-3.5" /> Book Porter
+                            </button>
+                          </div>
+                        )}
+
+                        {/* In-house rider assigned badge */}
+                        {order.delivery_partner_name && !order.porter_order_id && (
+                          <div className="flex items-center gap-2 bg-green-900/30 border border-green-500/30 px-3 py-2 rounded-lg">
+                            <Bike className="w-4 h-4 text-green-400" />
+                            <span className="text-green-400 text-sm font-medium">{order.delivery_partner_name}</span>
+                            <span className="text-gray-500 text-xs ml-auto">In-House</span>
+                          </div>
                         )}
                       </div>
                     )}
@@ -564,5 +735,144 @@ const OrdersManagement = () => {
     </div>
   );
 };
+
+      {/* ===== Porter Booking Modal ===== */}
+      {porterModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+          <div className="bg-[#0f2933] border border-orange-500/30 rounded-2xl p-5 max-w-md w-full shadow-2xl shadow-orange-900/20">
+
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-900/40">
+                  <Zap className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-white font-bold text-lg">Book Porter Rider</h3>
+                  <p className="text-gray-400 text-xs font-mono">{porterModal.order?.order_id?.slice(-10)}</p>
+                </div>
+              </div>
+              <button onClick={() => setPorterModal(null)} className="text-gray-400 hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Step: No Coordinates */}
+            {porterModal.step === "no_coords" && (
+              <div>
+                <div className="flex items-start gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 mb-4">
+                  <AlertTriangle className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5" />
+                  <p className="text-yellow-300 text-xs">This order doesn't have GPS coordinates stored. Please enter the customer's approximate coordinates to get a Porter quote.</p>
+                </div>
+                <p className="text-gray-400 text-xs mb-3">Customer address: <span className="text-white">{porterModal.order?.address}</span></p>
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div>
+                    <label className="text-xs text-gray-500 uppercase tracking-wider mb-1 block">Latitude</label>
+                    <input
+                      type="number" step="any"
+                      value={porterModal.tempLat || ""}
+                      onChange={e => setPorterModal(prev => ({ ...prev, tempLat: e.target.value }))}
+                      placeholder="e.g. 18.5230"
+                      className="w-full bg-[#1a4855] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-orange-500/50"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 uppercase tracking-wider mb-1 block">Longitude</label>
+                    <input
+                      type="number" step="any"
+                      value={porterModal.tempLng || ""}
+                      onChange={e => setPorterModal(prev => ({ ...prev, tempLng: e.target.value }))}
+                      placeholder="e.g. 73.8567"
+                      className="w-full bg-[#1a4855] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-orange-500/50"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => setPorterModal(null)} className="flex-1 py-2.5 rounded-xl text-sm border border-white/10 text-gray-400 hover:text-white transition-colors">Cancel</button>
+                  <button
+                    onClick={() => _fetchPorterQuote(porterModal.order, porterModal.tempLat, porterModal.tempLng)}
+                    disabled={!porterModal.tempLat || !porterModal.tempLng}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-orange-600 to-orange-500 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    Get Quote
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step: Quoting (loading) */}
+            {porterModal.step === "quoting" && (
+              <div className="text-center py-8">
+                <div className="w-10 h-10 border-3 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" style={{ borderWidth: 3 }} />
+                <p className="text-gray-400 text-sm">Fetching Porter quote...</p>
+              </div>
+            )}
+
+            {/* Step: Quoted — show fare and confirm */}
+            {porterModal.step === "quoted" && porterModal.quote && (
+              <div>
+                {/* Order summary */}
+                <div className="bg-[#1a4855] rounded-xl p-3 mb-4 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Customer</span>
+                    <span className="text-white font-medium">{porterModal.quote.customer_name}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Distance</span>
+                    <span className="text-white">{porterModal.quote.distance_km ? `${porterModal.quote.distance_km} km` : "—"}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Customer delivery fee</span>
+                    <span className={(porterModal.quote.distance_km || 0) <= 5 ? "text-green-400 font-bold" : "text-[#EAB308] font-bold"}>
+                      {(porterModal.quote.distance_km || 0) <= 5 ? "FREE (≤5km)" : "₹60"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Porter Cost Card */}
+                <div className="bg-gradient-to-br from-orange-900/30 to-orange-800/20 border border-orange-500/30 rounded-xl p-4 mb-4">
+                  <p className="text-orange-400 text-xs font-bold uppercase tracking-wider mb-3">Porter Quote (Your Cost)</p>
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="text-3xl font-black text-white">₹{porterModal.quote.estimated_fare?.toFixed(0)}</p>
+                      <p className="text-gray-400 text-xs">Estimated Porter fare</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xl font-bold text-orange-400">{porterModal.quote.eta_minutes} min</p>
+                      <p className="text-gray-400 text-xs">Rider ETA</p>
+                    </div>
+                  </div>
+                  <p className="text-gray-500 text-xs">{porterModal.quote.note}</p>
+                </div>
+
+                {/* Vehicle */}
+                <div className="flex items-center gap-2 mb-4">
+                  <Bike className="w-4 h-4 text-orange-400" />
+                  <span className="text-gray-300 text-sm capitalize">Vehicle: {porterModal.quote.vehicle_type}</span>
+                </div>
+
+                <div className="flex gap-2">
+                  <button onClick={() => setPorterModal(null)} className="flex-1 py-2.5 rounded-xl text-sm border border-white/10 text-gray-400 hover:text-white transition-colors">Cancel</button>
+                  <button
+                    onClick={confirmPorterBook}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white transition-all shadow-lg shadow-orange-900/30"
+                  >
+                    ✓ Confirm Book Porter
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step: Booking */}
+            {porterModal.step === "booking" && (
+              <div className="text-center py-8">
+                <div className="w-10 h-10 border-3 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" style={{ borderWidth: 3 }} />
+                <p className="text-gray-400 text-sm">Booking Porter rider...</p>
+                <p className="text-gray-600 text-xs mt-1">This may take a few seconds</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
 export default OrdersManagement;

@@ -8,6 +8,98 @@ import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
 import API_BASE from "../../lib/config";
 
+// ── Porter Config Panel (sub-component used in Settings) ─────────────────────
+const PorterConfigPanel = () => {
+  const [config, setConfig] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const token = localStorage.getItem("admin_token");
+    fetch(`${API_BASE}/api/admin/porter/config`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(r => r.json())
+      .then(d => setConfig(d))
+      .catch(() => setConfig(null))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="text-gray-500 text-sm animate-pulse">Checking Porter configuration...</div>;
+  if (!config) return <div className="text-red-400 text-sm">Could not reach backend to check Porter status.</div>;
+
+  return (
+    <div className="space-y-4">
+      {/* Status */}
+      <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${config.configured ? "bg-green-900/20 border-green-500/30" : "bg-red-900/20 border-red-500/30"}`}>
+        <div className={`w-2.5 h-2.5 rounded-full ${config.configured ? "bg-green-400" : "bg-red-400"}`} />
+        <div>
+          <p className={`text-sm font-bold ${config.configured ? "text-green-400" : "text-red-400"}`}>
+            {config.configured ? "Porter API Connected" : "Porter API Key Not Set"}
+          </p>
+          <p className="text-gray-500 text-xs">
+            {config.configured
+              ? `Environment: ${config.environment === "sandbox" ? "🧪 Sandbox (Testing)" : "🚀 Production"}`
+              : 'Add PORTER_API_KEY to backend/.env to activate'}
+          </p>
+        </div>
+      </div>
+
+      {/* Restaurant Pickup Location */}
+      <div className="bg-[#0f2933] rounded-xl p-4">
+        <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-3">Restaurant Pickup Location</p>
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-400">Name</span>
+            <span className="text-white">{config.restaurant_name}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-400">Coordinates</span>
+            <span className="text-white font-mono text-xs">{config.restaurant_lat}, {config.restaurant_lng}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-400">Address</span>
+            <span className="text-white text-xs text-right max-w-[60%]">{config.restaurant_address}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Setup Instructions */}
+      {!config.configured && (
+        <div className="bg-[#0f2933] border border-orange-500/20 rounded-xl p-4">
+          <p className="text-orange-400 text-xs font-bold uppercase tracking-wider mb-2">Setup Steps</p>
+          <ol className="space-y-1.5 text-xs text-gray-400 list-none">
+            <li>1. Go to <span className="text-orange-400">porter.in/enterprise</span> → Request API access</li>
+            <li>2. Receive API key from Porter team</li>
+            <li>3. Set <code className="text-green-400 bg-black/30 px-1 rounded">PORTER_API_KEY=your_key</code> in <code className="text-gray-300">backend/.env</code></li>
+            <li>4. Change <code className="text-green-400 bg-black/30 px-1 rounded">PORTER_API_BASE_URL</code> to production URL when ready</li>
+            <li>5. Restart backend server</li>
+          </ol>
+        </div>
+      )}
+
+      {/* Delivery Policy */}
+      <div className="bg-[#0f2933] rounded-xl p-4">
+        <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-3">Delivery Fee Policy</p>
+        <div className="space-y-2">
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-gray-400">0 – 5 km</span>
+            <span className="text-green-400 font-bold">FREE (customer pays ₹0)</span>
+          </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-gray-400">5 – 20 km</span>
+            <span className="text-[#EAB308] font-bold">₹60 from customer</span>
+          </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-gray-400">Porter's cost</span>
+            <span className="text-gray-300 text-xs">~₹50–120 (restaurant absorbs)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 const Settings = () => {
   const { toast } = useToast();
   const [fetchingSettings, setFetchingSettings] = useState(true);
@@ -632,6 +724,21 @@ const Settings = () => {
             {pwSaved ? "Password Changed Successfully!" : pwSaving ? "Updating Password..." : "Change Admin Password"}
           </button>
         </form>
+      </div>
+
+      {/* ===== Porter Integration Section ===== */}
+      <div className="bg-[#1a4855] border border-[#EAB308]/15 rounded-2xl p-6">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-900/30">
+            <span className="text-white text-lg">🛵</span>
+          </div>
+          <div>
+            <h3 className="text-white font-bold text-lg">Porter Delivery Integration</h3>
+            <p className="text-gray-400 text-xs">On-demand intracity delivery service for when in-house riders aren't available</p>
+          </div>
+        </div>
+
+        <PorterConfigPanel />
       </div>
     </div>
   );
