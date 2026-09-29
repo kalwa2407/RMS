@@ -926,11 +926,11 @@ async def get_reservation(reservation_id: str, manager: BaseDataManager = Depend
 # =============================================================================
 
 @api_router.get("/events")
+async def get_events(manager: BaseDataManager = Depends(get_data_manager)):
+    """Get all published events (public) - cached 5 min"""
+    events = await manager._read("events")
     active = [e for e in events if e.get("status", "active") != "archived"]
     return JSONResponse(content=active, headers={"Cache-Control": "public, max-age=300, stale-while-revalidate=60"})
-    events = await manager._read("events")
-    # Only return active/upcoming events for public
-    return [e for e in events if e.get("status", "active") != "archived"]
 
 @api_router.post("/events/contact")
 async def event_contact_request(request: dict, manager: BaseDataManager = Depends(get_data_manager)):
