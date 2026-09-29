@@ -128,15 +128,72 @@ const EventCard = ({ event, onContact, index }) => {
   );
 };
 
+const DEFAULT_EVENTS = [
+  {
+    _id: "def-1",
+    title: "Royal Sufi & Ghazal Night",
+    category: "Music & Dining",
+    description: "Immerse yourself in soul-stirring live Sufi melodies accompanied by a royal Dastarkhwan feast. Authentic kebabs, slow-cooked gravies, and saffron biryanis under ambient candlelit elegance.",
+    date: "2026-10-10",
+    time: "08:00 PM onwards",
+    venue: "Persian Darbar, Royal Banquet Hall, Pune",
+    image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800",
+    max_guests: 120,
+    price: "Reserve Table / Set Menu",
+    highlights: ["Live Sufi Troupe", "Royal Welcome Drink", "Chef's Special Raan Biryani", "Shahi Tukda Finale"]
+  },
+  {
+    _id: "def-2",
+    title: "Grand Persian Dastarkhwan Festival",
+    category: "Culinary Festival",
+    description: "A royal sharing feast featuring our heritage Mutton Raan, Jujeh Kebabs, Irani Koobideh, and aromatic saffron rice crafted following century-old Persian recipes.",
+    date: "2026-10-17",
+    time: "07:30 PM to 11:30 PM",
+    venue: "Main Dining Hall, Persian Darbar Pune",
+    image: "https://images.unsplash.com/photo-1544025162-d76694265947?w=800",
+    max_guests: 200,
+    price: "A La Carte & Royal Sharing Trays",
+    highlights: ["Mutton Raan Dum Pukht", "Persian Saffron Rice", "Live Tandoor Skewers", "Fresh Bakery Desserts"]
+  },
+  {
+    _id: "def-3",
+    title: "Corporate & Private Banquet Showcase",
+    category: "Private Gatherings",
+    description: "Planning a corporate milestone, royal wedding reception, or family celebration? Experience our bespoke catering, luxurious table setups, and dedicated banquet hospitality.",
+    date: "2026-10-24",
+    time: "Flexible Timings",
+    venue: "Banquet Hall, Persian Darbar Pune",
+    image: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=800",
+    max_guests: 250,
+    price: "Custom Banquet Packages",
+    highlights: ["Dedicated Service Staff", "Customized Multi-Course Menu", "Sound & Audio Setup", "Valet Parking"]
+  }
+];
+
 const Events = () => {
-  const [events, setEvents] = useState([]);
+  const [events, setEvents] = useState(DEFAULT_EVENTS);
   const [loading, setLoading] = useState(true);
   const [contactModal, setContactModal] = useState(null);
   const [generalContact, setGeneralContact] = useState(false);
   const [filterCat, setFilterCat] = useState("All");
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/events`).then(r => r.json()).then(d => setEvents(Array.isArray(d) ? d : [])).catch(() => {}).finally(() => setLoading(false));
+    fetch(`${API_BASE}/api/events`)
+      .then(r => {
+        if (!r.ok) throw new Error("Status " + r.status);
+        return r.json();
+      })
+      .then(d => {
+        if (Array.isArray(d) && d.length > 0) {
+          setEvents(d);
+        } else {
+          setEvents(DEFAULT_EVENTS);
+        }
+      })
+      .catch(() => {
+        setEvents(DEFAULT_EVENTS);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const categories = ["All", ...new Set(events.map(e => e.category || "Special Event"))];
