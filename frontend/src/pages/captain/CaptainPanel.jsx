@@ -1,8 +1,9 @@
-﻿﻿import React, { useState, useEffect, useCallback, useRef } from "react";
+﻿import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   UtensilsCrossed, RefreshCw, LogOut, ChefHat, Plus, X, Minus,
-  Check, Clock, Receipt, ShoppingBag, Users, Bell, AlertCircle, CheckCircle, Search, Sparkles, TrendingUp, Coffee
+  Check, Clock, Receipt, ShoppingBag, Users, Bell, AlertCircle, CheckCircle, Search, Sparkles, TrendingUp, Coffee,
+  Calendar, UserCheck
 } from "lucide-react";
 import axios from "axios";
 import API_BASE from "../../lib/config";
@@ -11,6 +12,7 @@ import API_BASE from "../../lib/config";
 const tableColor = (status) => {
   if (status === "free") return { bg: "rgba(34,197,94,0.1)", border: "rgba(34,197,94,0.4)", text: "#22c55e", label: "Free" };
   if (status === "occupied") return { bg: "rgba(239,68,68,0.1)", border: "rgba(239,68,68,0.4)", text: "#ef4444", label: "Occupied" };
+  if (status === "reserved") return { bg: "rgba(234,179,8,0.15)", border: "rgba(234,179,8,0.5)", text: "#EAB308", label: "Reserved" };
   return { bg: "rgba(234,179,8,0.1)", border: "rgba(234,179,8,0.4)", text: "#EAB308", label: "Billing" };
 };
 
@@ -381,7 +383,7 @@ const CaptainPanel = () => {
               <>
                 {/* Legend */}
                 <div className="flex gap-4 mb-4 px-1">
-                  {[{ s: "free", l: "Free" }, { s: "occupied", l: "Occupied" }, { s: "billing", l: "Billing" }].map(({ s, l }) => {
+                  {[{ s: "free", l: "Free" }, { s: "reserved", l: "Reserved" }, { s: "occupied", l: "Occupied" }, { s: "billing", l: "Billing" }].map(({ s, l }) => {
                     const c = tableColor(s);
                     return (
                       <div key={s} className="flex items-center gap-1.5">
@@ -396,24 +398,32 @@ const CaptainPanel = () => {
                 <div className="grid grid-cols-4 sm:grid-cols-5 gap-2.5">
                   {tables.map(t => {
                     const c = tableColor(t.status);
-                    // Check if this table has a ready order
                     const hasReady = readyOrders.some(o => o.table_number === t.table_number);
+                    const isReserved = t.is_reserved_today || t.status === "reserved";
                     return (
                       <button key={t.table_number} onClick={() => openTable(t)}
-                        className="relative flex flex-col items-center justify-center rounded-2xl py-4 px-1 transition-all active:scale-95"
-                        style={{ background: c.bg, border: `1.5px solid ${hasReady ? "#22c55e" : c.border}` }}>
+                        className="relative flex flex-col items-center justify-center rounded-2xl py-3.5 px-1 transition-all active:scale-95"
+                        style={{
+                          background: isReserved && t.status === "free" ? "rgba(234,179,8,0.1)" : c.bg,
+                          border: `1.5px solid ${hasReady ? "#22c55e" : isReserved && t.status === "free" ? "#EAB308" : c.border}`
+                        }}>
                         {hasReady && (
                           <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center animate-bounce">
                             <Check className="h-2.5 w-2.5 text-white" />
                           </span>
                         )}
+                        {isReserved && !hasReady && (
+                          <span className="absolute -top-1.5 -right-1 px-1.5 py-0.2 bg-[#EAB308] text-black text-[8px] font-black rounded-full uppercase shadow">
+                            {t.upcoming_reservation?.time || "RES"}
+                          </span>
+                        )}
                         <span className="text-white font-bold text-lg leading-none">{t.table_number}</span>
-                        <span className="text-[9px] font-bold uppercase tracking-wider mt-1" style={{ color: hasReady ? "#22c55e" : c.text }}>
-                          {hasReady ? "READY" : c.label}
+                        <span className="text-[9px] font-bold uppercase tracking-wider mt-1 truncate max-w-full px-1"
+                          style={{ color: hasReady ? "#22c55e" : isReserved && t.status === "free" ? "#EAB308" : c.text }}>
+                          {hasReady ? "READY" : isReserved && t.status === "free" ? (t.upcoming_reservation?.time || "Reserved") : c.label}
                         </span>
                         {t.status === "occupied" && !hasReady && (
-                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2"
-                            style={{ borderColor: "#0a1628" }} />
+                          <div className="absolute -top-1 -left-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#0a1628]" />
                         )}
                       </button>
                     );
@@ -522,6 +532,40 @@ const CaptainPanel = () => {
 
             {/* Scrollable body */}
             <div className="flex-1 overflow-y-auto">
+
+                            {/* Upcoming Reservation warning banner */}
+              {sheet.table?.upcoming_reservation && (
+                <div className="mx-4 mt-3 rounded-2xl p-3.5 flex items-start gap-3 bg-gradient-to-r from-amber-500/20 to-orange-500/10 border border-amber-500/40">
+                  <div className="w-8 h-8 rounded-full bg-[#EAB308]/20 text-[#EAB308] flex items-center justify-center shrink-0 mt-0.5">
+                    <Calendar className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[#EAB308] font-bold text-sm">⚠️ Table Reserved Today: {sheet.table.upcoming_reservation.time}</p>
+                      <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-[#EAB308]/20 text-[#EAB308] border border-[#EAB308]/30">
+                        {sheet.table.upcoming_reservation.status}
+                      </span>
+                    </div>
+                    <p className="text-gray-300 text-xs mt-1">
+                      Reserved for <strong className="text-white">{sheet.table.upcoming_reservation.customer_name}</strong> ({sheet.table.upcoming_reservation.guests} guests)
+                      {sheet.table.upcoming_reservation.phone && ` • +91 ${sheet.table.upcoming_reservation.phone}`}
+                    </p>
+                    {sheet.table.upcoming_reservation.special_requests && (
+                      <p className="text-amber-200/80 text-[11px] mt-1 italic">
+                        "{sheet.table.upcoming_reservation.special_requests}"
+                      </p>
+                    )}
+                    {sheet.table.status === "free" && (
+                      <button
+                        onClick={() => setGuestName(sheet.table.upcoming_reservation.customer_name)}
+                        className="mt-2 text-xs font-bold bg-[#EAB308] hover:bg-[#ca9a07] text-black px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-colors"
+                      >
+                        <UserCheck className="w-3.5 h-3.5" /> Seat Reserved Guest ({sheet.table.upcoming_reservation.customer_name})
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Ready alert for this table */}
               {readyOrders.some(o => o.table_number === sheet.table.table_number) && (

@@ -185,7 +185,7 @@ const CustomerReservations = () => {
                   </div>
 
                   {/* Date, Time & Details grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs bg-[#0a1e25]/60 p-3.5 rounded-xl border border-white/5">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-[#0a1e25]/60 p-3.5 rounded-xl border border-white/5">
                     <div>
                       <span className="text-gray-400 block mb-0.5">Date</span>
                       <strong className="text-white text-sm">{res.date}</strong>
@@ -196,7 +196,13 @@ const CustomerReservations = () => {
                     </div>
                     <div>
                       <span className="text-gray-400 block mb-0.5">Party Size</span>
-                      <strong className="text-white text-sm">{res.guests} People</strong>
+                      <strong className="text-white text-sm">{res.guests} Guests</strong>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 block mb-0.5">Assigned Table</span>
+                      <strong className={`text-sm ${res.table_number ? "text-emerald-400 font-bold" : "text-gray-400 font-normal"}`}>
+                        {res.table_number ? `Table ${res.table_number}` : "Auto-allocated"}
+                      </strong>
                     </div>
                   </div>
 
@@ -211,15 +217,34 @@ const CustomerReservations = () => {
                     </div>
                   )}
 
-                  {/* Status feedback note */}
-                  <div className="flex items-center justify-between pt-1 text-xs text-gray-400">
-                    <p>{statusInfo.desc}</p>
-                    <Link
-                      to="/reservation"
-                      className="text-[#EAB308] hover:underline font-semibold whitespace-nowrap"
-                    >
-                      Book Another
-                    </Link>
+                  {/* Action & WhatsApp Row */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-white/5">
+                    <p className="text-xs text-gray-400">{statusInfo.desc}</p>
+                    <div className="flex items-center gap-3">
+                      <a
+                        href={`https://wa.me/919594287868?text=${encodeURIComponent(
+                          `Hello Persian Darbar! I have a question regarding my table reservation:\n\n` +
+                          `👤 *Name:* ${res.customer_name}\n` +
+                          `📅 *Date:* ${res.date}\n` +
+                          `⏰ *Time:* ${res.time}\n` +
+                          `👥 *Guests:* ${res.guests} Guests\n` +
+                          `${res.table_number ? `🪑 *Table:* Table ${res.table_number}\n` : ""}\n` +
+                          `Please help me with this. Thank you!`
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-3 py-1.5 rounded-xl transition-all"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>WhatsApp Concierge</span>
+                      </a>
+                      <Link
+                        to="/reservation"
+                        className="text-xs text-[#EAB308] hover:underline font-semibold whitespace-nowrap"
+                      >
+                        Book Another
+                      </Link>
+                    </div>
                   </div>
                 </div>
               );

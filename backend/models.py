@@ -244,8 +244,10 @@ class Reservation(BaseModel):
     date: str
     time: str
     guests: int
+    table_number: Optional[int] = None
     special_requests: Optional[str] = None
-    status: str = "pending"  # 'pending', 'confirmed', 'rejected'
+    status: str = "pending"  # 'pending', 'confirmed', 'rejected', 'seated', 'completed'
+    whatsapp_sent: bool = False
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -262,10 +264,13 @@ class ReservationCreate(BaseModel):
     date: str
     time: str
     guests: int
+    table_number: Optional[int] = None
     special_requests: Optional[str] = None
 
 class ReservationStatusUpdate(BaseModel):
     status: str
+    table_number: Optional[int] = None
+    whatsapp_sent: Optional[bool] = None
 
 # Customer Profile Models
 class CustomerProfile(BaseModel):

@@ -498,41 +498,135 @@ const Reservation = () => {
               </motion.div>
             )}
 
-            {/* Step 5: Success! */}
+            {/* Step 5: Success & Royal Reservation Pass */}
             {step === 5 && (
               <motion.div
                 key="step5"
-                initial={{ scale: 0.9, opacity: 0 }}
+                initial={{ scale: 0.92, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="text-center py-10 space-y-12"
+                className="py-6 space-y-8"
               >
-                <div className="relative inline-block">
-                  <div className="absolute inset-0 bg-primary/20 blur-[60px] animate-pulse rounded-full" />
-                  <div className="w-32 h-32 rounded-full bg-primary flex items-center justify-center text-black relative z-10 border-4 border-black">
-                     <Check size={60} strokeWidth={3} />
+                {/* Header Icon & Title */}
+                <div className="text-center space-y-4">
+                  <div className="relative inline-block">
+                    <div className="absolute inset-0 bg-[#EAB308]/25 blur-[50px] animate-pulse rounded-full" />
+                    <div className="w-24 h-24 rounded-full bg-[#EAB308] flex items-center justify-center text-black relative z-10 border-4 border-[#0f2933] shadow-2xl">
+                      <Check size={48} strokeWidth={3} />
+                    </div>
                   </div>
-                </div>
-
-                <div className="space-y-6">
-                  <h2 className="text-5xl font-black text-white">It is Sealed.</h2>
-                  <p className="text-gray-400 text-lg font-light leading-relaxed max-w-sm mx-auto">
-                    Your royal table is being prepared. Our chefs have been notified of your arrival.
+                  <h2 className="text-3xl md:text-5xl font-black text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
+                    Reservation Received!
+                  </h2>
+                  <p className="text-gray-300 text-sm max-w-md mx-auto">
+                    Your table request has been submitted. Our concierge is reserving your royal seats.
                   </p>
                 </div>
 
-                <div className="pt-8 flex flex-col items-center space-y-4">
-                   <Link to="/customer/reservations" className="w-full">
-                      <button className="w-full bg-[#EAB308] hover:bg-[#CA8A04] text-black py-4 rounded-xl font-bold uppercase tracking-wider text-xs transition-all shadow-lg flex items-center justify-center gap-2">
-                        <span>Track Live Status in Customer Hub</span>
-                        <ChevronRight size={16} />
-                      </button>
-                   </Link>
-                   <Link to="/" className="w-full">
-                      <button className="w-full bg-[#1a4855] border border-[#EAB308]/20 text-white py-3.5 rounded-xl font-semibold uppercase tracking-[0.2em] text-[10px] hover:bg-white hover:text-black transition-all">
-                        Return To Home
-                      </button>
-                   </Link>
-                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Your confirmation code: #PD-{Math.random().toString(36).substring(7).toUpperCase()}</p>
+                {/* ── ROYAL BOOKING PASS ── */}
+                <div className="max-w-md mx-auto rounded-3xl bg-gradient-to-b from-[#133640] to-[#0a1e25] border border-[#EAB308]/30 overflow-hidden shadow-2xl">
+                  {/* Pass Header */}
+                  <div className="px-6 py-4 bg-[#EAB308]/15 border-b border-[#EAB308]/20 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-[#EAB308]" />
+                      <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[#EAB308]">
+                        Persian Darbar • Dining Pass
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-mono font-bold text-gray-400">
+                      #PD-{(formData.date || "").replace(/[^0-9]/g, "").slice(-4) || "RES"}-{selectedTable || "01"}
+                    </span>
+                  </div>
+
+                  {/* Pass Body */}
+                  <div className="p-6 space-y-4">
+                    {/* Primary Details Grid */}
+                    <div className="grid grid-cols-2 gap-3 bg-black/20 p-4 rounded-2xl border border-white/5">
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-gray-400 block mb-0.5">Date</span>
+                        <strong className="text-white text-sm block">{formData.date}</strong>
+                      </div>
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-gray-400 block mb-0.5">Time Slot</span>
+                        <strong className="text-[#EAB308] text-sm block">{formData.time}</strong>
+                      </div>
+                      <div className="pt-2 border-t border-white/5">
+                        <span className="text-[10px] uppercase font-bold text-gray-400 block mb-0.5">Table</span>
+                        <strong className="text-white text-sm block">
+                          {selectedTable ? `Table ${selectedTable}` : "Palace Hall Selection"}
+                        </strong>
+                      </div>
+                      <div className="pt-2 border-t border-white/5">
+                        <span className="text-[10px] uppercase font-bold text-gray-400 block mb-0.5">Party Size</span>
+                        <strong className="text-white text-sm block">{formData.guests} Guests</strong>
+                      </div>
+                    </div>
+
+                    {/* Guest Info */}
+                    <div className="space-y-1 text-xs text-gray-300 px-1">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Reserved For:</span>
+                        <strong className="text-white">{formData.name}</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Contact:</span>
+                        <span className="text-[#EAB308] font-mono">+91 {formData.phone}</span>
+                      </div>
+                      {formData.specialRequests && (
+                        <div className="flex justify-between pt-1">
+                          <span className="text-gray-400">Special Note:</span>
+                          <span className="text-amber-300 italic">{formData.specialRequests}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Status Pill */}
+                    <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-xs text-yellow-300 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-yellow-400 animate-ping" />
+                        <span className="font-semibold">Awaiting Host Confirmation</span>
+                      </div>
+                      <span className="text-[10px] text-gray-400">~2-5 mins</span>
+                    </div>
+                  </div>
+
+                  {/* ── PASS FOOTER: WHATSAPP BUTTON ── */}
+                  <div className="p-4 bg-black/40 border-t border-white/5 space-y-2">
+                    <a
+                      href={`https://wa.me/919594287868?text=${encodeURIComponent(
+                        `🌟 *Table Reservation Request — Persian Darbar*\n\n` +
+                        `Hello Persian Darbar! I have submitted a table reservation:\n\n` +
+                        `👤 *Name:* ${formData.name}\n` +
+                        `📞 *Phone:* ${formData.phone}\n` +
+                        `📅 *Date:* ${formData.date}\n` +
+                        `⏰ *Time:* ${formData.time}\n` +
+                        `👥 *Guests:* ${formData.guests} Persons\n` +
+                        `${selectedTable ? `🪑 *Preferred Table:* Table ${selectedTable}\n` : ""}` +
+                        `${formData.specialRequests ? `📝 *Note:* ${formData.specialRequests}\n` : ""}\n` +
+                        `Please confirm my booking. Thank you!`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white py-3.5 rounded-xl font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/30 transition-all"
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                      <span>Confirm via WhatsApp Concierge</span>
+                    </a>
+                  </div>
+                </div>
+
+                {/* Navigation Links */}
+                <div className="max-w-md mx-auto space-y-3 pt-2">
+                  <Link to="/customer/reservations" className="block w-full">
+                    <button className="w-full bg-[#EAB308] hover:bg-[#CA8A04] text-black py-4 rounded-2xl font-bold uppercase tracking-wider text-xs transition-all shadow-lg flex items-center justify-center gap-2">
+                      <span>Track Live Status in Customer Hub</span>
+                      <ChevronRight size={16} />
+                    </button>
+                  </Link>
+                  <Link to="/" className="block w-full">
+                    <button className="w-full bg-[#1a4855]/70 border border-[#EAB308]/20 text-white py-3 rounded-2xl font-semibold uppercase tracking-widest text-[10px] hover:bg-white hover:text-black transition-all">
+                      Return To Home
+                    </button>
+                  </Link>
                 </div>
               </motion.div>
             )}

@@ -1,4 +1,4 @@
-﻿from fastapi import FastAPI, APIRouter, Depends, HTTPException, status, UploadFile, File, Response, Request
+from fastapi import FastAPI, APIRouter, Depends, HTTPException, status, UploadFile, File, Response, Request
 from datetime import datetime, timezone, timedelta
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
@@ -879,11 +879,14 @@ async def create_reservation(
     now = get_ist_now()
     reservation_data = reservation.dict()
     
-    # Check for duplicate bookings at the same date and time
+    # Check for duplicate bookings at the same date, time, and table
     existing_reservations = await manager._read("reservations")
     for r in existing_reservations:
-        if r.get("date") == reservation_data.get("date") and r.get("time") == reservation_data.get("time") and r.get("status") == "confirmed":
-            raise HTTPException(status_code=409, detail="A reservation already exists for this date and time.")
+        if r.get("date") == reservation_data.get("date") and r.get("time") == reservation_data.get("time"):
+            if reservation_data.get("table_number") and r.get("table_number") == reservation_data.get("table_number") and r.get("status") in ["confirmed", "pending"]:
+                raise HTTPException(status_code=409, detail=f"Table {reservation_data.get('table_number')} is already booked for {reservation_data.get('time')} on this date.")
+            elif not reservation_data.get("table_number") and r.get("status") == "confirmed" and r.get("customer_name") == reservation_data.get("customer_name"):
+                raise HTTPException(status_code=409, detail="A reservation already exists for this name and time.")
 
     # Auto-link customer if authenticated
     if not reservation_data.get("customer_uid") and optional_customer:
@@ -904,6 +907,7 @@ async def create_reservation(
 
     reservation_data.update({
         "status": "pending",
+        "whatsapp_sent": False,
         "created_at": now.isoformat(),
         "updated_at": now.isoformat()
     })
@@ -1907,18 +1911,43 @@ async def admin_update_reservation_status(
     """Update reservation status"""
     reservations = await manager._read("reservations")
     updated = False
+    target_res = None
     for r in reservations:
         if r.get("id") == reservation_id or r.get("_id") == reservation_id:
             r["status"] = status_update.status
-            r["updated_at"] = datetime.utcnow().isoformat()
+            if status_update.table_number is not None:
+                r["table_number"] = status_update.table_number
+            if status_update.whatsapp_sent is not None:
+                r["whatsapp_sent"] = status_update.whatsapp_sent
+            r["updated_at"] = get_ist_now().isoformat()
             updated = True
+            target_res = r
             break
     
     if not updated:
         raise HTTPException(status_code=404, detail="Reservation not found")
     
     await manager._write("reservations", reservations)
-    return {"message": "Reservation status updated"}
+
+    # If confirmed today and has table_number, ensure table is marked reserved if currently free
+    if status_update.status == "confirmed" and target_res.get("table_number"):
+        try:
+            today_str = get_ist_now().strftime("%Y-%m-%d")
+            if target_res.get("date") == today_str:
+                tables = await manager.get_tables()
+                t_modified = False
+                for t in tables:
+                    if t.get("table_number") == target_res["table_number"]:
+                        if t.get("status") == "free":
+                            t["status"] = "reserved"
+                            t_modified = True
+                        break
+                if t_modified:
+                    await manager._write("tables", tables)
+        except Exception:
+            pass
+
+    return {"message": "Reservation status updated", "reservation": target_res}
 
 @admin_router.delete("/reservations/{reservation_id}")
 async def admin_delete_reservation(
@@ -2676,18 +2705,47 @@ async def admin_get_pending_orders(username: str = Depends(verify_token), manage
 
 @admin_router.get("/tables")
 async def admin_get_tables(username: str = Depends(verify_token), manager: BaseDataManager = Depends(get_data_manager)):
-    """Get all tables with their status"""
+    """Get all tables with their status and today's reservations"""
     tables = await manager.get_tables()
+    reservations = await manager._read("reservations")
+    today_str = get_ist_now().strftime("%Y-%m-%d")
+    today_res = [r for r in reservations if r.get("date") == today_str and r.get("status") in ["confirmed", "pending"]]
     
     table_data = []
     for table in tables:
+        t_num = table.get("table_number")
+        t_res = [r for r in today_res if r.get("table_number") == t_num]
+        t_res_sorted = sorted(t_res, key=lambda x: x.get("time", ""))
+
         table_info = {
-            "table_number": table.get("table_number"),
+            "table_number": t_num,
             "capacity": table.get("capacity"),
             "status": table.get("status"),
             "current_session_id": table.get("current_session_id"),
             "current_order_id": table.get("current_order_id"),
-            "current_order": None
+            "current_order": None,
+            "reservations_today": [
+                {
+                    "id": r.get("id") or r.get("_id"),
+                    "customer_name": r.get("customer_name"),
+                    "time": r.get("time"),
+                    "guests": r.get("guests"),
+                    "phone": r.get("phone"),
+                    "status": r.get("status"),
+                    "special_requests": r.get("special_requests")
+                }
+                for r in t_res_sorted
+            ],
+            "upcoming_reservation": {
+                "id": t_res_sorted[0].get("id") or t_res_sorted[0].get("_id"),
+                "customer_name": t_res_sorted[0].get("customer_name"),
+                "time": t_res_sorted[0].get("time"),
+                "guests": t_res_sorted[0].get("guests"),
+                "phone": t_res_sorted[0].get("phone"),
+                "status": t_res_sorted[0].get("status"),
+                "special_requests": t_res_sorted[0].get("special_requests")
+            } if t_res_sorted else None,
+            "is_reserved_today": len(t_res_sorted) > 0
         }
         
         if table.get("current_order_id"):
@@ -3223,16 +3281,46 @@ async def captain_login(credentials: CaptainLogin, manager: BaseDataManager = De
 @captain_router.get("/tables")
 async def captain_get_tables(captain_id: str = Depends(verify_captain_token),
                               manager: BaseDataManager = Depends(get_data_manager)):
-    """Get all tables with live status for captain panel"""
+    """Get all tables with live status and today's reservations for captain panel"""
     tables = await manager.get_tables()
+    reservations = await manager._read("reservations")
+    today_str = get_ist_now().strftime("%Y-%m-%d")
+    today_res = [r for r in reservations if r.get("date") == today_str and r.get("status") in ["confirmed", "pending"]]
+    
     result = []
     for t in tables:
+        t_num = t.get("table_number")
+        t_res = [r for r in today_res if r.get("table_number") == t_num]
+        t_res_sorted = sorted(t_res, key=lambda x: x.get("time", ""))
+
         info = {
-            "table_number": t.get("table_number"),
+            "table_number": t_num,
             "capacity": t.get("capacity"),
             "status": t.get("status"),  # free / occupied / reserved
             "current_session_id": t.get("current_session_id"),
             "current_order_id": t.get("current_order_id"),
+            "reservations_today": [
+                {
+                    "id": r.get("id") or r.get("_id"),
+                    "customer_name": r.get("customer_name"),
+                    "time": r.get("time"),
+                    "guests": r.get("guests"),
+                    "phone": r.get("phone"),
+                    "status": r.get("status"),
+                    "special_requests": r.get("special_requests")
+                }
+                for r in t_res_sorted
+            ],
+            "upcoming_reservation": {
+                "id": t_res_sorted[0].get("id") or t_res_sorted[0].get("_id"),
+                "customer_name": t_res_sorted[0].get("customer_name"),
+                "time": t_res_sorted[0].get("time"),
+                "guests": t_res_sorted[0].get("guests"),
+                "phone": t_res_sorted[0].get("phone"),
+                "status": t_res_sorted[0].get("status"),
+                "special_requests": t_res_sorted[0].get("special_requests")
+            } if t_res_sorted else None,
+            "is_reserved_today": len(t_res_sorted) > 0
         }
         result.append(info)
     return result
