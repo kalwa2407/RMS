@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ChefHat, Clock, RefreshCw, CheckCircle, LogOut,
@@ -39,6 +39,12 @@ const KitchenPanel = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("kitchen_token");
   const staffName = localStorage.getItem("kitchen_name") || "Chef";
+
+  const logout = () => {
+    localStorage.removeItem("kitchen_token");
+    localStorage.removeItem("kitchen_name");
+    navigate("/staff-entry", { replace: true });
+  };
   const [shiftStart] = useState(() => new Date());
   const [clockNow, setClockNow] = useState(new Date());
 

@@ -1,0 +1,16 @@
+﻿{
+  "appId": "in.persiandarbar.customer",
+  "appName": "Persian Darbar",
+  "webDir": "build",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "launchAutoHide": true,
+      "backgroundColor": "#0a1f28",
+      "showSpinner": false
+    }
+  }
+}

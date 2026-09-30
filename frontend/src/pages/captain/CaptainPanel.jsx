@@ -60,6 +60,13 @@ const CaptainPanel = () => {
   const token = localStorage.getItem("captain_token");
   const captainName = localStorage.getItem("captain_name") || "Captain";
 
+  const logout = () => {
+    localStorage.removeItem("captain_token");
+    localStorage.removeItem("captain_name");
+    localStorage.removeItem("captain_id");
+    navigate("/staff-entry", { replace: true });
+  };
+
   const [tab, setTab] = useState("tables");
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(true);

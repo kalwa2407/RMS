@@ -41,6 +41,12 @@ const DeliveryPanel = () => {
   const token = localStorage.getItem("delivery_token");
   const riderId = localStorage.getItem("delivery_id") || "rider";
 
+  const logout = () => {
+    localStorage.removeItem("delivery_token");
+    localStorage.removeItem("delivery_id");
+    navigate("/staff-entry", { replace: true });
+  };
+
   const [profile, setProfile]  = useState(null);
   const [orders, setOrders]    = useState([]);
   const [loading, setLoading]  = useState(true);

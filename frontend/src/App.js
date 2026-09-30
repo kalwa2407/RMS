@@ -65,18 +65,24 @@ import { isStandaloneApp } from "./lib/pwa";
 import { useLocation } from "react-router-dom";
 import { App as CapApp } from "@capacitor/app";
 
-// Standalone / Native root redirect — shows 4-panel staff entry on iOS PWA, Android & Capacitor, home on regular website
+// Standalone / Native root redirect
+// Staff app (default): /staff-entry
+// Customer app (REACT_APP_APP_MODE=customer): /customer/login
 const NativeRootRedirect = () => {
   const navigate = useNavigate();
-  const shouldGoToStaff = isStandaloneApp() && sessionStorage.getItem("allow_public_website") !== "true";
+  const isCustomerApp = process.env.REACT_APP_APP_MODE === "customer";
+  const shouldGoToStaff = isStandaloneApp() && !isCustomerApp && sessionStorage.getItem("allow_public_website") !== "true";
+  const shouldGoToCustomer = isStandaloneApp() && isCustomerApp;
 
   useEffect(() => {
-    if (shouldGoToStaff) {
+    if (shouldGoToCustomer) {
+      navigate("/customer/login", { replace: true });
+    } else if (shouldGoToStaff) {
       navigate("/staff-entry", { replace: true });
     }
-  }, [shouldGoToStaff, navigate]);
+  }, [shouldGoToStaff, shouldGoToCustomer, navigate]);
 
-  if (shouldGoToStaff) {
+  if (shouldGoToStaff || shouldGoToCustomer) {
     return (
       <div className="min-h-screen bg-[#0a1f28] flex items-center justify-center">
         <div className="w-10 h-10 border-4 border-[#EAB308] border-t-transparent rounded-full animate-spin" />
