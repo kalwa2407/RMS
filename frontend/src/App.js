@@ -13,6 +13,8 @@ import OrderTracking from "./pages/OrderTracking";
 import Reservation from "./pages/Reservation";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsAndConditions from "./pages/TermsAndConditions";
 import TableOrder from "./pages/TableOrder";
 import Events from "./pages/Events";
 import { Toaster } from "./components/ui/toaster";
@@ -187,6 +189,8 @@ function App() {
             path="/contact"
             element={<><Navbar /><Contact /><Footer /><ChatBot /></>}
           />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsAndConditions />} />
           <Route
             path="/events"
             element={<><Navbar /><Events /><Footer /><ChatBot /></>}

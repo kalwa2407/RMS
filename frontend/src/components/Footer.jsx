@@ -98,6 +98,10 @@ const Footer = () => {
           <p className="text-sm text-gray-400">
             © {new Date().getFullYear()} Persian Darbar Pune. All rights reserved.
           </p>
+          <div className="flex justify-center gap-6 mt-3">
+            <Link to="/privacy-policy" className="text-xs text-gray-500 hover:text-[#EAB308] transition-colors">Privacy Policy</Link>
+            <Link to="/terms" className="text-xs text-gray-500 hover:text-[#EAB308] transition-colors">Terms & Conditions</Link>
+          </div>
         </div>
       </div>
     </footer>
