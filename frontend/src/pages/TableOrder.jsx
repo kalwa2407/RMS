@@ -413,7 +413,7 @@ const TableOrder = () => {
             </div>
 
             <span className="text-[#EAB308] text-[11px] font-bold uppercase tracking-[0.3em] block mb-1">
-              Table {tableNumber} Â· Royal Dining
+              Table {tableNumber} · Royal Dining
             </span>
             <h1 className="text-3xl text-white font-['Playfair_Display',serif] font-bold mb-2">
               Persian Darbar
@@ -545,7 +545,7 @@ const TableOrder = () => {
                 <div className="space-y-2 py-2">
                   {order.items?.map((item, i) => (
                     <div key={i} className="flex justify-between text-sm text-gray-300">
-                      <span>{item.quantity}Ã— {item.name}</span>
+                      <span>{item.quantity}× {item.name}</span>
                       <span className="font-semibold text-white">₹{item.price * item.quantity}</span>
                     </div>
                   ))}
@@ -593,7 +593,7 @@ const TableOrder = () => {
           <div className="flex items-center justify-between gap-2 mb-4">
             <div className="inline-flex items-center gap-2 bg-white/5 border border-[#EAB308]/30 px-3.5 py-1.5 rounded-full text-[11px] font-semibold tracking-wider text-gray-300">
               <span className="w-2 h-2 rounded-full bg-[#EAB308] shadow-[0_0_8px_#EAB308] animate-pulse" />
-              <span>Table {tableNumber} Â· Dine-In</span>
+              <span>Table {tableNumber} · Dine-In</span>
             </div>
 
             <div className="flex items-center gap-2">
@@ -941,7 +941,7 @@ const TableOrder = () => {
                   </div>
                   <div>
                     <h3 className="font-['Playfair_Display',serif] text-base font-bold text-white">Your Table Order</h3>
-                    <p className="text-[10px] text-gray-400">Table {tableNumber} Â· {customerName}</p>
+                    <p className="text-[10px] text-gray-400">Table {tableNumber} · {customerName}</p>
                   </div>
                 </div>
                 <span className="text-xs font-bold bg-[#EAB308]/10 text-[#EAB308] px-2.5 py-0.5 rounded-full border border-[#EAB308]/30">

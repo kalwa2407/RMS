@@ -223,6 +223,11 @@ class TableCreate(BaseModel):
     table_number: int
     capacity: int = 4
 
+class TableUpdate(BaseModel):
+    capacity: Optional[int] = None
+    table_number: Optional[int] = None
+    status: Optional[str] = None
+
 class TableStatusUpdate(BaseModel):
     status: str  # 'free', 'occupied', 'reserved'
 

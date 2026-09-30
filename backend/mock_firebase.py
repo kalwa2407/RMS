@@ -171,6 +171,29 @@ class MockFirebaseManager(BaseDataManager):
             self._write_sync("tables", tables)
         return updated
 
+    async def create_table(self, table_data: Dict[str, Any]) -> Dict[str, Any]:
+        tables = self._read_sync("tables")
+        tables.append(table_data)
+        self._write_sync("tables", tables)
+        return table_data
+
+    async def update_table(self, table_number: int, update_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        tables = self._read_sync("tables")
+        for t in tables:
+            if t.get("table_number") == table_number:
+                t.update(update_data)
+                self._write_sync("tables", tables)
+                return t
+        return None
+
+    async def delete_table(self, table_number: int) -> bool:
+        tables = self._read_sync("tables")
+        new_tables = [t for t in tables if t.get("table_number") != table_number]
+        if len(new_tables) != len(tables):
+            self._write_sync("tables", new_tables)
+            return True
+        return False
+
     async def get_gallery(self) -> List[Dict[str, Any]]:
         return self._read_sync("gallery_images")
 

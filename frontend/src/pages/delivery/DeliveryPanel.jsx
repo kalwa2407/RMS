@@ -65,8 +65,13 @@ const DeliveryPanel = () => {
     try {
       const { data } = await axios.get(`${API_BASE}/api/delivery/profile`, { headers:{ Authorization:`Bearer ${token}` } });
       setProfile(data);
+      if (data?.id || data?._id) localStorage.setItem("delivery_id", data.id || data._id);
+      if (data?.name) localStorage.setItem("delivery_name", data.name);
     } catch (err) {
-      if (err.response?.status===401||err.response?.status===403) { localStorage.removeItem("delivery_token"); navigate("/staff-entry",{replace:true}); }
+      if (err.response?.status===401||err.response?.status===403) {
+        ["delivery_token", "delivery_id", "delivery_name"].forEach(k => localStorage.removeItem(k));
+        navigate("/staff-entry",{replace:true});
+      }
     }
   }, [token, navigate]);
 
@@ -80,7 +85,10 @@ const DeliveryPanel = () => {
       setCumulativeStats(newStats);
       localStorage.setItem(statsKey, JSON.stringify(newStats));
     } catch (err) {
-      if (err.response?.status===401||err.response?.status===403) { localStorage.removeItem("delivery_token"); navigate("/staff-entry",{replace:true}); }
+      if (err.response?.status===401||err.response?.status===403) {
+        ["delivery_token", "delivery_id", "delivery_name"].forEach(k => localStorage.removeItem(k));
+        navigate("/staff-entry",{replace:true});
+      }
     } finally { setLoading(false); }
   }, [token, navigate, statsKey]);
 
@@ -97,7 +105,10 @@ const DeliveryPanel = () => {
   };
 
   const openMaps = (address) => window.open(`https://maps.google.com/?q=${encodeURIComponent(address)}`,"_blank");
-  const logout = () => { localStorage.removeItem("delivery_token"); navigate("/staff-entry",{replace:true}); };
+  const logout = () => {
+    ["delivery_token", "delivery_id", "delivery_name"].forEach(k => localStorage.removeItem(k));
+    navigate("/staff-entry",{replace:true});
+  };
 
   const activeOrders    = orders.filter(o => o.status !== "delivered" && o.status !== "cancelled");
   const completedOrders = orders.filter(o => o.status === "delivered");

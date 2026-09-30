@@ -37,6 +37,8 @@ ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://10.213.185.123:3000",
+    "https://localhost",
+    "capacitor://localhost",
     "https://rms.tasteofhindustan.com",
     "https://tasteofhindustan.com",
     "https://www.tasteofhindustan.com",
@@ -48,7 +50,7 @@ ALLOWED_ORIGINS = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
-    allow_origin_regex=r"https?://.*",
+    allow_origin_regex=r"(https?://.*|capacitor://.*)",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -2774,11 +2776,57 @@ async def admin_create_table(
     if any(t.get("table_number") == table.table_number for t in tables):
         raise HTTPException(status_code=400, detail="Table number already exists")
     
-    return await manager.create_table({
+    table_data = {
         "table_number": table.table_number,
-        "capacity": table.capacity,
-        "status": "free"
-    })
+        "capacity": max(1, table.capacity),
+        "status": "free",
+        "created_at": datetime.utcnow().isoformat()
+    }
+    if hasattr(manager, "create_table"):
+        return await manager.create_table(table_data)
+    else:
+        tables = await manager._read("tables")
+        tables.append(table_data)
+        await manager._write("tables", tables)
+        return table_data
+
+@admin_router.put("/tables/{table_number}")
+async def admin_update_table(
+    table_number: int,
+    table_update: TableUpdate,
+    username: str = Depends(verify_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Update table capacity, status, or table number"""
+    tables = await manager.get_tables()
+    existing = next((t for t in tables if t.get("table_number") == table_number), None)
+    if not existing:
+        raise HTTPException(status_code=404, detail="Table not found")
+    
+    update_data = {}
+    if table_update.capacity is not None:
+        if table_update.capacity < 1:
+            raise HTTPException(status_code=400, detail="Capacity must be at least 1")
+        update_data["capacity"] = table_update.capacity
+    if table_update.status is not None:
+        update_data["status"] = table_update.status
+    if table_update.table_number is not None and table_update.table_number != table_number:
+        if any(t.get("table_number") == table_update.table_number for t in tables):
+            raise HTTPException(status_code=400, detail="New table number already exists")
+        update_data["table_number"] = table_update.table_number
+
+    if hasattr(manager, "update_table"):
+        updated = await manager.update_table(table_number, update_data)
+        if updated:
+            return updated
+
+    tables = await manager._read("tables")
+    for t in tables:
+        if t.get("table_number") == table_number:
+            t.update(update_data)
+            await manager._write("tables", tables)
+            return t
+    raise HTTPException(status_code=404, detail="Table not found")
 
 @admin_router.put("/tables/{table_number}/status")
 async def admin_update_table_status(
@@ -2802,7 +2850,11 @@ async def admin_delete_table(
     manager: BaseDataManager = Depends(get_data_manager)
 ):
     """Delete a table"""
-    # Internal delete
+    if hasattr(manager, "delete_table"):
+        deleted = await manager.delete_table(table_number)
+        if deleted:
+            return {"message": "Table deleted successfully"}
+    # Internal delete fallback
     tables = await manager._read("tables")
     new_tables = [t for t in tables if t.get("table_number") != table_number]
     if len(new_tables) == len(tables):

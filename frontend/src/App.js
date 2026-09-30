@@ -60,6 +60,9 @@ import CustomerProfile from "./pages/customer/CustomerProfile";
 
 import { isStandaloneApp } from "./lib/pwa";
 
+import { useLocation } from "react-router-dom";
+import { App as CapApp } from "@capacitor/app";
+
 // Standalone / Native root redirect — shows 4-panel staff entry on iOS PWA, Android & Capacitor, home on regular website
 const NativeRootRedirect = () => {
   const navigate = useNavigate();
@@ -89,12 +92,50 @@ const NativeRootRedirect = () => {
   );
 };
 
+// Android Native Hardware Back Button Manager
+const AndroidBackButtonHandler = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    let removeListener;
+    if (window.Capacitor && typeof window.Capacitor.isNativePlatform === "function" && window.Capacitor.isNativePlatform()) {
+      CapApp.addListener("backButton", ({ canGoBack }) => {
+        const path = location.pathname;
+        if (path === "/staff-entry" || path === "/") {
+          CapApp.exitApp();
+        } else if (
+          path === "/admin/dashboard" ||
+          path === "/captain/panel" ||
+          path === "/kitchen/panel" ||
+          path === "/delivery/panel"
+        ) {
+          navigate("/staff-entry");
+        } else {
+          navigate(-1);
+        }
+      }).then((handle) => {
+        removeListener = handle;
+      });
+    }
+
+    return () => {
+      if (removeListener && typeof removeListener.remove === "function") {
+        removeListener.remove();
+      }
+    };
+  }, [location.pathname, navigate]);
+
+  return null;
+};
+
 function App() {
   return (
     <div className="App">
       <BrowserRouter>
         <CustomerAuthProvider>
           <ScrollToTop />
+          <AndroidBackButtonHandler />
           <Routes>
 
             {/* ---------------- STAFF APP ENTRY (Capacitor native) ---------------- */}

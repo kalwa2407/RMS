@@ -37,6 +37,18 @@ class BaseDataManager(ABC):
         pass
 
     @abstractmethod
+    async def create_table(self, table_data: Dict[str, Any]) -> Dict[str, Any]:
+        pass
+
+    @abstractmethod
+    async def update_table(self, table_number: int, update_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        pass
+
+    @abstractmethod
+    async def delete_table(self, table_number: int) -> bool:
+        pass
+
+    @abstractmethod
     async def get_gallery(self) -> List[Dict[str, Any]]:
         pass
 

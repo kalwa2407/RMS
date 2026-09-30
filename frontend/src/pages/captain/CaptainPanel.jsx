@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   UtensilsCrossed, RefreshCw, LogOut, ChefHat, Plus, X, Minus,
@@ -8,7 +8,7 @@ import {
 import axios from "axios";
 import API_BASE from "../../lib/config";
 
-/* â”€â”€ Helpers â”€â”€ */
+/* ── Helpers ── */
 const tableColor = (status) => {
   if (status === "free") return { bg: "rgba(34,197,94,0.1)", border: "rgba(34,197,94,0.4)", text: "#22c55e", label: "Free" };
   if (status === "occupied") return { bg: "rgba(239,68,68,0.1)", border: "rgba(239,68,68,0.4)", text: "#ef4444", label: "Occupied" };
@@ -17,14 +17,14 @@ const tableColor = (status) => {
 };
 
 const formatTime = (ts) => {
-  if (!ts) return "â€”";
+  if (!ts) return "—";
   try {
     const d = new Date(ts);
     const now = new Date();
     const isToday = d.toDateString() === now.toDateString();
     const time = d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
     return isToday ? time : d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }) + " " + time;
-  } catch { return "â€”"; }
+  } catch { return "—"; }
 };
 
 const timeSince = (ts) => {
@@ -36,11 +36,11 @@ const timeSince = (ts) => {
 };
 
 const orderStatusLabel = (s) => ({
-  accepted: "â³ Sent to Kitchen",
-  preparing: "ðŸ”¥ Preparing",
-  ready: "âœ… READY â€” Serve Now!",
-  delivered: "âœ” Served",
-}[s] || s);
+  accepted: "⏳ Sent to Kitchen",
+  preparing: "🔥 Preparing",
+  ready: "✅ READY — Serve Now!",
+  delivered: "✔ Served",
+})[s] || s;
 
 const fmt = (n) => `₹${Number(n || 0).toFixed(0)}`;
 
@@ -232,6 +232,21 @@ const CaptainPanel = () => {
     }
   };
 
+  const markOrderServed = async (orderId) => {
+    try {
+      await axios.put(
+        `${API_BASE}/api/admin/orders/${orderId}/status`,
+        { status: "delivered" },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setReadyOrders(prev => prev.filter(o => o.order_id !== orderId));
+      fetchTables();
+      fetchReadyOrders();
+    } catch (err) {
+      alert(err.response?.data?.detail || "Failed to update order status");
+    }
+  };
+
   const logout = () => {
     ["captain_token", "captain_name", "captain_id"].forEach(k => localStorage.removeItem(k));
     navigate("/staff-entry", { replace: true });
@@ -324,7 +339,7 @@ const CaptainPanel = () => {
           <div className="p-4 space-y-3">
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-white font-bold text-lg" style={{ fontFamily: "'Playfair Display', serif" }}>
-                ðŸ”” Ready to Serve
+                🔔 Ready to Serve
               </h2>
               <button onClick={() => setTab("tables")} className="text-gray-500 hover:text-white transition-colors">
                 <X className="h-5 w-5" />
@@ -357,13 +372,20 @@ const CaptainPanel = () => {
                     <div className="space-y-1">
                       {(order.items || []).map((item, i) => (
                         <div key={i} className="flex justify-between text-sm">
-                          <span className="text-gray-300">{item.quantity}Ã— {item.name}</span>
+                          <span className="text-gray-300">{item.quantity}× {item.name}</span>
                           <span className="text-emerald-400 font-medium">₹{(item.price * item.quantity).toFixed(0)}</span>
                         </div>
                       ))}
                     </div>
-                    <div className="mt-3 p-2 rounded-xl text-center" style={{ background: "rgba(34,197,94,0.1)" }}>
-                      <p className="text-emerald-400 font-bold text-sm">âœ… Food is ready â€” Please serve Table {order.table_number || "â€”"}</p>
+                    <div className="mt-3 p-3 rounded-xl text-center space-y-2.5" style={{ background: "rgba(34,197,94,0.1)" }}>
+                      <p className="text-emerald-400 font-bold text-sm">✅ Food is ready — Please serve Table {order.table_number || "—"}</p>
+                      <button
+                        onClick={() => markOrderServed(order.order_id)}
+                        className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs uppercase tracking-wider transition-all active:scale-95 shadow-md flex items-center justify-center gap-1.5"
+                      >
+                        <Check className="h-4 w-4" />
+                        Mark as Served
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -461,7 +483,7 @@ const CaptainPanel = () => {
                         <div>
                           <p className="text-white font-semibold text-sm">Table {t.table_number}</p>
                           <p className={`text-xs capitalize ${hasReady ? "text-emerald-400 font-bold" : "text-gray-400"}`}>
-                            {hasReady ? "âœ… Ready to serve!" : t.status}
+                            {hasReady ? "✅ Ready to serve!" : t.status}
                           </p>
                         </div>
                       </div>
@@ -575,7 +597,7 @@ const CaptainPanel = () => {
                     <Check className="h-4 w-4 text-white" />
                   </div>
                   <div>
-                    <p className="text-emerald-400 font-bold text-sm">Food is Ready! ðŸŽ‰</p>
+                    <p className="text-emerald-400 font-bold text-sm">Food is Ready! 🎉</p>
                     <p className="text-emerald-600 text-xs">Kitchen has marked this order ready. Please serve.</p>
                   </div>
                 </div>
@@ -597,10 +619,10 @@ const CaptainPanel = () => {
                           {orderStatusLabel(o.status)}
                         </span>
                       </div>
-                      {o.created_at && <p className="text-gray-600 text-[10px] mb-1.5">{formatTime(o.created_at)} Â· {timeSince(o.created_at)}</p>}
+                      {o.created_at && <p className="text-gray-600 text-[10px] mb-1.5">{formatTime(o.created_at)} · {timeSince(o.created_at)}</p>}
                       {o.items?.map((item, j) => (
                         <div key={j} className="flex justify-between text-xs text-gray-400 mt-0.5">
-                          <span>{item.quantity}Ã— {item.name}</span>
+                          <span>{item.quantity}× {item.name}</span>
                           <span>{fmt(item.price * item.quantity)}</span>
                         </div>
                       ))}
@@ -730,7 +752,7 @@ const CaptainPanel = () => {
                     className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm text-white disabled:opacity-60 active:scale-[0.98]"
                     style={{ background: "rgba(239,68,68,0.2)", border: "1px solid rgba(239,68,68,0.35)" }}>
                     <Receipt className="h-4 w-4" />
-                    {closingBill ? "Closing..." : `Close Bill â€” ${fmt(sheet.session.total)}`}
+                    {closingBill ? "Closing..." : `Close Bill — ${fmt(sheet.session.total)}`}
                   </button>
                 </div>
               )}

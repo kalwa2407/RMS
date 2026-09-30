@@ -221,7 +221,9 @@ const Order = () => {
   const cartTotal = Math.max(0, netSubtotal + (distance !== null && distance > 5 && distance <= 20 ? 60 : 0) + taxes);
 
   // ─── Cart inner content (shared desktop + mobile drawer) ───────────────────
-  const CartContent = ({ isMobile = false }) => (
+  // Using a render function instead of a nested component so that React does NOT unmount/remount
+  // input/textarea elements when typing phone/address (which causes keyboard to close/reappear on mobile).
+  const renderCartContent = (isMobile = false) => (
     <div className="flex flex-col">
 
       {/* Items list */}
@@ -579,7 +581,7 @@ const Order = () => {
                 </div>
 
                 <div className="p-4 overflow-y-auto max-h-[80vh]" style={{ WebkitOverflowScrolling: 'touch' }}>
-                  <CartContent isMobile={false} />
+                  {renderCartContent(false)}
                 </div>
               </div>
             </div>
@@ -647,7 +649,7 @@ const Order = () => {
 
             {/* Scrollable body */}
             <div className="flex-1 overflow-y-auto px-5 py-4" style={{ WebkitOverflowScrolling: 'touch' }}>
-              <CartContent isMobile={true} />
+              {renderCartContent(true)}
             </div>
           </div>
         </div>

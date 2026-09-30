@@ -195,6 +195,45 @@ class FirebaseManager(BaseDataManager):
             return True
         return False
 
+    async def create_table(self, table_data: Dict[str, Any]) -> Dict[str, Any]:
+        table_num = table_data.get("table_number")
+        doc_id = str(table_num)
+        table_data["_id"] = doc_id
+        if "status" not in table_data:
+            table_data["status"] = "free"
+        self.db.collection('tables').document(doc_id).set(table_data)
+        return table_data
+
+    async def update_table(self, table_number: int, update_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        docs = self.db.collection('tables').where('table_number', '==', table_number).stream()
+        for doc in docs:
+            doc.reference.update(update_data)
+            updated = doc.to_dict()
+            updated.update(update_data)
+            return updated
+        # If not found by query, try direct document lookup
+        doc_ref = self.db.collection('tables').document(str(table_number))
+        doc_snap = doc_ref.get()
+        if doc_snap.exists:
+            doc_ref.update(update_data)
+            updated = doc_snap.to_dict()
+            updated.update(update_data)
+            return updated
+        return None
+
+    async def delete_table(self, table_number: int) -> bool:
+        docs = self.db.collection('tables').where('table_number', '==', table_number).stream()
+        deleted = False
+        for doc in docs:
+            doc.reference.delete()
+            deleted = True
+        if not deleted:
+            doc_ref = self.db.collection('tables').document(str(table_number))
+            if doc_ref.get().exists:
+                doc_ref.delete()
+                deleted = True
+        return deleted
+
     async def get_gallery(self) -> List[Dict[str, Any]]:
         cached = _menu_cache.get(_KEY_GALLERY)
         if cached is None:

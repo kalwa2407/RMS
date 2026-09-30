@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCustomerAuth } from '../../context/CustomerAuthContext';
 import API_BASE from '../../lib/config';
@@ -238,18 +238,18 @@ const CustomerDashboard = () => {
   const tOccup = tables.filter(t => t.status?.toLowerCase() === 'occupied').length;
   const tResvd = tables.filter(t => ['reserved','held'].includes(t.status?.toLowerCase())).length;
 
-  /* â”€â”€ Status badge â”€â”€ */
+  /* ── Status badge ── */
   const badge = (s) => ({
     placed:           <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse">Placed</span>,
     accepted:         <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">Accepted</span>,
-    preparing:        <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30 animate-pulse">Preparing ðŸ”¥</span>,
+    preparing:        <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30 animate-pulse">Preparing 🔥</span>,
     ready:            <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">Ready</span>,
-    out_for_delivery: <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 animate-pulse">On way ðŸ›µ</span>,
-    delivered:        <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-green-500/20 text-green-300 border border-green-500/30">Delivered âœ“</span>,
+    out_for_delivery: <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 animate-pulse">On way 🛵</span>,
+    delivered:        <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-green-500/20 text-green-300 border border-green-500/30">Delivered ✔</span>,
     cancelled:        <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30">Cancelled</span>,
   }[s] || <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-gray-500/20 text-gray-300 border border-gray-500/30">{s}</span>);
 
-  /* â”€â”€ Razorpay â”€â”€ */
+  /* ── Razorpay ── */
   const handlePay = async () => {
     if (!rzReady) { alert('Payment loading...'); return; }
     setPaying(true);
@@ -258,7 +258,7 @@ const CustomerDashboard = () => {
       amount: fee * 100,
       currency: 'INR',
       name: 'Persian Darbar',
-      description: `Table Reservation â€” ${guests} Guest${guests>1?'s':''}`,
+      description: `Table Reservation — ${guests} Guest${guests>1?'s':''}`,
       theme: { color: GOLD },
       prefill: { name: currentUser?.displayName||'', email: currentUser?.email||'', contact: customerProfile?.phone ? `91${customerProfile.phone}`:'' },
       handler: async (response) => {
@@ -587,7 +587,7 @@ const CustomerDashboard = () => {
               </h1>
 
               <p className="text-[10px] font-bold tracking-[0.3em] uppercase mt-2.5" style={{ color: 'rgba(234,179,8,0.8)' }}>
-                Reserve Â· Dine Â· Earn Â· Revisit
+                Reserve · Dine · Earn · Revisit
               </p>
 
               {/* Dots indicator */}
@@ -617,7 +617,7 @@ const CustomerDashboard = () => {
                     Book Your Royal Table
                   </p>
                   <p className="text-xs mt-1 text-white/75">
-                    ₹10/person <span style={{ color: GOLD }}>Â·</span> Earn 10% PD Coins on bill
+                    ₹10/person <span style={{ color: GOLD }}>·</span> Earn 10% PD Coins on bill
                   </p>
                 </div>
                 {/* Glass squircle button with Calendar icon as shown in mockup */}
@@ -679,7 +679,7 @@ const CustomerDashboard = () => {
                         const c = cm[s] || cm.unavailable;
                         return (
                           <div key={tNum}
-                            title={`Table ${tNum} â€” ${isOccupied ? 'Occupied (locked)' : s}`}
+                            title={`Table ${tNum} — ${isOccupied ? 'Occupied (locked)' : s}`}
                             className="aspect-square rounded-xl flex flex-col items-center justify-center text-[8px] font-black transition-all relative"
                             style={{
                               background: `${c}15`,
@@ -742,7 +742,7 @@ const CustomerDashboard = () => {
                   <div>
                     <p className="text-emerald-400 font-black text-[10px] uppercase tracking-widest">Upcoming Reservation</p>
                     <p className="text-white font-bold text-sm">{activeRes[0].date} at {activeRes[0].time}</p>
-                    <p className="text-white/70 text-xs">{activeRes[0].guests} guests Â· {activeRes[0].status === 'confirmed' ? 'âœ… Confirmed' : 'â³ Pending'}</p>
+                    <p className="text-white/70 text-xs">{activeRes[0].guests} guests · {activeRes[0].status === 'confirmed' ? '✅ Confirmed' : 'â³ Pending'}</p>
                   </div>
                 </div>
               )}
@@ -763,7 +763,7 @@ const CustomerDashboard = () => {
                       <span className="text-4xl font-black text-white">{pdCoins.toLocaleString()}</span>
                       <span className="text-base font-bold" style={{ color: GOLD }}>PD Coins</span>
                     </div>
-                    <p className="text-xs text-white/75 mt-1">₹{pdCoins.toLocaleString()} value <span style={{ color: GOLD }}>Â·</span> Earn 10% on dine-in</p>
+                    <p className="text-xs text-white/75 mt-1">₹{pdCoins.toLocaleString()} value <span style={{ color: GOLD }}>·</span> Earn 10% on dine-in</p>
                   </div>
                   <div className="flex flex-col items-end gap-2.5">
                     <div className="w-14 h-14 rounded-2xl flex items-center justify-center p-2 transition-transform hover:scale-105"
@@ -1105,7 +1105,7 @@ const CustomerDashboard = () => {
                       <div className="px-4 py-3 flex items-center justify-between">
                         <div>
                           <p className="text-white/90 text-sm font-medium">{o.items?.map(i=>`${i.quantity}x ${i.name}`).slice(0,2).join(', ')}{o.items?.length>2?` +${o.items.length-2}`:''}</p>
-                          <p className="text-white/50 text-xs mt-0.5">{fmt(o.created_at)} Â· {fmtT(o.created_at)}</p>
+                          <p className="text-white/50 text-xs mt-0.5">{fmt(o.created_at)} · {fmtT(o.created_at)}</p>
                         </div>
                         <Link to={`/track?order_id=${o.order_id}`}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold active:scale-95 transition-all shadow-sm"
@@ -1158,7 +1158,7 @@ const CustomerDashboard = () => {
                   <p className="text-gray-400 text-sm">Camp, Pune</p>
                 </div>
                 <div className="w-full rounded-2xl p-4 space-y-2.5" style={{ background:CARD, border:`1px solid ${GB}` }}>
-                  {[['Guests',`${success.guests} Persons`],['Amount Paid',`₹${success.fee}`],['Payment ID',success.payment_id?.slice(-10)||'â€”']].map(([k,v])=>(
+                  {[['Guests',`${success.guests} Persons`],['Amount Paid',`₹${success.fee}`],['Payment ID',success.payment_id?.slice(-10)||'—']].map(([k,v])=>(
                     <div key={k} className="flex items-center justify-between">
                       <span className="text-gray-500 text-xs">{k}</span>
                       <span className="text-white font-bold text-sm">{v}</span>
@@ -1166,7 +1166,7 @@ const CustomerDashboard = () => {
                   ))}
                 </div>
                 <div className="w-full rounded-2xl p-4 text-center" style={{ background:'rgba(34,197,94,0.06)', border:'1px solid rgba(34,197,94,0.25)' }}>
-                  <p className="text-emerald-400 font-black text-sm">âœ… CONFIRMED</p>
+                  <p className="text-emerald-400 font-black text-sm">✅ CONFIRMED</p>
                   <p className="text-gray-500 text-xs mt-1">Show this screen at the host desk</p>
                 </div>
                 <button onClick={()=>{ setSuccess(null); setTab('bookings'); }}
@@ -1180,7 +1180,7 @@ const CustomerDashboard = () => {
                 <div className="pt-2">
                   <p className="text-[10px] font-black uppercase tracking-[0.4em] mb-1" style={{ color:GOLD }}>Reserve Your Table</p>
                   <h2 className="text-white text-xl font-black" style={{ fontFamily:"'Playfair Display',serif" }}>Persian Darbar</h2>
-                  <p className="text-gray-500 text-xs mt-0.5">Camp, Pune Â· Instant Confirmation</p>
+                  <p className="text-gray-500 text-xs mt-0.5">Camp, Pune · Instant Confirmation</p>
                 </div>
 
                 {/* Guest stepper */}
@@ -1219,7 +1219,7 @@ const CustomerDashboard = () => {
                 {/* Summary */}
                 <div className="rounded-3xl p-5" style={GLASS_CARD}>
                   <p className="text-[#EAB308] text-xs font-black uppercase tracking-widest mb-3">Reservation Summary</p>
-                  {[['Guests',`${guests} Ã— ₹10`],['Reservation Fee',`₹${fee}`],['PD Coins Reward','After eligible dine-in']].map(([k,v])=>(
+                  {[['Guests',`${guests} × ₹10`],['Reservation Fee',`₹${fee}`],['PD Coins Reward','After eligible dine-in']].map(([k,v])=>(
                     <div key={k} className="flex items-center justify-between py-2" style={{ borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
                       <span className="text-white/60 text-xs">{k}</span>
                       <span className={`font-bold text-sm ${k==='Reservation Fee'?'text-white text-base':'text-white/80'}`}>{v}</span>
@@ -1281,10 +1281,10 @@ const CustomerDashboard = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <Calendar className="w-4 h-4" style={{ color:GOLD }} />
-                      <span className="text-white font-bold text-sm">{r.date} Â· {r.time}</span>
+                      <span className="text-white font-bold text-sm">{r.date} · {r.time}</span>
                     </div>
                     <span className={`text-[9px] font-black px-2.5 py-1 rounded-full border ${ok?'bg-emerald-500/20 text-emerald-300 border-emerald-500/40':bad?'bg-red-500/20 text-red-300 border-red-500/40':'bg-amber-500/20 text-amber-300 border-amber-500/40 animate-pulse'}`}>
-                      {ok?'âœ… Confirmed':bad?'Unavailable':'â³ Pending'}
+                      {ok?'✅ Confirmed':bad?'Unavailable':'â³ Pending'}
                     </span>
                   </div>
                   <div className="flex items-center gap-4 text-xs text-white/65">
@@ -1486,7 +1486,7 @@ const CustomerDashboard = () => {
                   </h2>
                   <div className="flex items-center gap-1.5 mt-1">
                     <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-[#EAB308]/25 text-[#EAB308] border border-[#EAB308]/40">
-                      {pdCoins > 500 ? 'â­ Royal Elite Member' : 'ðŸ‘‘ Royal Patron'}
+                      {pdCoins > 500 ? 'â­ Royal Elite Member' : '👑 Royal Patron'}
                     </span>
                   </div>
                   <p className="text-white/65 text-xs mt-1 truncate">{currentUser?.email}</p>
@@ -1795,7 +1795,7 @@ const CustomerDashboard = () => {
                     </div>
                     <div>
                       <p className="text-white font-bold text-sm">Call Camp, Pune Desk</p>
-                      <p className="text-white/60 text-xs mt-0.5">+91 20 2613 0000 Â· Open 11:00 AM - 1:00 AM</p>
+                      <p className="text-white/60 text-xs mt-0.5">+91 20 2613 0000 · Open 11:00 AM - 1:00 AM</p>
                     </div>
                   </div>
                   <ChevronRight className="w-4 h-4 text-white/40" />
@@ -1813,7 +1813,7 @@ const CustomerDashboard = () => {
                     <div>
                       <p className="text-white font-bold text-sm">Share Persian Darbar</p>
                       <p className="text-white/60 text-xs mt-0.5">
-                        {copiedLink ? 'âœ“ Link copied to clipboard!' : 'Invite friends & family to the royal experience'}
+                        {copiedLink ? '✔ Link copied to clipboard!' : 'Invite friends & family to the royal experience'}
                       </p>
                     </div>
                   </div>
@@ -1865,7 +1865,7 @@ const CustomerDashboard = () => {
                 PERSIAN DARBAR
               </p>
               <p className="text-[9px] text-white/40 tracking-wider">
-                Serving Royal Mughlai Cuisine Since 1976 Â· Camp, Pune
+                Serving Royal Mughlai Cuisine Since 1976 · Camp, Pune
               </p>
               <p className="text-[8px] text-white/30 font-mono pt-1">
                 Version 2.4.0 (Privilege Edition)
@@ -1990,7 +1990,7 @@ const CustomerDashboard = () => {
                       <span>{detectingLoc ? 'Detecting...' : distanceKm ? `ðŸ“ ${distanceKm} km away` : 'Detect Range'}</span>
                     </button>
                     <span className="text-[11px] text-white/60">
-                      {distanceKm === null ? 'Within 5km: Free' : distanceKm <= 5 ? 'âœ… Free Delivery' : distanceKm <= 20 ? '₹60 Delivery Fee' : 'âŒ Out of range (>20km)'}
+                      {distanceKm === null ? 'Within 5km: Free' : distanceKm <= 5 ? '✅ Free Delivery' : distanceKm <= 20 ? '₹60 Delivery Fee' : 'âŒ Out of range (>20km)'}
                     </span>
                   </div>
                 </div>
@@ -2029,7 +2029,7 @@ const CustomerDashboard = () => {
                       payMethod === 'cod' ? 'bg-[#EAB308] text-black shadow' : 'bg-white/10 text-white/70'
                     }`}
                   >
-                    ðŸ’µ Cash on {orderType === 'TAKEAWAY' ? 'Pickup' : 'Delivery'}
+                    💵 Cash on {orderType === 'TAKEAWAY' ? 'Pickup' : 'Delivery'}
                   </button>
                   <button
                     type="button"
@@ -2038,12 +2038,12 @@ const CustomerDashboard = () => {
                       payMethod === 'online' ? 'bg-[#EAB308] text-black shadow' : 'bg-white/10 text-white/70'
                     }`}
                   >
-                    ðŸ’³ Online / UPI
+                    💳 Online / UPI
                   </button>
                 </div>
               </div>
 
-              {/* ðŸª™ PD Coins Redemption Card */}
+              {/* 🪙 PD Coins Redemption Card */}
               {pdCoins > 0 && (
                 <div 
                   className="rounded-2xl p-3.5 transition-all border"
@@ -2090,7 +2090,7 @@ const CustomerDashboard = () => {
                             : 'bg-white/10 text-white/80 hover:bg-white/15'
                         }`}
                       >
-                        {applyCoins ? 'Applied âœ“' : 'Apply'}
+                        {applyCoins ? 'Applied ✔' : 'Apply'}
                       </button>
                     )}
                   </div>
@@ -2117,7 +2117,7 @@ const CustomerDashboard = () => {
                 {coinsApplied > 0 && (
                   <div className="flex justify-between text-emerald-400 font-bold">
                     <span className="flex items-center gap-1">
-                      ðŸª™ PD Coins Discount
+                      🪙 PD Coins Discount
                     </span>
                     <span>-₹{coinsDiscount.toLocaleString()}</span>
                   </div>
@@ -2147,7 +2147,7 @@ const CustomerDashboard = () => {
                   boxShadow: '0 8px 24px rgba(234,179,8,0.5)'
                 }}
               >
-                {placingOrder ? 'Placing Order...' : `Confirm Order Â· ₹${cartTotal.toLocaleString()}`}
+                {placingOrder ? 'Placing Order...' : `Confirm Order · ₹${cartTotal.toLocaleString()}`}
               </button>
 
             </div>
