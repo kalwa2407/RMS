@@ -1,0 +1,369 @@
+"""
+Meta WhatsApp Cloud API Service for Persian Darbar Restaurant Management System (RMS)
+
+This module handles:
+1. Meta Webhook Verification (hub.mode, hub.verify_token, hub.challenge)
+2. HMAC-SHA256 Webhook Signature Validation (X-Hub-Signature-256)
+3. Parsing and processing incoming webhook events (statuses, delivery, reads, incoming messages)
+4. Sending transactional WhatsApp messages (Templates and Freeform Text)
+5. Linking WhatsApp message status to Customer Reservations
+"""
+
+import os
+import hmac
+import hashlib
+import logging
+from datetime import datetime, timezone, timedelta
+from typing import Optional, Dict, Any, List
+from collections import OrderedDict
+import httpx
+from dotenv import load_dotenv
+
+# Load local environment variables
+load_dotenv()
+
+logger = logging.getLogger("whatsapp_service")
+logger.setLevel(logging.INFO)
+
+# ─── CONFIGURATION & ENVIRONMENT VARIABLES ───
+WHATSAPP_ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN", "").strip()
+WHATSAPP_BUSINESS_ACCOUNT_ID = os.getenv("WHATSAPP_BUSINESS_ACCOUNT_ID", "207051877129638").strip()
+WHATSAPP_PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "2681861995237690").strip()
+WHATSAPP_VERIFY_TOKEN = os.getenv("WHATSAPP_VERIFY_TOKEN", "").strip()
+WHATSAPP_API_VERSION = os.getenv("WHATSAPP_API_VERSION", "v20.0").strip()
+META_APP_SECRET = os.getenv("META_APP_SECRET", "").strip()
+RESERVATION_TEMPLATE_NAME = os.getenv("WHATSAPP_RESERVATION_TEMPLATE", "").strip()
+
+# Default IST Timezone helper
+IST = timezone(timedelta(hours=5, minutes=30))
+
+def get_ist_now() -> datetime:
+    return datetime.now(IST)
+
+# ─── DEDUPLICATION CACHE ───
+# Bounded in-memory LRU set to avoid duplicate processing of retried webhook events
+MAX_DEDUP_SIZE = 5000
+_processed_events: OrderedDict[str, float] = OrderedDict()
+
+def is_duplicate_event(event_id: str) -> bool:
+    """Check if an event ID has already been processed recently"""
+    if not event_id:
+        return False
+    if event_id in _processed_events:
+        return True
+    _processed_events[event_id] = datetime.now().timestamp()
+    if len(_processed_events) > MAX_DEDUP_SIZE:
+        _processed_events.popitem(last=False)
+    return False
+
+# ─── PHONE NUMBER FORMATTER ───
+def format_whatsapp_number(phone_str: str) -> str:
+    """
+    Format recipient phone numbers into E.164 without leading '+' or symbols.
+    For 10-digit Indian numbers, automatically prepends '91'.
+    """
+    if not phone_str:
+        return ""
+    digits = "".join(ch for ch in str(phone_str) if ch.isdigit())
+    
+    # 10 digits (e.g. 9594287868) -> 919594287868
+    if len(digits) == 10:
+        return f"91{digits}"
+    # 11 digits starting with 0 -> replace 0 with 91
+    if len(digits) == 11 and digits.startswith("0"):
+        return f"91{digits[1:]}"
+    # Already includes 91 (12 digits) or international
+    return digits
+
+# ─── WEBHOOK SIGNATURE VALIDATION ───
+def verify_webhook_signature(raw_body: bytes, signature_header: Optional[str]) -> bool:
+    """
+    Validates Meta X-Hub-Signature-256 header using META_APP_SECRET.
+    Returns True if valid or if META_APP_SECRET is not configured.
+    """
+    meta_secret = os.getenv("META_APP_SECRET", "").strip()
+    if not meta_secret:
+        # If secret is not set, allow webhook (logs info once)
+        return True
+
+    if not signature_header or not signature_header.startswith("sha256="):
+        logger.warning("[WhatsApp Security] Missing or malformed X-Hub-Signature-256 header")
+        return False
+
+    expected_hash = signature_header.split("sha256=")[1]
+    computed_hash = hmac.new(
+        key=meta_secret.encode("utf-8"),
+        msg=raw_body,
+        digestmod=hashlib.sha256
+    ).hexdigest()
+
+    return hmac.compare_digest(expected_hash, computed_hash)
+
+# ─── SENDING WHATSAPP MESSAGES ───
+def _get_api_url() -> str:
+    phone_id = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "2681861995237690").strip()
+    api_version = os.getenv("WHATSAPP_API_VERSION", "v20.0").strip()
+    return f"https://graph.facebook.com/{api_version}/{phone_id}/messages"
+
+def _get_headers() -> Dict[str, str]:
+    token = os.getenv("WHATSAPP_ACCESS_TOKEN", "").strip()
+    return {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+
+async def send_whatsapp_template_message(
+    to_phone: str,
+    template_name: str,
+    language_code: str = "en",
+    components: Optional[List[Dict[str, Any]]] = None
+) -> Dict[str, Any]:
+    """
+    Sends a Meta pre-approved WhatsApp Template Message.
+    Required for business-initiated conversations outside the 24-hour window.
+    """
+    token = os.getenv("WHATSAPP_ACCESS_TOKEN", "").strip()
+    if not token:
+        logger.warning("[WhatsApp] WHATSAPP_ACCESS_TOKEN not configured. Skipping message dispatch.")
+        return {"success": False, "error": "WHATSAPP_ACCESS_TOKEN_MISSING"}
+
+    formatted_recipient = format_whatsapp_number(to_phone)
+    if not formatted_recipient:
+        return {"success": False, "error": "INVALID_PHONE_NUMBER"}
+
+    payload: Dict[str, Any] = {
+        "messaging_product": "whatsapp",
+        "recipient_type": "individual",
+        "to": formatted_recipient,
+        "type": "template",
+        "template": {
+            "name": template_name,
+            "language": {"code": language_code},
+        }
+    }
+    if components:
+        payload["template"]["components"] = components
+
+    url = _get_api_url()
+    headers = _get_headers()
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.post(url, headers=headers, json=payload)
+            data = response.json()
+            
+            if response.status_code in [200, 201]:
+                message_id = data.get("messages", [{}])[0].get("id")
+                logger.info(f"[WhatsApp] Template '{template_name}' sent successfully to ...{formatted_recipient[-4:]}. ID: {message_id}")
+                return {"success": True, "message_id": message_id, "data": data}
+            else:
+                error_msg = data.get("error", {}).get("message", response.text)
+                logger.error(f"[WhatsApp] Meta API Error ({response.status_code}): {error_msg}")
+                return {"success": False, "error": error_msg, "status_code": response.status_code, "data": data}
+    except Exception as e:
+        logger.error(f"[WhatsApp] Exception sending template message: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+async def send_whatsapp_text_message(
+    to_phone: str,
+    message_text: str
+) -> Dict[str, Any]:
+    """
+    Sends a freeform text message.
+    Works for test numbers during development or within the customer 24-hour service window.
+    """
+    token = os.getenv("WHATSAPP_ACCESS_TOKEN", "").strip()
+    if not token:
+        logger.warning("[WhatsApp] WHATSAPP_ACCESS_TOKEN not configured. Skipping message dispatch.")
+        return {"success": False, "error": "WHATSAPP_ACCESS_TOKEN_MISSING"}
+
+    formatted_recipient = format_whatsapp_number(to_phone)
+    if not formatted_recipient:
+        return {"success": False, "error": "INVALID_PHONE_NUMBER"}
+
+    payload = {
+        "messaging_product": "whatsapp",
+        "recipient_type": "individual",
+        "to": formatted_recipient,
+        "type": "text",
+        "text": {
+            "preview_url": False,
+            "body": message_text
+        }
+    }
+
+    url = _get_api_url()
+    headers = _get_headers()
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.post(url, headers=headers, json=payload)
+            data = response.json()
+
+            if response.status_code in [200, 201]:
+                message_id = data.get("messages", [{}])[0].get("id")
+                logger.info(f"[WhatsApp] Text message sent to ...{formatted_recipient[-4:]}. ID: {message_id}")
+                return {"success": True, "message_id": message_id, "data": data}
+            else:
+                error_msg = data.get("error", {}).get("message", response.text)
+                logger.error(f"[WhatsApp] Meta Text Send Error ({response.status_code}): {error_msg}")
+                return {"success": False, "error": error_msg, "status_code": response.status_code, "data": data}
+    except Exception as e:
+        logger.error(f"[WhatsApp] Exception sending text message: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+# ─── RESERVATION CONFIRMATION ORCHESTRATION ───
+async def send_reservation_confirmation(
+    reservation: Dict[str, Any],
+    template_name: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Sends table booking confirmation message to customer via Meta WhatsApp Cloud API.
+    If template is configured in env or passed in, dispatches approved Meta template.
+    Otherwise, sends rich royal dining text message pass.
+    """
+    customer_phone = reservation.get("phone") or reservation.get("customer_phone")
+    if not customer_phone:
+        return {"success": False, "error": "NO_PHONE_NUMBER"}
+
+    customer_name = reservation.get("customer_name") or "Valued Guest"
+    date_str = reservation.get("date") or "Today"
+    time_str = reservation.get("time") or "Evening"
+    guests = str(reservation.get("guests") or 2)
+    table_num = str(reservation.get("table_number") or "Priority Seating")
+    
+    active_template = template_name or os.getenv("WHATSAPP_RESERVATION_TEMPLATE", "").strip()
+
+    if active_template:
+        # Build template parameters:
+        # {{1}} = Customer Name
+        # {{2}} = Date
+        # {{3}} = Time
+        # {{4}} = Guests
+        # {{5}} = Table Number
+        components = [
+            {
+                "type": "body",
+                "parameters": [
+                    {"type": "text", "text": customer_name},
+                    {"type": "text", "text": date_str},
+                    {"type": "text", "text": time_str},
+                    {"type": "text", "text": guests},
+                    {"type": "text", "text": f"Table {table_num}" if not table_num.startswith("Table") else table_num}
+                ]
+            }
+        ]
+        res = await send_whatsapp_template_message(
+            to_phone=customer_phone,
+            template_name=active_template,
+            language_code=os.getenv("WHATSAPP_TEMPLATE_LANG", "en"),
+            components=components
+        )
+        if res.get("success"):
+            return res
+
+        logger.info(f"[WhatsApp] Template '{active_template}' delivery fallback to text message...")
+
+    # Fallback to royal text pass
+    table_line = f"Table {table_num}" if not table_num.startswith("Table") else table_num
+    text_message = (
+        f"🌟 *TABLE RESERVATION CONFIRMED — PERSIAN DARBAR* 🌟\n\n"
+        f"Dear *{customer_name}*,\n\n"
+        f"We are delighted to confirm your royal dining reservation at *Persian Darbar*!\n\n"
+        f"📋 *Your Dining Pass:*\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"📅 *Date:* {date_str}\n"
+        f"⏰ *Time Slot:* {time_str}\n"
+        f"👥 *Guests:* {guests} Guests\n"
+        f"🪑 *Assigned Table:* {table_line}\n\n"
+        f"📍 *Location:* Camp, Pune\n"
+        f"📞 *Host Desk:* +91 95942 87868\n\n"
+        f"⚠️ *Guest Note:* Please arrive 10-15 minutes prior to your time slot. Your table is held for 15 minutes past booking time.\n\n"
+        f"We look forward to welcoming you with royal hospitality! 👑"
+    )
+
+    return await send_whatsapp_text_message(to_phone=customer_phone, message_text=text_message)
+
+# ─── INCOMING WEBHOOK HANDLER ───
+async def handle_whatsapp_webhook(
+    payload: Dict[str, Any],
+    manager: Any
+) -> Dict[str, Any]:
+    """
+    Parses Meta WhatsApp webhook payload:
+    1. Message status updates ('sent', 'delivered', 'read', 'failed')
+    2. Updates corresponding reservation record with real-time delivery status
+    3. Handles incoming customer replies
+    """
+    results: Dict[str, Any] = {
+        "statuses_processed": 0,
+        "messages_processed": 0,
+        "updated_reservations": []
+    }
+
+    entries = payload.get("entry", [])
+    if not entries:
+        return results
+
+    for entry in entries:
+        changes = entry.get("changes", [])
+        for change in changes:
+            value = change.get("value", {})
+            field = change.get("field", "")
+
+            if field != "messages":
+                continue
+
+            # ── 1. STATUS UPDATES (sent, delivered, read, failed) ──
+            statuses = value.get("statuses", [])
+            for s in statuses:
+                wamid = s.get("id")
+                status = s.get("status")  # sent, delivered, read, failed
+                recipient_id = s.get("recipient_id")
+                timestamp = s.get("timestamp")
+
+                if is_duplicate_event(f"status_{wamid}_{status}"):
+                    continue
+
+                logger.info(f"[WhatsApp Status] Message {wamid} for ...{str(recipient_id)[-4:]} is now: {status.upper()}")
+                results["statuses_processed"] += 1
+
+                # Update reservation in database if associated
+                try:
+                    all_reservations = await manager._read("reservations")
+                    matched = False
+                    for r in all_reservations:
+                        # Match by wamid or by recipient phone
+                        r_wamid = r.get("whatsapp_message_id")
+                        r_phone = format_whatsapp_number(r.get("phone") or "")
+
+                        if (r_wamid and r_wamid == wamid) or (r_phone and r_phone == recipient_id):
+                            r["whatsapp_status"] = status
+                            r["whatsapp_updated_at"] = get_ist_now().isoformat()
+                            if s.get("errors"):
+                                r["whatsapp_error"] = s.get("errors")
+                            matched = True
+                            rid = r.get("id") or r.get("_id")
+                            results["updated_reservations"].append({"id": rid, "status": status})
+                            break
+
+                    if matched:
+                        await manager._write("reservations", all_reservations)
+                except Exception as db_err:
+                    logger.error(f"[WhatsApp Webhook] Database update error on status: {db_err}")
+
+            # ── 2. INCOMING MESSAGES FROM CUSTOMERS ──
+            messages = value.get("messages", [])
+            for m in messages:
+                mid = m.get("id")
+                from_num = m.get("from")
+                msg_type = m.get("type")
+                
+                if is_duplicate_event(f"msg_{mid}"):
+                    continue
+
+                results["messages_processed"] += 1
+                body_text = m.get("text", {}).get("body", "") if msg_type == "text" else f"[{msg_type} message]"
+                logger.info(f"[WhatsApp Incoming] Message from ...{str(from_num)[-4:]}: {body_text[:50]}")
+
+    return results

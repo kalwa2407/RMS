@@ -26,6 +26,14 @@ from auth import (
     verify_customer_token, get_optional_customer
 )
 from invoice_generator import generate_invoice_pdf
+import json
+from whatsapp_service import (
+    verify_webhook_signature,
+    handle_whatsapp_webhook,
+    send_reservation_confirmation,
+    send_whatsapp_text_message,
+    send_whatsapp_template_message
+)
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -925,6 +933,87 @@ async def get_reservation(reservation_id: str, manager: BaseDataManager = Depend
     if not reservation:
         raise HTTPException(status_code=404, detail="Reservation not found")
     return reservation
+
+
+# =============================================================================
+# META WHATSAPP CLOUD API PRODUCTION WEBHOOK ENDPOINTS
+# =============================================================================
+
+@api_router.get("/whatsapp/webhook")
+async def verify_whatsapp_webhook(request: Request):
+    """
+    Meta WhatsApp Cloud API Webhook Verification.
+    Meta issues a GET request with:
+      - hub.mode = 'subscribe'
+      - hub.verify_token = '<YOUR_CUSTOM_VERIFY_TOKEN>'
+      - hub.challenge = '<RANDOM_CHALLENGE_STRING>'
+
+    Verification Protocol:
+    1. Read 'hub.verify_token' and compare against WHATSAPP_VERIFY_TOKEN from environment.
+    2. If mode is 'subscribe' and token matches, return 'hub.challenge' as raw plain text with HTTP 200.
+    3. If invalid or mismatched, return HTTP 403 Forbidden.
+    """
+    mode = request.query_params.get("hub.mode")
+    verify_token = request.query_params.get("hub.verify_token")
+    challenge = request.query_params.get("hub.challenge")
+
+    configured_token = os.getenv("WHATSAPP_VERIFY_TOKEN", "").strip()
+
+    if mode == "subscribe" and verify_token and configured_token and verify_token == configured_token:
+        logging.info("[WhatsApp Webhook] Verification successful for Meta challenge.")
+        # Crucial: Meta expects the raw challenge string as plain text with 200 OK
+        return Response(content=str(challenge), media_type="text/plain", status_code=200)
+
+    logging.warning(
+        f"[WhatsApp Webhook] Verification failed. Received mode={mode}, "
+        f"match={verify_token == configured_token if configured_token else 'Token Not Configured'}"
+    )
+    return Response(content="Verification failed", media_type="text/plain", status_code=403)
+
+
+@api_router.post("/whatsapp/webhook")
+async def receive_whatsapp_webhook(
+    request: Request,
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """
+    Meta WhatsApp Cloud API Event Ingestion.
+    Receives incoming webhook events:
+      - Message delivery statuses: 'sent', 'delivered', 'read', 'failed'
+      - Incoming customer messages / replies
+    
+    Security & Reliability:
+    - Validates X-Hub-Signature-256 HMAC-SHA256 signature if META_APP_SECRET is set.
+    - Prevents duplicate processing via in-memory event deduplication.
+    - Updates associated reservation with delivery status.
+    - Never logs tokens or sensitive data.
+    - Always responds HTTP 200 quickly to Meta to avoid webhook unsubscription.
+    """
+    raw_body = await request.body()
+    signature = request.headers.get("X-Hub-Signature-256")
+
+    # Optional signature validation using META_APP_SECRET
+    if not verify_webhook_signature(raw_body, signature):
+        logging.warning("[WhatsApp Webhook] Invalid X-Hub-Signature-256 signature rejected.")
+        return Response(content="Invalid signature", media_type="text/plain", status_code=403)
+
+    try:
+        payload = json.loads(raw_body.decode("utf-8")) if raw_body else {}
+    except Exception as e:
+        logging.error(f"[WhatsApp Webhook] Malformed JSON payload: {e}")
+        # Always return 200 to acknowledge Meta even if body is unparseable
+        return JSONResponse(content={"status": "invalid_json"}, status_code=200)
+
+    # Process statuses and messages safely
+    try:
+        results = await handle_whatsapp_webhook(payload, manager)
+    except Exception as e:
+        logging.error(f"[WhatsApp Webhook] Error processing payload: {e}", exc_info=True)
+        results = {"error": str(e)}
+
+    # Return fast 200 OK to Meta
+    return JSONResponse(content={"status": "ok", "processed": results}, status_code=200)
+
 
 
 # =============================================================================
@@ -1949,7 +2038,81 @@ async def admin_update_reservation_status(
         except Exception:
             pass
 
+    # Automatically dispatch WhatsApp confirmation via Meta Cloud API if status is confirmed
+    if status_update.status == "confirmed":
+        try:
+            wa_res = await send_reservation_confirmation(target_res)
+            if wa_res.get("success"):
+                target_res["whatsapp_sent"] = True
+                target_res["whatsapp_message_id"] = wa_res.get("message_id")
+                target_res["whatsapp_status"] = "sent"
+                target_res["whatsapp_sent_at"] = get_ist_now().isoformat()
+                await manager._write("reservations", reservations)
+                logging.info(f"[WhatsApp] Auto-confirmation dispatched for reservation {reservation_id} (wamid: {wa_res.get('message_id')})")
+            else:
+                target_res["whatsapp_error"] = wa_res.get("error")
+                await manager._write("reservations", reservations)
+                logging.info(f"[WhatsApp] Auto-confirmation notice: {wa_res.get('error')}")
+        except Exception as wa_err:
+            logging.warning(f"[WhatsApp] Error dispatching auto-confirmation: {wa_err}")
+
     return {"message": "Reservation status updated", "reservation": target_res}
+
+@admin_router.post("/reservations/{reservation_id}/send-whatsapp")
+async def admin_send_reservation_whatsapp(
+    reservation_id: str,
+    username: str = Depends(verify_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """
+    Manually dispatch or re-send WhatsApp confirmation for a reservation
+    using Meta WhatsApp Cloud API.
+    """
+    reservations = await manager._read("reservations")
+    target_res = next((r for r in reservations if r.get("id") == reservation_id or r.get("_id") == reservation_id), None)
+    if not target_res:
+        raise HTTPException(status_code=404, detail="Reservation not found")
+
+    wa_res = await send_reservation_confirmation(target_res)
+    if wa_res.get("success"):
+        target_res["whatsapp_sent"] = True
+        target_res["whatsapp_message_id"] = wa_res.get("message_id")
+        target_res["whatsapp_status"] = "sent"
+        target_res["whatsapp_sent_at"] = get_ist_now().isoformat()
+        await manager._write("reservations", reservations)
+        return {
+            "success": True,
+            "message": "WhatsApp confirmation dispatched successfully",
+            "message_id": wa_res.get("message_id")
+        }
+    else:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "success": False,
+                "error": wa_res.get("error"),
+                "details": wa_res.get("data")
+            }
+        )
+
+@admin_router.post("/whatsapp/test-send")
+async def admin_whatsapp_test_send(
+    phone: str,
+    message: Optional[str] = None,
+    username: str = Depends(verify_token)
+):
+    """
+    Admin diagnostic endpoint to verify Meta credentials and connectivity
+    by sending a test text message.
+    """
+    msg = message or "🧪 Persian Darbar: Meta WhatsApp Cloud API connection test successful!"
+    res = await send_whatsapp_text_message(to_phone=phone, message_text=msg)
+    if res.get("success"):
+        return {"success": True, "message_id": res.get("message_id")}
+    return JSONResponse(
+        status_code=400,
+        content={"success": False, "error": res.get("error"), "data": res.get("data")}
+    )
 
 @admin_router.delete("/reservations/{reservation_id}")
 async def admin_delete_reservation(
