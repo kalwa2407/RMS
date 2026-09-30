@@ -6,7 +6,7 @@ export const restaurantInfo = {
   description: "Experience the royal heritage of India. From aromatic biryanis to succulent kebabs, we bring the authentic soul of Hindustan to your plate in the heart of Pune.",
   address: "Upper Ground Floor, Renaissance Business Wellesley Road, Camp Area, Pune",
   phone: "+919175623047",
-  email: "info@persiandarbar.com",
+  email: "info@persiandarbar.in",
   hours: "10:00 AM - 2:00 AM (Daily)",
   rating: 4.4,
   totalReviews: 2561

@@ -66,7 +66,7 @@ const Contact = () => {
             <div className="space-y-10 group">
                {[
                  { icon: PhoneCall, channel: "concierge", val: "+91 91756 23047", desc: "For Reservations & Inquiries" },
-                 { icon: Mail, channel: "correspondence", val: "info@persiandarbar.com", desc: "For Corporate & Event Bookings" },
+                 { icon: Mail, channel: "correspondence", val: "info@persiandarbar.in", desc: "For Corporate & Event Bookings" },
                  { icon: Navigation, channel: "imperial address", val: "Camp Area, Pune, India", desc: "Renaissance Business Wellesley Road" }
                ].map((item, i) => (
                  <ScrollReveal key={i} delay={i * 0.1}>

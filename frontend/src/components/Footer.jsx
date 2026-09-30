@@ -9,7 +9,7 @@ const Footer = () => {
   const [contactInfo, setContactInfo] = useState({
     address: "Upper Ground Floor, Renaissance Business Wellesley Road, Camp, Pune",
     phone: "+91 91756 23047",
-    email: "info@persiandarbar.com"
+    email: "info@persiandarbar.in"
   });
 
   useEffect(() => {
