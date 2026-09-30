@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCustomerAuth } from '../../context/CustomerAuthContext';
+import { useToast } from '../../hooks/use-toast';
 import API_BASE from '../../lib/config';
 import { lsCache, memCache } from '../../lib/cache';
 
@@ -75,8 +76,10 @@ const Dot = ({ status }) => {
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 const CustomerDashboard = () => {
   const { currentUser, customerProfile, updateProfile, signOutCustomer, idToken, fetchWithAuth, refreshProfile } = useCustomerAuth();
+  const { toast } = useToast();
   const navigate   = useNavigate();
   const rzReady    = useRazorpay();
+  const prevResRef = useRef([]);
 
   const [tab, setTab]           = useState('home');
   const [orders, setOrders]     = useState([]);
@@ -179,12 +182,30 @@ const CustomerDashboard = () => {
   }, [idToken, fetchWithAuth]);
 
   /* â”€â”€ Fetch reservations â”€â”€ */
-  const fetchRes = useCallback(async () => {
+  const fetchRes = useCallback(async (isSilent = false) => {
     if (!idToken) return;
-    setLoadR(true);
-    try { const r = await fetchWithAuth(`${API_BASE}/api/customer/reservations`); if (r.ok) setRes(await r.json() || []); }
-    catch(e) { console.error(e); } finally { setLoadR(false); }
-  }, [idToken, fetchWithAuth]);
+    if (!isSilent) setLoadR(true);
+    try {
+      const r = await fetchWithAuth(`${API_BASE}/api/customer/reservations`);
+      if (r.ok) {
+        const data = await r.json() || [];
+        if (prevResRef.current.length > 0) {
+          data.forEach(curr => {
+            const prev = prevResRef.current.find(p => (p.id || p._id) === (curr.id || curr._id));
+            if (prev && prev.status === 'pending' && curr.status === 'confirmed') {
+              toast({
+                title: "🎉 Table Reserved!",
+                description: `Table ${curr.table_number ? curr.table_number : 'Assigned'} is confirmed for ${curr.date} at ${curr.time}!`,
+              });
+            }
+          });
+        }
+        prevResRef.current = data;
+        setRes(data);
+      }
+    }
+    catch(e) { console.error(e); } finally { if (!isSilent) setLoadR(false); }
+  }, [idToken, fetchWithAuth, toast]);
 
   /* ─── Table polling every 90s (replaces SSE — saves ~95% reads) ─── */
   useEffect(() => {
@@ -209,6 +230,29 @@ const CustomerDashboard = () => {
   }, []);
 
   useEffect(() => { if (idToken) { fetchOrders(); fetchRes(); } }, [idToken, fetchOrders, fetchRes]);
+
+  // Polling reservations: every 4 seconds if pending, every 15 seconds otherwise
+  useEffect(() => {
+    if (!idToken) return;
+    const hasPending = reservations.some(r => r.status === 'pending');
+    const intervalTime = hasPending ? 4000 : 15000;
+    const interval = setInterval(() => {
+      fetchRes(true);
+    }, intervalTime);
+    return () => clearInterval(interval);
+  }, [idToken, reservations, fetchRes]);
+
+  // Immediate refresh on window focus
+  useEffect(() => {
+    const handleFocus = () => {
+      if (idToken) {
+        fetchRes(true);
+        fetchOrders();
+      }
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [idToken, fetchRes, fetchOrders]);
 
   /* â”€â”€ Computed â”€â”€ */
   const activeOrders = orders.filter(o => ['placed','accepted','preparing','ready','out_for_delivery'].includes(o.status));
@@ -734,17 +778,56 @@ const CustomerDashboard = () => {
 
               {/* Active reservation banner */}
               {activeRes.length > 0 && (
-                <div className="rounded-3xl p-4 flex items-center gap-3"
-                  style={{ background:'rgba(34,197,94,0.10)', border:'1px solid rgba(34,197,94,0.3)', backdropFilter:'blur(16px)' }}>
-                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0" style={{ background:'rgba(34,197,94,0.2)' }}>
-                    <Calendar className="w-5 h-5 text-emerald-400" />
+                <Link to="/customer/reservations" className="block group">
+                  <div
+                    className="rounded-3xl p-4 flex items-center justify-between gap-3 transition-all duration-300 hover:scale-[1.01]"
+                    style={{
+                      background: activeRes[0].status === 'confirmed'
+                        ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(5, 46, 22, 0.45) 100%)'
+                        : 'linear-gradient(135deg, rgba(234, 179, 8, 0.15) 0%, rgba(69, 42, 5, 0.35) 100%)',
+                      border: activeRes[0].status === 'confirmed'
+                        ? '1px solid rgba(52, 211, 153, 0.4)'
+                        : '1px solid rgba(234, 179, 8, 0.35)',
+                      backdropFilter: 'blur(20px)',
+                      boxShadow: activeRes[0].status === 'confirmed'
+                        ? '0 8px 24px rgba(16, 185, 129, 0.15)'
+                        : '0 8px 24px rgba(234, 179, 8, 0.12)'
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
+                        style={{
+                          background: activeRes[0].status === 'confirmed'
+                            ? 'rgba(16, 185, 129, 0.25)'
+                            : 'rgba(234, 179, 8, 0.2)'
+                        }}
+                      >
+                        <Calendar className={`w-6 h-6 ${activeRes[0].status === 'confirmed' ? 'text-emerald-400' : 'text-amber-400'}`} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className={`font-black text-[11px] uppercase tracking-wider ${activeRes[0].status === 'confirmed' ? 'text-emerald-400' : 'text-amber-400'}`}>
+                            {activeRes[0].status === 'confirmed'
+                              ? (activeRes[0].table_number ? `Table ${activeRes[0].table_number} Reserved` : 'Table Confirmed')
+                              : 'Awaiting Host Confirmation'}
+                          </p>
+                          <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border ${activeRes[0].status === 'confirmed' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-amber-500/20 text-amber-300 border-amber-500/40 animate-pulse'}`}>
+                            {activeRes[0].status === 'confirmed' ? '✓ Confirmed' : '⏳ Pending'}
+                          </span>
+                        </div>
+                        <p className="text-white font-bold text-sm mt-0.5">{activeRes[0].date} at {activeRes[0].time}</p>
+                        <p className="text-white/70 text-xs">
+                          {activeRes[0].guests} Guests {activeRes[0].table_number ? `· Table ${activeRes[0].table_number}` : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 text-white/50 group-hover:text-white transition-colors">
+                      <span className="text-[11px] font-semibold hidden sm:inline">Details</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-emerald-400 font-black text-[10px] uppercase tracking-widest">Upcoming Reservation</p>
-                    <p className="text-white font-bold text-sm">{activeRes[0].date} at {activeRes[0].time}</p>
-                    <p className="text-white/70 text-xs">{activeRes[0].guests} guests · {activeRes[0].status === 'confirmed' ? '✅ Confirmed' : 'â³ Pending'}</p>
-                  </div>
-                </div>
+                </Link>
               )}
 
               {/* PD Coins card (Frosted Glass Panel) */}
@@ -1284,11 +1367,15 @@ const CustomerDashboard = () => {
                       <span className="text-white font-bold text-sm">{r.date} · {r.time}</span>
                     </div>
                     <span className={`text-[9px] font-black px-2.5 py-1 rounded-full border ${ok?'bg-emerald-500/20 text-emerald-300 border-emerald-500/40':bad?'bg-red-500/20 text-red-300 border-red-500/40':'bg-amber-500/20 text-amber-300 border-amber-500/40 animate-pulse'}`}>
-                      {ok?'✅ Confirmed':bad?'Unavailable':'â³ Pending'}
-                    </span>
+                      {ok ? (r.table_number ? `✅ Table ${r.table_number} Confirmed` : '✅ Confirmed') : bad ? 'Unavailable' : '⏳ Pending Confirmation'}</span>
                   </div>
                   <div className="flex items-center gap-4 text-xs text-white/65">
                     <span><UtensilsCrossed className="w-3.5 h-3.5 inline mr-1 text-white/80" />{r.guests} guests</span>
+                    {r.table_number && (
+                      <span className="text-emerald-400 font-bold px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                        Table {r.table_number}
+                      </span>
+                    )}
                     {r.occasion && <span>{r.occasion}</span>}
                     {r.amount_paid && <span style={{ color:GOLD }} className="font-bold">₹{r.amount_paid} paid</span>}
                   </div>

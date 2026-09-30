@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useCustomerAuth } from '../../context/CustomerAuthContext';
+import { useToast } from '../../hooks/use-toast';
 import API_BASE from '../../lib/config';
 import {
   Calendar,
@@ -18,9 +19,11 @@ import {
 
 const CustomerReservations = () => {
   const { idToken, fetchWithAuth } = useCustomerAuth();
+  const { toast } = useToast();
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const prevReservationsRef = useRef([]);
 
   const fetchReservations = useCallback(async (isPolling = false) => {
     if (!idToken) return;
@@ -28,8 +31,22 @@ const CustomerReservations = () => {
     try {
       const res = await fetchWithAuth(`${API_BASE}/api/customer/reservations`);
       if (res.ok) {
-        const data = await res.json();
-        setReservations(data || []);
+        const data = await res.json() || [];
+
+        // Check if any reservation just got confirmed
+        if (prevReservationsRef.current.length > 0) {
+          data.forEach(curr => {
+            const prev = prevReservationsRef.current.find(p => (p.id || p._id) === (curr.id || curr._id));
+            if (prev && prev.status === 'pending' && curr.status === 'confirmed') {
+              toast({
+                title: "🎉 Reservation Confirmed!",
+                description: `Table ${curr.table_number ? curr.table_number : 'Assigned'} is confirmed for ${curr.date} at ${curr.time}!`,
+              });
+            }
+          });
+        }
+        prevReservationsRef.current = data;
+        setReservations(data);
       }
     } catch (err) {
       console.error('Error fetching reservations:', err);
@@ -37,7 +54,7 @@ const CustomerReservations = () => {
       if (!isPolling) setLoading(false);
       setIsRefreshing(false);
     }
-  }, [idToken, fetchWithAuth]);
+  }, [idToken, fetchWithAuth, toast]);
 
   useEffect(() => {
     if (idToken) {
@@ -45,26 +62,39 @@ const CustomerReservations = () => {
     }
   }, [idToken, fetchReservations]);
 
-  // Polling every 60s for pending reservations (customer-side)
+  // Fast live polling: 4 seconds if pending reservation exists, 15 seconds otherwise
   useEffect(() => {
+    if (!idToken) return;
     const hasPending = reservations.some(r => r.status === 'pending');
-    if (!hasPending) return;
+    const intervalTime = hasPending ? 4000 : 15000;
 
     const interval = setInterval(() => {
       fetchReservations(true);
-    }, 60000); // 60s — customer side
+    }, intervalTime);
 
     return () => clearInterval(interval);
-  }, [reservations, fetchReservations]);
+  }, [idToken, reservations, fetchReservations]);
 
-  const getStatusDisplay = (status) => {
+  // Immediate refresh on window / tab focus
+  useEffect(() => {
+    const handleFocus = () => {
+      if (idToken) fetchReservations(true);
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [idToken, fetchReservations]);
+
+  const getStatusDisplay = (res) => {
+    const status = res.status;
     switch (status) {
       case 'confirmed':
         return {
           icon: <CheckCircle className="w-4 h-4 text-emerald-400" />,
-          label: 'Confirmed',
+          label: res.table_number ? `Confirmed (Table ${res.table_number})` : 'Confirmed',
           badgeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-          desc: 'Your table is confirmed! Please arrive 10 minutes early.'
+          desc: res.table_number
+            ? `Your Table ${res.table_number} is reserved for ${res.date} at ${res.time}! Please arrive 10-15 minutes early.`
+            : `Your table is confirmed for ${res.date} at ${res.time}! Please arrive 10-15 minutes early.`
         };
       case 'rejected':
       case 'cancelled':
@@ -77,9 +107,9 @@ const CustomerReservations = () => {
       default:
         return {
           icon: <Clock3 className="w-4 h-4 text-amber-400 animate-pulse" />,
-          label: 'Awaiting Confirmation',
+          label: 'Awaiting Host Confirmation',
           badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/40 animate-pulse',
-          desc: 'Our manager is reviewing table availability in real-time...'
+          desc: 'Our manager is reviewing table availability and will confirm shortly...'
         };
     }
   };
@@ -154,7 +184,7 @@ const CustomerReservations = () => {
         ) : (
           <div className="space-y-4">
             {reservations.map(res => {
-              const statusInfo = getStatusDisplay(res.status);
+              const statusInfo = getStatusDisplay(res);
 
               return (
                 <div
@@ -167,8 +197,13 @@ const CustomerReservations = () => {
                         <Calendar className="w-5 h-5" />
                       </div>
                       <div>
-                        <h3 className="text-base font-bold text-white">
-                          Table for {res.guests} Guests
+                        <h3 className="text-base font-bold text-white flex items-center gap-2 flex-wrap">
+                          <span>Table for {res.guests} Guests</span>
+                          {res.status === 'confirmed' && res.table_number && (
+                            <span className="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2.5 py-0.5 rounded-full font-black">
+                              Table {res.table_number}
+                            </span>
+                          )}
                         </h3>
                         <p className="text-xs text-gray-400">
                           Reserved under {res.customer_name} {res.phone && `• +91 ${res.phone}`}

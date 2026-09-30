@@ -120,8 +120,8 @@ const Reservation = () => {
       if (!res.ok) throw new Error("Reservation failed");
       
       toast({ 
-        title: "Table Reserved", 
-        description: "Your royal table has been successfully secured." 
+        title: "Table Request Received", 
+        description: "Our manager will review and confirm your table shortly." 
       });
       setStep(5); // Success step
     } catch (error) {
@@ -589,28 +589,22 @@ const Reservation = () => {
                     </div>
                   </div>
 
-                  {/* ── PASS FOOTER: WHATSAPP BUTTON ── */}
-                  <div className="p-4 bg-black/40 border-t border-white/5 space-y-2">
-                    <a
-                      href={`https://wa.me/919594287868?text=${encodeURIComponent(
-                        `🌟 *Table Reservation Request — Persian Darbar*\n\n` +
-                        `Hello Persian Darbar! I have submitted a table reservation:\n\n` +
-                        `👤 *Name:* ${formData.name}\n` +
-                        `📞 *Phone:* ${formData.phone}\n` +
-                        `📅 *Date:* ${formData.date}\n` +
-                        `⏰ *Time:* ${formData.time}\n` +
-                        `👥 *Guests:* ${formData.guests} Persons\n` +
-                        `${selectedTable ? `🪑 *Preferred Table:* Table ${selectedTable}\n` : ""}` +
-                        `${formData.specialRequests ? `📝 *Note:* ${formData.specialRequests}\n` : ""}\n` +
-                        `Please confirm my booking. Thank you!`
-                      )}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white py-3.5 rounded-xl font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/30 transition-all"
-                    >
-                      <MessageSquare className="w-4 h-4" />
-                      <span>Confirm via WhatsApp Concierge</span>
-                    </a>
+                  {/* ── PASS FOOTER: HOST CONFIRMATION STATUS ── */}
+                  <div className="p-4 bg-black/40 border-t border-white/5 space-y-2.5">
+                    <div className="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0 text-emerald-400">
+                        <Check className="w-4 h-4" />
+                      </div>
+                      <div className="space-y-0.5">
+                        <p className="font-bold text-white text-xs">Request Sent to Restaurant Manager</p>
+                        <p className="text-[11px] text-emerald-200/80 leading-snug">
+                          Our manager will review and allocate your table, then send an official confirmation text to your WhatsApp (<strong className="text-white font-mono">+91 {formData.phone}</strong>).
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-gray-400 text-center">
+                      Your status will automatically update to <span className="text-emerald-400 font-semibold">Confirmed</span> in your Customer Dashboard.
+                    </p>
                   </div>
                 </div>
 
