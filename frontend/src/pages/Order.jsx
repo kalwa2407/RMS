@@ -40,6 +40,149 @@ const MapFitBounds = ({ positions }) => {
   return null;
 };
 
+// ─── Isolated Checkout Form ──────────────────────────────────────────────────
+// Dedicated component with its own local state to ensure typing into Name, Phone,
+// or Address NEVER triggers re-renders of the parent Order page or drawer animations.
+const CheckoutForm = React.memo(({
+  initialInfo,
+  onPlaceOrder,
+  isPlacingOrder,
+  isMobile = false,
+  onCloseCart,
+  distance,
+  loadingLocation,
+  getUserLocation,
+  userLocation,
+  RESTAURANT_LOCATION,
+  restaurantIcon,
+  userIcon
+}) => {
+  const [formData, setFormData] = useState(initialInfo);
+
+  useEffect(() => {
+    setFormData(prev => ({
+      name: prev.name || initialInfo?.name || "",
+      phone: prev.phone || initialInfo?.phone || "",
+      address: prev.address || initialInfo?.address || "",
+      paymentMethod: prev.paymentMethod || initialInfo?.paymentMethod || "cod"
+    }));
+  }, [initialInfo?.name, initialInfo?.phone, initialInfo?.address, initialInfo?.paymentMethod]);
+
+  const onSubmit = (e) => {
+    e.preventDefault();
+    onPlaceOrder(formData);
+    if (isMobile && onCloseCart) {
+      onCloseCart();
+    }
+  };
+
+  return (
+    <form onSubmit={onSubmit} className="space-y-2.5 mt-3">
+      <input
+        id={isMobile ? "mob-customer-name" : "desk-customer-name"}
+        name="customer-name"
+        key={isMobile ? "mob-name" : "desk-name"}
+        required
+        value={formData.name}
+        onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))}
+        placeholder="Your Name"
+        autoComplete="name"
+        className="w-full bg-[#0f2933] text-white px-4 py-3 rounded-xl border border-[#EAB308]/30 focus:border-[#EAB308] outline-none placeholder-gray-500 transition-colors"
+        style={{ fontSize: '16px' }}
+      />
+      <input
+        id={isMobile ? "mob-customer-phone" : "desk-customer-phone"}
+        name="customer-phone"
+        key={isMobile ? "mob-phone" : "desk-phone"}
+        required
+        value={formData.phone}
+        onChange={(e) => setFormData(p => ({ ...p, phone: e.target.value }))}
+        placeholder="Phone Number"
+        type="tel"
+        autoComplete="tel"
+        className="w-full bg-[#0f2933] text-white px-4 py-3 rounded-xl border border-[#EAB308]/30 focus:border-[#EAB308] outline-none placeholder-gray-500 transition-colors"
+        style={{ fontSize: '16px' }}
+      />
+      <textarea
+        id={isMobile ? "mob-customer-address" : "desk-customer-address"}
+        name="customer-address"
+        key={isMobile ? "mob-address" : "desk-address"}
+        required
+        value={formData.address}
+        onChange={(e) => setFormData(p => ({ ...p, address: e.target.value }))}
+        placeholder="Delivery Address"
+        rows={2}
+        autoComplete="street-address"
+        className="w-full bg-[#0f2933] text-white px-4 py-3 rounded-xl border border-[#EAB308]/30 focus:border-[#EAB308] outline-none placeholder-gray-500 resize-none transition-colors"
+        style={{ fontSize: '16px' }}
+      />
+
+      {/* Location */}
+      <div className="bg-[#0f2933] rounded-xl p-3 border border-[#EAB308]/20 text-center">
+        {!distance ? (
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={getUserLocation}
+              className="flex items-center justify-center gap-2 w-full text-[#EAB308] hover:text-white transition-colors text-sm font-bold py-1"
+            >
+              {loadingLocation ? <Loader2 className="animate-spin" size={15} /> : <MapPin size={15} />}
+              <span>{loadingLocation ? 'Detecting...' : 'Detect My Location'}</span>
+            </button>
+            <div className="text-[11px] text-gray-600 space-y-0.5">
+              <p>0–5 km — <span className="text-green-500">Free delivery</span></p>
+              <p>5–20 km — <span className="text-orange-400">₹60 flat fee</span></p>
+              <p>&gt;20 km — <span className="text-red-500">Not accepted</span></p>
+            </div>
+          </div>
+        ) : distance > 20
+          ? <p className="text-red-400 text-sm font-bold">❌ {distance} km — Out of delivery range</p>
+          : <p className="text-green-400 text-sm font-bold">✓ {distance} km · {distance <= 5 ? 'Free Delivery!' : '₹60 Delivery Fee'}</p>}
+      </div>
+
+      {/* Leaflet Map */}
+      {userLocation && (
+        <div className="rounded-xl overflow-hidden border border-[#EAB308]/20" style={{ height: 180 }}>
+          <MapContainer center={[userLocation.lat, userLocation.lng]} zoom={12} style={{ height: "100%", width: "100%" }} zoomControl={false}>
+            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' />
+            <Marker position={[RESTAURANT_LOCATION.lat, RESTAURANT_LOCATION.lng]} icon={restaurantIcon}><Popup>🍽️ Persian Darbar (Restaurant)</Popup></Marker>
+            <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon}><Popup>📍 Your Location ({distance} km away)</Popup></Marker>
+            <Polyline positions={[[RESTAURANT_LOCATION.lat, RESTAURANT_LOCATION.lng], [userLocation.lat, userLocation.lng]]}
+              color={distance > 20 ? "#ef4444" : distance > 5 ? "#f97316" : "#22c55e"} weight={2} dashArray="6 4" />
+            <MapFitBounds positions={[[RESTAURANT_LOCATION.lat, RESTAURANT_LOCATION.lng], [userLocation.lat, userLocation.lng]]} />
+          </MapContainer>
+        </div>
+      )}
+
+      {/* Payment Method */}
+      <div className="grid grid-cols-2 gap-2">
+        {[['cod', 'Cash', <Wallet size={15} />], ['online', 'Online', <CreditCard size={15} />]].map(([val, label, icon]) => (
+          <button
+            key={val}
+            type="button"
+            onClick={() => setFormData(p => ({ ...p, paymentMethod: val }))}
+            className={`p-3 rounded-xl border text-sm font-bold transition-all flex items-center justify-center gap-2 ${formData.paymentMethod === val
+              ? 'bg-[#EAB308] border-[#EAB308] text-black'
+              : 'bg-[#0f2933] border-[#EAB308]/30 text-gray-400 hover:border-[#EAB308]/60'}`}
+          >
+            {icon}<span>{label}</span>
+          </button>
+        ))}
+      </div>
+
+      <button
+        type="submit"
+        disabled={isPlacingOrder}
+        className="w-full bg-[#EAB308] hover:bg-[#CA8A04] text-black py-3.5 rounded-2xl font-black text-base transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2"
+        style={{ boxShadow: '0 6px 28px rgba(234,179,8,0.30)' }}
+      >
+        {isPlacingOrder ? <Loader2 className="animate-spin" size={18} /> : <span>Place Order 🎉</span>}
+      </button>
+      <p className="text-center text-gray-600 text-xs">Minimum order value: ₹250</p>
+    </form>
+  );
+});
+
 const Order = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -56,6 +199,13 @@ const Order = () => {
   const [distance, setDistance] = useState(null);
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 1024 : true);
+
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const categoryBarRef = useRef(null);
 
   // Persian Darbar location (Camp, Pune)
@@ -162,8 +312,8 @@ const Order = () => {
   const taxes = Math.round(subtotal * taxRate);
   const coinsEarnable = Math.floor(netSubtotal * 0.10);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handlePlaceOrder = async (submittedInfo) => {
+    const finalInfo = submittedInfo || customerInfo;
     if (cart.length === 0) return toast({ title: "Cart is empty", variant: "destructive" });
     const sub = calculateSubtotal();
     if (sub < 250) return toast({ title: "Minimum order value: ₹250", variant: "destructive" });
@@ -183,11 +333,11 @@ const Order = () => {
     const orderData = {
       customer_uid: currentUser?.uid || null,
       email: currentUser?.email || null,
-      customer_name: customerInfo.name,
-      phone: customerInfo.phone,
-      address: customerInfo.address,
+      customer_name: finalInfo.name,
+      phone: finalInfo.phone,
+      address: finalInfo.address,
       distance_km: distance || 0,
-      payment_method: customerInfo.paymentMethod,
+      payment_method: finalInfo.paymentMethod,
       items: cart.map((i) => ({
         item_id: String(i._id), name: i.name, price: i.price, quantity: i.quantity,
         variant: null, variant_price: 0.0, addons: [], special_instructions: null
@@ -315,77 +465,20 @@ const Order = () => {
         </div>
 
         {/* Checkout form */}
-        <form onSubmit={(e) => { handleSubmit(e); if (isMobile) setIsCartOpen(false); }} className="space-y-2.5 mt-3">
-          <input required value={customerInfo.name}
-            onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
-            placeholder="Your Name"
-            className="w-full bg-[#0f2933] text-white px-4 py-3 rounded-xl border border-[#EAB308]/30 focus:border-[#EAB308] outline-none placeholder-gray-500 transition-colors"
-            style={{ fontSize: '16px' }} />
-          <input required value={customerInfo.phone}
-            onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
-            placeholder="Phone Number" type="tel"
-            className="w-full bg-[#0f2933] text-white px-4 py-3 rounded-xl border border-[#EAB308]/30 focus:border-[#EAB308] outline-none placeholder-gray-500 transition-colors"
-            style={{ fontSize: '16px' }} />
-          <textarea required value={customerInfo.address}
-            onChange={(e) => setCustomerInfo({ ...customerInfo, address: e.target.value })}
-            placeholder="Delivery Address" rows={2}
-            className="w-full bg-[#0f2933] text-white px-4 py-3 rounded-xl border border-[#EAB308]/30 focus:border-[#EAB308] outline-none placeholder-gray-500 resize-none transition-colors"
-            style={{ fontSize: '16px' }} />
-
-          {/* Location */}
-          <div className="bg-[#0f2933] rounded-xl p-3 border border-[#EAB308]/20 text-center">
-            {!distance ? (
-              <div className="space-y-2">
-                <button type="button" onClick={getUserLocation}
-                  className="flex items-center justify-center gap-2 w-full text-[#EAB308] hover:text-white transition-colors text-sm font-bold py-1">
-                  {loadingLocation ? <Loader2 className="animate-spin" size={15} /> : <MapPin size={15} />}
-                  <span>{loadingLocation ? 'Detecting...' : 'Detect My Location'}</span>
-                </button>
-                <div className="text-[11px] text-gray-600 space-y-0.5">
-                  <p>0–5 km — <span className="text-green-500">Free delivery</span></p>
-                  <p>5–20 km — <span className="text-orange-400">₹60 flat fee</span></p>
-                  <p>&gt;20 km — <span className="text-red-500">Not accepted</span></p>
-                </div>
-              </div>
-            ) : distance > 20
-              ? <p className="text-red-400 text-sm font-bold">❌ {distance} km — Out of delivery range</p>
-              : <p className="text-green-400 text-sm font-bold">✓ {distance} km · {distance <= 5 ? 'Free Delivery!' : '₹60 Delivery Fee'}</p>}
-          </div>
-
-          {/* Leaflet Map */}
-          {userLocation && (
-            <div className="rounded-xl overflow-hidden border border-[#EAB308]/20" style={{ height: 180 }}>
-              <MapContainer center={[userLocation.lat, userLocation.lng]} zoom={12} style={{ height: "100%", width: "100%" }} zoomControl={false}>
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' />
-                <Marker position={[RESTAURANT_LOCATION.lat, RESTAURANT_LOCATION.lng]} icon={restaurantIcon}><Popup>🍽️ Persian Darbar (Restaurant)</Popup></Marker>
-                <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon}><Popup>📍 Your Location ({distance} km away)</Popup></Marker>
-                <Polyline positions={[[RESTAURANT_LOCATION.lat, RESTAURANT_LOCATION.lng], [userLocation.lat, userLocation.lng]]}
-                  color={distance > 20 ? "#ef4444" : distance > 5 ? "#f97316" : "#22c55e"} weight={2} dashArray="6 4" />
-                <MapFitBounds positions={[[RESTAURANT_LOCATION.lat, RESTAURANT_LOCATION.lng], [userLocation.lat, userLocation.lng]]} />
-              </MapContainer>
-            </div>
-          )}
-
-          {/* Payment Method */}
-          <div className="grid grid-cols-2 gap-2">
-            {[['cod', 'Cash', <Wallet size={15} />], ['online', 'Online', <CreditCard size={15} />]].map(([val, label, icon]) => (
-              <button key={val} type="button"
-                onClick={() => setCustomerInfo({ ...customerInfo, paymentMethod: val })}
-                className={`p-3 rounded-xl border text-sm font-bold transition-all flex items-center justify-center gap-2 ${customerInfo.paymentMethod === val
-                  ? 'bg-[#EAB308] border-[#EAB308] text-black'
-                  : 'bg-[#0f2933] border-[#EAB308]/30 text-gray-400 hover:border-[#EAB308]/60'}`}>
-                {icon}<span>{label}</span>
-              </button>
-            ))}
-          </div>
-
-          <button type="submit" disabled={isPlacingOrder}
-            className="w-full bg-[#EAB308] hover:bg-[#CA8A04] text-black py-3.5 rounded-2xl font-black text-base transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2"
-            style={{ boxShadow: '0 6px 28px rgba(234,179,8,0.30)' }}>
-            {isPlacingOrder ? <Loader2 className="animate-spin" size={18} /> : <span>Place Order 🎉</span>}
-          </button>
-          <p className="text-center text-gray-600 text-xs">Minimum order value: ₹250</p>
-        </form>
+        <CheckoutForm
+          initialInfo={customerInfo}
+          onPlaceOrder={handlePlaceOrder}
+          isPlacingOrder={isPlacingOrder}
+          isMobile={isMobile}
+          onCloseCart={() => setIsCartOpen(false)}
+          distance={distance}
+          loadingLocation={loadingLocation}
+          getUserLocation={getUserLocation}
+          userLocation={userLocation}
+          RESTAURANT_LOCATION={RESTAURANT_LOCATION}
+          restaurantIcon={restaurantIcon}
+          userIcon={userIcon}
+        />
       </>)}
     </div>
   );
@@ -393,23 +486,6 @@ const Order = () => {
   // ─── JSX ───────────────────────────────────────────────────────────────────
   return (
     <>
-      <style>{`
-        @keyframes slideUpCart {
-          from { transform: translateY(100%); opacity: 0.7; }
-          to   { transform: translateY(0);    opacity: 1; }
-        }
-        @keyframes popIn {
-          from { transform: scale(0.8); opacity: 0; }
-          to   { transform: scale(1);   opacity: 1; }
-        }
-        .pills-scroll::-webkit-scrollbar { display: none; }
-        .pills-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-        .menu-row { transition: background 0.15s ease; }
-        .menu-row:hover { background: rgba(234,179,8,0.05); }
-        .add-btn-pill { transition: all 0.15s ease; }
-        .add-btn-pill:hover { background: #EAB308 !important; color: #000 !important; }
-        .qty-inline { animation: popIn 0.18s ease; }
-      `}</style>
 
       {/* ── Page shell ────────────────────────────────────────────────────── */}
       <div className="min-h-screen bg-gradient-to-b from-[#184956] to-[#0f2933] pt-24 pb-28 lg:pb-10">
@@ -581,7 +657,7 @@ const Order = () => {
                 </div>
 
                 <div className="p-4 overflow-y-auto max-h-[80vh]" style={{ WebkitOverflowScrolling: 'touch' }}>
-                  {renderCartContent(false)}
+                  {isDesktop && renderCartContent(false)}
                 </div>
               </div>
             </div>
@@ -619,10 +695,9 @@ const Order = () => {
             onClick={() => setIsCartOpen(false)} />
 
           {/* Drawer */}
-          <div className="relative bg-[#0b1e28] rounded-t-3xl flex flex-col overflow-hidden border-t border-[#EAB308]/25"
+          <div className="relative bg-[#0b1e28] rounded-t-3xl flex flex-col overflow-hidden border-t border-[#EAB308]/25 cart-drawer-animate"
             style={{
               maxHeight: '92dvh',
-              animation: 'slideUpCart 0.35s cubic-bezier(0.32,0.72,0,1)',
               paddingBottom: 'env(safe-area-inset-bottom, 0px)',
               boxShadow: '0 -16px 48px rgba(0,0,0,0.6)',
             }}>
@@ -649,7 +724,7 @@ const Order = () => {
 
             {/* Scrollable body */}
             <div className="flex-1 overflow-y-auto px-5 py-4" style={{ WebkitOverflowScrolling: 'touch' }}>
-              {renderCartContent(true)}
+              {!isDesktop && renderCartContent(true)}
             </div>
           </div>
         </div>

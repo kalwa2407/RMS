@@ -110,3 +110,33 @@ input:focus, textarea:focus, select:focus {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
+
+/* Order page mobile drawer & animations */
+@keyframes slideUpCart {
+  from {
+    transform: translateY(100%);
+    opacity: 0.7;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.cart-drawer-animate {
+  animation: slideUpCart 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+@keyframes popIn {
+  from { transform: scale(0.8); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.pills-scroll::-webkit-scrollbar { display: none; }
+.pills-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+.menu-row { transition: background 0.15s ease; }
+.menu-row:hover { background: rgba(234, 179, 8, 0.05); }
+.add-btn-pill { transition: all 0.15s ease; }
+.add-btn-pill:hover { background: #EAB308 !important; color: #000 !important; }
+.qty-inline { animation: popIn 0.18s ease; }
+
