@@ -117,6 +117,46 @@ def generate_kot_number():
     random_suffix = ''.join(random.choices(string.digits, k=3))
     return f"KOT{timestamp}{random_suffix}"
 
+async def generate_bill_number(manager) -> str:
+    """
+    Generate a monthly sequential bill number in the format MMMXXX.
+    e.g. JAN001, JAN002 ... FEB001, FEB002 ...
+    Resets to 001 at the start of each month.
+    Counts across BOTH table_sessions (dine-in) AND orders (online/delivery/takeaway)
+    so the sequence is shared and unique across all order types.
+    """
+    now_ist = get_ist_now()
+    month_abbr = now_ist.strftime('%b').upper()   # 'JAN', 'FEB', ...
+    year_month  = now_ist.strftime('%Y-%m')        # '2026-01', used to detect month boundary
+
+    session_count = 0
+    order_count   = 0
+
+    # Count from dine-in table sessions
+    try:
+        sessions = await manager._read("table_sessions")
+        session_count = sum(
+            1 for s in sessions
+            if s.get("bill_number", "").startswith(month_abbr)
+            and s.get("bill_year_month") == year_month
+        )
+    except Exception:
+        session_count = 0
+
+    # Count from online/delivery/takeaway orders
+    try:
+        orders = await manager._read("orders")
+        order_count = sum(
+            1 for o in orders
+            if o.get("bill_number", "").startswith(month_abbr)
+            and o.get("bill_year_month") == year_month
+        )
+    except Exception:
+        order_count = 0
+
+    seq = session_count + order_count + 1
+    return f"{month_abbr}{seq:03d}", year_month
+
 def get_ist_now():
     """Get current IST datetime"""
     return datetime.now(timezone(timedelta(hours=5, minutes=30)))
@@ -417,7 +457,133 @@ async def get_public_settings(manager: BaseDataManager = Depends(get_data_manage
     public_keys = ["contact_address", "contact_phone", "contact_email", "opening_hours"]
     return {k: v for k, v in settings.items() if k in public_keys}
 
-# Coupon Validation
+# =============================================================================
+# OFFERS / PROMOTIONS (Public + Admin)
+# =============================================================================
+
+@api_router.get("/offers")
+async def get_public_offers(manager: BaseDataManager = Depends(get_data_manager)):
+    """
+    Public endpoint: returns active offers for the customer app.
+    Respects:
+      1. Global master toggle (offers_master_enabled in settings)
+      2. Individual offer active flag
+      3. Date range (start_date / end_date in IST)
+    """
+    settings = await manager.get_settings()
+    if not settings.get("offers_master_enabled", True):
+        return []   # Master toggle OFF → no offers shown
+
+    try:
+        offers = await manager._read("offers")
+    except Exception:
+        offers = []
+
+    now_ist = get_ist_now().date()
+    active = []
+    for o in offers:
+        if not o.get("active", False):
+            continue
+        # Date-range check
+        try:
+            start = datetime.strptime(o["start_date"], "%Y-%m-%d").date() if o.get("start_date") else None
+            end   = datetime.strptime(o["end_date"],   "%Y-%m-%d").date() if o.get("end_date")   else None
+            if start and now_ist < start:
+                continue
+            if end and now_ist > end:
+                continue
+        except Exception:
+            pass
+        active.append(o)
+
+    return sorted(active, key=lambda x: x.get("sort_order", 999))
+
+
+@admin_router.get("/offers")
+async def admin_get_offers(username: str = Depends(verify_token), manager: BaseDataManager = Depends(get_data_manager)):
+    """Admin: get all offers (including inactive)"""
+    try:
+        offers = await manager._read("offers")
+    except Exception:
+        offers = []
+    settings = await manager.get_settings()
+    return {
+        "offers": sorted(offers, key=lambda x: x.get("sort_order", 999)),
+        "master_enabled": settings.get("offers_master_enabled", True)
+    }
+
+
+@admin_router.post("/offers/master-toggle")
+async def admin_toggle_offers_master(
+    body: dict,
+    username: str = Depends(verify_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Admin: toggle the global offers master switch"""
+    enabled = body.get("enabled", True)
+    settings = await manager.get_settings()
+    settings["offers_master_enabled"] = enabled
+    await manager.update_settings(settings)
+    return {"master_enabled": enabled}
+
+
+@admin_router.post("/offers")
+async def admin_create_offer(
+    offer: dict,
+    username: str = Depends(verify_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Admin: create a new offer"""
+    import uuid
+    offer["id"] = f"offer_{uuid.uuid4().hex[:8]}"
+    offer.setdefault("active", False)
+    offer.setdefault("sort_order", 999)
+    offer["created_at"] = get_ist_now().isoformat()
+    try:
+        offers = await manager._read("offers")
+    except Exception:
+        offers = []
+    offers.append(offer)
+    await manager._write("offers", offers)
+    return offer
+
+
+@admin_router.put("/offers/{offer_id}")
+async def admin_update_offer(
+    offer_id: str,
+    updates: dict,
+    username: str = Depends(verify_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Admin: update/toggle an offer"""
+    try:
+        offers = await manager._read("offers")
+    except Exception:
+        offers = []
+    idx = next((i for i, o in enumerate(offers) if o.get("id") == offer_id), None)
+    if idx is None:
+        raise HTTPException(status_code=404, detail="Offer not found")
+    offers[idx].update(updates)
+    await manager._write("offers", offers)
+    return offers[idx]
+
+
+@admin_router.delete("/offers/{offer_id}")
+async def admin_delete_offer(
+    offer_id: str,
+    username: str = Depends(verify_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Admin: delete an offer"""
+    try:
+        offers = await manager._read("offers")
+    except Exception:
+        offers = []
+    offers = [o for o in offers if o.get("id") != offer_id]
+    await manager._write("offers", offers)
+    return {"deleted": offer_id}
+
+
 @api_router.post("/coupons/validate")
 async def validate_coupon(coupon_validation: CouponValidation, manager: BaseDataManager = Depends(get_data_manager)):
     """Validate a coupon code"""
@@ -448,6 +614,16 @@ async def validate_coupon(coupon_validation: CouponValidation, manager: BaseData
         "discount_value": coupon.get("discount_value"),
         "code": coupon.get("code")
     }
+
+
+@api_router.get("/coupons/public")
+async def get_public_coupons(manager: BaseDataManager = Depends(get_data_manager)):
+    """Get active public coupons for customer checkout"""
+    try:
+        coupons = await manager._read("coupons")
+        return [c for c in coupons if c.get("active", True)]
+    except Exception:
+        return []
 
 # Orders Endpoints
 @api_router.post("/orders")
@@ -1398,6 +1574,11 @@ async def admin_update_order_status(
             invoice_url = await create_order_invoice(order_id, manager)
             if invoice_url:
                 update_data["invoice_url"] = invoice_url
+            # Assign monthly bill number for online orders (if not already set)
+            if not order.get("bill_number"):
+                bill_number, year_month = await generate_bill_number(manager)
+                update_data["bill_number"] = bill_number
+                update_data["bill_year_month"] = year_month
         status_entry["note"] = f"Order accepted - KOT#{kot_num} generated"
     
     if status_update.status == "delivered":
@@ -1441,21 +1622,68 @@ async def admin_assign_delivery_partner(
         "note": f"Delivery partner {partner.get('name')} assigned"
     })
     
+    vehicle_info = f"{partner.get('vehicle_type', 'Bike')}"
+    if partner.get("vehicle_number"):
+        vehicle_info += f" ({partner.get('vehicle_number')})"
+
     await manager.update_order(order_id, {
         "delivery_partner_id": assignment.delivery_partner_id,
         "delivery_partner_name": partner.get("name"),
+        "delivery_partner_phone": partner.get("phone"),
+        "delivery_partner_vehicle": vehicle_info,
+        "delivery_fleet": "Persian Darbar Private Fleet",
         "status_history": history
     })
     
     # Update partner internal
     current_orders = partner.get("current_orders", [])
-    current_orders.append(order_id)
+    if order_id not in current_orders:
+        current_orders.append(order_id)
     for p in partners:
         if p.get("id") == assignment.delivery_partner_id or p.get("_id") == assignment.delivery_partner_id:
             p["current_orders"] = current_orders
             break
     await manager._write("delivery_partners", partners)
     
+    return await manager.get_order_by_id(order_id)
+
+@admin_router.post("/orders/{order_id}/unassign-delivery")
+async def admin_unassign_delivery_partner(
+    order_id: str,
+    username: str = Depends(verify_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Unassign delivery partner from an order"""
+    order = await manager.get_order_by_id(order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    old_partner_id = order.get("delivery_partner_id")
+    if old_partner_id:
+        partners = await manager._read("delivery_partners")
+        for p in partners:
+            if p.get("id") == old_partner_id or p.get("_id") == old_partner_id:
+                curr = p.get("current_orders", [])
+                p["current_orders"] = [o for o in curr if o != order_id]
+                break
+        await manager._write("delivery_partners", partners)
+
+    now = datetime.utcnow()
+    history = order.get("status_history", [])
+    history.append({
+        "status": order.get("status"),
+        "timestamp": now.isoformat(),
+        "note": "Delivery partner unassigned"
+    })
+
+    await manager.update_order(order_id, {
+        "delivery_partner_id": None,
+        "delivery_partner_name": None,
+        "delivery_partner_phone": None,
+        "delivery_partner_vehicle": None,
+        "delivery_fleet": None,
+        "status_history": history
+    })
     return await manager.get_order_by_id(order_id)
 
 # =============================================================================
@@ -3173,17 +3401,28 @@ async def admin_generate_session_bill(session_id: str, discount: float = 0, user
     subtotal = sum(o.get("subtotal", 0) for o in active_orders)
     taxes = sum(o.get("taxes", 0) for o in active_orders)
     total = subtotal + taxes - discount
+
+    # Assign bill number only once (avoid re-numbering if already has one)
+    existing_bill_number = session.get("bill_number", "")
+    if not existing_bill_number:
+        bill_number, year_month = await generate_bill_number(manager)
+    else:
+        bill_number = existing_bill_number
+        year_month = session.get("bill_year_month", get_ist_now().strftime('%Y-%m'))
     
     await manager.update_table_session(session_id, {
         "status": "billing",
         "subtotal": subtotal,
         "discount": discount,
         "taxes": taxes,
-        "total": total
+        "total": total,
+        "bill_number": bill_number,
+        "bill_year_month": year_month,
     })
     
     return {
         "session_id": session_id,
+        "bill_number": bill_number,
         "table_number": session.get("table_number"),
         "customer_name": session.get("customer_name"),
         "orders": active_orders,

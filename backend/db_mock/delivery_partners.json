@@ -1,1 +1,32 @@
-[]
+[
+  {
+    "id": "rider_001",
+    "_id": "rider_001",
+    "name": "Sameer Khan",
+    "phone": "9822019760",
+    "email": "sameer.fleet@persiandarbar.com",
+    "vehicle_type": "Royal Fleet Bike",
+    "vehicle_number": "MH-12-PD-1976",
+    "password": "301d71f784fe27a3b04a7f7cb0f054527349694135546dc083e2c8a34bc4079c",
+    "active": true,
+    "current_orders": [],
+    "total_deliveries": 342,
+    "rating": 4.9,
+    "created_at": "2026-01-15T10:00:00"
+  },
+  {
+    "id": "rider_002",
+    "_id": "rider_002",
+    "name": "Imran Qureshi",
+    "phone": "9822019761",
+    "email": "imran.fleet@persiandarbar.com",
+    "vehicle_type": "Royal Fleet Scooter",
+    "vehicle_number": "MH-12-PD-2024",
+    "password": "301d71f784fe27a3b04a7f7cb0f054527349694135546dc083e2c8a34bc4079c",
+    "active": true,
+    "current_orders": [],
+    "total_deliveries": 218,
+    "rating": 4.8,
+    "created_at": "2026-02-01T11:00:00"
+  }
+]

@@ -57,3 +57,16 @@ backend/firebase_credentials.json
 
 # UI inspiration reference folder (not part of project)
 TAKE_UI_INSPR/
+
+# Keystores and sensitive signing credentials
+*.keystore
+*.jks
+KEYSTORE_INFO.txt
+
+# Temp automation scripts & screenshots
+capture_*.py
+test_*.py
+slide_data.py
+test_home_live.png
+screenshots/
+KAL_KA_PLAN.txt

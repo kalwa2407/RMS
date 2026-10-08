@@ -13,8 +13,10 @@ import {
   DollarSign,
   Volume2,
   VolumeX,
+  Printer,
 } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
+import logoImg from "../../assets/logo.png";
 
 import API_BASE from "../../lib/config";
 
@@ -226,11 +228,139 @@ const TableSessions = () => {
     }
   };
 
-  const formatTime = (dateStr) => {
-    return new Date(dateStr).toLocaleTimeString("en-IN", {
-      hour: "2-digit",
-      minute: "2-digit",
+  const formatDateTime = (dateStr) => {
+    const d = new Date(dateStr);
+    const date = d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+    const time = d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+    return { date, time };
+  };
+
+  const getLogoBase64 = () => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width  = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        canvas.getContext("2d").drawImage(img, 0, 0);
+        resolve(canvas.toDataURL("image/png"));
+      };
+      img.onerror = () => resolve("");
+      img.src = logoImg;
     });
+  };
+
+  const printBill = async (session) => {
+    const billNo   = session.bill_number || session.session_id?.slice(-8) || "—";
+    const tableNo  = session.table_number;
+    const customer = session.customer_name || "Guest";
+    const now      = formatDateTime(new Date().toISOString());
+
+    // Flatten all items across all orders in the session
+    const allItems = (session.orders || []).flatMap((o) => o.items || []);
+
+    // Merge duplicate items
+    const merged = {};
+    allItems.forEach((item) => {
+      const key = item.name + (item.variant ? `|${item.variant}` : "");
+      if (merged[key]) {
+        merged[key].quantity += item.quantity;
+        merged[key].total   += item.price * item.quantity;
+      } else {
+        merged[key] = {
+          name:     item.name + (item.variant ? ` (${item.variant})` : ""),
+          quantity: item.quantity,
+          rate:     item.price,
+          total:    item.price * item.quantity,
+        };
+      }
+    });
+    const rows = Object.values(merged);
+
+    const subtotal = session.subtotal ?? 0;
+    const taxes    = session.taxes    ?? 0;
+    const discount = session.discount ?? 0;
+    const total    = session.total    ?? subtotal + taxes - discount;
+
+    // Convert logo to base64 so it works inside the sandboxed print window
+    const logoBase64 = await getLogoBase64();
+    const logoHtml   = logoBase64
+      ? `<img src="${logoBase64}" alt="Persian Darbar" style="width:60px;height:60px;object-fit:contain;margin-bottom:4px;" /><br/>`
+      : "";
+
+    const w = window.open("", "_blank", "width=340,height=700");
+    if (!w) return;
+    w.document.write(`<!DOCTYPE html><html><head>
+      <title>Bill - ${billNo}</title>
+      <style>
+        @page { size: 80mm auto; margin: 4mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Courier New', Courier, monospace; font-size: 11px; width: 72mm; color: #000; }
+        .center { text-align: center; }
+        .bold   { font-weight: bold; }
+        .dashed { border-top: 1px dashed #000; margin: 5px 0; }
+        .solid  { border-top: 2px solid #000; margin: 5px 0; }
+        .row    { display: flex; justify-content: space-between; }
+        .row-3  { display: flex; }
+        .row-3 .col-name  { flex: 1; }
+        .row-3 .col-qty   { width: 30px; text-align: center; }
+        .row-3 .col-amt   { width: 50px; text-align: right; }
+        .header-name { font-size: 16px; font-weight: bold; letter-spacing: 1px; }
+        .bill-no { font-size: 13px; font-weight: bold; }
+        .grand-total { font-size: 14px; font-weight: bold; }
+        .footer { font-size: 9px; }
+        .items-header { font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 2px; margin-bottom: 3px; }
+      </style>
+    </head><body>
+      <div class="center">
+        ${logoHtml}
+        <div class="header-name">PERSIAN DARBAR</div>
+        <div style="font-size:10px;letter-spacing:1px;margin-bottom:2px">&#9654; THE TASTE OF HINDUSTAN &#9664;</div>
+        <div style="font-size:9px">Camp, Pune, Maharashtra 411004</div>
+        <div style="font-size:9px">Ph: +91 9594287868</div>
+        <div style="font-size:9px">GSTIN: 27XXXXX1234X1Z5</div>
+      </div>
+      <div class="dashed"></div>
+      <div class="center bold" style="font-size:12px">BILL / TAX INVOICE</div>
+      <div class="dashed"></div>
+      <div class="row">
+        <span><b>Bill No:</b> <span class="bill-no">${billNo}</span></span>
+        <span>${now.date}</span>
+      </div>
+      <div class="row">
+        <span><b>Table:</b> ${tableNo}</span>
+        <span>${now.time}</span>
+      </div>
+      <div><b>Customer:</b> ${customer}</div>
+      <div class="dashed"></div>
+      <div class="items-header row-3">
+        <span class="col-name">ITEM</span>
+        <span class="col-qty">QTY</span>
+        <span class="col-amt">AMT</span>
+      </div>
+      ${rows.map(r => `
+        <div class="row-3">
+          <span class="col-name">${r.name}</span>
+          <span class="col-qty">${r.quantity}</span>
+          <span class="col-amt">&#8377;${r.total.toFixed(0)}</span>
+        </div>
+      `).join("")}
+      <div class="dashed"></div>
+      <div class="row"><span>Subtotal</span><span>&#8377;${subtotal.toFixed(2)}</span></div>
+      <div class="row"><span>GST (5%)</span><span>&#8377;${taxes.toFixed(2)}</span></div>
+      ${discount > 0 ? `<div class="row"><span>Discount</span><span>- &#8377;${discount.toFixed(2)}</span></div>` : ""}
+      <div class="solid"></div>
+      <div class="row grand-total"><span>GRAND TOTAL</span><span>&#8377;${total.toFixed(2)}</span></div>
+      <div class="solid"></div>
+      <div class="dashed"></div>
+      <div class="center footer" style="margin-top:6px">
+        <div>Thank you for dining with us!</div>
+        <div>Powered by Persian Darbar POS</div>
+      </div>
+    </body></html>`);
+    w.document.close();
+    setTimeout(() => { w.focus(); w.print(); }, 300);
   };
 
   if (loading) {
@@ -523,6 +653,11 @@ const TableSessions = () => {
                         <span className="bg-blue-500 text-black px-3 py-1 rounded-lg font-bold">
                           Table {session.table_number}
                         </span>
+                        {session.bill_number && (
+                          <span className="ml-2 bg-[#EAB308]/20 text-primary font-mono text-sm px-2 py-1 rounded font-bold">
+                            #{session.bill_number}
+                          </span>
+                        )}
                         <p className="text-white mt-1">{session.customer_name}</p>
                       </div>
                       <div className="text-right">
@@ -543,6 +678,11 @@ const TableSessions = () => {
               <div className="bg-[#1a4855] rounded-xl p-4">
                 <div className="text-center mb-4 pb-4 border-b border-[#EAB308]/20">
                   <h4 className="text-xl font-bold text-white">Persian Darbar</h4>
+                  {selectedSession.bill_number && (
+                    <p className="text-primary font-mono font-bold text-lg tracking-widest mt-1">
+                      Bill # {selectedSession.bill_number}
+                    </p>
+                  )}
                   <p className="text-gray-400">Table {selectedSession.table_number}</p>
                   <p className="text-gray-400">{selectedSession.customer_name}</p>
                 </div>
@@ -606,14 +746,23 @@ const TableSessions = () => {
                   </div>
                 </div>
 
-                {/* Close Session Button */}
-                <button
-                  onClick={() => closeSession(selectedSession.session_id)}
-                  className="w-full mt-4 bg-green-500 text-black py-3 rounded-lg font-bold hover:bg-green-400 transition flex items-center justify-center space-x-2"
-                >
-                  <CreditCard className="h-5 w-5" />
-                  <span>Complete Payment & Close Table</span>
-                </button>
+                {/* Print + Close Session Buttons */}
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={() => printBill(selectedSession)}
+                    className="flex-1 bg-[#1a4855] border border-[#EAB308]/40 text-primary py-3 rounded-lg font-bold hover:bg-[#234d5c] transition flex items-center justify-center space-x-2"
+                  >
+                    <Printer className="h-4 w-4" />
+                    <span>Print Bill</span>
+                  </button>
+                  <button
+                    onClick={() => closeSession(selectedSession.session_id)}
+                    className="flex-1 bg-green-500 text-black py-3 rounded-lg font-bold hover:bg-green-400 transition flex items-center justify-center space-x-2"
+                  >
+                    <CreditCard className="h-5 w-5" />
+                    <span>Complete Payment</span>
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="bg-[#1a4855] rounded-xl p-8 text-center">

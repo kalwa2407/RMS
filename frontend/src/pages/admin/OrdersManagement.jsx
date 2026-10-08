@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Check, X, Clock, Package, Truck, Home, Printer, Eye, Bell, Trash2, Bike, UtensilsCrossed, ShoppingBag, MapPin, Phone, ExternalLink, RefreshCw, Zap, AlertTriangle } from "lucide-react";
+import { Check, X, Clock, Package, Truck, Home, Printer, Eye, Bell, Trash2, Bike, UtensilsCrossed, ShoppingBag, MapPin, Phone, ExternalLink, RefreshCw, Zap, AlertTriangle, ToggleLeft, ToggleRight, WifiOff } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
 import API_BASE from "../../lib/config";
+import { printOrder, getPrintMode, isSerialPrinterConnected, connectSerialPrinter } from "../../lib/PrintService";
 
 /* Porter status → display config */
 const PORTER_STATUS_DISPLAY = {
@@ -45,11 +46,55 @@ const OrdersManagement = () => {
   const [assigningOrder, setAssigningOrder] = useState(null);
   const audioRef = useRef(null);
 
-  // ── Porter state ───────────────────────────────────────────────────────────
-  // porterModal = { order, step: 'idle'|'quoting'|'quoted'|'booking', quote: null|{...} }
+  const [unassigningOrder, setUnassigningOrder] = useState(null);
+
+  // ── Porter state (Stage 2 Integration) ──────────────────────────────────────
   const [porterModal, setPorterModal] = useState(null);
-  const [porterCancelling, setPorterCancelling] = useState(null); // order_id being cancelled
-  const [porterRefreshing, setPorterRefreshing] = useState(null); // order_id being refreshed
+  const [porterCancelling, setPorterCancelling] = useState(null);
+  const [porterRefreshing, setPorterRefreshing] = useState(null);
+
+  // ── Print Mode ────────────────────────────────────────────────────────────
+  const [printMode, setPrintModeState] = useState(() => getPrintMode());
+  // Sync when localStorage changes (e.g. user changes setting in another tab)
+  useEffect(() => {
+    const sync = () => setPrintModeState(getPrintMode());
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
+  }, []);
+
+  // ── Online Orders Billing Mode ────────────────────────────────────────────
+  // "auto" = bill prints automatically when order is accepted (via thermal printer)
+  // "manual" = admin clicks Print Bill manually
+  const [onlineBillingMode, setOnlineBillingMode] = useState(
+    () => localStorage.getItem("pd_online_billing_mode") || "manual"
+  );
+  const [printerConnected, setPrinterConnected] = useState(() => isSerialPrinterConnected());
+
+  const toggleOnlineBillingMode = () => {
+    const next = onlineBillingMode === "manual" ? "auto" : "manual";
+    setOnlineBillingMode(next);
+    localStorage.setItem("pd_online_billing_mode", next);
+    if (next === "auto" && !isSerialPrinterConnected()) {
+      toast({
+        title: "⚠️ Auto Bill Mode Enabled",
+        description: "No printer connected. Connect a thermal printer first.",
+        variant: "destructive",
+        duration: 6000,
+      });
+    } else if (next === "auto") {
+      toast({ title: "✅ Auto Bill Mode", description: "Bills will print automatically on order accept.", duration: 4000 });
+    }
+  };
+
+  const handleConnectPrinter = async () => {
+    const result = await connectSerialPrinter();
+    if (result.success) {
+      setPrinterConnected(true);
+      toast({ title: "🖨️ Printer Connected!", description: "Thermal printer is ready.", duration: 4000 });
+    } else {
+      toast({ title: "Connection Failed", description: result.error || "Could not connect to printer.", variant: "destructive" });
+    }
+  };
 
 
   useEffect(() => {
@@ -137,8 +182,24 @@ const OrdersManagement = () => {
       toast({ title: "Error", description: err.response?.data?.detail || "Failed to assign", variant: "destructive" });
     }
   };
-  // -- Porter Handlers ----------------------------------------------------------
+  const unassignDelivery = async (orderId) => {
+    if (!window.confirm("Remove assigned in-house delivery rider from this order?")) return;
+    setUnassigningOrder(orderId);
+    try {
+      const token = localStorage.getItem("admin_token");
+      await axios.post(`${API_BASE}/api/admin/orders/${orderId}/unassign-delivery`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast({ title: "Unassigned", description: "Rider removed from order" });
+      fetchOrders();
+    } catch (err) {
+      toast({ title: "Error", description: err.response?.data?.detail || "Failed to unassign", variant: "destructive" });
+    } finally {
+      setUnassigningOrder(null);
+    }
+  };
 
+  // -- Porter Handlers (Stage 2 Integration) -----------------------------------
   const openPorterModal = async (order) => {
     const drop_lat = order.drop_lat || null;
     const drop_lng = order.drop_lng || null;
@@ -225,8 +286,57 @@ const OrdersManagement = () => {
       );
       toast({ title: "Updated!", description: `Order is now ${newStatus}` });
       fetchOrders();
+
+      // Auto/Manual billing for online orders on accept
+      if (newStatus === "accepted" && order.order_type !== "DINE_IN") {
+        // Re-fetch to get the assigned bill_number from backend
+        setTimeout(async () => {
+          try {
+            const token2 = localStorage.getItem("admin_token");
+            const res = await axios.get(`${API_BASE}/api/admin/orders/${order.order_id}`, {
+              headers: { Authorization: `Bearer ${token2}` }
+            });
+            const updatedOrder = res.data;
+            const billNo = updatedOrder?.bill_number || order.order_id?.slice(-8);
+            const currentBillingMode = localStorage.getItem("pd_online_billing_mode") || "manual";
+
+            if (currentBillingMode === "auto") {
+              // AUTO mode: check printer connected
+              if (isSerialPrinterConnected()) {
+                await printOrder(updatedOrder || order, billNo, "auto");
+                toast({ title: `🖨️ Bill Printed: ${billNo}`, description: "Auto-printed to thermal printer", duration: 4000 });
+              } else {
+                // Auto mode but printer not connected — show alert
+                toast({
+                  title: `⚠️ Printer Not Connected`,
+                  description: `Bill ${billNo} generated but printer is not connected. Connect printer and print manually.`,
+                  variant: "destructive",
+                  duration: 8000,
+                });
+              }
+            } else {
+              // MANUAL mode: just notify, let admin click Print Bill
+              toast({
+                title: `📄 Bill Ready: ${billNo}`,
+                description: "Click Print Bill on the order to print",
+                duration: 6000
+              });
+            }
+          } catch { /* print errors are non-fatal */ }
+        }, 1200);
+      }
     } catch {
       toast({ title: "Error", description: "Failed to update order status", variant: "destructive" });
+    }
+  };
+
+  // ── Print online order bill (called manually or automatically) ───────────
+  const printOnlineOrderBill = async (order) => {
+    const billNo = order.bill_number || order.order_id?.slice(-8);
+    try {
+      await printOrder(order, billNo, printMode);
+    } catch (err) {
+      toast({ title: "Print Failed", description: "Could not print bill.", variant: "destructive" });
     }
   };
 
@@ -408,6 +518,84 @@ const OrdersManagement = () => {
         })}
       </div>
 
+      {/* ── Online Billing Mode Toggle ─────────────────────────────────────── */}
+      {(orderTypeTab === "online" || orderTypeTab === "all") && (
+        <div className={`mb-4 rounded-xl border px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 transition-all ${
+          onlineBillingMode === "auto"
+            ? "bg-emerald-900/20 border-emerald-500/30"
+            : "bg-[#1a4855] border-[#EAB308]/20"
+        }`}>
+          {/* Left: Mode Info */}
+          <div className="flex items-center gap-3 flex-1">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+              onlineBillingMode === "auto" ? "bg-emerald-500/20" : "bg-[#EAB308]/10"
+            }`}>
+              <Printer className={`w-4 h-4 ${onlineBillingMode === "auto" ? "text-emerald-400" : "text-[#EAB308]"}`} />
+            </div>
+            <div>
+              <p className={`text-sm font-bold ${onlineBillingMode === "auto" ? "text-emerald-300" : "text-white"}`}>
+                {onlineBillingMode === "auto" ? "🤖 Auto Bill Mode" : "🖐 Manual Bill Mode"}
+                <span className={`ml-2 text-xs font-normal px-2 py-0.5 rounded-full ${
+                  onlineBillingMode === "auto"
+                    ? "bg-emerald-500/20 text-emerald-400"
+                    : "bg-[#EAB308]/15 text-[#EAB308]"
+                }`}>
+                  Online Orders
+                </span>
+              </p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {onlineBillingMode === "auto"
+                  ? "Bill prints automatically to thermal printer when order is accepted"
+                  : "Click 'Print Bill' manually on each order after accepting"}
+              </p>
+            </div>
+          </div>
+
+          {/* Right: Printer Status + Toggle */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Printer Connection Status */}
+            {onlineBillingMode === "auto" && (
+              <div className="flex items-center gap-1.5">
+                {printerConnected ? (
+                  <span className="flex items-center gap-1 text-xs text-emerald-400 bg-emerald-900/30 border border-emerald-500/30 px-2.5 py-1.5 rounded-lg font-medium">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Printer Ready
+                  </span>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <span className="flex items-center gap-1.5 text-xs text-red-400 bg-red-900/20 border border-red-500/30 px-2.5 py-1.5 rounded-lg font-medium">
+                      <WifiOff className="w-3 h-3" />
+                      Not Connected
+                    </span>
+                    <button
+                      onClick={handleConnectPrinter}
+                      className="text-xs text-white bg-[#EAB308]/20 hover:bg-[#EAB308]/30 border border-[#EAB308]/30 px-2.5 py-1.5 rounded-lg font-medium transition-colors"
+                    >
+                      Connect
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Toggle Button */}
+            <button
+              onClick={toggleOnlineBillingMode}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                onlineBillingMode === "auto"
+                  ? "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500"
+                  : "bg-[#0f2933] hover:bg-[#1a4855] text-gray-300 border-white/10"
+              }`}
+            >
+              {onlineBillingMode === "auto"
+                ? <><ToggleRight className="w-4 h-4" /> Auto</>
+                : <><ToggleLeft className="w-4 h-4" /> Manual</>
+              }
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Status Filter Tabs */}
       <div className="mb-5 flex gap-2 overflow-x-auto pb-2 scrollbar-none">
         {statusTabs.map(tab => (
@@ -540,19 +728,30 @@ const OrdersManagement = () => {
                       </button>
                     ))}
 
-                    {/* Print Invoice */}
-                    {["accepted", "preparing", "ready", "out_for_delivery", "delivered"].includes(order.status) && (
-                      <button onClick={() => printInvoice(order)}
-                        className="bg-[#0f2933] border border-[#EAB308]/30 text-white px-4 py-2 rounded-lg hover:bg-[#1a4855] text-sm font-medium flex items-center gap-2 transition-colors">
-                        <Printer className="w-4 h-4" /> Print
-                      </button>
+                    {/* Print Bill (online orders) */}
+                    {["accepted", "preparing", "ready", "out_for_delivery", "delivered"].includes(order.status) && order.order_type !== "DINE_IN" && (
+                      <div className="flex items-center gap-1.5">
+                        {order.bill_number && (
+                          <span className="bg-[#EAB308]/15 text-[#EAB308] font-mono text-xs px-2 py-1 rounded font-bold border border-[#EAB308]/30">
+                            #{order.bill_number}
+                          </span>
+                        )}
+                        <button
+                          onClick={() => printOnlineOrderBill(order)}
+                          className="bg-[#0f2933] border border-[#EAB308]/30 text-white px-3 py-2 rounded-lg hover:bg-[#1a4855] text-sm font-medium flex items-center gap-1.5 transition-colors"
+                          title="Print Bill"
+                        >
+                          <Printer className="w-4 h-4" />
+                          <span>Print Bill</span>
+                        </button>
+                      </div>
                     )}
 
-                    {/* ── Delivery Assignment (In-House OR Porter) ── */}
+                    {/* ── Delivery Assignment (In-House Fleet OR Porter) ── */}
                     {order.order_type === "DELIVERY" && ["accepted","preparing","ready","out_for_delivery"].includes(order.status) && (
-                      <div className="w-full mt-1">
+                      <div className="w-full mt-2">
 
-                        {/* Porter Status Banner — shown when Porter is active */}
+                        {/* 1. Porter Active Banner */}
                         {order.porter_order_id && (
                           <div className="mb-2 rounded-xl border overflow-hidden" style={{ background: "rgba(15,41,51,0.8)" }}>
                             <div className={`flex items-center justify-between px-3 py-2 border-b ${(PORTER_STATUS_DISPLAY[order.porter_status] || PORTER_STATUS_DISPLAY["open"]).bg}`}>
@@ -563,7 +762,6 @@ const OrdersManagement = () => {
                                 </span>
                               </div>
                               <div className="flex items-center gap-1.5">
-                                {/* Refresh Porter Status */}
                                 <button
                                   onClick={() => refreshPorterStatus(order)}
                                   disabled={porterRefreshing === order.order_id}
@@ -572,7 +770,6 @@ const OrdersManagement = () => {
                                 >
                                   <RefreshCw className={`w-3 h-3 ${porterRefreshing === order.order_id ? "animate-spin" : ""}`} />
                                 </button>
-                                {/* Cancel Porter */}
                                 {!["order_picked_up","started_for_delivery","delivered"].includes(order.porter_status) && (
                                   <button
                                     onClick={() => cancelPorterBooking(order)}
@@ -585,7 +782,6 @@ const OrdersManagement = () => {
                                 )}
                               </div>
                             </div>
-                            {/* Rider Info */}
                             {(order.porter_rider_name || order.porter_rider_phone || order.porter_tracking_url) && (
                               <div className="px-3 py-2 flex items-center justify-between gap-2 flex-wrap">
                                 <div className="flex items-center gap-3">
@@ -597,7 +793,7 @@ const OrdersManagement = () => {
                                   )}
                                   {order.porter_rider_phone && (
                                     <div className="flex items-center gap-1.5">
-                                      <Phone className="w-3 h-3 text-gray-400" />
+                                      <Phone className="w-3.5 h-3.5 text-gray-400" />
                                       <a href={`tel:${order.porter_rider_phone}`} className="text-[#EAB308] text-xs">{order.porter_rider_phone}</a>
                                     </div>
                                   )}
@@ -613,49 +809,131 @@ const OrdersManagement = () => {
                           </div>
                         )}
 
-                        {/* Assignment choice — only show if NOT already assigned */}
+                        {/* 2. In-House Rider Assigned Card */}
+                        {order.delivery_partner_name && !order.porter_order_id && (
+                          <div className="rounded-xl p-2.5 bg-gradient-to-r from-emerald-950/40 to-[#0e2c36] border border-emerald-500/30 flex items-center justify-between gap-2 flex-wrap mb-2">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+                                <Bike className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-white text-xs font-bold">{order.delivery_partner_name}</span>
+                                  <span className="text-[9px] bg-emerald-500/20 text-emerald-300 font-bold px-1.5 py-0.5 rounded border border-emerald-500/30">
+                                    PD FLEET
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 text-[10px] text-gray-400 mt-0.5">
+                                  <span>{order.delivery_partner_vehicle || "Royal Fleet Bike"}</span>
+                                  {order.delivery_partner_phone && (
+                                    <>
+                                      <span>•</span>
+                                      <a href={`tel:${order.delivery_partner_phone}`} className="text-[#EAB308] hover:underline font-mono">
+                                        📞 {order.delivery_partner_phone}
+                                      </a>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1.5 ml-auto">
+                              <div className="relative">
+                                <button
+                                  type="button"
+                                  onClick={() => setAssigningOrder(assigningOrder === order.order_id ? null : order.order_id)}
+                                  className="text-[10px] font-bold px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-white/80 transition"
+                                >
+                                  Change
+                                </button>
+                                {assigningOrder === order.order_id && (
+                                  <div className="absolute bottom-full right-0 mb-1 bg-[#0f2933] border border-[#EAB308]/25 rounded-xl shadow-2xl z-30 w-56 overflow-hidden">
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider px-3 pt-2.5 pb-1">Assign Different Rider</p>
+                                    {deliveryPartners.length === 0 ? (
+                                      <p className="text-gray-400 text-xs px-3 py-2">No active riders</p>
+                                    ) : (
+                                      deliveryPartners.map(p => (
+                                        <button
+                                          key={p.id || p._id}
+                                          type="button"
+                                          onClick={() => assignDelivery(order.order_id, p.id || p._id)}
+                                          className="w-full text-left px-3 py-2 text-xs text-gray-200 hover:bg-[#1a4855] transition-colors flex items-center gap-2"
+                                        >
+                                          <Bike className="w-3.5 h-3.5 text-[#EAB308]" />
+                                          <div>
+                                            <p className="font-bold">{p.name}</p>
+                                            <p className="text-gray-500 text-[10px]">{p.vehicle_type} · {p.phone}</p>
+                                          </div>
+                                        </button>
+                                      ))
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => unassignDelivery(order.order_id)}
+                                disabled={unassigningOrder === order.order_id}
+                                title="Unassign Rider"
+                                className="text-[10px] font-bold px-2 py-1 rounded bg-red-950/40 border border-red-500/30 text-red-400 hover:bg-red-900/40 transition"
+                              >
+                                {unassigningOrder === order.order_id ? '...' : 'Unassign'}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 3. Not Assigned to Either — Show BOTH In-House Rider & Book Porter options */}
                         {!order.delivery_partner_name && !order.porter_order_id && (
                           <div className="flex items-center gap-2 flex-wrap">
                             {/* In-House Rider Button */}
                             <div className="relative">
-                              <button onClick={() => setAssigningOrder(assigningOrder === order.order_id ? null : order.order_id)}
-                                className="bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                              <button
+                                type="button"
+                                onClick={() => setAssigningOrder(assigningOrder === order.order_id ? null : order.order_id)}
+                                className="bg-gradient-to-r from-[#ca8a04] to-[#EAB308] text-black px-3.5 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1.5 shadow-md hover:brightness-110 active:scale-95 transition-all"
+                              >
                                 <Bike className="w-3.5 h-3.5" /> In-House Rider
                               </button>
                               {assigningOrder === order.order_id && (
-                                <div className="absolute bottom-full left-0 mb-1 bg-[#0f2933] border border-[#EAB308]/25 rounded-xl shadow-2xl z-20 w-56 overflow-hidden">
-                                  <p className="text-xs text-gray-500 font-bold uppercase tracking-wider px-3 pt-3 pb-1">Select Partner</p>
+                                <div className="absolute bottom-full left-0 mb-1 bg-[#0f2933] border border-[#EAB308]/25 rounded-xl shadow-2xl z-30 w-64 overflow-hidden">
+                                  <div className="px-3 py-2 bg-[#1a4855]/60 border-b border-white/10 flex items-center justify-between">
+                                    <span className="text-[10px] text-[#EAB308] font-black uppercase tracking-wider">Persian Darbar Fleet</span>
+                                    <span className="text-[9px] text-gray-400">{deliveryPartners.length} Available</span>
+                                  </div>
                                   {deliveryPartners.length === 0 ? (
-                                    <p className="text-gray-400 text-sm px-3 py-2">No active partners</p>
+                                    <p className="text-gray-400 text-xs px-3 py-3">No active riders configured</p>
                                   ) : (
-                                    deliveryPartners.map(p => (
-                                      <button key={p.id} onClick={() => assignDelivery(order.order_id, p.id)}
-                                        className="w-full text-left px-3 py-2.5 text-sm text-gray-200 hover:bg-[#1a4855] transition-colors flex items-center gap-2">
-                                        <Bike className="w-3.5 h-3.5 text-[#EAB308]" />
-                                        <div>
-                                          <p className="font-medium">{p.name}</p>
-                                          <p className="text-gray-500 text-xs">{p.vehicle_type} · {p.phone}</p>
-                                        </div>
-                                      </button>
-                                    ))
+                                    <div className="max-h-48 overflow-y-auto">
+                                      {deliveryPartners.map(p => (
+                                        <button
+                                          key={p.id || p._id}
+                                          type="button"
+                                          onClick={() => assignDelivery(order.order_id, p.id || p._id)}
+                                          className="w-full text-left px-3 py-2.5 text-xs text-gray-200 hover:bg-[#1a4855] transition-colors flex items-center gap-2.5 border-b border-white/5 last:border-b-0"
+                                        >
+                                          <div className="w-6 h-6 rounded-md bg-[#EAB308]/15 text-[#EAB308] flex items-center justify-center shrink-0">
+                                            <Bike className="w-3.5 h-3.5" />
+                                          </div>
+                                          <div className="flex-1 min-w-0">
+                                            <p className="font-bold text-white truncate">{p.name}</p>
+                                            <p className="text-gray-400 text-[10px] truncate">{p.vehicle_type} · {p.phone}</p>
+                                          </div>
+                                        </button>
+                                      ))}
+                                    </div>
                                   )}
                                 </div>
                               )}
                             </div>
-                            {/* Porter Button */}
-                            <button onClick={() => openPorterModal(order)}
-                              className="bg-gradient-to-r from-orange-600 to-orange-500 text-white px-3 py-2 rounded-lg hover:from-orange-700 hover:to-orange-600 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md shadow-orange-900/30">
+
+                            {/* Porter Button (Next Stage / Backup Option) */}
+                            <button
+                              type="button"
+                              onClick={() => openPorterModal(order)}
+                              className="bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md shadow-orange-900/30"
+                            >
                               <Zap className="w-3.5 h-3.5" /> Book Porter
                             </button>
-                          </div>
-                        )}
-
-                        {/* In-house rider assigned badge */}
-                        {order.delivery_partner_name && !order.porter_order_id && (
-                          <div className="flex items-center gap-2 bg-green-900/30 border border-green-500/30 px-3 py-2 rounded-lg">
-                            <Bike className="w-4 h-4 text-green-400" />
-                            <span className="text-green-400 text-sm font-medium">{order.delivery_partner_name}</span>
-                            <span className="text-gray-500 text-xs ml-auto">In-House</span>
                           </div>
                         )}
                       </div>
@@ -733,7 +1011,7 @@ const OrdersManagement = () => {
         </div>
       )}
 
-      {/* ===== Porter Booking Modal ===== */}
+      {/* ===== Porter Booking Modal (Stage 2 Integration) ===== */}
       {porterModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
           <div className="bg-[#0f2933] border border-orange-500/30 rounded-2xl p-5 max-w-md w-full shadow-2xl shadow-orange-900/20">
@@ -805,10 +1083,9 @@ const OrdersManagement = () => {
               </div>
             )}
 
-            {/* Step: Quoted — show fare and confirm */}
+            {/* Step: Quoted */}
             {porterModal.step === "quoted" && porterModal.quote && (
               <div>
-                {/* Order summary */}
                 <div className="bg-[#1a4855] rounded-xl p-3 mb-4 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-400">Customer</span>
@@ -826,7 +1103,6 @@ const OrdersManagement = () => {
                   </div>
                 </div>
 
-                {/* Porter Cost Card */}
                 <div className="bg-gradient-to-br from-orange-900/30 to-orange-800/20 border border-orange-500/30 rounded-xl p-4 mb-4">
                   <p className="text-orange-400 text-xs font-bold uppercase tracking-wider mb-3">Porter Quote (Your Cost)</p>
                   <div className="flex items-center justify-between mb-2">
@@ -842,7 +1118,6 @@ const OrdersManagement = () => {
                   <p className="text-gray-500 text-xs">{porterModal.quote.note}</p>
                 </div>
 
-                {/* Vehicle */}
                 <div className="flex items-center gap-2 mb-4">
                   <Bike className="w-4 h-4 text-orange-400" />
                   <span className="text-gray-300 text-sm capitalize">Vehicle: {porterModal.quote.vehicle_type}</span>

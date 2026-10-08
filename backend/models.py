@@ -146,8 +146,13 @@ class Order(BaseModel):
     delay_time: Optional[int] = None  # Minutes
     delivery_partner_id: Optional[str] = None
     delivery_partner_name: Optional[str] = None
+    delivery_partner_phone: Optional[str] = None
+    delivery_partner_vehicle: Optional[str] = None
+    delivery_fleet: Optional[str] = "Persian Darbar Private Fleet"
     estimated_delivery_time: Optional[datetime] = None
     invoice_url: Optional[str] = None
+    cooking_instructions: Optional[str] = None
+    delivery_instructions: Optional[str] = None
     status_history: List[dict] = []  # Track status changes with timestamp
     # Dine-in / Table ordering fields
     order_type: str = "DELIVERY"  # 'DELIVERY', 'TAKEAWAY', 'DINE_IN'
@@ -193,6 +198,8 @@ class OrderCreate(BaseModel):
     # PD Coins loyalty redemption (online orders)
     coins_to_redeem: int = 0        # Number of PD Coins customer wants to apply (1 coin = ₹1)
     coins_discount: float = 0.0     # Calculated discount value from coins (mirrors coins_to_redeem)
+    cooking_instructions: Optional[str] = None
+    delivery_instructions: Optional[str] = None
 
 # Table Order Create (simplified for QR ordering)
 class TableOrderCreate(BaseModel):
@@ -238,6 +245,17 @@ class OrderStatusUpdate(BaseModel):
 
 class OrderCancellationRequest(BaseModel):
     reason: str
+
+# Porter Booking Models
+class PorterBookRequest(BaseModel):
+    """Admin request to book a Porter rider for a DELIVERY order"""
+    vehicle_type: str = "2-wheeler"   # '2-wheeler', '4-wheeler'
+    drop_lat: float                    # Customer delivery latitude
+    drop_lng: float                    # Customer delivery longitude
+
+class PorterCancelRequest(BaseModel):
+    reason: str = "Cancelled by restaurant"
+
 
 # Reservation Models
 class Reservation(BaseModel):

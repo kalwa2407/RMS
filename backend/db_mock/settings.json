@@ -18,5 +18,10 @@
         "key": "opening_hours",
         "value": "11:00 AM - 11:00 PM",
         "_id": "49a5822c-72c2-42dd-a1a0-e8b60c975d6e"
+    },
+    {
+        "key": "offers_master_enabled",
+        "value": true,
+        "_id": "offers_master_switch"
     }
 ]

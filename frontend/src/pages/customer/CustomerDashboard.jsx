@@ -12,7 +12,8 @@ import {
   Eye, User, ChevronRight, Crown, Home, Plus, X,
   Star, Minus, Zap, Gift, TrendingUp, BookOpen,
   Search, MapPin, CheckCircle2, Trash2, Sparkles,
-  ShieldCheck, MessageSquare, ExternalLink, Share2
+  ShieldCheck, MessageSquare, ExternalLink, Share2,
+  Tag, Flame, Percent, ChefHat, Repeat, Leaf
 } from 'lucide-react';
 
 /* â”€â”€â”€ Design tokens â”€â”€â”€ */
@@ -129,6 +130,152 @@ const CustomerDashboard = () => {
   const [placingOrder, setPlacingOrder]   = useState(false);
   const [orderDone, setOrderDone]         = useState(null);
   const [applyCoins, setApplyCoins]       = useState(false);
+
+  /* ── Offers & Promotions State ── */
+  const [offers, setOffers]               = useState([]);
+  const [activeOfferIdx, setActiveOfferIdx] = useState(0);
+
+  /* Fetch active offers from server */
+  useEffect(() => {
+    const fetchOffers = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/offers`);
+        if (res.ok) {
+          const data = await res.json();
+          setOffers(Array.isArray(data) ? data : []);
+        }
+      } catch (err) {
+        console.error("Failed to load offers:", err);
+      }
+    };
+    fetchOffers();
+  }, []);
+
+  /* Auto-slide offers carousel every 5 seconds */
+  useEffect(() => {
+    if (offers.length <= 1) return;
+    const interval = setInterval(() => {
+      setActiveOfferIdx((prev) => (prev + 1) % offers.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [offers.length]);
+
+  const handleOfferClick = (offer) => {
+    if (!offer) return;
+    if (offer.action === 'reserve') {
+      setTab('reserve');
+    } else if (offer.action === 'order') {
+      setTab('order');
+    } else if (offer.action === 'coupon' && offer.coupon_code) {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(offer.coupon_code);
+      }
+      toast({
+        title: "🎟️ Coupon Copied!",
+        description: `Code ${offer.coupon_code} copied to clipboard!`,
+      });
+      setTab('order');
+    } else {
+      setTab('order');
+    }
+  };
+
+  /* ── Phase 2: Category, Veg Filter & Re-order State ── */
+  const [vegOnly, setVegOnly]                     = useState(false);
+  const [coupons, setCoupons]                     = useState([]);
+  const [couponCodeInput, setCouponCodeInput]     = useState('');
+  const [appliedCoupon, setAppliedCoupon]         = useState(null);
+  const [couponDiscount, setCouponDiscount]       = useState(0);
+  const [couponError, setCouponError]             = useState('');
+  const [validatingCoupon, setValidatingCoupon]   = useState(false);
+
+  /* Cooking & Delivery Customization */
+  const [cookingTags, setCookingTags]             = useState([]);
+  const [cookingNote, setCookingNote]             = useState('');
+  const [deliveryTags, setDeliveryTags]           = useState([]);
+
+  /* Fetch Public Coupons */
+  useEffect(() => {
+    const fetchCoupons = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/coupons/public`);
+        if (res.ok) {
+          const data = await res.json();
+          setCoupons(Array.isArray(data) ? data : []);
+        }
+      } catch (err) {
+        console.error("Failed to load coupons:", err);
+      }
+    };
+    fetchCoupons();
+  }, []);
+
+  /* Apply Coupon Code */
+  const applyCoupon = async (codeToTry) => {
+    const code = (codeToTry || couponCodeInput).trim().toUpperCase();
+    if (!code) return;
+    setValidatingCoupon(true);
+    setCouponError('');
+    try {
+      const res = await fetch(`${API_BASE}/api/coupons/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, order_value: cartSubtotal })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.detail || 'Invalid coupon code');
+      }
+      setAppliedCoupon({ code, ...data });
+      setCouponDiscount(data.discount || 0);
+      setCouponCodeInput(code);
+      toast({
+        title: `🎉 Coupon Applied: ${code}`,
+        description: `You saved ₹${data.discount}!`,
+      });
+    } catch (err) {
+      setCouponError(err.message || 'Coupon could not be applied');
+      toast({
+        title: 'Coupon Error',
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setValidatingCoupon(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponDiscount(0);
+    setCouponCodeInput('');
+    setCouponError('');
+  };
+
+  /* Quick Re-Order Last Order */
+  const handleReorder = (pastOrder) => {
+    if (!pastOrder || !pastOrder.items || pastOrder.items.length === 0) return;
+    const reorderedItems = pastOrder.items.map(item => {
+      const match = menu.find(m => String(m._id) === String(item.item_id) || m.name === item.name);
+      return {
+        _id: match ? match._id : (item.item_id || item._id || String(Math.random())),
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity || 1,
+        image: match?.image || item.image || '/no-image.png',
+        category: match?.category || 'Main Course',
+        is_veg: match?.is_veg ?? match?.veg,
+      };
+    });
+    setCart(reorderedItems);
+    setTab('order');
+    setOrderSubTab('menu');
+    setIsCartOpen(true);
+    toast({
+      title: '⚡ Feast Reloaded!',
+      description: `Loaded ${reorderedItems.length} dishes from Order #${pastOrder.order_id?.slice(-8)} into your cart!`,
+    });
+  };
 
   /* â”€â”€ Auto-scroll to top when switching tabs or subtabs (native mobile app behavior) â”€â”€ */
   useEffect(() => {
@@ -373,32 +520,53 @@ const CustomerDashboard = () => {
     }
   };
 
-  /* â”€â”€ In-App Cart & Ordering Calculations â”€â”€ */
+  /* ── In-App Cart & Ordering Calculations (Phase 2 Enhanced) ── */
+  const CATEGORY_META = {
+    All: { icon: '✨', title: 'All', desc: 'Royal Menu' },
+    Biryani: { icon: '🍗', title: 'Biryani', desc: 'Dum & Saffron' },
+    Kebabs: { icon: '🍢', title: 'Kebabs', desc: 'Tandoor & Seekh' },
+    Mughlai: { icon: '🥘', title: 'Mughlai', desc: 'Shahi Gravies' },
+    'Main Course': { icon: '🍛', title: 'Gravies', desc: 'Rich Curries' },
+    Starters: { icon: '🥟', title: 'Starters', desc: 'Appetizers' },
+    Breads: { icon: '🫓', title: 'Breads', desc: 'Roti & Naan' },
+    Desserts: { icon: '🍮', title: 'Desserts', desc: 'Shahi Meetha' },
+    Beverages: { icon: '🍹', title: 'Drinks', desc: 'Chai & Sharbats' },
+  };
+
   const menuCategories = ['All', ...new Set(menu.map(i => i.category).filter(Boolean))];
+  
   const filteredMenuItems = menu.filter(item => {
     const matchesCat = selectedCat === 'All' || item.category === selectedCat;
     const matchesSearch = !searchQuery.trim() || 
       item.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
       item.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCat && matchesSearch && item.available !== false;
+    const isVeg = item.is_veg !== false && !item.category?.toLowerCase().includes('non') && item.veg !== false;
+    const matchesVeg = !vegOnly || isVeg;
+    return matchesCat && matchesSearch && matchesVeg && item.available !== false;
   });
+
+  const chefsSpecials = useMemo(() => {
+    return menu.filter(item => item.popular || (item.rating && item.rating >= 4.8)).slice(0, 8);
+  }, [menu]);
+
+  const latestOrder = orders && orders.length > 0 ? orders[0] : null;
 
   const cartItemCount   = cart.reduce((sum, i) => sum + i.quantity, 0);
   const cartSubtotal    = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const cartDeliveryFee = orderType === 'TAKEAWAY' ? 0 : (distanceKm !== null && distanceKm > 10 ? 60 : 0);
+  const freeDeliveryThreshold = 500;
+  const isFreeDeliveryEligible = cartSubtotal >= freeDeliveryThreshold;
+  const freeDeliveryProgress = Math.min(100, (cartSubtotal / freeDeliveryThreshold) * 100);
+  const cartDeliveryFee = orderType === 'TAKEAWAY' ? 0 : isFreeDeliveryEligible ? 0 : (distanceKm !== null && distanceKm > 10 ? 60 : 35);
   const cartTaxes       = Math.round(cartSubtotal * 0.05);
 
-  /* â”€â”€ PD Coins Redemption Rules:
-     - Min ₹300 subtotal
-     - Max burn cap: 25% of subtotal
-     - 1 coin = ₹1 discount
-     - 10% re-earn on net paid amount (subtotal - coin discount) â”€â”€ */
+  /* ── PD Coins & Coupon Combined Discounts ── */
   const maxRedeemableCoins = (cartSubtotal >= 300 && pdCoins > 0)
     ? Math.min(pdCoins, Math.floor(cartSubtotal * 0.25))
     : 0;
   const coinsApplied     = (applyCoins && maxRedeemableCoins > 0) ? maxRedeemableCoins : 0;
   const coinsDiscount    = coinsApplied;
-  const netSubtotal      = Math.max(0, cartSubtotal - coinsDiscount);
+  const totalDiscount    = coinsDiscount + (couponDiscount || 0);
+  const netSubtotal      = Math.max(0, cartSubtotal - totalDiscount);
   const cartTotal        = Math.max(0, netSubtotal + cartDeliveryFee + cartTaxes);
   const coinsEarnable    = Math.floor(netSubtotal * 0.10);
 
@@ -467,6 +635,9 @@ const CustomerDashboard = () => {
     }
 
     setPlacingOrder(true);
+    const combinedCookingNotes = [...cookingTags, cookingNote.trim()].filter(Boolean).join(', ') || null;
+    const combinedDeliveryNotes = deliveryTags.join(', ') || null;
+
     const orderData = {
       customer_uid: currentUser?.uid || null,
       email: currentUser?.email || null,
@@ -484,16 +655,18 @@ const CustomerDashboard = () => {
         variant: null,
         variant_price: 0.0,
         addons: [],
-        special_instructions: null
+        special_instructions: combinedCookingNotes
       })),
       subtotal: cartSubtotal,
-      discount: coinsDiscount,
+      discount: totalDiscount,
       coins_to_redeem: coinsApplied,
       coins_discount: coinsDiscount,
       delivery_fee: cartDeliveryFee,
       taxes: cartTaxes,
       total: cartTotal,
-      coupon_code: null
+      coupon_code: appliedCoupon ? appliedCoupon.code : null,
+      cooking_instructions: combinedCookingNotes,
+      delivery_instructions: combinedDeliveryNotes
     };
 
     try {
@@ -608,42 +781,249 @@ const CustomerDashboard = () => {
         {/* â•â• HOME â•â• */}
         {tab === 'home' && (
           <div className="pb-6">
-            {/* Hero banner card (Frosted Glass) */}
-            <div className="relative mx-4 mt-3 rounded-3xl overflow-hidden p-5"
-              style={{
-                background: 'linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(20,20,25,0.48) 100%)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255,255,255,0.20)',
-                boxShadow: '0 8px 32px 0 rgba(0,0,0,0.35)'
-              }}>
-              <div className="absolute inset-0 -z-10 opacity-30 bg-cover bg-center" style={{ backgroundImage: 'url(/dynamic_images/img1.jpeg)' }} />
-              <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/75 via-black/35 to-transparent" />
+            {/* ── Dynamic Offers Carousel (Admin Controlled) OR Classic Hero (Screenshot 3) ── */}
+            {offers && offers.length > 0 ? (
+              <div className="mx-4 mt-3 relative">
+                {/* Carousel Card */}
+                <div
+                  onClick={() => handleOfferClick(offers[activeOfferIdx])}
+                  className="relative rounded-3xl overflow-hidden cursor-pointer transition-all duration-500 shadow-2xl active:scale-[0.99] group"
+                  style={{
+                    border: '1px solid rgba(234, 179, 8, 0.40)',
+                    boxShadow: '0 10px 36px 0 rgba(0, 0, 0, 0.45), 0 0 24px rgba(234, 179, 8, 0.15)',
+                    minHeight: '178px',
+                  }}
+                >
+                  {/* Background Image / Persian Darbar Art */}
+                  <img
+                    key={offers[activeOfferIdx]?.id || activeOfferIdx}
+                    src={offers[activeOfferIdx]?.image_url || '/dynamic_images/offer_royal_feast.jpg'}
+                    alt={offers[activeOfferIdx]?.title}
+                    className="absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-105"
+                    onError={(e) => {
+                      e.target.src = '/dynamic_images/offer_royal_feast.jpg';
+                    }}
+                  />
 
-              <div className="flex justify-between items-start mb-3">
-                <div className="w-6 h-[2px] rounded-full" style={{ background: GOLD }} />
-                <p className="text-[10px] font-black tracking-[0.25em] uppercase text-right" style={{ color: GOLD }}>PERSIAN DARBAR</p>
+                  {/* Dark Vignette Overlay for Crisp Typography */}
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      background: 'linear-gradient(to right, rgba(5, 12, 16, 0.94) 0%, rgba(5, 12, 16, 0.70) 58%, rgba(5, 12, 16, 0.30) 100%)',
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/35" />
+
+                  {/* Banner Content */}
+                  <div className="relative z-10 p-5 flex flex-col justify-between h-full min-h-[178px]">
+                    <div>
+                      {/* Top Row: Persian Darbar Tag & Badge */}
+                      <div className="flex items-center justify-between mb-2">
+                        <span
+                          className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow"
+                          style={{
+                            background: GOLD,
+                            color: '#000',
+                          }}
+                        >
+                          {offers[activeOfferIdx]?.badge_text || 'SPECIAL OFFER'}
+                        </span>
+                        <p className="text-[10px] font-black tracking-[0.25em] uppercase text-right" style={{ color: GOLD }}>
+                          PERSIAN DARBAR
+                        </p>
+                      </div>
+
+                      {/* Title */}
+                      <h2
+                        className="text-white text-xl sm:text-2xl font-black leading-tight max-w-[82%]"
+                        style={{ fontFamily: "'Playfair Display',Georgia,serif" }}
+                      >
+                        {offers[activeOfferIdx]?.title}
+                      </h2>
+
+                      {/* Subtitle */}
+                      <p className="text-xs font-semibold mt-1 text-gray-200 line-clamp-1 max-w-[82%]">
+                        {offers[activeOfferIdx]?.subtitle}
+                      </p>
+                    </div>
+
+                    {/* Bottom Row: CTA Button + Slide Indicators */}
+                    <div className="flex items-center justify-between pt-2">
+                      <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/15 backdrop-blur-md border border-white/20 text-white text-xs font-bold shadow hover:bg-white/25 transition">
+                        <span>
+                          {offers[activeOfferIdx]?.action === 'reserve' ? 'Book Table' : 'Order Now'}
+                        </span>
+                        <ArrowRight className="w-3.5 h-3.5 text-[#EAB308]" />
+                      </div>
+
+                      {/* Dots / Indicators */}
+                      {offers.length > 1 && (
+                        <div
+                          className="flex items-center gap-1.5 bg-black/50 backdrop-blur-sm px-2.5 py-1 rounded-full border border-white/10"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {offers.map((_, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => setActiveOfferIdx(i)}
+                              className={`transition-all rounded-full ${
+                                i === activeOfferIdx
+                                  ? 'w-5 h-1.5 bg-[#EAB308]'
+                                  : 'w-1.5 h-1.5 bg-white/40 hover:bg-white/70'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
+            ) : (
+              /* Hero banner card (Frosted Glass) - Screenshot 3 Classic Screen */
+              <div className="relative mx-4 mt-3 rounded-3xl overflow-hidden p-5"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(20,20,25,0.48) 100%)',
+                  backdropFilter: 'blur(20px)',
+                  WebkitBackdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(255,255,255,0.20)',
+                  boxShadow: '0 8px 32px 0 rgba(0,0,0,0.35)'
+                }}>
+                <div className="absolute inset-0 -z-10 opacity-30 bg-cover bg-center" style={{ backgroundImage: 'url(/dynamic_images/img1.jpeg)' }} />
+                <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/75 via-black/35 to-transparent" />
 
-              <h1 className="text-white text-2xl font-black leading-snug" style={{ fontFamily: "'Playfair Display',Georgia,serif" }}>
-                More than a meal,<br />
-                <em style={{ color: GOLD }}>a tradition.</em>
-              </h1>
+                <div className="flex justify-between items-start mb-3">
+                  <div className="w-6 h-[2px] rounded-full" style={{ background: GOLD }} />
+                  <p className="text-[10px] font-black tracking-[0.25em] uppercase text-right" style={{ color: GOLD }}>PERSIAN DARBAR</p>
+                </div>
 
-              <p className="text-[10px] font-bold tracking-[0.3em] uppercase mt-2.5" style={{ color: 'rgba(234,179,8,0.8)' }}>
-                Reserve · Dine · Earn · Revisit
-              </p>
+                <h1 className="text-white text-2xl font-black leading-snug" style={{ fontFamily: "'Playfair Display',Georgia,serif" }}>
+                  More than a meal,<br />
+                  <em style={{ color: GOLD }}>a tradition.</em>
+                </h1>
 
-              {/* Dots indicator */}
-              <div className="flex justify-center items-center gap-1.5 mt-4">
-                <span className="w-2.5 h-1.5 rounded-full" style={{ background: GOLD }} />
-                <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
-                <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
-                <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
+                <p className="text-[10px] font-bold tracking-[0.3em] uppercase mt-2.5" style={{ color: 'rgba(234,179,8,0.8)' }}>
+                  Reserve · Dine · Earn · Revisit
+                </p>
+
+                {/* Dots indicator */}
+                <div className="flex justify-center items-center gap-1.5 mt-4">
+                  <span className="w-2.5 h-1.5 rounded-full" style={{ background: GOLD }} />
+                  <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="px-4 pt-3 space-y-3">
+            <div className="px-4 pt-3 space-y-4">
+
+              {/* ── Quick Reorder (Last Feast) ── */}
+              {latestOrder && (
+                <div className="rounded-3xl p-4 transition-all relative overflow-hidden border border-[#EAB308]/30 shadow-lg"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.12) 0%, rgba(20, 24, 30, 0.65) 100%)',
+                    backdropFilter: 'blur(20px)',
+                  }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-lg bg-[#EAB308]/20 flex items-center justify-center text-[#EAB308]">
+                        <Repeat className="w-3.5 h-3.5" />
+                      </span>
+                      <span className="text-xs font-black uppercase tracking-wider text-white">Order Again · Last Feast</span>
+                    </div>
+                    <span className="text-[10px] text-gray-400 font-mono">#{latestOrder.order_id?.slice(-8)}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-xs font-medium truncate">
+                        {latestOrder.items?.map(i => `${i.quantity}x ${i.name}`).slice(0, 3).join(', ')}
+                      </p>
+                      <p className="text-[10px] text-gray-400 mt-0.5">
+                        ₹{latestOrder.total?.toFixed(0)} · In-House Persian Darbar Delivery
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleReorder(latestOrder)}
+                      className="px-3.5 py-1.5 rounded-xl bg-[#EAB308] text-black font-black text-xs active:scale-95 transition shadow-md shadow-[#EAB308]/20 shrink-0 flex items-center gap-1.5"
+                    >
+                      <Repeat className="w-3 h-3" /> Re-Order
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Chef's Royal Specials Carousel (Home Tab) ── */}
+              {chefsSpecials.length > 0 && (
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between px-1">
+                    <div className="flex items-center gap-1.5">
+                      <ChefHat className="w-4 h-4 text-[#EAB308]" />
+                      <span className="text-xs font-black uppercase tracking-widest text-white">Chef's Royal Specials</span>
+                    </div>
+                    <button
+                      onClick={() => { setTab('order'); setOrderSubTab('menu'); }}
+                      className="text-[11px] font-bold text-[#EAB308] hover:underline flex items-center gap-0.5"
+                    >
+                      Full Menu <ChevronRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                  
+                  <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar select-none">
+                    {chefsSpecials.map(dish => {
+                      const inCart = cart.find(c => c._id === dish._id);
+                      const qty = inCart ? inCart.quantity : 0;
+                      const isVeg = dish.is_veg !== false && !dish.category?.toLowerCase().includes('non') && dish.veg !== false;
+                      return (
+                        <div
+                          key={dish._id}
+                          className="shrink-0 w-44 rounded-2xl overflow-hidden border border-white/10 bg-[#0e2129]/80 shadow-lg flex flex-col justify-between"
+                        >
+                          <div className="relative h-24 w-full bg-black/40">
+                            <img
+                              src={dish.image || '/no-image.png'}
+                              alt={dish.name}
+                              className="w-full h-full object-cover"
+                              onError={e => { e.target.src = '/no-image.png'; }}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                            <div className={`absolute top-2 left-2 w-3.5 h-3.5 rounded-sm border-2 flex items-center justify-center ${isVeg ? 'border-green-500 bg-[#0f2933]' : 'border-red-500 bg-[#0f2933]'}`}>
+                              <div className={`w-1.5 h-1.5 rounded-full ${isVeg ? 'bg-green-500' : 'bg-red-500'}`} />
+                            </div>
+                            <span className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm text-[#EAB308] text-[9px] font-black px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                              <Star className="w-2.5 h-2.5 fill-[#EAB308]" /> {dish.rating || 4.8}
+                            </span>
+                          </div>
+                          <div className="p-2.5 flex flex-col justify-between flex-1">
+                            <div>
+                              <p className="text-white font-bold text-xs truncate">{dish.name}</p>
+                              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">{dish.serves || 'Serves 1-2'}</p>
+                            </div>
+                            <div className="flex items-center justify-between mt-2 pt-1 border-t border-white/5">
+                              <span className="text-[#EAB308] font-black text-xs">₹{dish.price}</span>
+                              {qty === 0 ? (
+                                <button
+                                  onClick={() => addToCart(dish)}
+                                  className="px-2.5 py-1 rounded-lg bg-[#EAB308] text-black font-black text-[10px] active:scale-90 transition"
+                                >
+                                  + ADD
+                                </button>
+                              ) : (
+                                <div className="flex items-center gap-1 bg-[#EAB308] rounded-lg px-1 py-0.5">
+                                  <button onClick={() => updateCartQty(dish._id, -1)} className="w-4 h-4 text-black text-xs font-bold">-</button>
+                                  <span className="text-black font-black text-[10px] px-1">{qty}</span>
+                                  <button onClick={() => updateCartQty(dish._id, 1)} className="w-4 h-4 text-black text-xs font-bold">+</button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Reserve & Earn CTA (Frosted Glass Panel) */}
               <button onClick={()=>setTab('reserve')}
@@ -757,24 +1137,159 @@ const CustomerDashboard = () => {
                 )}
               </div>
 
-              {/* Active order banner */}
-              {activeOrders.length > 0 && (
-                <Link to={`/track?order_id=${activeOrders[0].order_id}`}>
-                  <div className="rounded-3xl p-4 flex items-center gap-3 active:scale-[0.98] transition-all"
-                    style={GLASS_CARD_SM}>
-                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
-                      style={{ background: 'rgba(234,179,8,0.15)', border: `1px solid ${GB}` }}>
-                      <Truck className="w-5 h-5 animate-bounce" style={{ color:GOLD }} />
+              {/* ── Active Live Order Banner (Persian Darbar In-House Fleet Tracker) ── */}
+              {activeOrders.length > 0 && (() => {
+                const live = activeOrders[0];
+                const isRiderOut = live.status === 'out_for_delivery';
+                const isPrep = live.status === 'preparing' || live.status === 'accepted';
+                const mIdx = live.status === 'placed' ? 0 : isPrep ? 1 : isRiderOut ? 2 : live.status === 'delivered' ? 3 : 0;
+
+                return (
+                  <div
+                    className="rounded-3xl p-4 border relative overflow-hidden transition-all"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(14, 22, 28, 0.95) 0%, rgba(8, 14, 18, 0.98) 100%)',
+                      borderColor: isRiderOut ? 'rgba(234, 179, 8, 0.45)' : 'rgba(255, 255, 255, 0.18)',
+                      backdropFilter: 'blur(24px)',
+                      boxShadow: '0 12px 36px rgba(0, 0, 0, 0.45)'
+                    }}
+                  >
+                    {/* Header line */}
+                    <div className="flex items-center justify-between gap-2 mb-2.5">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-[#EAB308]/20 flex items-center justify-center text-[#EAB308] border border-[#EAB308]/30">
+                          <Bike className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#EAB308]">
+                            Persian Darbar Private Fleet
+                          </p>
+                          <p className="text-[9px] text-white/50">
+                            Live Order Tracking · In-House Fleet
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        {live.bill_number && (
+                          <span className="text-[10px] font-mono font-bold text-[#EAB308] bg-[#EAB308]/15 px-2 py-0.5 rounded-full border border-[#EAB308]/30">
+                            #{live.bill_number}
+                          </span>
+                        )}
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-black text-[10px] uppercase tracking-widest" style={{ color:GOLD }}>Live Order</p>
-                      <p className="text-white font-bold text-sm leading-tight truncate">{activeOrders[0].items?.map(i=>i.name).slice(0,2).join(', ')}</p>
-                      <div className="flex items-center gap-2 mt-0.5">{badge(activeOrders[0].status)}</div>
+
+                    {/* Status & ETA */}
+                    <div className="flex items-center justify-between gap-3 bg-white/5 p-3 rounded-2xl border border-white/10 mb-3">
+                      <div>
+                        <p className="text-white font-bold text-xs">
+                          {isRiderOut
+                            ? '🛵 Dispatched with In-House Rider'
+                            : isPrep
+                            ? '👨‍🍳 Royal Kitchen Crafting Fresh Feast'
+                            : '📝 Order Confirmed & Heralded'}
+                        </p>
+                        <p className="text-white/60 text-[11px] truncate mt-0.5 max-w-[200px] sm:max-w-xs">
+                          {live.items?.map(i => `${i.quantity}x ${i.name}`).slice(0, 2).join(', ')}
+                        </p>
+                      </div>
+
+                      <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/15 px-2.5 py-1 rounded-xl border border-emerald-500/30 shrink-0">
+                        {isRiderOut ? 'ARRIVING ~15-20M' : 'EST. ~25-35M'}
+                      </span>
                     </div>
-                    <ArrowRight className="w-4 h-4 shrink-0" style={{ color:GOLD }} />
+
+                    {/* 4-Step Milestone Progress Bar */}
+                    <div className="mb-3 px-1">
+                      <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wider text-white/50 mb-1.5">
+                        <span className={mIdx >= 0 ? 'text-[#EAB308]' : ''}>1. Placed</span>
+                        <span className={mIdx >= 1 ? 'text-[#EAB308]' : ''}>2. Kitchen</span>
+                        <span className={mIdx >= 2 ? 'text-[#EAB308]' : ''}>3. PD Fleet</span>
+                        <span className={mIdx >= 3 ? 'text-emerald-400' : ''}>4. Delivered</span>
+                      </div>
+                      <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-[#ca8a04] via-[#EAB308] to-emerald-400 transition-all duration-700"
+                          style={{ width: `${Math.max(25, (mIdx + 1) * 25)}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Rider Info if assigned (Porter or Persian Darbar Fleet) */}
+                    {live.porter_order_id ? (
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/10 mb-2.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center text-[10px] font-bold border border-orange-500/30">
+                            ⚡
+                          </div>
+                          <div>
+                            <p className="text-white font-bold text-xs leading-none">
+                              {live.porter_rider_name || 'Porter Courier'}
+                            </p>
+                            <p className="text-orange-400 text-[9px] mt-0.5 font-medium">
+                              Porter Express Delivery {live.porter_status ? `• ${live.porter_status.replace(/_/g, ' ')}` : ''}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          {live.porter_rider_phone && (
+                            <a
+                              href={`tel:${live.porter_rider_phone}`}
+                              className="px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 text-[10px] font-bold border border-emerald-500/30 flex items-center gap-1 active:scale-95 transition"
+                            >
+                              <Phone className="w-3 h-3" />
+                              <span>Call</span>
+                            </a>
+                          )}
+                          {live.porter_tracking_url && (
+                            <a
+                              href={live.porter_tracking_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="px-2 py-1 rounded-lg bg-orange-500/20 text-orange-300 hover:bg-orange-500/30 text-[10px] font-bold border border-orange-500/30 flex items-center gap-1 active:scale-95 transition"
+                            >
+                              <span>Map</span>
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    ) : live.delivery_partner_name ? (
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/10 mb-2.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-bold border border-emerald-500/30">
+                            {live.delivery_partner_name.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="text-white font-bold text-xs leading-none">{live.delivery_partner_name}</p>
+                            <p className="text-white/40 text-[9px] mt-0.5">{live.delivery_partner_vehicle || 'PD Fleet Rider'}</p>
+                          </div>
+                        </div>
+
+                        {live.delivery_partner_phone && (
+                          <a
+                            href={`tel:${live.delivery_partner_phone}`}
+                            className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 text-[10px] font-bold border border-emerald-500/30 flex items-center gap-1 active:scale-95 transition"
+                          >
+                            <Phone className="w-3 h-3" />
+                            <span>Call</span>
+                          </a>
+                        )}
+                      </div>
+                    ) : null}
+
+                    {/* CTA Link to full /track screen */}
+                    <Link
+                      to={`/track?order_id=${live.order_id}`}
+                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#ca8a04] to-[#EAB308] text-black font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all"
+                    >
+                      <span>Track Live Feast Details</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
                   </div>
-                </Link>
-              )}
+                );
+              })()}
 
               {/* Active reservation banner */}
               {activeRes.length > 0 && (
@@ -1040,32 +1555,122 @@ const CustomerDashboard = () => {
                   )}
                 </div>
 
-                {/* Category Pills (Horizontal Scroll) */}
-                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar select-none">
-                  {menuCategories.map(cat => (
-                    <button
-                      key={cat}
-                      onClick={() => {
-                        setSelectedCat(cat);
-                        if (mainScrollRef.current) mainScrollRef.current.scrollTop = 0;
-                      }}
-                      className={`shrink-0 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all active:scale-95 ${
-                        selectedCat === cat
-                          ? 'bg-[#EAB308] text-black shadow-md shadow-[#EAB308]/30'
-                          : 'bg-[#1a4855] text-gray-300 border border-[#EAB308]/20 hover:border-[#EAB308]/50 hover:text-white'
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
+                {/* ── Swiggy/Zomato Style Category Chips (Horizontal Scroll) ── */}
+                <div className="flex gap-2.5 overflow-x-auto pb-1 no-scrollbar select-none">
+                  {menuCategories.map(cat => {
+                    const meta = CATEGORY_META[cat] || { icon: '🍽️', title: cat, desc: '' };
+                    const isSelected = selectedCat === cat;
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => {
+                          setSelectedCat(cat);
+                          if (mainScrollRef.current) mainScrollRef.current.scrollTop = 0;
+                        }}
+                        className={`shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold whitespace-nowrap transition-all duration-200 active:scale-95 border ${
+                          isSelected
+                            ? 'bg-gradient-to-r from-[#EAB308] to-[#ca9a04] text-black border-[#EAB308] shadow-md shadow-[#EAB308]/30 font-black'
+                            : 'bg-[#133540] text-gray-200 border-white/10 hover:border-[#EAB308]/40 hover:text-white'
+                        }`}
+                      >
+                        <span className="text-base leading-none">{meta.icon}</span>
+                        <span>{meta.title}</span>
+                      </button>
+                    );
+                  })}
                 </div>
 
-                {/* Result count */}
-                <div className="flex items-center gap-2 px-1">
-                  <p className="text-white/80 text-xs font-bold">
-                    {searchQuery ? `Results for "${searchQuery}"` : selectedCat === 'All' ? 'All Items' : selectedCat}
-                  </p>
-                  <span className="bg-[#EAB308] text-black text-[10px] font-black px-2 py-0.5 rounded-full">{filteredMenuItems.length}</span>
+                {/* ── Chef's Specials Highlight (When viewing All category) ── */}
+                {selectedCat === 'All' && !searchQuery && chefsSpecials.length > 0 && (
+                  <div className="space-y-2 pt-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-1.5">
+                        <Flame className="w-4 h-4 text-[#EAB308]" />
+                        <span>Persian Darbar Bestsellers</span>
+                      </span>
+                      <span className="text-[10px] text-gray-400 font-semibold">Must-Try</span>
+                    </div>
+
+                    <div className="flex gap-3 overflow-x-auto pb-1 no-scrollbar select-none">
+                      {chefsSpecials.slice(0, 5).map(spec => {
+                        const inCart = cart.find(c => c._id === spec._id);
+                        const qty = inCart ? inCart.quantity : 0;
+                        const isVeg = spec.is_veg !== false && !spec.category?.toLowerCase().includes('non') && spec.veg !== false;
+                        return (
+                          <div
+                            key={`spec-${spec._id}`}
+                            className="shrink-0 w-44 rounded-2xl overflow-hidden border border-[#EAB308]/30 bg-[#0c1f26] shadow-lg flex flex-col justify-between"
+                          >
+                            <div className="relative h-24 w-full bg-black/40">
+                              <img
+                                src={spec.image || '/no-image.png'}
+                                alt={spec.name}
+                                className="w-full h-full object-cover"
+                                onError={e => { e.target.src = '/no-image.png'; }}
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                              <div className={`absolute top-2 left-2 w-3.5 h-3.5 rounded-sm border-2 flex items-center justify-center ${isVeg ? 'border-green-500 bg-[#0f2933]' : 'border-red-500 bg-[#0f2933]'}`}>
+                                <div className={`w-1.5 h-1.5 rounded-full ${isVeg ? 'bg-green-500' : 'bg-red-500'}`} />
+                              </div>
+                              <span className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm text-[#EAB308] text-[9px] font-black px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                                <Star className="w-2.5 h-2.5 fill-[#EAB308]" /> {spec.rating || 4.9}
+                              </span>
+                            </div>
+                            <div className="p-2.5 flex flex-col justify-between flex-1">
+                              <div>
+                                <p className="text-white font-bold text-xs truncate">{spec.name}</p>
+                                <p className="text-[10px] text-gray-400 mt-0.5">{spec.serves || 'Serves 1-2'}</p>
+                              </div>
+                              <div className="flex items-center justify-between mt-2 pt-1 border-t border-white/5">
+                                <span className="text-[#EAB308] font-black text-xs">₹{spec.price}</span>
+                                {qty === 0 ? (
+                                  <button
+                                    onClick={() => addToCart(spec)}
+                                    className="px-2.5 py-1 rounded-lg bg-[#EAB308] text-black font-black text-[10px] active:scale-90 transition"
+                                  >
+                                    + ADD
+                                  </button>
+                                ) : (
+                                  <div className="flex items-center gap-1 bg-[#EAB308] rounded-lg px-1 py-0.5">
+                                    <button onClick={() => updateCartQty(spec._id, -1)} className="w-4 h-4 text-black text-xs font-bold">-</button>
+                                    <span className="text-black font-black text-[10px] px-1">{qty}</span>
+                                    <button onClick={() => updateCartQty(spec._id, 1)} className="w-4 h-4 text-black text-xs font-bold">+</button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Filters & Veg Only Toggle Row ── */}
+                <div className="flex items-center justify-between px-1 pt-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-white/80 text-xs font-bold">
+                      {searchQuery ? `Results for "${searchQuery}"` : selectedCat === 'All' ? 'All Dishes' : selectedCat}
+                    </p>
+                    <span className="bg-[#EAB308] text-black text-[10px] font-black px-2 py-0.5 rounded-full">
+                      {filteredMenuItems.length}
+                    </span>
+                  </div>
+
+                  {/* Veg Only Toggle Button */}
+                  <button
+                    onClick={() => setVegOnly(prev => !prev)}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition border ${
+                      vegOnly
+                        ? 'bg-emerald-600 text-white border-emerald-400 shadow-md shadow-emerald-900/30'
+                        : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/20'
+                    }`}
+                  >
+                    <div className="w-3.5 h-3.5 rounded-sm border-2 border-emerald-400 flex items-center justify-center">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    </div>
+                    <span>Veg Only</span>
+                  </button>
                 </div>
 
                 {/* Menu Items List */}
@@ -1078,21 +1683,21 @@ const CustomerDashboard = () => {
                   <div className="rounded-3xl p-10 text-center" style={GLASS_CARD_SM}>
                     <UtensilsCrossed className="w-12 h-12 text-white/20 mx-auto mb-3" />
                     <p className="text-white font-bold text-sm">No dishes found</p>
-                    <p className="text-white/50 text-xs mt-1">Try another category or search term</p>
+                    <p className="text-white/50 text-xs mt-1">Try another category or toggle off Veg Only</p>
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {filteredMenuItems.map(item => {
                       const inCart = cart.find(c => c._id === item._id);
                       const qty = inCart ? inCart.quantity : 0;
-                      const isVeg = item.is_veg !== false && !item.category?.toLowerCase().includes('non');
+                      const isVeg = item.is_veg !== false && !item.category?.toLowerCase().includes('non') && item.veg !== false;
                       return (
                         <div
                           key={item._id}
-                          className="flex items-center gap-3 p-3 rounded-2xl border border-[#EAB308]/10 bg-[#1a4855]/60 transition-colors hover:bg-[#EAB308]/5"
+                          className="flex items-center gap-3.5 p-3.5 rounded-2xl border border-[#EAB308]/15 bg-[#143640]/80 transition-all hover:bg-[#1a4350] hover:border-[#EAB308]/30 shadow-md shadow-black/20"
                         >
-                          {/* Thumbnail */}
-                          <div className="relative shrink-0 w-[72px] h-[72px] rounded-xl overflow-hidden bg-[#0f2933]">
+                          {/* Thumbnail with Veg indicator and Rating */}
+                          <div className="relative shrink-0 w-20 h-20 rounded-2xl overflow-hidden bg-[#0a1b22] border border-white/10">
                             <img
                               src={item.image || '/no-image.png'}
                               alt={item.name}
@@ -1100,18 +1705,40 @@ const CustomerDashboard = () => {
                               onError={e => { e.target.src = '/no-image.png'; }}
                             />
                             {/* Veg/Non-veg indicator */}
-                            <div className={`absolute top-1 left-1 w-3.5 h-3.5 rounded-sm border-2 flex items-center justify-center ${isVeg ? 'border-green-500 bg-[#0f2933]' : 'border-red-500 bg-[#0f2933]'}`}>
+                            <div className={`absolute top-1.5 left-1.5 w-3.5 h-3.5 rounded-sm border-2 flex items-center justify-center ${isVeg ? 'border-green-500 bg-[#0f2933]' : 'border-red-500 bg-[#0f2933]'}`}>
                               <div className={`w-1.5 h-1.5 rounded-full ${isVeg ? 'bg-green-500' : 'bg-red-500'}`} />
                             </div>
+                            {item.popular && (
+                              <span className="absolute bottom-1 left-1 bg-[#EAB308] text-black text-[8px] font-black px-1.5 py-0.5 rounded shadow">
+                                ★ BESTSELLER
+                              </span>
+                            )}
                           </div>
 
-                          {/* Info */}
+                          {/* Details */}
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-white font-black text-sm leading-snug truncate">{item.name}</h3>
-                            {(item.description || item.category) && (
-                              <p className="text-gray-400 text-[11px] mt-0.5 line-clamp-2 leading-relaxed">{item.description || item.category}</p>
-                            )}
-                            <p className="text-[#EAB308] font-black text-sm mt-1.5">₹{item.price}</p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="text-white font-bold text-sm leading-tight truncate">
+                                {item.name}
+                              </h3>
+                              {item.rating && (
+                                <span className="text-[10px] text-[#EAB308] font-bold bg-[#EAB308]/15 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                                  <Star className="w-2.5 h-2.5 fill-[#EAB308]" /> {item.rating}
+                                </span>
+                              )}
+                            </div>
+
+                            <p className="text-gray-300 text-[11px] mt-1 line-clamp-2 leading-relaxed">
+                              {item.description || item.category}
+                            </p>
+
+                            <div className="flex items-center gap-3 mt-1.5 text-[10px] text-gray-400">
+                              <span className="font-bold text-white text-sm text-[#EAB308]">
+                                ₹{item.price}
+                              </span>
+                              {item.serves && <span>• {item.serves}</span>}
+                              {item.preparation_time && <span>• ⏱️ {item.preparation_time}m</span>}
+                            </div>
                           </div>
 
                           {/* ADD / qty stepper */}
@@ -1119,24 +1746,24 @@ const CustomerDashboard = () => {
                             {qty === 0 ? (
                               <button
                                 onClick={() => addToCart(item)}
-                                className="border-2 border-[#EAB308] text-[#EAB308] font-black text-xs px-3.5 py-1.5 rounded-xl flex items-center gap-1 bg-transparent hover:bg-[#EAB308] hover:text-black transition-all active:scale-95"
+                                className="border border-[#EAB308] text-[#EAB308] hover:bg-[#EAB308] hover:text-black font-black text-xs px-3.5 py-2 rounded-xl flex items-center gap-1 bg-[#EAB308]/10 transition-all active:scale-95 shadow-sm"
                               >
                                 <Plus className="w-3.5 h-3.5" /> ADD
                               </button>
                             ) : (
-                              <div className="flex items-center gap-1 bg-[#EAB308] rounded-xl px-1 py-1" style={{ animation: 'popIn 0.18s ease' }}>
+                              <div className="flex items-center gap-1.5 bg-[#EAB308] rounded-xl px-2 py-1 shadow-md shadow-[#EAB308]/30">
                                 <button
                                   onClick={() => updateCartQty(item._id, -1)}
-                                  className="w-6 h-6 flex items-center justify-center text-black hover:bg-black/15 rounded-lg transition-colors"
+                                  className="w-6 h-6 flex items-center justify-center text-black hover:bg-black/15 rounded-lg transition-colors font-bold"
                                 >
-                                  <Minus className="w-3 h-3" />
+                                  <Minus className="w-3.5 h-3.5" />
                                 </button>
                                 <span className="text-black font-black text-sm w-5 text-center">{qty}</span>
                                 <button
                                   onClick={() => updateCartQty(item._id, 1)}
-                                  className="w-6 h-6 flex items-center justify-center text-black hover:bg-black/15 rounded-lg transition-colors"
+                                  className="w-6 h-6 flex items-center justify-center text-black hover:bg-black/15 rounded-lg transition-colors font-bold"
                                 >
-                                  <Plus className="w-3 h-3" />
+                                  <Plus className="w-3.5 h-3.5" />
                                 </button>
                               </div>
                             )}
@@ -1180,21 +1807,64 @@ const CustomerDashboard = () => {
                     <div key={o.order_id || o._id} className="rounded-3xl overflow-hidden" style={GLASS_CARD_SM}>
                       <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
                         <div className="flex items-center gap-2">
-                          <span className="text-white/50 text-xs font-mono">#{o.order_id?.slice(-8)}</span>
+                          {o.bill_number ? (
+                            <span className="text-[#EAB308] bg-[#EAB308]/15 px-2 py-0.5 rounded-full text-xs font-mono font-bold border border-[#EAB308]/30">
+                              #{o.bill_number}
+                            </span>
+                          ) : (
+                            <span className="text-white/50 text-xs font-mono">#{o.order_id?.slice(-8)}</span>
+                          )}
                           {badge(o.status)}
                         </div>
                         <span className="text-white font-bold text-sm">₹{o.total?.toFixed(0)}</span>
                       </div>
-                      <div className="px-4 py-3 flex items-center justify-between">
-                        <div>
-                          <p className="text-white/90 text-sm font-medium">{o.items?.map(i=>`${i.quantity}x ${i.name}`).slice(0,2).join(', ')}{o.items?.length>2?` +${o.items.length-2}`:''}</p>
-                          <p className="text-white/50 text-xs mt-0.5">{fmt(o.created_at)} · {fmtT(o.created_at)}</p>
+                      <div className="px-4 py-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-white/90 text-sm font-medium">{o.items?.map(i=>`${i.quantity}x ${i.name}`).slice(0,2).join(', ')}{o.items?.length>2?` +${o.items.length-2}`:''}</p>
+                            <p className="text-white/50 text-xs mt-0.5">{fmt(o.created_at)} · {fmtT(o.created_at)}</p>
+                          </div>
+                          <Link to={`/track?order_id=${o.order_id}`}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold active:scale-95 transition-all shadow-sm"
+                            style={{ background:'rgba(234,179,8,0.18)', border:`1px solid ${GB}`, color:GOLD }}>
+                            <Eye className="w-3.5 h-3.5" /> Track
+                          </Link>
                         </div>
-                        <Link to={`/track?order_id=${o.order_id}`}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold active:scale-95 transition-all shadow-sm"
-                          style={{ background:'rgba(234,179,8,0.18)', border:`1px solid ${GB}`, color:GOLD }}>
-                          <Eye className="w-3.5 h-3.5" /> Track
-                        </Link>
+
+                        {/* Logistics Rider Badge (Porter Courier or In-House Fleet) */}
+                        {o.porter_order_id ? (
+                          <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[11px]">
+                            <span className="text-orange-400 font-semibold flex items-center gap-1.5">
+                              <span>⚡</span>
+                              <span>Porter Courier: {o.porter_rider_name || 'Assigned'}</span>
+                            </span>
+                            {o.porter_rider_phone && (
+                              <a
+                                href={`tel:${o.porter_rider_phone}`}
+                                className="text-emerald-400 hover:underline font-bold flex items-center gap-1"
+                              >
+                                <Phone className="w-3 h-3" />
+                                <span>Call</span>
+                              </a>
+                            )}
+                          </div>
+                        ) : o.delivery_partner_name ? (
+                          <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[11px]">
+                            <span className="text-emerald-400 font-semibold flex items-center gap-1.5">
+                              <Bike className="w-3.5 h-3.5" />
+                              <span>PD Fleet: {o.delivery_partner_name}</span>
+                            </span>
+                            {o.delivery_partner_phone && o.status === 'out_for_delivery' && (
+                              <a
+                                href={`tel:${o.delivery_partner_phone}`}
+                                className="text-[#EAB308] hover:underline font-bold flex items-center gap-1"
+                              >
+                                <Phone className="w-3 h-3" />
+                                <span>Call Rider</span>
+                              </a>
+                            )}
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   ))
@@ -1964,7 +2634,7 @@ const CustomerDashboard = () => {
 
       </div>
 
-      {/* â•â•â• IN-APP CART & CHECKOUT DRAWER (Glassmorphism) â•â•â• */}
+      {/* ─── IN-APP CART & CHECKOUT DRAWER (Glassmorphism) ─── */}
       {isCartOpen && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/70 backdrop-blur-md">
           <div
@@ -1996,7 +2666,50 @@ const CustomerDashboard = () => {
             {/* Scrollable Cart Content */}
             <div className="p-5 overflow-y-auto space-y-4 flex-1">
 
-              {/* Items List */}
+              {/* ── 1. Free Delivery Progress Bar (Order Type: DELIVERY) ── */}
+              {orderType === 'DELIVERY' && (
+                <div className="rounded-2xl p-3.5 bg-gradient-to-r from-emerald-950/40 via-[#0d232c] to-[#0a1c22] border border-emerald-500/30">
+                  <div className="flex items-center justify-between text-xs mb-1.5">
+                    <span className="font-bold flex items-center gap-1.5 text-emerald-300">
+                      <Truck className="w-4 h-4 text-emerald-400" />
+                      {isFreeDeliveryEligible
+                        ? '🎉 You have unlocked FREE Delivery!'
+                        : `Add ₹${freeDeliveryThreshold - cartSubtotal} more for FREE Delivery!`}
+                    </span>
+                    <span className="text-[10px] font-mono text-gray-400">
+                      ₹{cartSubtotal}/₹{freeDeliveryThreshold}
+                    </span>
+                  </div>
+                  <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-[#EAB308] to-emerald-400 transition-all duration-500 rounded-full"
+                      style={{ width: `${freeDeliveryProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* ── 2. In-House Rider ETA Banner ── */}
+              <div className="rounded-2xl p-3 bg-white/5 border border-white/10 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-[#EAB308]/20 flex items-center justify-center text-[#EAB308] shrink-0 border border-[#EAB308]/30">
+                    <Clock className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-white font-bold text-xs">
+                      {orderType === 'TAKEAWAY' ? 'Ready for Pickup: ~20-25 Mins' : 'Estimated Delivery: 30-40 Mins'}
+                    </p>
+                    <p className="text-[10px] text-gray-400">
+                      {orderType === 'TAKEAWAY' ? 'Persian Darbar, Camp Pune Counter' : 'Delivered by Persian Darbar In-House Rider'}
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[9px] bg-emerald-500/15 text-emerald-300 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30 shrink-0">
+                  LIVE KITCHEN
+                </span>
+              </div>
+
+              {/* ── 3. Items List ── */}
               <div className="space-y-2.5">
                 {cart.map(item => (
                   <div key={item._id} className="rounded-2xl p-3 flex items-center justify-between gap-3"
@@ -2029,7 +2742,7 @@ const CustomerDashboard = () => {
                 ))}
               </div>
 
-              {/* Order Type: Delivery vs Takeaway */}
+              {/* ── 4. Order Type: Delivery vs Takeaway ── */}
               <div className="rounded-2xl p-1.5 flex gap-2" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
                 <button
                   type="button"
@@ -2051,7 +2764,7 @@ const CustomerDashboard = () => {
                 </button>
               </div>
 
-              {/* Delivery Details */}
+              {/* ── 5. Delivery Details ── */}
               {orderType === 'DELIVERY' && (
                 <div className="rounded-2xl p-4 space-y-3" style={GLASS_CARD_SM}>
                   <div>
@@ -2074,10 +2787,10 @@ const CustomerDashboard = () => {
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/15 text-[#EAB308] border border-[#EAB308]/30 active:scale-95 transition-all"
                     >
                       <MapPin className="w-3.5 h-3.5" />
-                      <span>{detectingLoc ? 'Detecting...' : distanceKm ? `ðŸ“ ${distanceKm} km away` : 'Detect Range'}</span>
+                      <span>{detectingLoc ? 'Detecting...' : distanceKm ? `📍 ${distanceKm} km away` : 'Detect Range'}</span>
                     </button>
                     <span className="text-[11px] text-white/60">
-                      {distanceKm === null ? 'Within 5km: Free' : distanceKm <= 5 ? '✅ Free Delivery' : distanceKm <= 20 ? '₹60 Delivery Fee' : 'âŒ Out of range (>20km)'}
+                      {isFreeDeliveryEligible ? '✅ Free Delivery (Order > ₹500)' : distanceKm === null ? 'Within 5km: Free' : distanceKm <= 5 ? '✅ Free Delivery' : distanceKm <= 20 ? '₹60 Delivery Fee' : '❌ Out of range (>20km)'}
                     </span>
                   </div>
                 </div>
@@ -2091,7 +2804,163 @@ const CustomerDashboard = () => {
                 </div>
               )}
 
-              {/* Contact Phone */}
+              {/* ── 6. Cooking Instructions / Chef Note ── */}
+              <div className="rounded-2xl p-3.5 space-y-2.5" style={GLASS_CARD_SM}>
+                <div className="flex items-center gap-2">
+                  <ChefHat className="w-4 h-4 text-[#EAB308]" />
+                  <label className="text-xs font-bold text-white/85">Cooking Request / Chef Note</label>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { id: 'less_spicy', label: '🌶️ Less Spicy' },
+                    { id: 'extra_spicy', label: '🔥 Extra Spicy' },
+                    { id: 'extra_salan', label: '🍲 Extra Salan / Gravy' },
+                    { id: 'extra_onion_lemon', label: '🧅 Extra Onion & Lemon' },
+                    { id: 'no_cutlery', label: '🥄 No Plastic Cutlery' },
+                  ].map(tag => {
+                    const active = cookingTags.includes(tag.label);
+                    return (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        onClick={() => {
+                          setCookingTags(prev =>
+                            prev.includes(tag.label) ? prev.filter(t => t !== tag.label) : [...prev, tag.label]
+                          );
+                        }}
+                        className={`px-2.5 py-1 rounded-xl text-[11px] font-semibold transition border ${
+                          active
+                            ? 'bg-[#EAB308] text-black border-[#EAB308] font-bold'
+                            : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/20'
+                        }`}
+                      >
+                        {tag.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <input
+                  type="text"
+                  value={cookingNote}
+                  onChange={e => setCookingNote(e.target.value)}
+                  placeholder="Any other special cooking requests? (optional)"
+                  className="w-full rounded-xl px-3 py-2 bg-white/10 text-white text-xs border border-white/20 focus:outline-none focus:border-[#EAB308] placeholder-white/40"
+                />
+              </div>
+
+              {/* ── 7. Delivery Partner Instructions (for Delivery) ── */}
+              {orderType === 'DELIVERY' && (
+                <div className="rounded-2xl p-3.5 space-y-2" style={GLASS_CARD_SM}>
+                  <div className="flex items-center gap-2">
+                    <Truck className="w-4 h-4 text-[#EAB308]" />
+                    <label className="text-xs font-bold text-white/85">Rider Delivery Instructions</label>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {['🚪 Leave at door', '🔕 Avoid calling bell', '📞 Call upon arrival', '🏢 Leave with security'].map(tag => {
+                      const active = deliveryTags.includes(tag);
+                      return (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => {
+                            setDeliveryTags(prev =>
+                              prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+                            );
+                          }}
+                          className={`px-2.5 py-1 rounded-xl text-[11px] font-semibold transition border ${
+                            active
+                              ? 'bg-[#EAB308] text-black border-[#EAB308] font-bold'
+                              : 'bg-white/5 text-gray-300 border-white/10 hover:border-white/20'
+                          }`}
+                        >
+                          {tag}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* ── 8. Coupons & Promo Codes Section ── */}
+              <div className="rounded-2xl p-3.5 space-y-2.5" style={GLASS_CARD_SM}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Tag className="w-4 h-4 text-[#EAB308]" />
+                    <span className="text-xs font-bold text-white">Apply Coupon Code</span>
+                  </div>
+                  {appliedCoupon && (
+                    <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                      SAVING ₹{couponDiscount}
+                    </span>
+                  )}
+                </div>
+
+                {appliedCoupon ? (
+                  <div className="flex items-center justify-between bg-emerald-500/15 border border-emerald-500/30 rounded-xl p-2.5">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      <div>
+                        <span className="font-mono font-black text-xs text-white">{appliedCoupon.code}</span>
+                        <p className="text-[10px] text-emerald-300">Coupon applied! ₹{couponDiscount} discount</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={removeCoupon}
+                      className="text-xs text-red-400 font-bold hover:underline px-2 py-1"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={couponCodeInput}
+                      onChange={e => setCouponCodeInput(e.target.value.toUpperCase())}
+                      placeholder="Enter coupon code (e.g. ROYAL30)"
+                      className="flex-1 rounded-xl px-3 py-2 bg-white/10 text-white font-mono text-xs border border-white/20 focus:outline-none focus:border-[#EAB308] placeholder-white/40 uppercase"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => applyCoupon()}
+                      disabled={validatingCoupon || !couponCodeInput.trim()}
+                      className="px-4 py-2 rounded-xl bg-[#EAB308] text-black font-black text-xs disabled:opacity-40 active:scale-95 transition"
+                    >
+                      {validatingCoupon ? 'Checking...' : 'APPLY'}
+                    </button>
+                  </div>
+                )}
+
+                {couponError && (
+                  <p className="text-[10px] text-red-400 font-semibold">{couponError}</p>
+                )}
+
+                {/* Available Coupons Suggestion Chips */}
+                {!appliedCoupon && coupons.length > 0 && (
+                  <div className="pt-1">
+                    <p className="text-[10px] text-gray-400 font-medium mb-1.5">Available for you:</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {coupons.map(cpn => (
+                        <button
+                          key={cpn.code}
+                          type="button"
+                          onClick={() => applyCoupon(cpn.code)}
+                          className="text-[10px] font-mono px-2.5 py-1 rounded-lg bg-[#EAB308]/15 border border-[#EAB308]/30 text-[#EAB308] hover:bg-[#EAB308]/25 font-bold transition flex items-center gap-1"
+                        >
+                          <Percent className="w-3 h-3" />
+                          <span>{cpn.code}</span>
+                          <span className="text-[9px] text-white/60">
+                            ({cpn.discount_type === 'percentage' ? `${cpn.discount_value}% OFF` : `₹${cpn.discount_value} OFF`})
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ── 9. Contact Phone ── */}
               <div className="rounded-2xl p-3 flex items-center gap-2" style={GLASS_CARD_SM}>
                 <Phone className="w-4 h-4 text-[#EAB308]" />
                 <span className="text-xs text-white/60">Contact:</span>
@@ -2105,7 +2974,7 @@ const CustomerDashboard = () => {
                 />
               </div>
 
-              {/* Payment Method */}
+              {/* ── 10. Payment Method ── */}
               <div className="rounded-2xl p-3.5 space-y-2" style={GLASS_CARD_SM}>
                 <label className="text-xs font-bold text-white/75 block">Payment Option</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -2130,7 +2999,7 @@ const CustomerDashboard = () => {
                 </div>
               </div>
 
-              {/* 🪙 PD Coins Redemption Card */}
+              {/* ── 11. 🪙 PD Coins Redemption Card ── */}
               {pdCoins > 0 && (
                 <div 
                   className="rounded-2xl p-3.5 transition-all border"
@@ -2195,7 +3064,7 @@ const CustomerDashboard = () => {
                 </div>
               )}
 
-              {/* Bill Breakdown */}
+              {/* ── 12. Bill Breakdown ── */}
               <div className="rounded-2xl p-4 space-y-2 text-xs" style={GLASS_CARD_SM}>
                 <div className="flex justify-between text-white/70">
                   <span>Items Subtotal</span>
@@ -2207,6 +3076,14 @@ const CustomerDashboard = () => {
                       🪙 PD Coins Discount
                     </span>
                     <span>-₹{coinsDiscount.toLocaleString()}</span>
+                  </div>
+                )}
+                {couponDiscount > 0 && (
+                  <div className="flex justify-between text-emerald-400 font-bold">
+                    <span className="flex items-center gap-1">
+                      🎟️ Promo Code ({appliedCoupon?.code})
+                    </span>
+                    <span>-₹{couponDiscount.toLocaleString()}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-white/70">
@@ -2223,7 +3100,7 @@ const CustomerDashboard = () => {
                 </div>
               </div>
 
-              {/* Submit CTA */}
+              {/* ── 13. Confirm Order CTA ── */}
               <button
                 type="button"
                 onClick={handlePlaceOrder}

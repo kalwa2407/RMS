@@ -204,6 +204,18 @@ class MockFirebaseManager(BaseDataManager):
         settings_list = self._read_sync("settings")
         return {s["key"]: s["value"] for s in settings_list}
 
+    async def update_settings(self, settings_dict: Dict[str, Any]) -> bool:
+        """Upsert settings dict — each key/value is stored as {key, value} row"""
+        settings_list = self._read_sync("settings")
+        existing = {s["key"]: i for i, s in enumerate(settings_list)}
+        for key, value in settings_dict.items():
+            if key in existing:
+                settings_list[existing[key]]["value"] = value
+            else:
+                settings_list.append({"key": key, "value": value})
+        self._write_sync("settings", settings_list)
+        return True
+
     async def create_order(self, order_data: Dict[str, Any]) -> Dict[str, Any]:
         orders = self._read_sync("orders")
         order_data["_id"] = str(uuid.uuid4())

@@ -21,6 +21,7 @@ import {
   Bike,
   Coins,
   Sparkles,
+  Tag,
 } from "lucide-react";
 import logoImg from "../../assets/logo.png";
 import API_BASE from "../../lib/config";
@@ -42,6 +43,7 @@ const SECTIONS = [
     label: "Management",
     items: [
       { name: "Reports",      path: "/admin/reports",        icon: BarChart3 },
+      { name: "Offers",       path: "/admin/offers",         icon: Tag },
       { name: "Inventory",    path: "/admin/inventory",      icon: Package },
       { name: "Menu",         path: "/admin/menu",           icon: MenuIcon },
       { name: "Reservations", path: "/admin/reservations",   icon: Calendar },

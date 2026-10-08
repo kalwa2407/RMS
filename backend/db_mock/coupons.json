@@ -1,1 +1,30 @@
-[]
+[
+  {
+    "id": "cpn_royal30",
+    "code": "ROYAL30",
+    "discount_type": "percentage",
+    "discount_value": 30,
+    "max_discount": 150,
+    "min_order_value": 400,
+    "description": "30% OFF up to ₹150 on royal feasts above ₹400",
+    "active": true
+  },
+  {
+    "id": "cpn_welcome",
+    "code": "WELCOME",
+    "discount_type": "flat",
+    "discount_value": 100,
+    "min_order_value": 300,
+    "description": "Flat ₹100 OFF on your order above ₹300",
+    "active": true
+  },
+  {
+    "id": "cpn_darbar50",
+    "code": "DARBAR50",
+    "discount_type": "flat",
+    "discount_value": 50,
+    "min_order_value": 250,
+    "description": "Flat ₹50 OFF on orders above ₹250",
+    "active": true
+  }
+]
