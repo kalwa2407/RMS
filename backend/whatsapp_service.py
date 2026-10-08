@@ -239,8 +239,8 @@ async def send_reservation_confirmation(
         # {{1}} = Customer Name
         # {{2}} = Date
         # {{3}} = Time
-        # {{4}} = Guests
-        # {{5}} = Table Number
+        # {{4}} = Table Number
+        # {{5}} = Guests
         components = [
             {
                 "type": "body",
@@ -248,8 +248,8 @@ async def send_reservation_confirmation(
                     {"type": "text", "text": customer_name},
                     {"type": "text", "text": date_str},
                     {"type": "text", "text": time_str},
-                    {"type": "text", "text": guests},
-                    {"type": "text", "text": f"Table {table_num}" if not table_num.startswith("Table") else table_num}
+                    {"type": "text", "text": f"Table {table_num}" if not str(table_num).startswith("Table") else str(table_num)},
+                    {"type": "text", "text": str(guests)}
                 ]
             }
         ]
