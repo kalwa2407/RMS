@@ -42,8 +42,7 @@ const DeliveryPanel = () => {
   const riderId = localStorage.getItem("delivery_id") || "rider";
 
   const logout = () => {
-    localStorage.removeItem("delivery_token");
-    localStorage.removeItem("delivery_id");
+    ["delivery_token", "delivery_id", "delivery_name"].forEach(k => localStorage.removeItem(k));
     navigate("/staff-entry", { replace: true });
   };
 
@@ -111,10 +110,6 @@ const DeliveryPanel = () => {
   };
 
   const openMaps = (address) => window.open(`https://maps.google.com/?q=${encodeURIComponent(address)}`,"_blank");
-  const logout = () => {
-    ["delivery_token", "delivery_id", "delivery_name"].forEach(k => localStorage.removeItem(k));
-    navigate("/staff-entry",{replace:true});
-  };
 
   const activeOrders    = orders.filter(o => o.status !== "delivered" && o.status !== "cancelled");
   const completedOrders = orders.filter(o => o.status === "delivered");

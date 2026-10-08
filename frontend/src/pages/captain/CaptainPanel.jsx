@@ -254,11 +254,6 @@ const CaptainPanel = () => {
     }
   };
 
-  const logout = () => {
-    ["captain_token", "captain_name", "captain_id"].forEach(k => localStorage.removeItem(k));
-    navigate("/staff-entry", { replace: true });
-  };
-
   const categories = ["All", ...new Set(menu.map(i => i.category))];
   const filteredMenu = menu.filter(i => {
     const matchesCategory = menuCategory === "All" || i.category === menuCategory;

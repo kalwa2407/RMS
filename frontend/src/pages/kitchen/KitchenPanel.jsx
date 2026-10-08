@@ -103,8 +103,6 @@ const KitchenPanel = () => {
     finally { setUpdating(null); }
   };
 
-  const logout = () => { ["kitchen_token", "kitchen_name"].forEach(k => localStorage.removeItem(k)); navigate("/staff-entry", { replace: true }); };
-
   const newOrders = orders.filter(o => o.status === "accepted");
   const preparingOrders = orders.filter(o => o.status === "preparing");
   const displayOrders = activeTab === "new" ? newOrders : activeTab === "preparing" ? preparingOrders : orders;
