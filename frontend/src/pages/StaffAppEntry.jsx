@@ -140,14 +140,33 @@ const StaffAppEntry = () => {
           sessionStorage.setItem("allow_public_website", "true");
           navigate("/");
         }}
-        className="mt-8 text-xs text-[#EAB308]/70 hover:text-[#EAB308] transition-colors flex items-center gap-1.5 underline decoration-[#EAB308]/30 underline-offset-4 active:scale-95"
+        className="mt-6 text-xs text-[#EAB308]/70 hover:text-[#EAB308] transition-colors flex items-center gap-1.5 underline decoration-[#EAB308]/30 underline-offset-4 active:scale-95"
       >
         <span>View Public Restaurant Website</span>
         <span>&rarr;</span>
       </button>
 
+      {/* Legal & Compliance links for Play Store */}
+      <div className="flex items-center gap-3 mt-4 text-[11px] text-gray-400">
+        <button
+          type="button"
+          onClick={() => navigate("/privacy-policy")}
+          className="hover:text-[#EAB308] transition-colors underline decoration-white/20 underline-offset-2"
+        >
+          Privacy Policy
+        </button>
+        <span className="text-gray-600">•</span>
+        <button
+          type="button"
+          onClick={() => navigate("/terms")}
+          className="hover:text-[#EAB308] transition-colors underline decoration-white/20 underline-offset-2"
+        >
+          Terms of Service
+        </button>
+      </div>
+
       {/* Footer note */}
-      <p className="text-gray-500 text-[10px] mt-6 text-center uppercase tracking-widest">
+      <p className="text-gray-500 text-[10px] mt-4 text-center uppercase tracking-widest">
         Persian Darbar — Staff & Operations Access
       </p>
     </div>

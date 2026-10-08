@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Account & Data Deletion Request — Persian Darbar</title>
+  <meta name="description" content="Request deletion of your Persian Darbar account and associated data in compliance with Google Play Store policies." />
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070d14;
+      --card: rgba(255, 255, 255, 0.05);
+      --border: rgba(255, 255, 255, 0.12);
+      --gold: #EAB308;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      line-height: 1.6;
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .card {
+      max-width: 620px;
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 36px 28px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      color: #ffffff;
+      margin-bottom: 10px;
+    }
+    p {
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin-bottom: 16px;
+    }
+    .step-box {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    .step-title {
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 6px;
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      text-align: center;
+      background: var(--gold);
+      color: #000;
+      font-weight: 700;
+      padding: 14px 20px;
+      border-radius: 14px;
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: transform 0.15s, opacity 0.15s;
+      cursor: pointer;
+    }
+    .btn:hover { opacity: 0.95; transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .back-link {
+      display: block;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-top: 20px;
+      text-decoration: none;
+    }
+    .back-link:hover { color: var(--gold); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">Google Play Data Safety Policy</div>
+    <h1>Account & Data Deletion</h1>
+    <p>
+      Users of the <strong>Persian Darbar</strong> application (<code>in.persiandarbar.customer</code>) can request complete deletion of their account and associated personal data at any time.
+    </p>
+
+    <div class="step-box">
+      <div class="step-title">Option 1: In-App Deletion</div>
+      <p style="margin-bottom: 0; font-size: 0.85rem;">
+        Open the Persian Darbar app on your Android device &rarr; Navigate to <strong>My Profile</strong> &rarr; Scroll down to <strong>Account Management</strong> &rarr; Tap <strong>Delete Account</strong>.
+      </p>
+    </div>
+
+    <div class="step-box">
+      <div class="step-title">Option 2: Direct Web / Email Request</div>
+      <p style="font-size: 0.85rem; margin-bottom: 12px;">
+        Click below to dispatch an automated deletion request to our privacy desk:
+      </p>
+      <a class="btn" href="mailto:privacy@persiandarbar.in?subject=Account%20Deletion%20Request&body=Please%20delete%20my%20Persian%20Darbar%20account%20and%20associated%20data.%0A%0ARegistered%20Email:%20%0ARegistered%20Phone:%20">
+        ✉️ Submit Deletion Request via Email
+      </a>
+    </div>
+
+    <div style="background: rgba(234,179,8,0.06); border: 1px solid rgba(234,179,8,0.2); border-radius: 12px; padding: 14px; font-size: 0.8rem; color: #cbd5e1;">
+      <strong style="color: var(--gold);">Data Removal Details:</strong>
+      <ul style="margin: 6px 0 0 16px; color: var(--muted);">
+        <li>Google Authentication credentials and Firebase user ID are permanently revoked.</li>
+        <li>Saved home/work delivery addresses and telephone numbers are purged within 30 days.</li>
+        <li>Financial invoices are retained in anonymized format solely for legal GST compliance.</li>
+      </ul>
+    </div>
+
+    <a href="/privacy-policy" class="back-link">&larr; Read Full Privacy Policy</a>
+  </div>
+</body>
+</html>

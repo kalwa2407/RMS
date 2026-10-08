@@ -13,7 +13,10 @@ import {
   Plus,
   Trash2,
   Check,
-  AlertCircle
+  AlertCircle,
+  Shield,
+  FileText,
+  ExternalLink
 } from 'lucide-react';
 
 const CustomerProfile = () => {
@@ -28,6 +31,7 @@ const CustomerProfile = () => {
 
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     if (customerProfile) {
@@ -307,6 +311,91 @@ const CustomerProfile = () => {
             </button>
           </div>
         </form>
+
+        {/* ─── Legal & Account Deletion (Google Play Compliance) ─── */}
+        <div className="bg-[#0f2933]/90 border border-white/10 rounded-2xl p-5 backdrop-blur-md shadow-lg space-y-4">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <div className="flex items-center gap-2">
+              <Shield className="w-4 h-4 text-[#EAB308]" />
+              <h3 className="text-white font-semibold text-xs uppercase tracking-wider">Privacy & Legal</h3>
+            </div>
+            <span className="text-[10px] text-gray-500 font-mono">v1.0.0</span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 text-xs">
+            <Link
+              to="/privacy-policy"
+              className="p-3 rounded-xl bg-white/5 border border-white/5 hover:border-[#EAB308]/30 hover:bg-white/10 transition-colors flex items-center justify-between text-gray-300 hover:text-white"
+            >
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#EAB308]" />
+                <span>Privacy Policy</span>
+              </div>
+              <ExternalLink className="w-3 h-3 text-gray-500" />
+            </Link>
+
+            <Link
+              to="/terms"
+              className="p-3 rounded-xl bg-white/5 border border-white/5 hover:border-[#EAB308]/30 hover:bg-white/10 transition-colors flex items-center justify-between text-gray-300 hover:text-white"
+            >
+              <div className="flex items-center gap-2">
+                <FileText className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Terms of Service</span>
+              </div>
+              <ExternalLink className="w-3 h-3 text-gray-500" />
+            </Link>
+          </div>
+
+          {/* Account Deletion Request */}
+          <div className="pt-3 border-t border-white/5 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold text-red-300">Delete Account & Data</p>
+              <p className="text-[11px] text-gray-500">Permanently remove credentials & saved addresses</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowDeleteModal(true)}
+              className="px-3 py-1.5 rounded-xl text-xs font-medium bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-colors cursor-pointer"
+            >
+              Delete Account
+            </button>
+          </div>
+        </div>
+
+        {/* ─── Delete Account Confirmation Modal ─── */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-[#0b161f] border border-red-500/30 rounded-2xl p-6 max-w-md w-full shadow-2xl">
+              <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 mb-4">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <h3 className="text-white text-lg font-bold mb-2">Request Account Deletion?</h3>
+              <p className="text-xs text-gray-300 leading-relaxed mb-4">
+                In compliance with Google Play Store User Data policies, requesting deletion will permanently revoke your
+                Google Authentication profile, purge your saved phone number, delivery addresses, and active loyalty tokens within 30 days.
+              </p>
+              <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-[11px] text-gray-400 mb-5">
+                Past tax invoices are retained in anonymized form as required by Indian GST and statutory accounting laws.
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteModal(false)}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-medium bg-white/10 hover:bg-white/15 text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <a
+                  href={`mailto:privacy@persiandarbar.in?subject=Account%20Deletion%20Request&body=Please%20delete%20my%20Persian%20Darbar%20account%20and%20associated%20data.%0A%0AUser%20Email:%20${encodeURIComponent(currentUser?.email || '')}%0APhone:%20${encodeURIComponent(phone || '')}`}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-700 text-white text-center transition-colors"
+                  onClick={() => setShowDeleteModal(false)}
+                >
+                  Proceed via Email
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
 
         </div>
       </div>

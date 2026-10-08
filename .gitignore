@@ -50,6 +50,7 @@ backend/static/invoices/
 # Large test files
 test.mp4
 *.apk
+*.aab
 
 # Local Firebase credentials
 firebase_credentials.json

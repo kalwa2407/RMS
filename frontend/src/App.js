@@ -197,6 +197,8 @@ function App() {
             element={<><Navbar /><Contact /><Footer /><ChatBot /></>}
           />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/account-deletion" element={<PrivacyPolicy />} />
+          <Route path="/delete-account" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsAndConditions />} />
           <Route
             path="/events"

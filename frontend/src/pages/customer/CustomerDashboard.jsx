@@ -2616,8 +2616,23 @@ const CustomerDashboard = () => {
               )}
             </div>
 
+            {/* Legal & Compliance (Google Play Store) */}
+            <div className="flex items-center justify-center gap-3 text-xs text-white/60 pt-1">
+              <Link to="/privacy-policy" className="hover:text-[#EAB308] transition-colors underline decoration-white/20 underline-offset-2">
+                Privacy Policy
+              </Link>
+              <span>•</span>
+              <Link to="/terms" className="hover:text-[#EAB308] transition-colors underline decoration-white/20 underline-offset-2">
+                Terms of Service
+              </Link>
+              <span>•</span>
+              <Link to="/customer/profile" className="hover:text-red-300 transition-colors underline decoration-white/20 underline-offset-2">
+                Account Deletion
+              </Link>
+            </div>
+
             {/* 7. BRAND HERITAGE FOOTER */}
-            <div className="text-center pt-2 pb-4 space-y-1 select-none">
+            <div className="text-center pt-1 pb-4 space-y-1 select-none">
               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#EAB308]">
                 PERSIAN DARBAR
               </p>

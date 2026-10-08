@@ -16,6 +16,14 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            storeFile file('persian-darbar-release.keystore')
+            storePassword System.getenv("KEYSTORE_PASSWORD") ?: ""
+            keyAlias System.getenv("KEY_ALIAS") ?: "persian-darbar"
+            keyPassword System.getenv("KEY_PASSWORD") ?: ""
+        }
+    }
     buildTypes {
         release {
             minifyEnabled true
@@ -25,14 +33,6 @@ android {
             if (keystoreFile.exists()) {
                 signingConfig signingConfigs.release
             }
-        }
-    }
-    signingConfigs {
-        release {
-            storeFile file('persian-darbar-release.keystore')
-            storePassword System.getenv("KEYSTORE_PASSWORD") ?: ""
-            keyAlias System.getenv("KEY_ALIAS") ?: "persian-darbar"
-            keyPassword System.getenv("KEY_PASSWORD") ?: ""
         }
     }
     compileOptions {

@@ -179,10 +179,18 @@ const CustomerLogin = () => {
                 </button>
               </Link>
 
-              {/* Trust Badge */}
-              <div className="mt-5 pt-4 border-t border-[#EAB308]/15 flex items-center justify-center gap-1.5 text-gray-500 text-[11px]">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                <span>Secured by Google Auth · No password needed</span>
+              {/* Trust Badge & Legal */}
+              <div className="mt-5 pt-4 border-t border-[#EAB308]/15 flex flex-col items-center justify-center gap-2 text-center text-gray-500 text-[11px]">
+                <div className="flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                  <span>Secured by Google Auth · No password needed</span>
+                </div>
+                <p className="text-[10px] text-gray-500 mt-0.5">
+                  By continuing, you agree to our{' '}
+                  <Link to="/terms" className="text-[#EAB308] hover:underline">Terms</Link>
+                  {' '}and{' '}
+                  <Link to="/privacy-policy" className="text-[#EAB308] hover:underline">Privacy Policy</Link>
+                </p>
               </div>
             </div>
           </div>
