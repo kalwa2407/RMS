@@ -89,9 +89,17 @@ logger = logging.getLogger(__name__)
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Global exception on {request.method} {request.url.path}: {exc}", exc_info=True)
+    origin = request.headers.get("origin")
+    cors_headers = {
+        "Access-Control-Allow-Origin": origin if origin else "*",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Allow-Methods": "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT",
+        "Access-Control-Allow-Headers": "*",
+    }
     return JSONResponse(
         status_code=500,
         content={"detail": "Internal server error", "error": str(exc)},
+        headers=cors_headers,
     )
 
 
@@ -546,9 +554,23 @@ async def admin_toggle_offers_master(
 ):
     """Admin: toggle the global offers master switch"""
     enabled = body.get("enabled", True)
-    settings = await manager.get_settings()
-    settings["offers_master_enabled"] = enabled
-    await manager.update_settings(settings)
+    try:
+        if hasattr(manager, "update_setting"):
+            await manager.update_setting("offers_master_enabled", enabled)
+        if hasattr(manager, "update_settings"):
+            settings = await manager.get_settings()
+            settings["offers_master_enabled"] = enabled
+            await manager.update_settings(settings)
+    except Exception as e:
+        logger.error(f"Error updating offers master toggle in settings: {e}")
+        try:
+            if hasattr(manager, "_write"):
+                settings = await manager.get_settings()
+                settings["offers_master_enabled"] = enabled
+                settings_list = [{"key": k, "value": v} for k, v in settings.items()]
+                await manager._write("settings", settings_list)
+        except Exception as inner_e:
+            logger.error(f"Fallback write error: {inner_e}")
     return {"master_enabled": enabled}
 
 

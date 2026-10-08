@@ -153,6 +153,10 @@ class BaseDataManager(ABC):
     async def update_setting(self, key: str, value: str) -> bool:
         pass
 
+    @abstractmethod
+    async def update_settings(self, settings_dict: Dict[str, Any]) -> bool:
+        pass
+
 def get_data_manager() -> BaseDataManager:
     db_mode = os.environ.get("DB_MODE", "FIREBASE")
     

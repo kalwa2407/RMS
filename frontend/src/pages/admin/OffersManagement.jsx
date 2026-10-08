@@ -93,12 +93,13 @@ const OffersManagement = () => {
   const handleMasterToggle = async () => {
     const nextState = !masterEnabled;
     setSavingMaster(true);
+    const currentToken = localStorage.getItem("admin_token");
     try {
       const res = await fetch(`${API_BASE}/api/admin/offers/master-toggle`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          ...(currentToken ? { Authorization: `Bearer ${currentToken}` } : {}),
         },
         body: JSON.stringify({ enabled: nextState }),
       });
@@ -110,9 +111,16 @@ const OffersManagement = () => {
             ? "Offer banners are now visible on the customer app home screen."
             : "Customer app will now show the default Persian Darbar welcome screen.",
         });
+      } else {
+        const data = await res.json().catch(() => ({}));
+        toast({
+          title: "Failed to update master switch",
+          description: data.detail || `Server error (${res.status})`,
+          variant: "destructive",
+        });
       }
     } catch (err) {
-      toast({ title: "Failed to update master switch", variant: "destructive" });
+      toast({ title: "Failed to update master switch", description: err.message || "Network error", variant: "destructive" });
     } finally {
       setSavingMaster(false);
     }
@@ -120,12 +128,13 @@ const OffersManagement = () => {
 
   const handleToggleOfferActive = async (offer) => {
     const updated = { ...offer, active: !offer.active };
+    const currentToken = localStorage.getItem("admin_token") || token;
     try {
       const res = await fetch(`${API_BASE}/api/admin/offers/${offer.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          ...(currentToken ? { Authorization: `Bearer ${currentToken}` } : {}),
         },
         body: JSON.stringify({ active: updated.active }),
       });

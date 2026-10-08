@@ -456,3 +456,9 @@ class FirebaseManager(BaseDataManager):
                 'updated_at': datetime.utcnow().isoformat()
             })
         return True
+
+    async def update_settings(self, settings_dict: Dict[str, Any]) -> bool:
+        """Upsert settings dict — each key/value stored in settings collection"""
+        for key, value in settings_dict.items():
+            await self.update_setting(key, value)
+        return True
