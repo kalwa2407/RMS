@@ -224,6 +224,13 @@ async def create_order_invoice(order_id: str, manager: BaseDataManager):
             logger.error(f"Order not found: {order_id}")
             return None
         
+        # Ensure monthly sequential bill number is assigned
+        if not order.get("bill_number"):
+            bill_number, year_month = await generate_bill_number(manager)
+            order["bill_number"] = bill_number
+            order["bill_year_month"] = year_month
+            await manager.update_order(order_id, {"bill_number": bill_number, "bill_year_month": year_month})
+
         # Generate PDF
         invoice_filename = f"invoice_{order_id}.pdf"
         invoice_path = INVOICE_DIR / invoice_filename
@@ -231,7 +238,7 @@ async def create_order_invoice(order_id: str, manager: BaseDataManager):
         
         # Update order with invoice URL
         invoice_url = f"/static/invoices/{invoice_filename}"
-        await manager.update_order_status(order_id, order["status"], {"status": order["status"], "timestamp": datetime.now().isoformat(), "note": "Invoice generated"})
+        await manager.update_order_status(order_id, order["status"], {"status": order["status"], "timestamp": datetime.now().isoformat(), "note": f"Invoice generated (#{order.get('bill_number')})"})
         
         return invoice_url
     except Exception as e:
@@ -807,8 +814,13 @@ async def create_order(
     except Exception as e:
         print(f"Error processing customer loyalty for order {order_id}: {e}")
 
+    # Generate monthly sequential bill number (e.g. OCT001)
+    bill_number, year_month = await generate_bill_number(manager)
+
     order_dict.update({
         "order_id": order_id,
+        "bill_number": bill_number,
+        "bill_year_month": year_month,
         "payment_status": "pending",
         "status": "placed",
         "status_history": [{
@@ -1604,14 +1616,16 @@ async def admin_update_order_status(
         kot_num = generate_kot_number()
         update_data["kot_number"] = kot_num
         if order.get("order_type") != "DINE_IN":
-            invoice_url = await create_order_invoice(order_id, manager)
-            if invoice_url:
-                update_data["invoice_url"] = invoice_url
             # Assign monthly bill number for online orders (if not already set)
             if not order.get("bill_number"):
                 bill_number, year_month = await generate_bill_number(manager)
                 update_data["bill_number"] = bill_number
                 update_data["bill_year_month"] = year_month
+                order["bill_number"] = bill_number
+                order["bill_year_month"] = year_month
+            invoice_url = await create_order_invoice(order_id, manager)
+            if invoice_url:
+                update_data["invoice_url"] = invoice_url
         status_entry["note"] = f"Order accepted - KOT#{kot_num} generated"
     
     if status_update.status == "delivered":
@@ -2057,34 +2071,72 @@ async def porter_webhook(
     return {"received": True, "matched": True, "rms_order_id": rms_order_id}
 
 
-# Invoice Download Endpoint
+# Invoice Download Endpoints
 @admin_router.get("/invoice/{order_id}")
 async def download_invoice(
     order_id: str,
     username: str = Depends(verify_token),
     manager: BaseDataManager = Depends(get_data_manager)
 ):
-    """Download invoice PDF â€” auto-generate if not already stored"""
+    """Download invoice PDF - always re-generates fresh to ensure logo, Rs., and monthly bill number"""
+    order = await manager.get_order_by_id(order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+        
     invoice_path = INVOICE_DIR / f"invoice_{order_id}.pdf"
     
-    # Auto-generate if not found
-    if not invoice_path.exists():
-        order = await manager.get_order_by_id(order_id)
-        if not order:
-            raise HTTPException(status_code=404, detail="Order not found")
-        try:
-            invoice_url = await create_order_invoice(order_id, manager)
-            if not invoice_url or not invoice_path.exists():
-                raise HTTPException(status_code=500, detail="Could not generate invoice")
-        except Exception as e:
-            logger.error(f"Invoice generation failed: {e}")
-            raise HTTPException(status_code=500, detail=f"Invoice generation failed: {str(e)}")
+    # Ensure bill number is present
+    if not order.get("bill_number"):
+        bill_number, year_month = await generate_bill_number(manager)
+        order["bill_number"] = bill_number
+        order["bill_year_month"] = year_month
+        await manager.update_order(order_id, {"bill_number": bill_number, "bill_year_month": year_month})
+        
+    try:
+        generate_invoice_pdf(order, str(invoice_path))
+    except Exception as e:
+        logger.error(f"Invoice generation failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Invoice generation failed: {str(e)}")
     
+    bill_no = order.get("bill_number", order_id)
     return FileResponse(
         path=str(invoice_path),
-        filename=f"invoice_{order_id}.pdf",
+        filename=f"invoice_{bill_no}.pdf",
         media_type="application/pdf",
-        headers={"Content-Disposition": f"inline; filename=invoice_{order_id}.pdf"}
+        headers={"Content-Disposition": f"inline; filename=invoice_{bill_no}.pdf"}
+    )
+
+
+@api_router.get("/invoice/{order_id}")
+async def customer_download_invoice(
+    order_id: str,
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Public customer download endpoint for order invoice PDF"""
+    order = await manager.get_order_by_id(order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+        
+    invoice_path = INVOICE_DIR / f"invoice_{order_id}.pdf"
+    
+    if not order.get("bill_number"):
+        bill_number, year_month = await generate_bill_number(manager)
+        order["bill_number"] = bill_number
+        order["bill_year_month"] = year_month
+        await manager.update_order(order_id, {"bill_number": bill_number, "bill_year_month": year_month})
+        
+    try:
+        generate_invoice_pdf(order, str(invoice_path))
+    except Exception as e:
+        logger.error(f"Customer invoice generation failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Invoice generation failed: {str(e)}")
+    
+    bill_no = order.get("bill_number", order_id)
+    return FileResponse(
+        path=str(invoice_path),
+        filename=f"invoice_{bill_no}.pdf",
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"inline; filename=invoice_{bill_no}.pdf"}
     )
 
 # Admin File Upload Endpoints

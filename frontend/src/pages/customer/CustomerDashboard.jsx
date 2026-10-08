@@ -13,7 +13,7 @@ import {
   Star, Minus, Zap, Gift, TrendingUp, BookOpen,
   Search, MapPin, CheckCircle2, Trash2, Sparkles,
   ShieldCheck, MessageSquare, ExternalLink, Share2,
-  Tag, Flame, Percent, ChefHat, Repeat, Leaf
+  Tag, Flame, Percent, ChefHat, Repeat, Leaf, Bike
 } from 'lucide-react';
 
 /* â”€â”€â”€ Design tokens â”€â”€â”€ */
