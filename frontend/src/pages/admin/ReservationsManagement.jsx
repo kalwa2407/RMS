@@ -4,7 +4,7 @@ import {
   RotateCcw, Users, Clock, MessageCircle, Phone, Star, AlertCircle, Table,
   Search, Volume2, VolumeX, Bell, CheckCircle2, UserCheck, Utensils, Send,
   Copy, ExternalLink, Filter, Sparkles, LayoutGrid, ListOrdered, ChevronDown,
-  Crown, ShieldAlert, Timer, ArrowUpRight, CheckCheck
+  Crown, ShieldAlert, Timer, ArrowUpRight, CheckCheck, Zap
 } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
@@ -223,6 +223,7 @@ const ReservationsManagement = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sending, setSending] = useState(null);
   const [whatsappModal, setWhatsappModal] = useState(null);
+  const [sendingDirectWa, setSendingDirectWa] = useState(false);
   const [tablePickerModal, setTablePickerModal] = useState(null); // reservation object being assigned a table
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
@@ -301,22 +302,60 @@ const ReservationsManagement = () => {
 
       const updatedRes = data.reservation || { ...res, status, ...(newTableNum ? { table_number: Number(newTableNum) } : {}) };
 
-      toast({
-        title: status === "confirmed" ? "✅ Reservation Confirmed!" : status === "seated" ? "🪑 Guests Seated" : "Status Updated",
-        description: `Marked as ${status.toUpperCase()}${updatedRes.table_number ? ` (Table ${updatedRes.table_number})` : ""}`,
-      });
+      if (status === "confirmed") {
+        if (updatedRes.whatsapp_sent) {
+          toast({
+            title: "✅ Reservation Confirmed & WhatsApp Sent!",
+            description: `Confirmation pass dispatched directly to ${updatedRes.customer_name} (+91 ${updatedRes.phone})${updatedRes.table_number ? ` • Table ${updatedRes.table_number}` : ""}`,
+          });
+        } else if (updatedRes.whatsapp_error) {
+          toast({
+            title: "✅ Reservation Confirmed",
+            description: `Confirmed${updatedRes.table_number ? ` (Table ${updatedRes.table_number})` : ""}. WhatsApp status: ${updatedRes.whatsapp_error}`,
+          });
+        } else {
+          toast({
+            title: "✅ Reservation Confirmed!",
+            description: `Marked CONFIRMED${updatedRes.table_number ? ` (Table ${updatedRes.table_number})` : ""}. Automatic WhatsApp dispatched to customer.`,
+          });
+        }
+      } else {
+        toast({
+          title: status === "seated" ? "🪑 Guests Seated" : "Status Updated",
+          description: `Marked as ${status.toUpperCase()}${updatedRes.table_number ? ` (Table ${updatedRes.table_number})` : ""}`,
+        });
+      }
 
       fetchReservations(true);
-
-      // Open WhatsApp modal automatically on confirmation
-      if (status === "confirmed") {
-        setWhatsappModal(updatedRes);
-      }
+      // NOTE: Modal does not open on confirm! Silent background dispatch via Meta API.
     } catch {
       toast({ title: "Error", description: "Failed to update reservation", variant: "destructive" });
     } finally {
       setSending(null);
       setTablePickerModal(null);
+    }
+  };
+
+  const sendDirectWhatsApp = async (res) => {
+    const id = res._id || res.id;
+    setSendingDirectWa(true);
+    try {
+      const { data } = await axios.post(`${API_BASE}/api/admin/reservations/${id}/send-whatsapp`, {}, { headers });
+      toast({
+        title: "✅ WhatsApp Sent via Meta Cloud API!",
+        description: data.message || `Confirmation pass delivered to ${res.customer_name} (+91 ${res.phone})`,
+      });
+      setWhatsappModal(null);
+      fetchReservations(true);
+    } catch (err) {
+      const errMsg = err.response?.data?.error || err.response?.data?.detail || "Failed to dispatch via Meta API";
+      toast({
+        title: "Meta WhatsApp API Notice",
+        description: errMsg,
+        variant: "destructive",
+      });
+    } finally {
+      setSendingDirectWa(false);
     }
   };
 
@@ -1162,20 +1201,33 @@ const ReservationsManagement = () => {
               </div>
 
               {/* Actions */}
-              <div className="flex gap-3 pt-2">
+              <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
+                <button
+                  onClick={() => sendDirectWhatsApp(whatsappModal)}
+                  disabled={sendingDirectWa}
+                  className="flex-1 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-black py-3.5 px-4 rounded-2xl text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/40 transition-all disabled:opacity-60"
+                >
+                  {sendingDirectWa ? (
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <Zap className="w-4 h-4" />
+                  )}
+                  <span>Send Direct (Meta Cloud API)</span>
+                </button>
                 <button
                   onClick={() => {
                     openWhatsApp(whatsappModal.phone, getWhatsAppTemplates(whatsappModal).confirmation);
                     setWhatsappModal(null);
                   }}
-                  className="flex-1 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-black py-4 rounded-2xl text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/40 transition-all"
+                  className="px-4 py-3.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-bold rounded-2xl text-xs flex items-center justify-center gap-1.5 transition-colors"
+                  title="Open manual WhatsApp Web chat"
                 >
-                  <Send className="w-4 h-4" />
-                  <span>Send via WhatsApp</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>WhatsApp Web</span>
                 </button>
                 <button
                   onClick={() => setWhatsappModal(null)}
-                  className="px-5 bg-white/10 hover:bg-white/15 text-white font-bold py-4 rounded-2xl text-xs transition-colors"
+                  className="px-4 py-3.5 bg-white/10 hover:bg-white/15 text-white font-bold rounded-2xl text-xs transition-colors"
                 >
                   Close
                 </button>
