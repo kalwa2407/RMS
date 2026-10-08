@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { ChefHat, Clock, RefreshCw, CheckCircle, AlertCircle } from "lucide-react";
+import { ChefHat, Clock, RefreshCw, CheckCircle, AlertCircle, Printer } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import API_BASE from "../../lib/config";
+import { printKOT } from "../../lib/PrintService";
 
 const KitchenView = () => {
   const { toast } = useToast();
@@ -190,6 +191,15 @@ const KitchenView = () => {
 
               {/* Action Buttons */}
               <div className="flex space-x-2">
+                <button
+                  type="button"
+                  onClick={() => printKOT(order)}
+                  className="px-3 bg-amber-500/20 text-yellow-400 border border-yellow-500/30 py-2 rounded-lg font-bold hover:bg-yellow-500/30 transition flex items-center justify-center gap-1.5"
+                  title="Print Kitchen Order Ticket (80mm Thermal)"
+                >
+                  <Printer className="h-4 w-4" />
+                  <span>KOT</span>
+                </button>
                 {order.status === "accepted" && (
                   <button
                     onClick={() => updateOrderStatus(order.order_id, "preparing")}
