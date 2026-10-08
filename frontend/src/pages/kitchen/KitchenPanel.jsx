@@ -2,10 +2,11 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ChefHat, Clock, RefreshCw, CheckCircle, LogOut,
-  AlertCircle, Bell, Flame, UtensilsCrossed, Volume2
+  AlertCircle, Bell, Flame, UtensilsCrossed, Volume2, Printer
 } from "lucide-react";
 import axios from "axios";
 import API_BASE from "../../lib/config";
+import { printKOT } from "../../lib/PrintService";
 
 const formatTime = (ts) => {
   if (!ts) return "—";
@@ -52,6 +53,8 @@ const KitchenPanel = () => {
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [updating, setUpdating] = useState(null);
+  const [printingId, setPrintingId] = useState(null);
+  const [autoKotPrint, setAutoKotPrint] = useState(() => localStorage.getItem("pd_kitchen_auto_print") === "true");
   const [notifCount, setNotifCount] = useState(0);
   const [activeTab, setActiveTab] = useState("all");
   const [, setTick] = useState(0);
@@ -77,20 +80,40 @@ const KitchenPanel = () => {
     try { if (audioRef.current) { audioRef.current.currentTime = 0; audioRef.current.play().catch(() => {}); } } catch {}
   };
 
+  const handlePrintKot = async (order) => {
+    try {
+      setPrintingId(order.order_id);
+      await printKOT(order, "manual");
+    } catch (err) {
+      console.error("Print KOT failed:", err);
+      alert("Unable to open print dialog. Please ensure popups are allowed.");
+    } finally {
+      setTimeout(() => setPrintingId(null), 800);
+    }
+  };
+
   const fetchOrders = useCallback(async (silent = false) => {
     try {
       const { data } = await axios.get(`${API_BASE}/api/kitchen/orders`, { headers: { Authorization: `Bearer ${token}` } });
       const fresh = Array.isArray(data) ? data : [];
       const newIds = new Set(fresh.map(o => o.order_id));
       const arrived = fresh.filter(o => !prevOrderIds.current.has(o.order_id));
-      if (silent && arrived.length > 0) { playAlert(); setNotifCount(n => n + arrived.length); }
+      if (silent && arrived.length > 0) {
+        playAlert();
+        setNotifCount(n => n + arrived.length);
+        if (autoKotPrint) {
+          arrived.forEach(o => {
+            try { printKOT(o, "auto"); } catch (e) { console.error("Auto KOT print error:", e); }
+          });
+        }
+      }
       prevOrderIds.current = newIds;
       setOrders(fresh);
       setLastRefresh(new Date());
     } catch (err) {
       if (err.response?.status === 401 || err.response?.status === 403) { localStorage.removeItem("kitchen_token"); navigate("/kitchen", { replace: true }); }
     } finally { setLoading(false); }
-  }, [token, navigate]);
+  }, [token, navigate, autoKotPrint]);
 
   useEffect(() => { fetchOrders(); const i = setInterval(() => fetchOrders(true), 8000); return () => clearInterval(i); }, [fetchOrders]);
 
@@ -127,6 +150,24 @@ const KitchenPanel = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {/* Auto KOT toggle */}
+          <button
+            onClick={() => {
+              const next = !autoKotPrint;
+              setAutoKotPrint(next);
+              localStorage.setItem("pd_kitchen_auto_print", String(next));
+            }}
+            title="Auto-print KOT ticket when new order arrives"
+            className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-bold flex items-center gap-1.5 transition-all ${
+              autoKotPrint
+                ? "bg-amber-500/15 border-amber-500/40 text-amber-400"
+                : "bg-white/5 border-white/10 text-gray-400 hover:text-white"
+            }`}
+          >
+            <Printer className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Auto KOT:</span>
+            <span>{autoKotPrint ? "ON" : "OFF"}</span>
+          </button>
           {notifCount > 0 && (
             <button onClick={() => setNotifCount(0)} className="relative p-2 rounded-xl border" style={{ background:"rgba(239,68,68,0.12)",borderColor:"rgba(239,68,68,0.3)" }}>
               <Bell className="h-4 w-4 text-red-400"/>
@@ -260,6 +301,15 @@ const KitchenPanel = () => {
                       <div className="flex items-center gap-2 flex-wrap mb-1.5">
                         <span className="text-white font-black text-xl" style={{ fontFamily:"'Playfair Display',serif" }}>{order.kot_number || `#${order.order_id?.slice(-6)}`}</span>
                         <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${tag.cls}`}>{tag.label}</span>
+                        <button
+                          onClick={() => handlePrintKot(order)}
+                          disabled={printingId === order.order_id}
+                          className="px-2.5 py-1 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 text-[10px] font-black flex items-center gap-1 transition-all active:scale-95 shadow-sm"
+                          title="Quick Print KOT Slip (80mm Thermal)"
+                        >
+                          <Printer className={`h-3 w-3 ${printingId === order.order_id ? "animate-spin" : ""}`} />
+                          <span>KOT Slip</span>
+                        </button>
                       </div>
                       <p className="text-gray-500 text-xs font-medium">{order.customer_name}</p>
                     </div>
@@ -301,18 +351,38 @@ const KitchenPanel = () => {
                       ))}
                     </ul>
                   </div>
+                  {/* Order special instructions / chef notes */}
+                  {order.special_instructions && (
+                    <div className="mx-4 mb-3 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-start gap-2">
+                      <AlertCircle className="h-3.5 w-3.5 text-amber-400 shrink-0 mt-0.5" />
+                      <div className="text-xs">
+                        <span className="text-[10px] font-black text-amber-400 uppercase tracking-wider block">Special Note:</span>
+                        <span className="text-amber-200 font-medium">{order.special_instructions}</span>
+                      </div>
+                    </div>
+                  )}
                   {/* Action */}
-                  <div className="px-4 pb-4">
+                  <div className="px-4 pb-4 flex items-center gap-2">
+                    <button
+                      onClick={() => handlePrintKot(order)}
+                      disabled={printingId === order.order_id}
+                      className="px-3.5 py-3.5 rounded-2xl font-black text-xs text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all shrink-0"
+                      title="Print 80mm Thermal KOT Bill"
+                    >
+                      <Printer className={`h-4 w-4 ${printingId === order.order_id ? "animate-spin" : ""}`} />
+                      <span>Print KOT</span>
+                    </button>
+
                     {isNew && (
                       <button onClick={() => updateStatus(order.order_id,"preparing")} disabled={isUpdating}
-                        className="w-full py-3.5 rounded-2xl font-black text-sm text-white flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50"
+                        className="flex-1 py-3.5 rounded-2xl font-black text-sm text-white flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50"
                         style={{ background:"linear-gradient(135deg,#f97316,#ea580c)",boxShadow:"0 8px 24px rgba(249,115,22,0.3)" }}>
                         {isUpdating ? <><RefreshCw className="h-4 w-4 animate-spin"/> Updating...</> : <><Flame className="h-4 w-4"/> Start Preparing</>}
                       </button>
                     )}
                     {order.status==="preparing" && (
                       <button onClick={() => updateStatus(order.order_id,"ready")} disabled={isUpdating}
-                        className="w-full py-3.5 rounded-2xl font-black text-sm text-white flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50"
+                        className="flex-1 py-3.5 rounded-2xl font-black text-sm text-white flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50"
                         style={{ background:"linear-gradient(135deg,#22c55e,#16a34a)",boxShadow:"0 8px 24px rgba(34,197,94,0.25)" }}>
                         {isUpdating ? <><RefreshCw className="h-4 w-4 animate-spin"/> Updating...</> : <><CheckCircle className="h-4 w-4"/> Mark Ready — Notify Captain</>}
                       </button>

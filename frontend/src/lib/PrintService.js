@@ -318,6 +318,153 @@ async function _windowPrint(order, billNo, autoFocus) {
   return { method: "window.print", success: true };
 }
 
+// ── KOT Printing ─────────────────────────────────────────────────────────────
+export async function buildKotHtml(order) {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  const timeStr = now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+
+  const kotNo = order.kot_number || (order.order_id ? `#${order.order_id.slice(-6).toUpperCase()}` : "KOT-NEW");
+  const orderType = (order.order_type || "DINE_IN").replace("_", " ").toUpperCase();
+  const tableStr = order.table_number ? `TABLE ${order.table_number}` : orderType;
+
+  const items = order.items || [];
+  const totalQty = items.reduce((acc, it) => acc + (Number(it.quantity) || 1), 0);
+
+  const itemsHtml = items.map((item) => {
+    const qty = item.quantity || 1;
+    const name = item.name || item.item_name || "Item";
+    const variant = item.variant ? `<div class="sub">Variant: ${item.variant}</div>` : "";
+    const addons = (item.addons && item.addons.length > 0) ? `<div class="sub">+ ${item.addons.join(", ")}</div>` : "";
+    const note = item.special_instructions ? `<div class="note">NOTE: ${item.special_instructions}</div>` : "";
+
+    return `
+      <div class="kot-item">
+        <div class="item-row">
+          <span class="qty">${qty}x</span>
+          <span class="name">${name}</span>
+        </div>
+        ${variant}
+        ${addons}
+        ${note}
+      </div>
+    `;
+  }).join("");
+
+  const specialRequest = order.special_instructions || order.cooking_instructions || order.delivery_instructions;
+  const specialReqHtml = specialRequest ? `
+    <div class="solid"></div>
+    <div class="bold" style="font-size:11px; color:#000;">SPECIAL INSTRUCTION:</div>
+    <div style="font-size:11px; font-weight:bold; margin-top:2px;">${specialRequest}</div>
+  ` : "";
+
+  return `<!DOCTYPE html><html><head>
+    <title>KOT - ${kotNo}</title>
+    <style>
+      @page { size: 80mm auto; margin: 3mm; }
+      * { margin:0; padding:0; box-sizing:border-box; }
+      body { font-family:'Courier New',Courier,monospace; font-size:12px; width:72mm; color:#000; padding:2mm; }
+      .center { text-align:center; }
+      .bold   { font-weight:bold; }
+      .solid  { border-top:2px solid #000; margin:6px 0; }
+      .dashed { border-top:1px dashed #000; margin:5px 0; }
+      .double { border-top:3px double #000; margin:6px 0; }
+      .brand  { font-size:16px; font-weight:900; letter-spacing:1px; }
+      .kot-title { font-size:14px; font-weight:900; margin:3px 0; background:#000; color:#fff; padding:3px 0; }
+      .table-banner { font-size:20px; font-weight:900; letter-spacing:1px; margin:4px 0; }
+      .meta-row { display:flex; justify-content:space-between; font-size:11px; margin-bottom:2px; }
+      .kot-item { padding:4px 0; border-bottom:1px dotted #ccc; }
+      .item-row { display:flex; align-items:baseline; }
+      .qty { font-size:16px; font-weight:900; width:34px; shrink:0; }
+      .name { font-size:13px; font-weight:bold; flex:1; text-transform:uppercase; }
+      .sub { font-size:11px; margin-left:34px; color:#333; }
+      .note { font-size:11px; font-weight:900; margin-left:34px; margin-top:2px; background:#f0f0f0; padding:2px; border-left:3px solid #000; }
+      .total-row { display:flex; justify-content:space-between; font-size:13px; font-weight:bold; margin-top:4px; }
+      .footer { font-size:10px; margin-top:6px; }
+    </style>
+  </head><body>
+    <div class="center brand">PERSIAN DARBAR</div>
+    <div class="center kot-title">KITCHEN ORDER TICKET (KOT)</div>
+    <div class="center table-banner">${tableStr}</div>
+    <div class="solid"></div>
+    <div class="meta-row">
+      <span><b>KOT No:</b> ${kotNo}</span>
+      <span>${dateStr}</span>
+    </div>
+    <div class="meta-row">
+      <span><b>Order ID:</b> #${(order.order_id || "").slice(-6).toUpperCase()}</span>
+      <span><b>Time:</b> ${timeStr}</span>
+    </div>
+    <div class="meta-row">
+      <span><b>Customer:</b> ${order.customer_name || "Guest"}</span>
+      <span><b>Type:</b> ${orderType}</span>
+    </div>
+    <div class="solid"></div>
+    <div class="bold" style="font-size:11px; margin-bottom:4px; text-transform:uppercase;">
+      <span>QTY   ITEM DETAILS</span>
+    </div>
+    <div class="dashed"></div>
+    ${itemsHtml}
+    ${specialReqHtml}
+    <div class="double"></div>
+    <div class="total-row">
+      <span>TOTAL ITEMS:</span>
+      <span>${totalQty}</span>
+    </div>
+    <div class="dashed"></div>
+    <div class="center footer">
+      <div>*** KITCHEN COPY — PREPARE FRESH ***</div>
+      <div>Order Time: ${timeStr}</div>
+    </div>
+  </body></html>`;
+}
+
+export async function printKOT(order, mode = "manual") {
+  const html = await buildKotHtml(order);
+  try {
+    let iframe = document.getElementById("kot-print-frame");
+    if (!iframe) {
+      iframe = document.createElement("iframe");
+      iframe.id = "kot-print-frame";
+      iframe.style.position = "fixed";
+      iframe.style.right = "0";
+      iframe.style.bottom = "0";
+      iframe.style.width = "0";
+      iframe.style.height = "0";
+      iframe.style.border = "0";
+      document.body.appendChild(iframe);
+    }
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(html);
+    doc.close();
+    setTimeout(() => {
+      try {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      } catch (e) {
+        _popupKotPrint(html, mode);
+      }
+    }, 250);
+    return { method: "iframe.print", success: true };
+  } catch (err) {
+    return _popupKotPrint(html, mode);
+  }
+}
+
+function _popupKotPrint(html, mode) {
+  const w = window.open("", "_blank", "width=340,height=720");
+  if (!w) return { method: "popup_blocked", success: false };
+  w.document.write(html);
+  w.document.close();
+  setTimeout(() => {
+    w.focus();
+    w.print();
+    if (mode === "auto") setTimeout(() => { try { w.close(); } catch {} }, 4000);
+  }, 350);
+  return { method: "window.print", success: true };
+}
+
 // ── Preference helpers ────────────────────────────────────────────────────────
 export const getPrintMode  = ()     => localStorage.getItem("pd_print_mode") || "manual";
 export const setPrintMode  = (mode) => localStorage.setItem("pd_print_mode", mode);

@@ -1651,19 +1651,20 @@ async def admin_update_order_status(
                 update_data["invoice_url"] = invoice_url
         status_entry["note"] = f"Order accepted - KOT#{kot_num} generated"
 
-        # Dispatch clean transactional WhatsApp Order Confirmation to customer
-        try:
-            order_for_wa = {**order, **update_data}
-            wa_res = await send_order_confirmation(order_for_wa)
-            if wa_res.get("success"):
-                update_data["whatsapp_order_sent"] = True
-                update_data["whatsapp_order_id"] = wa_res.get("message_id")
-                logging.info(f"[WhatsApp] Online order confirmation dispatched for order {order_id} (wamid: {wa_res.get('message_id')})")
-            else:
-                update_data["whatsapp_order_error"] = wa_res.get("error")
-                logging.info(f"[WhatsApp] Online order confirmation notice for order {order_id}: {wa_res.get('error')}")
-        except Exception as wa_err:
-            logging.warning(f"[WhatsApp] Error dispatching order confirmation: {wa_err}")
+        # Dispatch clean transactional WhatsApp Order Confirmation to customer (strictly online orders, NOT for dine-in KOT)
+        if order.get("order_type") != "DINE_IN":
+            try:
+                order_for_wa = {**order, **update_data}
+                wa_res = await send_order_confirmation(order_for_wa)
+                if wa_res.get("success"):
+                    update_data["whatsapp_order_sent"] = True
+                    update_data["whatsapp_order_id"] = wa_res.get("message_id")
+                    logging.info(f"[WhatsApp] Online order confirmation dispatched for order {order_id} (wamid: {wa_res.get('message_id')})")
+                else:
+                    update_data["whatsapp_order_error"] = wa_res.get("error")
+                    logging.info(f"[WhatsApp] Online order confirmation notice for order {order_id}: {wa_res.get('error')}")
+            except Exception as wa_err:
+                logging.warning(f"[WhatsApp] Error dispatching order confirmation: {wa_err}")
     
     if status_update.status == "delivered":
         update_data["payment_status"] = "paid"
@@ -3225,16 +3226,17 @@ async def admin_get_kitchen_orders(username: str = Depends(verify_token), manage
     for order in active_orders:
         kitchen_orders.append({
             "order_id": order.get("order_id"),
-            "kot_number": order.get("kot_number"),
+            "kot_number": order.get("kot_number") or f"KOT-{(order.get('order_id') or '')[-4:].upper()}",
             "table_number": order.get("table_number"),
-            "order_type": order.get("order_type"),
+            "order_type": order.get("order_type", "DINE_IN"),
             "items": [{
-                "name": item.get("name"),
-                "quantity": item.get("quantity"),
+                "name": item.get("name") or item.get("item_name"),
+                "quantity": item.get("quantity", 1),
                 "variant": item.get("variant"),
-                "addons": [a.get("name") for a in item.get("addons", [])],
+                "addons": [a.get("name") if isinstance(a, dict) else str(a) for a in item.get("addons", [])],
                 "special_instructions": item.get("special_instructions")
             } for item in order.get("items", [])],
+            "special_instructions": order.get("special_instructions") or order.get("cooking_instructions") or order.get("notes") or "",
             "status": order.get("status"),
             "accepted_at": order.get("accepted_at"),
             "created_at": order.get("created_at"),
@@ -3825,15 +3827,16 @@ async def kitchen_get_orders(staff_id: str = Depends(verify_kitchen_token),
     )
     return [{
         "order_id": o.get("order_id"),
-        "kot_number": o.get("kot_number"),
+        "kot_number": o.get("kot_number") or f"KOT-{(o.get('order_id') or '')[-4:].upper()}",
         "table_number": o.get("table_number"),
-        "order_type": o.get("order_type"),
+        "order_type": o.get("order_type", "DINE_IN"),
         "source": o.get("source", ""),
-        "items": [{"name": i.get("name"), "quantity": i.get("quantity"),
+        "items": [{"name": i.get("name") or i.get("item_name"), "quantity": i.get("quantity", 1),
                    "variant": i.get("variant"),
-                   "addons": [a.get("name") for a in i.get("addons", []) if isinstance(a, dict)],
+                   "addons": [a.get("name") if isinstance(a, dict) else str(a) for a in i.get("addons", [])],
                    "special_instructions": i.get("special_instructions")}
                   for i in o.get("items", [])],
+        "special_instructions": o.get("special_instructions") or o.get("cooking_instructions") or o.get("notes") or "",
         "status": o.get("status"),
         "created_at": o.get("created_at"),
         "accepted_at": o.get("accepted_at"),
