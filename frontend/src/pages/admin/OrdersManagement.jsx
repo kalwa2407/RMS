@@ -284,7 +284,11 @@ const OrdersManagement = () => {
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast({ title: "Updated!", description: `Order is now ${newStatus}` });
+      if (newStatus === "accepted") {
+        toast({ title: "✅ Order Accepted & WhatsApp Dispatched!", description: "Confirmation details sent directly to customer's WhatsApp" });
+      } else {
+        toast({ title: "Updated!", description: `Order is now ${newStatus}` });
+      }
       fetchOrders();
 
       // Auto/Manual billing for online orders on accept
