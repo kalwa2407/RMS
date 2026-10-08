@@ -93,8 +93,10 @@ class MenuItemUpdate(BaseModel):
 # Gallery Models
 class GalleryImage(BaseModel):
     id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
-    image_url: str
+    image_url: Optional[str] = None
+    url: Optional[str] = None
     caption: str
+    category: Optional[str] = "Ambience"
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Config:
@@ -103,8 +105,10 @@ class GalleryImage(BaseModel):
         json_encoders = {ObjectId: str}
 
 class GalleryImageCreate(BaseModel):
-    image_url: str
+    image_url: Optional[str] = None
+    url: Optional[str] = None
     caption: str
+    category: Optional[str] = "Ambience"
 
 # Order Models
 class OrderItemAddon(BaseModel):

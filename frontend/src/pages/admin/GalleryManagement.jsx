@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Plus, Trash2, X } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
@@ -13,8 +13,18 @@ const GalleryManagement = () => {
   const [formData, setFormData] = useState({
     image_url: "",
     caption: "",
+    category: "Ambience"
   });
   const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Helper to format image URLs for admin preview
+  const getAdminImageUrl = (image) => {
+    const raw = image?.image_url || image?.url || "";
+    if (!raw) return "/signature_persian_kabab_platter_1776082069527.png";
+    if (raw.startsWith("http://") || raw.startsWith("https://") || raw.startsWith("data:")) return raw;
+    if (raw.startsWith("/static/")) return `${API_BASE}${raw}`;
+    return raw;
+  };
 
   useEffect(() => {
     fetchImages();
@@ -96,7 +106,7 @@ const GalleryManagement = () => {
         description: "Image added successfully!",
       });
 
-      setFormData({ image_url: "", caption: "" });
+      setFormData({ image_url: "", caption: "", category: "Ambience" });
       setShowAddForm(false);
       fetchImages();
     } catch (err) {
@@ -246,16 +256,34 @@ const GalleryManagement = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, caption: e.target.value })
                 }
-                placeholder="Short description"
+                placeholder="e.g. Royal Raan Biryani or The Grand Darbar Hall"
                 className="w-full px-4 py-2 bg-[#0f2933] border border-[#EAB308]/20 rounded-lg text-white focus:border-primary/50 focus:outline-none"
               />
             </div>
 
+            <div>
+              <label className="block text-primary font-semibold mb-2">
+                Category *
+              </label>
+              <select
+                value={formData.category}
+                onChange={(e) =>
+                  setFormData({ ...formData, category: e.target.value })
+                }
+                className="w-full px-4 py-2 bg-[#0f2933] border border-[#EAB308]/20 rounded-lg text-white focus:border-primary/50 focus:outline-none"
+              >
+                <option value="Ambience">Ambience (Dining Hall, Seating, Décor)</option>
+                <option value="Food">Food (Signature Dishes, Platters, Biryani)</option>
+                <option value="Royal">Royal (Archways, Art, Mocktails, Chandeliers)</option>
+                <option value="Events">Events (Banquets, Family Dastarkhwan, Celebrations)</option>
+              </select>
+            </div>
+
             <button
               type="submit"
-              className="w-full bg-primary hover:bg-[#CA8A04] text-black py-3 rounded-full font-bold"
+              className="w-full bg-primary hover:bg-[#CA8A04] text-black py-3 rounded-full font-bold transition-all shadow-lg shadow-[#EAB308]/20"
             >
-              Add Image
+              Add Image to Gallery
             </button>
           </form>
         </div>
@@ -263,34 +291,51 @@ const GalleryManagement = () => {
 
       {/* Gallery Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {images.map((image) => (
+        {images.map((image, idx) => (
           <div
-            key={image._id}
-            className="bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl overflow-hidden group hover:border-primary/20 transition-all duration-300"
+            key={image._id || image.id || `img-${idx}`}
+            className="bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl overflow-hidden group hover:border-primary/50 transition-all duration-300 flex flex-col"
           >
-            <div className="relative h-64">
+            <div className="relative h-64 bg-[#0d1c22]">
               <img
-                src={image.image_url}
+                src={getAdminImageUrl(image)}
                 alt={image.caption}
-                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "/signature_persian_kabab_platter_1776082069527.png";
+                }}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
 
-              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-70 transition-all duration-300 flex items-center justify-center">
+              {/* Category Badge */}
+              <div className="absolute top-3 left-3">
+                <span className="bg-black/70 backdrop-blur-sm border border-[#EAB308]/40 text-[#EAB308] text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md">
+                  {image.category || "Ambience"}
+                </span>
+              </div>
+
+              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all duration-300 flex items-center justify-center">
                 <button
-                  onClick={() => handleDelete(image._id)}
-                  className="opacity-0 group-hover:opacity-100 bg-red-600 hover:bg-red-700 text-white p-3 rounded-full transition-all duration-300"
+                  onClick={() => handleDelete(image._id || image.id)}
+                  title="Delete image"
+                  className="opacity-0 group-hover:opacity-100 bg-red-600 hover:bg-red-700 text-white p-3 rounded-full transition-all duration-300 shadow-lg scale-90 hover:scale-100"
                 >
-                  <Trash2 className="h-6 w-6" />
+                  <Trash2 className="h-5 w-5" />
                 </button>
               </div>
             </div>
 
-            <div className="p-4">
-              <p className="text-white font-semibold">{image.caption}</p>
-              <p className="text-gray-400 text-sm mt-1">
+            <div className="p-4 flex-1 flex flex-col justify-between">
+              <div>
+                <p className="text-white font-bold text-base">{image.caption}</p>
+                <p className="text-gray-400 text-xs mt-1">
+                  Category: <span className="text-[#EAB308]">{image.category || "Ambience"}</span>
+                </p>
+              </div>
+              <p className="text-gray-500 text-[11px] mt-2 border-t border-white/5 pt-2">
                 Added: {image.created_at
                   ? new Date(image.created_at).toLocaleDateString()
-                  : "Unknown"}
+                  : "Recently"}
               </p>
             </div>
           </div>

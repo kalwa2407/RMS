@@ -403,10 +403,28 @@ async def stream_table_status(request: Request, manager: BaseDataManager = Depen
 # Gallery Endpoints
 @api_router.get("/gallery")
 async def get_gallery(manager: BaseDataManager = Depends(get_data_manager)):
-    """Get all gallery images â€” cached 5 min"""
+    """Get all gallery images — cached 5 min"""
     images = await manager.get_gallery()
+    normalized = []
+    for img in images:
+        item = dict(img)
+        url = item.get("image_url") or item.get("url") or ""
+        item["image_url"] = url
+        item["url"] = url
+        # Auto-detect category if missing
+        if not item.get("category"):
+            caption_lower = (item.get("caption") or "").lower()
+            if any(w in caption_lower for w in ["biryani", "roll", "dish", "kebab", "kabab", "food", "platter", "curry", "rice", "naan"]):
+                item["category"] = "Food"
+            elif any(w in caption_lower for w in ["event", "banquet", "celebration", "party", "ghazal", "sufi"]):
+                item["category"] = "Events"
+            elif any(w in caption_lower for w in ["royal", "shahi", "gold", "darbar", "thali", "dastarkhwan"]):
+                item["category"] = "Royal"
+            else:
+                item["category"] = "Ambience"
+        normalized.append(item)
     return JSONResponse(
-        content=images,
+        content=normalized,
         headers={"Cache-Control": "public, max-age=300, stale-while-revalidate=60"}
     )
 
@@ -1476,7 +1494,17 @@ async def admin_delete_menu_item(
 @admin_router.get("/gallery")
 async def admin_get_gallery(username: str = Depends(verify_token), manager: BaseDataManager = Depends(get_data_manager)):
     """Get all gallery images"""
-    return await manager.get_gallery()
+    images = await manager.get_gallery()
+    normalized = []
+    for img in images:
+        item = dict(img)
+        url = item.get("image_url") or item.get("url") or ""
+        item["image_url"] = url
+        item["url"] = url
+        if not item.get("category"):
+            item["category"] = "Ambience"
+        normalized.append(item)
+    return normalized
 
 @admin_router.post("/gallery")
 async def admin_create_gallery_image(
@@ -1486,6 +1514,11 @@ async def admin_create_gallery_image(
 ):
     """Add new gallery image"""
     image_data = gallery_image.dict()
+    url = image_data.get("image_url") or image_data.get("url") or ""
+    image_data["image_url"] = url
+    image_data["url"] = url
+    if not image_data.get("category"):
+        image_data["category"] = "Ambience"
     return await manager.create_gallery_image(image_data)
 
 @admin_router.delete("/gallery/{image_id}")

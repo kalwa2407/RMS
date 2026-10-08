@@ -1,0 +1,98 @@
+[
+  {
+    "_id": "gal-amb-001",
+    "image_url": "/luxury_persian_restaurant_interior_1776082050142.png",
+    "url": "/luxury_persian_restaurant_interior_1776082050142.png",
+    "caption": "The Royal Darbar Hall",
+    "category": "Ambience",
+    "created_at": "2026-01-01T10:00:00Z"
+  },
+  {
+    "_id": "gal-food-001",
+    "image_url": "/signature_persian_kabab_platter_1776082069527.png",
+    "url": "/signature_persian_kabab_platter_1776082069527.png",
+    "caption": "Signature Persian Kabab Platter",
+    "category": "Food",
+    "created_at": "2026-01-02T10:00:00Z"
+  },
+  {
+    "_id": "gal-food-002",
+    "image_url": "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?q=80&w=1200&auto=format&fit=crop",
+    "url": "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?q=80&w=1200&auto=format&fit=crop",
+    "caption": "Dum Pukht Royal Biryani",
+    "category": "Food",
+    "created_at": "2026-01-03T10:00:00Z"
+  },
+  {
+    "_id": "gal-royal-001",
+    "image_url": "https://images.unsplash.com/photo-1541544741938-0af808b77e40?q=80&w=1200&auto=format&fit=crop",
+    "url": "https://images.unsplash.com/photo-1541544741938-0af808b77e40?q=80&w=1200&auto=format&fit=crop",
+    "caption": "Intricate Geometric Archways",
+    "category": "Royal",
+    "created_at": "2026-01-04T10:00:00Z"
+  },
+  {
+    "_id": "gal-amb-002",
+    "image_url": "https://images.unsplash.com/photo-1590846406792-0adc7f938f1d?q=80&w=1200&auto=format&fit=crop",
+    "url": "https://images.unsplash.com/photo-1590846406792-0adc7f938f1d?q=80&w=1200&auto=format&fit=crop",
+    "caption": "Sovereign Twilight Dining",
+    "category": "Ambience",
+    "created_at": "2026-01-05T10:00:00Z"
+  },
+  {
+    "_id": "gal-food-003",
+    "image_url": "https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=1200&auto=format&fit=crop",
+    "url": "https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=1200&auto=format&fit=crop",
+    "caption": "Charcoal Smoked Raan Tender",
+    "category": "Food",
+    "created_at": "2026-01-06T10:00:00Z"
+  },
+  {
+    "_id": "gal-royal-002",
+    "image_url": "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=1200&auto=format&fit=crop",
+    "url": "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=1200&auto=format&fit=crop",
+    "caption": "Zafrani & Rose Royal Mocktails",
+    "category": "Royal",
+    "created_at": "2026-01-07T10:00:00Z"
+  },
+  {
+    "_id": "gal-events-001",
+    "image_url": "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?q=80&w=1200&auto=format&fit=crop",
+    "url": "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?q=80&w=1200&auto=format&fit=crop",
+    "caption": "Bespoke Royal Banquet & Celebrations",
+    "category": "Events",
+    "created_at": "2026-01-08T10:00:00Z"
+  },
+  {
+    "_id": "gal-events-002",
+    "image_url": "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?q=80&w=1200&auto=format&fit=crop",
+    "url": "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?q=80&w=1200&auto=format&fit=crop",
+    "caption": "Private Dastarkhwan Family Gathering",
+    "category": "Events",
+    "created_at": "2026-01-09T10:00:00Z"
+  },
+  {
+    "_id": "gal-food-004",
+    "image_url": "https://images.unsplash.com/photo-1574484284002-952d92156ca6?q=80&w=1200&auto=format&fit=crop",
+    "url": "https://images.unsplash.com/photo-1574484284002-952d92156ca6?q=80&w=1200&auto=format&fit=crop",
+    "caption": "Saffron Berry Pulao & Nihari",
+    "category": "Food",
+    "created_at": "2026-01-10T10:00:00Z"
+  },
+  {
+    "_id": "gal-royal-003",
+    "image_url": "https://images.unsplash.com/photo-1578474846511-04ba529f0b88?q=80&w=1200&auto=format&fit=crop",
+    "url": "https://images.unsplash.com/photo-1578474846511-04ba529f0b88?q=80&w=1200&auto=format&fit=crop",
+    "caption": "Imperial Chandelier Gallery",
+    "category": "Royal",
+    "created_at": "2026-01-11T10:00:00Z"
+  },
+  {
+    "_id": "gal-events-003",
+    "image_url": "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=1200&auto=format&fit=crop",
+    "url": "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=1200&auto=format&fit=crop",
+    "caption": "Sufi Mehfil Live Musical Soirée",
+    "category": "Events",
+    "created_at": "2026-01-12T10:00:00Z"
+  }
+]
