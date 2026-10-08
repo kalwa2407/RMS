@@ -284,6 +284,92 @@ async def send_reservation_confirmation(
 
     return await send_whatsapp_text_message(to_phone=customer_phone, message_text=text_message)
 
+# ─── ONLINE ORDER CONFIRMATION DISPATCH (NO EMOJIS, DYNAMIC TOKEN) ───
+async def send_order_confirmation(order: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Sends clean transactional order confirmation WhatsApp message (strictly no emojis)
+    using Meta WhatsApp Cloud API when an order is accepted/confirmed.
+    """
+    customer_phone = order.get("phone") or order.get("customer_phone")
+    if not customer_phone:
+        return {"success": False, "error": "NO_PHONE_NUMBER"}
+
+    customer_name = order.get("customer_name") or "Valued Guest"
+
+    # Dynamic Order Token / ID
+    order_id = str(order.get("order_id") or order.get("id") or "")
+    token_str = (
+        order.get("bill_number")
+        or order.get("kot_number")
+        or (f"PD-{order_id[-6:].upper()}" if order_id else "PD-ORDER")
+    )
+
+    # Format items
+    items_raw = order.get("items") or []
+    items_lines = []
+    for it in items_raw:
+        if isinstance(it, dict):
+            qty = it.get("quantity", 1)
+            name = it.get("name") or it.get("item_name") or "Item"
+            items_lines.append(f"  • {qty}x {name}")
+        elif isinstance(it, str):
+            items_lines.append(f"  • {it}")
+
+    items_formatted = "\n".join(items_lines) if items_lines else "  • Royal Feast Selection"
+
+    # Total and payment
+    total_val = order.get("total") or order.get("subtotal") or 0
+    try:
+        total_str = f"{float(total_val):,.0f}"
+    except Exception:
+        total_str = str(total_val)
+
+    pay_method = str(order.get("payment_method") or "").lower()
+    pay_status = str(order.get("payment_status") or "").lower()
+    if "online" in pay_method or pay_status == "paid" or "razorpay" in pay_method:
+        payment_info = "Paid Online"
+    elif "cod" in pay_method or "cash" in pay_method:
+        payment_info = "Cash on Delivery"
+    else:
+        payment_info = "Pay at Counter" if str(order.get("order_type") or "").upper() == "DINE_IN" else "Cash / Online"
+
+    # Order Type & Address
+    order_type_raw = str(order.get("order_type") or "DELIVERY").upper()
+    if order_type_raw == "TAKEAWAY":
+        order_type_display = "Takeaway / Self Pickup"
+        address_display = "Persian Darbar, Camp, Pune (Pickup Counter)"
+        est_time = "15–25 mins"
+    elif order_type_raw == "DINE_IN":
+        table_no = order.get("table_number") or "Assigned"
+        order_type_display = f"Dine-In (Table {table_no})"
+        address_display = f"Table {table_no}, Persian Darbar"
+        est_time = "15–20 mins"
+    else:
+        order_type_display = "Home Delivery"
+        address_display = order.get("address") or "Customer Delivery Address"
+        est_time = "35–45 mins"
+
+    # Clean text message WITHOUT ANY EMOJIS (as explicitly requested)
+    message_text = (
+        f"*ORDER CONFIRMED — PERSIAN DARBAR*\n\n"
+        f"Dear *{customer_name}*,\n"
+        f"We have accepted your order! Our chefs are preparing your royal feast.\n\n"
+        f"*Order Details:*\n"
+        f"------------------------------------\n"
+        f"*Order Token / ID:* #{token_str}\n"
+        f"*Items:*\n"
+        f"{items_formatted}\n"
+        f"*Total Amount:* ₹{total_str} ({payment_info})\n"
+        f"*Delivery Type:* {order_type_display}\n"
+        f"*Address:* {address_display}\n"
+        f"*Estimated Time:* {est_time}\n\n"
+        f"*Live Order Tracking:*\n"
+        f"https://www.persiandarbar.in/track-order/{order_id}\n\n"
+        f"Helpline: +91 95942 87868"
+    )
+
+    return await send_whatsapp_text_message(to_phone=customer_phone, message_text=message_text)
+
 # ─── INCOMING WEBHOOK HANDLER ───
 async def handle_whatsapp_webhook(
     payload: Dict[str, Any],

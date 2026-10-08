@@ -31,6 +31,7 @@ from whatsapp_service import (
     verify_webhook_signature,
     handle_whatsapp_webhook,
     send_reservation_confirmation,
+    send_order_confirmation,
     send_whatsapp_text_message,
     send_whatsapp_template_message
 )
@@ -1649,6 +1650,20 @@ async def admin_update_order_status(
             if invoice_url:
                 update_data["invoice_url"] = invoice_url
         status_entry["note"] = f"Order accepted - KOT#{kot_num} generated"
+
+        # Dispatch clean transactional WhatsApp Order Confirmation to customer
+        try:
+            order_for_wa = {**order, **update_data}
+            wa_res = await send_order_confirmation(order_for_wa)
+            if wa_res.get("success"):
+                update_data["whatsapp_order_sent"] = True
+                update_data["whatsapp_order_id"] = wa_res.get("message_id")
+                logging.info(f"[WhatsApp] Online order confirmation dispatched for order {order_id} (wamid: {wa_res.get('message_id')})")
+            else:
+                update_data["whatsapp_order_error"] = wa_res.get("error")
+                logging.info(f"[WhatsApp] Online order confirmation notice for order {order_id}: {wa_res.get('error')}")
+        except Exception as wa_err:
+            logging.warning(f"[WhatsApp] Error dispatching order confirmation: {wa_err}")
     
     if status_update.status == "delivered":
         update_data["payment_status"] = "paid"
@@ -1663,6 +1678,42 @@ async def admin_update_order_status(
     await manager.update_order(order_id, update_data)
     
     return await manager.get_order_by_id(order_id)
+
+@admin_router.post("/orders/{order_id}/send-whatsapp")
+async def admin_send_order_whatsapp(
+    order_id: str,
+    username: str = Depends(verify_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """
+    Manually dispatch or re-send WhatsApp order confirmation to customer
+    using Meta WhatsApp Cloud API (clean format without emojis).
+    """
+    order = await manager.get_order_by_id(order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    wa_res = await send_order_confirmation(order)
+    if wa_res.get("success"):
+        await manager.update_order(order_id, {
+            "whatsapp_order_sent": True,
+            "whatsapp_order_id": wa_res.get("message_id"),
+            "whatsapp_order_sent_at": get_ist_now().isoformat()
+        })
+        return {
+            "success": True,
+            "message": "WhatsApp order confirmation dispatched successfully",
+            "message_id": wa_res.get("message_id")
+        }
+    else:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "success": False,
+                "error": wa_res.get("error"),
+                "details": wa_res.get("data")
+            }
+        )
 
 @admin_router.post("/orders/{order_id}/assign-delivery")
 async def admin_assign_delivery_partner(
