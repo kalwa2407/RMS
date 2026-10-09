@@ -450,12 +450,10 @@ async def send_order_delivered_bill(order: Dict[str, Any]) -> Dict[str, Any]:
     else:
         payment_info = "Paid"
 
-    # Fully qualified public link to view/download the tax invoice PDF
-    invoice_url = order.get("invoice_url")
-    if not invoice_url or not invoice_url.startswith("http"):
-        public_invoice_url = f"https://www.persiandarbar.in/api/invoice/{order_id}"
-    else:
-        public_invoice_url = invoice_url
+    # Public link on Persian Darbar official domain
+    public_invoice_url = f"https://www.persiandarbar.in/invoice/{order_id}"
+    # Direct high-speed API link for Meta document download engine
+    direct_pdf_download_url = f"https://tasteofhindustan-api-63332283509.asia-south1.run.app/api/invoice/{order_id}"
 
     order_id_short = order_id[-6:].upper() if len(order_id) >= 6 else order_id
 
@@ -482,7 +480,7 @@ async def send_order_delivered_bill(order: Dict[str, Any]) -> Dict[str, Any]:
     try:
         doc_res = await send_whatsapp_document_message(
             to_phone=customer_phone,
-            document_url=public_invoice_url,
+            document_url=direct_pdf_download_url,
             caption=f"Persian Darbar Tax Invoice #{bill_no}",
             filename=f"Persian_Darbar_Invoice_{bill_no}.pdf"
         )

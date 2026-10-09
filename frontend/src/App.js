@@ -17,6 +17,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import TableOrder from "./pages/TableOrder";
 import Events from "./pages/Events";
+import InvoiceRedirect from "./pages/InvoiceRedirect";
 import { Toaster } from "./components/ui/toaster";
 
 // Admin Imports
@@ -184,6 +185,8 @@ function App() {
               path="/track"
               element={<OrderTracking />}
             />
+            <Route path="/invoice/:orderId" element={<InvoiceRedirect />} />
+            <Route path="/invoices/:orderId" element={<InvoiceRedirect />} />
           <Route
             path="/reservation"
             element={<><Navbar /><Reservation /><Footer /><ChatBot /></>}
