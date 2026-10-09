@@ -264,22 +264,22 @@ async def send_reservation_confirmation(
 
         logger.info(f"[WhatsApp] Template '{active_template}' delivery fallback to text message...")
 
-    # Fallback to royal text pass
+    # Fallback to royal text pass without any emojis
     table_line = f"Table {table_num}" if not table_num.startswith("Table") else table_num
     text_message = (
-        f"🌟 *TABLE RESERVATION CONFIRMED — PERSIAN DARBAR* 🌟\n\n"
+        f"*TABLE RESERVATION CONFIRMED — PERSIAN DARBAR*\n\n"
         f"Dear *{customer_name}*,\n\n"
-        f"We are delighted to confirm your royal dining reservation at *Persian Darbar*!\n\n"
-        f"📋 *Your Dining Pass:*\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"📅 *Date:* {date_str}\n"
-        f"⏰ *Time Slot:* {time_str}\n"
-        f"👥 *Guests:* {guests} Guests\n"
-        f"🪑 *Assigned Table:* {table_line}\n\n"
-        f"📍 *Location:* Camp, Pune\n"
-        f"📞 *Host Desk:* +91 95942 87868\n\n"
-        f"⚠️ *Guest Note:* Please arrive 10-15 minutes prior to your time slot. Your table is held for 15 minutes past booking time.\n\n"
-        f"We look forward to welcoming you with royal hospitality! 👑"
+        f"We are delighted to confirm your dining reservation at *Persian Darbar*!\n\n"
+        f"*Your Dining Pass:*\n"
+        f"------------------------------------\n"
+        f"*Date:* {date_str}\n"
+        f"*Time Slot:* {time_str}\n"
+        f"*Guests:* {guests} Guests\n"
+        f"*Assigned Table:* {table_line}\n\n"
+        f"*Location:* Camp, Pune\n"
+        f"*Host Desk:* +91 95942 87868\n\n"
+        f"*Guest Note:* Please arrive 10-15 minutes prior to your time slot. Your table is held for 15 minutes past booking time.\n\n"
+        f"We look forward to welcoming you to Persian Darbar."
     )
 
     return await send_whatsapp_text_message(to_phone=customer_phone, message_text=text_message)
@@ -359,13 +359,94 @@ async def send_order_confirmation(order: Dict[str, Any]) -> Dict[str, Any]:
         f"*Order Token / ID:* #{token_str}\n"
         f"*Items:*\n"
         f"{items_formatted}\n"
-        f"*Total Amount:* ₹{total_str} ({payment_info})\n"
+        f"*Total Amount:* Rs {total_str} ({payment_info})\n"
         f"*Delivery Type:* {order_type_display}\n"
         f"*Address:* {address_display}\n"
         f"*Estimated Time:* {est_time}\n\n"
         f"*Live Order Tracking:*\n"
         f"https://www.persiandarbar.in/track-order/{order_id}\n\n"
         f"Helpline: +91 95942 87868"
+    )
+
+    return await send_whatsapp_text_message(to_phone=customer_phone, message_text=message_text)
+
+# ─── ONLINE ORDER DELIVERED BILL DISPATCH (NO EMOJIS, COMPREHENSIVE RECEIPT) ───
+async def send_order_delivered_bill(order: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Sends complete transactional invoice/bill on WhatsApp (strictly no emojis)
+    as soon as rider or admin marks an online order as DELIVERED.
+    """
+    customer_phone = order.get("phone") or order.get("customer_phone")
+    if not customer_phone:
+        return {"success": False, "error": "NO_PHONE_NUMBER"}
+
+    customer_name = order.get("customer_name") or "Valued Guest"
+    order_id = str(order.get("order_id") or order.get("id") or "")
+    bill_no = order.get("bill_number") or order.get("kot_number") or (f"PD-{order_id[-6:].upper()}" if order_id else "PD-BILL")
+
+    # Format items with price
+    items_raw = order.get("items") or []
+    items_lines = []
+    for it in items_raw:
+        if isinstance(it, dict):
+            qty = it.get("quantity", 1)
+            name = it.get("name") or it.get("item_name") or "Item"
+            price = it.get("price") or 0
+            line_amt = float(price) * float(qty) if price else 0
+            amt_str = f" - Rs {line_amt:,.0f}" if line_amt > 0 else ""
+            items_lines.append(f"  • {qty}x {name}{amt_str}")
+        elif isinstance(it, str):
+            items_lines.append(f"  • {it}")
+
+    items_formatted = "\n".join(items_lines) if items_lines else "  • Royal Feast Selection"
+
+    subtotal = float(order.get("subtotal") or 0)
+    gst = float(order.get("taxes") or order.get("tax") or 0)
+    del_fee = float(order.get("delivery_fee") or 0)
+    discount = float(order.get("discount") or 0)
+    total_val = float(order.get("total") or (subtotal + gst + del_fee - discount))
+
+    pay_method = str(order.get("payment_method") or "").lower()
+    pay_status = str(order.get("payment_status") or "").lower()
+    if "online" in pay_method or pay_status == "paid" or "razorpay" in pay_method:
+        payment_info = "Paid Online"
+    elif "cod" in pay_method or "cash" in pay_method:
+        payment_info = "Cash on Delivery (Received)"
+    else:
+        payment_info = "Paid"
+
+    invoice_url = order.get("invoice_url")
+    invoice_line = f"*Download Tax Invoice:*\n{invoice_url}\n\n" if invoice_url else ""
+
+    message_text = (
+        f"*ORDER DELIVERED — PERSIAN DARBAR*\n\n"
+        f"Dear *{customer_name}*,\n"
+        f"Your order has been delivered! We hope you loved your meal.\n\n"
+        f"*Invoice & Bill Details:*\n"
+        f"------------------------------------\n"
+        f"*Bill / Invoice No:* #{bill_no}\n"
+        f"*Order ID:* #{order_id[-6:].upper() if order_id else 'PD'}\n"
+        f"*Payment:* {payment_info}\n\n"
+        f"*Items Ordered:*\n"
+        f"{items_formatted}\n"
+        f"------------------------------------\n"
+        f"Subtotal: Rs {subtotal:,.0f}\n"
+    )
+    if gst > 0:
+        message_text += f"GST (5%): Rs {gst:,.0f}\n"
+    if del_fee > 0:
+        message_text += f"Delivery Fee: Rs {del_fee:,.0f}\n"
+    if discount > 0:
+        message_text += f"Discount: -Rs {discount:,.0f}\n"
+
+    message_text += (
+        f"------------------------------------\n"
+        f"*TOTAL PAID:* Rs {total_val:,.0f}\n\n"
+        f"{invoice_line}"
+        f"*Rate Your Meal / Helpline:*\n"
+        f"https://www.persiandarbar.in/reviews\n"
+        f"Support: +91 95942 87868\n\n"
+        f"Thank you for dining with Persian Darbar."
     )
 
     return await send_whatsapp_text_message(to_phone=customer_phone, message_text=message_text)

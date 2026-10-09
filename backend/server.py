@@ -32,6 +32,7 @@ from whatsapp_service import (
     handle_whatsapp_webhook,
     send_reservation_confirmation,
     send_order_confirmation,
+    send_order_delivered_bill,
     send_whatsapp_text_message,
     send_whatsapp_template_message
 )
@@ -1671,6 +1672,21 @@ async def admin_update_order_status(
         status_entry["note"] = "Order delivered successfully"
         if order.get("table_number"):
             await manager.update_table_status(order.get("table_number"), "free")
+        
+        # Dispatch clean transactional WhatsApp Bill to customer (strictly online orders)
+        if order.get("order_type") != "DINE_IN":
+            try:
+                order_for_bill = {**order, **update_data}
+                bill_res = await send_order_delivered_bill(order_for_bill)
+                if bill_res.get("success"):
+                    update_data["whatsapp_bill_sent"] = True
+                    update_data["whatsapp_bill_id"] = bill_res.get("message_id")
+                    logging.info(f"[WhatsApp] Delivered bill sent for order {order_id} (wamid: {bill_res.get('message_id')})")
+                else:
+                    update_data["whatsapp_bill_error"] = bill_res.get("error")
+                    logging.info(f"[WhatsApp] Delivered bill notice for order {order_id}: {bill_res.get('error')}")
+            except Exception as bill_err:
+                logging.warning(f"[WhatsApp] Error sending delivered bill: {bill_err}")
     
     history = order.get("status_history", [])
     history.append(status_entry)
@@ -3725,6 +3741,21 @@ async def delivery_update_order_status(
                     p["total_deliveries"] = p.get("total_deliveries", 0) + 1
                     break
             await manager._write("delivery_partners", partners)
+        
+        # Dispatch WhatsApp Bill / Receipt as soon as rider marks DELIVERED
+        if order.get("order_type") != "DINE_IN":
+            try:
+                order_for_bill = {**order, **update_data}
+                bill_res = await send_order_delivered_bill(order_for_bill)
+                if bill_res.get("success"):
+                    update_data["whatsapp_bill_sent"] = True
+                    update_data["whatsapp_bill_id"] = bill_res.get("message_id")
+                    logging.info(f"[WhatsApp] Rider delivered bill sent for order {order_id} (wamid: {bill_res.get('message_id')})")
+                else:
+                    update_data["whatsapp_bill_error"] = bill_res.get("error")
+                    logging.info(f"[WhatsApp] Rider delivered bill notice for order {order_id}: {bill_res.get('error')}")
+            except Exception as bill_err:
+                logging.warning(f"[WhatsApp] Error sending rider delivered bill: {bill_err}")
     
     await manager.update_order(order_id, update_data)
     return await manager.get_order_by_id(order_id)
