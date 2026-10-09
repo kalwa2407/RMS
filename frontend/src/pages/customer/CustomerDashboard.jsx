@@ -8,7 +8,7 @@ import { lsCache, memCache } from '../../lib/cache';
 import {
   ShoppingBag, Calendar, Clock, Phone,
   Edit2, Check, ArrowRight, LogOut, AlertCircle,
-  Truck, UtensilsCrossed, RotateCw,
+  Truck, UtensilsCrossed, RotateCw, FileText,
   Eye, User, ChevronRight, Crown, Home, Plus, X,
   Star, Minus, Zap, Gift, TrendingUp, BookOpen,
   Search, MapPin, CheckCircle2, Trash2, Sparkles,
@@ -691,6 +691,7 @@ const CustomerDashboard = () => {
       const data = await res.json();
       setCart([]);
       setApplyCoins(false);
+      setPayMethod('cod');
       setIsCartOpen(false);
       setOrderDone(data);
       setOrderSubTab('history');
@@ -1824,11 +1825,39 @@ const CustomerDashboard = () => {
                             <p className="text-white/90 text-sm font-medium">{o.items?.map(i=>`${i.quantity}x ${i.name}`).slice(0,2).join(', ')}{o.items?.length>2?` +${o.items.length-2}`:''}</p>
                             <p className="text-white/50 text-xs mt-0.5">{fmt(o.created_at)} · {fmtT(o.created_at)}</p>
                           </div>
-                          <Link to={`/track?order_id=${o.order_id}`}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold active:scale-95 transition-all shadow-sm"
-                            style={{ background:'rgba(234,179,8,0.18)', border:`1px solid ${GB}`, color:GOLD }}>
-                            <Eye className="w-3.5 h-3.5" /> Track
-                          </Link>
+                          {o.status === 'delivered' ? (
+                            <div className="flex items-center gap-1.5">
+                              <a
+                                href={o.invoice_url || `/invoice/${o.order_id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold active:scale-95 transition-all shadow-sm bg-white/10 text-white/90 hover:bg-white/20 border border-white/15"
+                              >
+                                <FileText className="w-3.5 h-3.5 text-[#EAB308]" /> Bill
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => handleReorder(o)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold active:scale-95 transition-all shadow-sm bg-[#EAB308] text-black hover:bg-[#CA8A04]"
+                              >
+                                <RotateCw className="w-3.5 h-3.5" /> Reorder
+                              </button>
+                            </div>
+                          ) : ['cancelled', 'rejected'].includes(o.status) ? (
+                            <button
+                              type="button"
+                              onClick={() => handleReorder(o)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold active:scale-95 transition-all shadow-sm bg-white/10 text-white hover:bg-white/20 border border-white/10"
+                            >
+                              <RotateCw className="w-3.5 h-3.5 text-[#EAB308]" /> Reorder
+                            </button>
+                          ) : (
+                            <Link to={`/track?order_id=${o.order_id}`}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold active:scale-95 transition-all shadow-sm"
+                              style={{ background:'rgba(234,179,8,0.18)', border:`1px solid ${GB}`, color:GOLD }}>
+                              <Eye className="w-3.5 h-3.5" /> Track
+                            </Link>
+                          )}
                         </div>
 
                         {/* Logistics Rider Badge (Porter Courier or In-House Fleet) */}
@@ -2996,20 +3025,24 @@ const CustomerDashboard = () => {
                   <button
                     type="button"
                     onClick={() => setPayMethod('cod')}
-                    className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
-                      payMethod === 'cod' ? 'bg-[#EAB308] text-black shadow' : 'bg-white/10 text-white/70'
+                    className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all border flex items-center justify-center gap-1.5 ${
+                      payMethod === 'cod' ? 'bg-[#EAB308] text-black border-[#EAB308] shadow-md font-black' : 'bg-white/10 text-white/70 border-white/10 hover:border-white/20'
                     }`}
                   >
-                    💵 Cash on {orderType === 'TAKEAWAY' ? 'Pickup' : 'Delivery'}
+                    <span>💵</span>
+                    <span>Cash on {orderType === 'TAKEAWAY' ? 'Pickup' : 'Delivery'}</span>
+                    {payMethod === 'cod' && <span className="text-[10px] ml-0.5">✓</span>}
                   </button>
                   <button
                     type="button"
                     onClick={() => setPayMethod('online')}
-                    className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
-                      payMethod === 'online' ? 'bg-[#EAB308] text-black shadow' : 'bg-white/10 text-white/70'
+                    className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all border flex items-center justify-center gap-1.5 ${
+                      payMethod === 'online' ? 'bg-[#EAB308] text-black border-[#EAB308] shadow-md font-black' : 'bg-white/10 text-white/70 border-white/10 hover:border-white/20'
                     }`}
                   >
-                    💳 Online / UPI
+                    <span>💳</span>
+                    <span>Online / UPI</span>
+                    {payMethod === 'online' && <span className="text-[10px] ml-0.5">✓</span>}
                   </button>
                 </div>
               </div>

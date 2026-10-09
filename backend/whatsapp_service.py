@@ -376,12 +376,16 @@ async def send_order_confirmation(order: Dict[str, Any]) -> Dict[str, Any]:
 
     pay_method = str(order.get("payment_method") or "").lower()
     pay_status = str(order.get("payment_status") or "").lower()
-    if "online" in pay_method or pay_status == "paid" or "razorpay" in pay_method:
-        payment_info = "Paid Online"
-    elif "cod" in pay_method or "cash" in pay_method:
+    if "cod" in pay_method or "cash" in pay_method:
         payment_info = "Cash on Delivery"
+    elif ("online" in pay_method or "razorpay" in pay_method or "upi" in pay_method) and pay_status in ["paid", "completed"]:
+        payment_info = "Paid Online"
+    elif "online" in pay_method or "razorpay" in pay_method or "upi" in pay_method:
+        payment_info = "Online / UPI"
+    elif pay_status in ["paid", "completed"]:
+        payment_info = "Paid Online"
     else:
-        payment_info = "Pay at Counter" if str(order.get("order_type") or "").upper() == "DINE_IN" else "Cash / Online"
+        payment_info = "Pay at Counter" if str(order.get("order_type") or "").upper() == "DINE_IN" else "Cash on Delivery"
 
     # Order Type & Address
     order_type_raw = str(order.get("order_type") or "DELIVERY").upper()
@@ -443,12 +447,12 @@ async def send_order_delivered_bill(order: Dict[str, Any]) -> Dict[str, Any]:
 
     pay_method = str(order.get("payment_method") or "").lower()
     pay_status = str(order.get("payment_status") or "").lower()
-    if "online" in pay_method or pay_status == "paid" or "razorpay" in pay_method:
+    if "cod" in pay_method or "cash" in pay_method:
+        payment_info = "Cash on Delivery (Collected)"
+    elif "online" in pay_method or "razorpay" in pay_method or "upi" in pay_method or pay_status in ["paid", "completed"]:
         payment_info = "Paid Online"
-    elif "cod" in pay_method or "cash" in pay_method:
-        payment_info = "Cash on Delivery (Received)"
     else:
-        payment_info = "Paid"
+        payment_info = "Cash on Delivery (Collected)"
 
     # Public link on Persian Darbar official domain
     public_invoice_url = f"https://www.persiandarbar.in/invoice/{order_id}"

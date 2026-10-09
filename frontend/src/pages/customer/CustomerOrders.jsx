@@ -313,13 +313,15 @@ const CustomerOrders = () => {
                         <span>Reorder</span>
                       </button>
 
-                      <Link
-                        to={`/track?order_id=${order.order_id}`}
-                        className="px-4 py-1.5 bg-[#EAB308] hover:bg-[#CA8A04] text-black text-xs font-bold rounded-xl transition-all shadow flex items-center gap-1.5"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>{isActive ? 'Track Live' : 'View Details'}</span>
-                      </Link>
+                      {isActive && (
+                        <Link
+                          to={`/track?order_id=${order.order_id}`}
+                          className="px-4 py-1.5 bg-[#EAB308] hover:bg-[#CA8A04] text-black text-xs font-bold rounded-xl transition-all shadow flex items-center gap-1.5"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Track Live</span>
+                        </Link>
+                      )}
                     </div>
                   </div>
 

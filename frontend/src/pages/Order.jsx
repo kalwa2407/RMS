@@ -156,16 +156,16 @@ const CheckoutForm = React.memo(({
 
       {/* Payment Method */}
       <div className="grid grid-cols-2 gap-2">
-        {[['cod', 'Cash', <Wallet size={15} />], ['online', 'Online', <CreditCard size={15} />]].map(([val, label, icon]) => (
+        {[['cod', 'Cash on Delivery', <Wallet size={15} />], ['online', 'Online Payment', <CreditCard size={15} />]].map(([val, label, icon]) => (
           <button
             key={val}
             type="button"
             onClick={() => setFormData(p => ({ ...p, paymentMethod: val }))}
-            className={`p-3 rounded-xl border text-sm font-bold transition-all flex items-center justify-center gap-2 ${formData.paymentMethod === val
-              ? 'bg-[#EAB308] border-[#EAB308] text-black'
+            className={`p-3 rounded-xl border text-sm font-bold transition-all flex items-center justify-center gap-1.5 ${formData.paymentMethod === val
+              ? 'bg-[#EAB308] border-[#EAB308] text-black font-black shadow-md'
               : 'bg-[#0f2933] border-[#EAB308]/30 text-gray-400 hover:border-[#EAB308]/60'}`}
           >
-            {icon}<span>{label}</span>
+            {icon}<span>{label}</span>{formData.paymentMethod === val && <span className="text-xs">✓</span>}
           </button>
         ))}
       </div>
@@ -337,7 +337,7 @@ const Order = () => {
       phone: finalInfo.phone,
       address: finalInfo.address,
       distance_km: distance || 0,
-      payment_method: finalInfo.paymentMethod,
+      payment_method: finalInfo.paymentMethod || "cod",
       items: cart.map((i) => ({
         item_id: String(i._id), name: i.name, price: i.price, quantity: i.quantity,
         variant: null, variant_price: 0.0, addons: [], special_instructions: null
