@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://tasteofhindustan-api-63332283509.asia-south1.run.app/api/:path*"
+    },
+    {
+      "source": "/static/:path*",
+      "destination": "https://tasteofhindustan-api-63332283509.asia-south1.run.app/static/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
