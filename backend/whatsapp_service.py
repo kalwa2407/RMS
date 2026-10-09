@@ -212,6 +212,56 @@ async def send_whatsapp_text_message(
         logger.error(f"[WhatsApp] Exception sending text message: {str(e)}")
         return {"success": False, "error": str(e)}
 
+async def send_whatsapp_document_message(
+    to_phone: str,
+    document_url: str,
+    caption: str = "",
+    filename: str = "Invoice.pdf"
+) -> Dict[str, Any]:
+    """
+    Sends a PDF document message to the customer via Meta WhatsApp Cloud API.
+    """
+    token = os.getenv("WHATSAPP_ACCESS_TOKEN", "").strip()
+    if not token:
+        logger.warning("[WhatsApp] WHATSAPP_ACCESS_TOKEN not configured. Skipping document dispatch.")
+        return {"success": False, "error": "WHATSAPP_ACCESS_TOKEN_MISSING"}
+
+    formatted_recipient = format_whatsapp_number(to_phone)
+    if not formatted_recipient:
+        return {"success": False, "error": "INVALID_PHONE_NUMBER"}
+
+    payload = {
+        "messaging_product": "whatsapp",
+        "recipient_type": "individual",
+        "to": formatted_recipient,
+        "type": "document",
+        "document": {
+            "link": document_url,
+            "caption": caption,
+            "filename": filename
+        }
+    }
+
+    url = _get_api_url()
+    headers = _get_headers()
+
+    try:
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            response = await client.post(url, headers=headers, json=payload)
+            data = response.json()
+
+            if response.status_code in [200, 201]:
+                message_id = data.get("messages", [{}])[0].get("id")
+                logger.info(f"[WhatsApp] Document sent successfully to ...{formatted_recipient[-4:]}. ID: {message_id}")
+                return {"success": True, "message_id": message_id, "data": data}
+            else:
+                error_msg = data.get("error", {}).get("message", response.text)
+                logger.error(f"[WhatsApp] Meta Document Send Error ({response.status_code}): {error_msg}")
+                return {"success": False, "error": error_msg, "status_code": response.status_code, "data": data}
+    except Exception as e:
+        logger.error(f"[WhatsApp] Exception sending document message: {str(e)}")
+        return {"success": False, "error": str(e)}
+
 # ─── RESERVATION CONFIRMATION ORCHESTRATION ───
 async def send_reservation_confirmation(
     reservation: Dict[str, Any],
@@ -370,11 +420,12 @@ async def send_order_confirmation(order: Dict[str, Any]) -> Dict[str, Any]:
 
     return await send_whatsapp_text_message(to_phone=customer_phone, message_text=message_text)
 
-# ─── ONLINE ORDER DELIVERED BILL DISPATCH (NO EMOJIS, COMPREHENSIVE RECEIPT) ───
+# ─── ONLINE ORDER DELIVERED BILL DISPATCH (CONCISE RECEIPT & DIRECT PDF LINK) ───
 async def send_order_delivered_bill(order: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Sends complete transactional invoice/bill on WhatsApp (strictly no emojis)
-    as soon as rider or admin marks an online order as DELIVERED.
+    Sends clean transactional delivery notice with direct clickable PDF invoice link
+    and dispatches the PDF invoice document via WhatsApp as soon as order is marked DELIVERED.
+    Strictly zero emojis.
     """
     customer_phone = order.get("phone") or order.get("customer_phone")
     if not customer_phone:
@@ -383,22 +434,6 @@ async def send_order_delivered_bill(order: Dict[str, Any]) -> Dict[str, Any]:
     customer_name = order.get("customer_name") or "Valued Guest"
     order_id = str(order.get("order_id") or order.get("id") or "")
     bill_no = order.get("bill_number") or order.get("kot_number") or (f"PD-{order_id[-6:].upper()}" if order_id else "PD-BILL")
-
-    # Format items with price
-    items_raw = order.get("items") or []
-    items_lines = []
-    for it in items_raw:
-        if isinstance(it, dict):
-            qty = it.get("quantity", 1)
-            name = it.get("name") or it.get("item_name") or "Item"
-            price = it.get("price") or 0
-            line_amt = float(price) * float(qty) if price else 0
-            amt_str = f" - Rs {line_amt:,.0f}" if line_amt > 0 else ""
-            items_lines.append(f"  • {qty}x {name}{amt_str}")
-        elif isinstance(it, str):
-            items_lines.append(f"  • {it}")
-
-    items_formatted = "\n".join(items_lines) if items_lines else "  • Royal Feast Selection"
 
     subtotal = float(order.get("subtotal") or 0)
     gst = float(order.get("taxes") or order.get("tax") or 0)
@@ -415,41 +450,48 @@ async def send_order_delivered_bill(order: Dict[str, Any]) -> Dict[str, Any]:
     else:
         payment_info = "Paid"
 
+    # Fully qualified public link to view/download the tax invoice PDF
     invoice_url = order.get("invoice_url")
-    invoice_line = f"*Download Tax Invoice:*\n{invoice_url}\n\n" if invoice_url else ""
+    if not invoice_url or not invoice_url.startswith("http"):
+        public_invoice_url = f"https://www.persiandarbar.in/api/invoice/{order_id}"
+    else:
+        public_invoice_url = invoice_url
+
+    order_id_short = order_id[-6:].upper() if len(order_id) >= 6 else order_id
 
     message_text = (
         f"*ORDER DELIVERED — PERSIAN DARBAR*\n\n"
         f"Dear *{customer_name}*,\n"
         f"Your order has been delivered! We hope you loved your meal.\n\n"
-        f"*Invoice & Bill Details:*\n"
-        f"------------------------------------\n"
+        f"*Order Summary:*\n"
         f"*Bill / Invoice No:* #{bill_no}\n"
-        f"*Order ID:* #{order_id[-6:].upper() if order_id else 'PD'}\n"
-        f"*Payment:* {payment_info}\n\n"
-        f"*Items Ordered:*\n"
-        f"{items_formatted}\n"
-        f"------------------------------------\n"
-        f"Subtotal: Rs {subtotal:,.0f}\n"
-    )
-    if gst > 0:
-        message_text += f"GST (5%): Rs {gst:,.0f}\n"
-    if del_fee > 0:
-        message_text += f"Delivery Fee: Rs {del_fee:,.0f}\n"
-    if discount > 0:
-        message_text += f"Discount: -Rs {discount:,.0f}\n"
-
-    message_text += (
-        f"------------------------------------\n"
-        f"*TOTAL PAID:* Rs {total_val:,.0f}\n\n"
-        f"{invoice_line}"
+        f"*Order ID:* #{order_id_short}\n"
+        f"*Payment:* {payment_info}\n"
+        f"*Total Paid:* Rs {total_val:,.0f}\n\n"
+        f"*Download Tax Invoice (PDF):*\n"
+        f"{public_invoice_url}\n\n"
         f"*Rate Your Meal / Helpline:*\n"
         f"https://www.persiandarbar.in/reviews\n"
         f"Support: +91 95942 87868\n\n"
         f"Thank you for dining with Persian Darbar."
     )
 
-    return await send_whatsapp_text_message(to_phone=customer_phone, message_text=message_text)
+    text_res = await send_whatsapp_text_message(to_phone=customer_phone, message_text=message_text)
+
+    # Also dispatch the PDF document file directly to customer WhatsApp
+    try:
+        doc_res = await send_whatsapp_document_message(
+            to_phone=customer_phone,
+            document_url=public_invoice_url,
+            caption=f"Persian Darbar Tax Invoice #{bill_no}",
+            filename=f"Persian_Darbar_Invoice_{bill_no}.pdf"
+        )
+        if doc_res.get("success"):
+            logger.info(f"[WhatsApp] Delivered invoice document dispatched to ...{str(customer_phone)[-4:]} (wamid: {doc_res.get('message_id')})")
+    except Exception as doc_err:
+        logger.warning(f"[WhatsApp] Document dispatch notice: {doc_err}")
+
+    return text_res
 
 # ─── INCOMING WEBHOOK HANDLER ───
 async def handle_whatsapp_webhook(

@@ -25,7 +25,7 @@ def warn(name, detail=""):
     print(f"  {WARN} {name}" + (f" -- {detail}" if detail else ""))
 
 print("\n" + "="*60)
-print("  TASTE OF HINDUSTAN - PRE-FLIGHT CHECK")
+print("  PERSIAN DARBAR - PRE-FLIGHT CHECK")
 print("="*60)
 
 # ── 1. FILE STRUCTURE ──

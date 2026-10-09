@@ -316,7 +316,6 @@ const TableSessions = () => {
       <div class="center">
         ${logoHtml}
         <div class="header-name">PERSIAN DARBAR</div>
-        <div style="font-size:10px;letter-spacing:1px;margin-bottom:2px">&#9654; THE TASTE OF HINDUSTAN &#9664;</div>
         <div style="font-size:9px">Camp, Pune, Maharashtra 411004</div>
         <div style="font-size:9px">Ph: +91 9594287868</div>
         <div style="font-size:9px">GSTIN: 27XXXXX1234X1Z5</div>

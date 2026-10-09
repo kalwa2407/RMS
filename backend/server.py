@@ -246,9 +246,9 @@ async def create_order_invoice(order_id: str, manager: BaseDataManager):
         invoice_path = INVOICE_DIR / invoice_filename
         generate_invoice_pdf(order, str(invoice_path))
         
-        # Update order with invoice URL
-        invoice_url = f"/static/invoices/{invoice_filename}"
-        await manager.update_order_status(order_id, order["status"], {"status": order["status"], "timestamp": datetime.now().isoformat(), "note": f"Invoice generated (#{order.get('bill_number')})"})
+        # Update order with official public invoice URL
+        invoice_url = f"https://www.persiandarbar.in/api/invoice/{order_id}"
+        await manager.update_order(order_id, {"invoice_url": invoice_url})
         
         return invoice_url
     except Exception as e:
@@ -1676,6 +1676,18 @@ async def admin_update_order_status(
         # Dispatch clean transactional WhatsApp Bill to customer (strictly online orders)
         if order.get("order_type") != "DINE_IN":
             try:
+                # Ensure monthly sequential bill number and invoice exist
+                if not order.get("bill_number"):
+                    bill_number, year_month = await generate_bill_number(manager)
+                    update_data["bill_number"] = bill_number
+                    update_data["bill_year_month"] = year_month
+                    order["bill_number"] = bill_number
+                    order["bill_year_month"] = year_month
+                invoice_url = await create_order_invoice(order_id, manager)
+                if invoice_url:
+                    update_data["invoice_url"] = invoice_url
+                    order["invoice_url"] = invoice_url
+
                 order_for_bill = {**order, **update_data}
                 bill_res = await send_order_delivered_bill(order_for_bill)
                 if bill_res.get("success"):
@@ -2198,6 +2210,9 @@ async def download_invoice(
 
 
 @api_router.get("/invoice/{order_id}")
+@api_router.get("/invoice/{order_id}.pdf")
+@api_router.get("/orders/{order_id}/invoice")
+@api_router.get("/orders/{order_id}/invoice.pdf")
 async def customer_download_invoice(
     order_id: str,
     manager: BaseDataManager = Depends(get_data_manager)
@@ -2224,9 +2239,9 @@ async def customer_download_invoice(
     bill_no = order.get("bill_number", order_id)
     return FileResponse(
         path=str(invoice_path),
-        filename=f"invoice_{bill_no}.pdf",
+        filename=f"Persian_Darbar_Invoice_{bill_no}.pdf",
         media_type="application/pdf",
-        headers={"Content-Disposition": f"inline; filename=invoice_{bill_no}.pdf"}
+        headers={"Content-Disposition": f"inline; filename=Persian_Darbar_Invoice_{bill_no}.pdf"}
     )
 
 # Admin File Upload Endpoints
@@ -3745,6 +3760,18 @@ async def delivery_update_order_status(
         # Dispatch WhatsApp Bill / Receipt as soon as rider marks DELIVERED
         if order.get("order_type") != "DINE_IN":
             try:
+                # Ensure monthly sequential bill number and invoice exist
+                if not order.get("bill_number"):
+                    bill_number, year_month = await generate_bill_number(manager)
+                    update_data["bill_number"] = bill_number
+                    update_data["bill_year_month"] = year_month
+                    order["bill_number"] = bill_number
+                    order["bill_year_month"] = year_month
+                invoice_url = await create_order_invoice(order_id, manager)
+                if invoice_url:
+                    update_data["invoice_url"] = invoice_url
+                    order["invoice_url"] = invoice_url
+
                 order_for_bill = {**order, **update_data}
                 bill_res = await send_order_delivered_bill(order_for_bill)
                 if bill_res.get("success"):

@@ -18,6 +18,13 @@
         }
       },
       {
+        "source": "/static/**",
+        "run": {
+          "serviceId": "tasteofhindustan-api",
+          "region": "asia-south1"
+        }
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

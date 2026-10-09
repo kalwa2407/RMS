@@ -42,7 +42,6 @@ function buildEscPosReceipt(order, billNo) {
   push(ALIGN_CENTER, BOLD_ON, FONT_2X);
   text("PERSIAN DARBAR");
   push(FONT_NORMAL, BOLD_OFF);
-  text("THE TASTE OF HINDUSTAN");
   text("Camp, Pune, MH 411004");
   text("Ph: +91 9594287868");
   text("GSTIN: 27XXXXX1234X1Z5");
@@ -224,7 +223,6 @@ export async function buildReceiptHtml(order, billNo) {
     <div class="center">
       ${logoHtml}
       <div class="brand">PERSIAN DARBAR</div>
-      <div class="tag">&#9654; THE TASTE OF HINDUSTAN &#9664;</div>
       <div style="font-size:9px">Camp, Pune, Maharashtra 411004</div>
       <div style="font-size:9px">Ph: +91 9594287868</div>
       <div style="font-size:9px">GSTIN: 27XXXXX1234X1Z5</div>
