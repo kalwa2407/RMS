@@ -474,22 +474,7 @@ async def send_order_delivered_bill(order: Dict[str, Any]) -> Dict[str, Any]:
         f"Thank you for dining with Persian Darbar."
     )
 
-    text_res = await send_whatsapp_text_message(to_phone=customer_phone, message_text=message_text)
-
-    # Also dispatch the PDF document file directly to customer WhatsApp
-    try:
-        doc_res = await send_whatsapp_document_message(
-            to_phone=customer_phone,
-            document_url=direct_pdf_download_url,
-            caption=f"Persian Darbar Tax Invoice #{bill_no}",
-            filename=f"Persian_Darbar_Invoice_{bill_no}.pdf"
-        )
-        if doc_res.get("success"):
-            logger.info(f"[WhatsApp] Delivered invoice document dispatched to ...{str(customer_phone)[-4:]} (wamid: {doc_res.get('message_id')})")
-    except Exception as doc_err:
-        logger.warning(f"[WhatsApp] Document dispatch notice: {doc_err}")
-
-    return text_res
+    return await send_whatsapp_text_message(to_phone=customer_phone, message_text=message_text)
 
 # ─── INCOMING WEBHOOK HANDLER ───
 async def handle_whatsapp_webhook(
