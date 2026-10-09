@@ -182,7 +182,15 @@ function App() {
               element={<OrderTracking />}
             />
             <Route
+              path="/track-order/:orderId"
+              element={<OrderTracking />}
+            />
+            <Route
               path="/track"
+              element={<OrderTracking />}
+            />
+            <Route
+              path="/track/:orderId"
               element={<OrderTracking />}
             />
             <Route path="/invoice/:orderId" element={<InvoiceRedirect />} />

@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "../hooks/use-toast";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import API_BASE from "../lib/config";
 
 const GOLD = "#EAB308";
@@ -48,6 +48,7 @@ const OrderTracking = () => {
   const { toast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
+  const { orderId: pathOrderId } = useParams();
   const [orderId, setOrderId] = useState("");
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -56,13 +57,13 @@ const OrderTracking = () => {
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const paramId = params.get("order_id");
+    const paramId = params.get("order_id") || pathOrderId;
     const lastOrderId = paramId || localStorage.getItem("lastOrderId");
     if (lastOrderId) {
       setOrderId(lastOrderId);
       fetchOrder(lastOrderId);
     }
-  }, [location.search]);
+  }, [location.search, pathOrderId]);
 
   // Real-time polling every 10 seconds for active orders
   useEffect(() => {

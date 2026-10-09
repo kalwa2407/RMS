@@ -403,7 +403,32 @@ async def send_order_confirmation(order: Dict[str, Any]) -> Dict[str, Any]:
         address_display = order.get("address") or "Customer Delivery Address"
         est_time = "35–45 mins"
 
-    # Clean text message WITHOUT ANY EMOJIS (as explicitly requested)
+    # Check for Meta approved template dispatch first
+    order_template = os.getenv("WHATSAPP_ORDER_TEMPLATE", "order_confirmation").strip()
+    if order_template:
+        components = [
+            {
+                "type": "body",
+                "parameters": [
+                    {"type": "text", "text": customer_name},
+                    {"type": "text", "text": str(token_str)},
+                    {"type": "text", "text": str(total_str)},
+                    {"type": "text", "text": str(order_type_display)},
+                    {"type": "text", "text": str(order_id)},
+                ]
+            }
+        ]
+        res = await send_whatsapp_template_message(
+            to_phone=customer_phone,
+            template_name=order_template,
+            language_code=os.getenv("WHATSAPP_TEMPLATE_LANG", "en"),
+            components=components
+        )
+        if res.get("success"):
+            return res
+        logger.info(f"[WhatsApp] Order template '{order_template}' fallback to text message...")
+
+    # Clean text message WITHOUT ANY EMOJIS (fallback)
     message_text = (
         f"*ORDER CONFIRMED — PERSIAN DARBAR*\n\n"
         f"Dear *{customer_name}*,\n"
@@ -429,7 +454,7 @@ async def send_order_delivered_bill(order: Dict[str, Any]) -> Dict[str, Any]:
     """
     Sends clean transactional delivery notice with direct clickable PDF invoice link
     and dispatches the PDF invoice document via WhatsApp as soon as order is marked DELIVERED.
-    Strictly zero emojis.
+    Attempts Meta approved template first, falls back to text.
     """
     customer_phone = order.get("phone") or order.get("customer_phone")
     if not customer_phone:
@@ -456,10 +481,32 @@ async def send_order_delivered_bill(order: Dict[str, Any]) -> Dict[str, Any]:
 
     # Public link on Persian Darbar official domain
     public_invoice_url = f"https://www.persiandarbar.in/invoice/{order_id}"
-    # Direct high-speed API link for Meta document download engine
-    direct_pdf_download_url = f"https://tasteofhindustan-api-63332283509.asia-south1.run.app/api/invoice/{order_id}"
 
     order_id_short = order_id[-6:].upper() if len(order_id) >= 6 else order_id
+
+    # Check for Meta approved template dispatch first
+    bill_template = os.getenv("WHATSAPP_BILL_TEMPLATE", "order_delivered_bill").strip()
+    if bill_template:
+        components = [
+            {
+                "type": "body",
+                "parameters": [
+                    {"type": "text", "text": customer_name},
+                    {"type": "text", "text": str(bill_no)},
+                    {"type": "text", "text": f"{total_val:,.0f}"},
+                    {"type": "text", "text": str(order_id)},
+                ]
+            }
+        ]
+        res = await send_whatsapp_template_message(
+            to_phone=customer_phone,
+            template_name=bill_template,
+            language_code=os.getenv("WHATSAPP_TEMPLATE_LANG", "en"),
+            components=components
+        )
+        if res.get("success"):
+            return res
+        logger.info(f"[WhatsApp] Bill template '{bill_template}' fallback to text message...")
 
     message_text = (
         f"*ORDER DELIVERED — PERSIAN DARBAR*\n\n"

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Check, X, Clock, Package, Truck, Home, Printer, Eye, Bell, Trash2, Bike, UtensilsCrossed, ShoppingBag, MapPin, Phone, ExternalLink, RefreshCw, Zap, AlertTriangle, ToggleLeft, ToggleRight, WifiOff } from "lucide-react";
+import { Check, X, Clock, Package, Truck, Home, Printer, Eye, Bell, Trash2, Bike, UtensilsCrossed, ShoppingBag, MapPin, Phone, ExternalLink, RefreshCw, Zap, AlertTriangle, ToggleLeft, ToggleRight, WifiOff, MessageCircle } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
 import API_BASE from "../../lib/config";
@@ -276,6 +276,27 @@ const OrdersManagement = () => {
   };
 
 
+
+  const openOrderWhatsApp = (order) => {
+    const rawPhone = order.phone?.replace(/\D/g, "");
+    const waNumber = rawPhone?.length === 10 ? `91${rawPhone}` : rawPhone;
+    if (!waNumber) {
+      toast({ title: "No Phone Number", description: "Customer phone number not available for this order.", variant: "destructive" });
+      return;
+    }
+    const token = order.bill_number || order.kot_number || (order.order_id ? order.order_id.slice(-6).toUpperCase() : "PD-ORDER");
+    const items = (order.items || []).map(i => `  • ${i.quantity || 1}x ${i.name || i.item_name || "Item"}`).join("\n");
+    const orderType = order.order_type === "TAKEAWAY" ? "Takeaway / Self Pickup" : "Home Delivery";
+    
+    let text = "";
+    if (order.status === "delivered") {
+      text = `*ORDER DELIVERED — PERSIAN DARBAR*\n\nDear *${order.customer_name || "Valued Guest"}*,\nYour order has been delivered! We hope you loved your meal.\n\n*Bill Summary:*\n*Bill No:* #${token}\n*Total Paid:* Rs ${order.total || order.subtotal || 0}\n\n*Download Tax Invoice (PDF):*\nhttps://www.persiandarbar.in/invoice/${order.order_id || order.id || ""}\n\nSupport: +91 95942 87868\nThank you for dining with Persian Darbar.`;
+    } else {
+      text = `*ORDER CONFIRMED — PERSIAN DARBAR*\n\nDear *${order.customer_name || "Valued Guest"}*,\nWe have accepted your order! Our chefs are preparing your royal feast.\n\n*Order Details:*\n*Order ID / Token:* #${token}\n*Items:*\n${items}\n*Total Amount:* Rs ${order.total || order.subtotal || 0}\n*Delivery Type:* ${orderType}\n\n*Live Order Tracking:*\nhttps://www.persiandarbar.in/track-order/${order.order_id || order.id || ""}\n\nHelpline: +91 95942 87868`;
+    }
+    
+    window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(text)}`, "_blank");
+  };
 
   const updateStatus = async (order, newStatus) => {
     try {
@@ -675,7 +696,19 @@ const OrdersManagement = () => {
                     <div>
                       <p className="text-gray-500 text-xs uppercase tracking-wider mb-0.5">Customer</p>
                       <p className="text-white font-semibold text-sm">{order.customer_name}</p>
-                      <p className="text-gray-400 text-xs">{order.phone || "—"}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-gray-400 text-xs">{order.phone || "—"}</p>
+                        {order.phone && (
+                          <button
+                            onClick={() => openOrderWhatsApp(order)}
+                            className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-400 hover:text-emerald-300 transition-colors bg-emerald-500/10 hover:bg-emerald-500/20 px-1.5 py-0.5 rounded border border-emerald-500/30"
+                            title="Chat with customer on WhatsApp"
+                          >
+                            <MessageCircle className="w-3 h-3" />
+                            <span>WhatsApp</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                     {(order.address || order.table_number) && (
                       <div>
@@ -749,6 +782,18 @@ const OrdersManagement = () => {
                           <span>Print Bill</span>
                         </button>
                       </div>
+                    )}
+
+                    {/* WhatsApp Customer Dispatch Button */}
+                    {order.phone && order.order_type !== "DINE_IN" && (
+                      <button
+                        onClick={() => openOrderWhatsApp(order)}
+                        className="bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-400 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors shadow-sm"
+                        title="Send WhatsApp confirmation to customer"
+                      >
+                        <MessageCircle className="w-4 h-4 text-emerald-400" />
+                        <span>WhatsApp</span>
+                      </button>
                     )}
 
                     {/* ── Delivery Assignment (In-House Fleet OR Porter) ── */}
