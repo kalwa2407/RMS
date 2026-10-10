@@ -4444,6 +4444,301 @@ async def admin_loyalty_transactions(
     return all_txns[:50]
 
 
+@admin_router.get("/customers")
+async def admin_get_all_customers_with_metrics(
+    username: str = Depends(verify_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """
+    Get all registered and guest customers segmented by provider (Google vs Phone OTP)
+    with complete metrics:
+    - total orders, total amount spent
+    - total reservations made
+    - item breakdown (what dishes and how many times ordered)
+    - full order history and reservation history
+    """
+    customers = await manager._read("customers")
+    orders = await manager._read("orders")
+    reservations = await manager._read("reservations")
+
+    def norm_p(p):
+        if not p:
+            return ""
+        d = "".join(ch for ch in str(p) if ch.isdigit())
+        return d[-10:] if len(d) >= 10 else d
+
+    def norm_e(e):
+        if not e:
+            return ""
+        return str(e).strip().lower()
+
+    # Pre-index orders by uid, phone, email for fast matching
+    orders_by_uid: Dict[str, list] = {}
+    orders_by_phone: Dict[str, list] = {}
+    orders_by_email: Dict[str, list] = {}
+    for o in orders:
+        o_uid = o.get("customer_uid")
+        o_p = norm_p(o.get("phone"))
+        o_e = norm_e(o.get("email"))
+        if o_uid:
+            orders_by_uid.setdefault(o_uid, []).append(o)
+        if o_p:
+            orders_by_phone.setdefault(o_p, []).append(o)
+        if o_e:
+            orders_by_email.setdefault(o_e, []).append(o)
+
+    # Pre-index reservations
+    res_by_uid: Dict[str, list] = {}
+    res_by_phone: Dict[str, list] = {}
+    res_by_email: Dict[str, list] = {}
+    for r in reservations:
+        r_uid = r.get("customer_uid")
+        r_p = norm_p(r.get("phone"))
+        r_e = norm_e(r.get("email"))
+        if r_uid:
+            res_by_uid.setdefault(r_uid, []).append(r)
+        if r_p:
+            res_by_phone.setdefault(r_p, []).append(r)
+        if r_e:
+            res_by_email.setdefault(r_e, []).append(r)
+
+    processed_customers = []
+    seen_customer_phones = set()
+    seen_customer_emails = set()
+
+    for c in customers:
+        uid = c.get("uid", "")
+        phone = norm_p(c.get("phone"))
+        email = norm_e(c.get("email"))
+        if phone:
+            seen_customer_phones.add(phone)
+        if email:
+            seen_customer_emails.add(email)
+
+        # Match orders uniquely
+        matched_orders = {}
+        for o in orders_by_uid.get(uid, []):
+            oid = o.get("order_id") or o.get("_id") or o.get("id")
+            if oid:
+                matched_orders[oid] = o
+        if phone:
+            for o in orders_by_phone.get(phone, []):
+                oid = o.get("order_id") or o.get("_id") or o.get("id")
+                if oid:
+                    matched_orders[oid] = o
+        if email:
+            for o in orders_by_email.get(email, []):
+                oid = o.get("order_id") or o.get("_id") or o.get("id")
+                if oid:
+                    matched_orders[oid] = o
+
+        # Match reservations uniquely
+        matched_res = {}
+        for r in res_by_uid.get(uid, []):
+            rid = r.get("id") or r.get("_id")
+            if rid:
+                matched_res[rid] = r
+        if phone:
+            for r in res_by_phone.get(phone, []):
+                rid = r.get("id") or r.get("_id")
+                if rid:
+                    matched_res[rid] = r
+        if email:
+            for r in res_by_email.get(email, []):
+                rid = r.get("id") or r.get("_id")
+                if rid:
+                    matched_res[rid] = r
+
+        user_orders = list(matched_orders.values())
+        user_res = list(matched_res.values())
+
+        user_orders.sort(key=lambda x: str(x.get("created_at") or x.get("timestamp") or ""), reverse=True)
+        user_res.sort(key=lambda x: str(x.get("created_at") or x.get("date") or ""), reverse=True)
+
+        # Aggregate items ordered
+        items_map = {}
+        total_spent = 0.0
+        for o in user_orders:
+            amt = o.get("total") or o.get("total_amount") or o.get("final_amount") or 0
+            try:
+                total_spent += float(amt)
+            except Exception:
+                pass
+
+            for it in o.get("items", []):
+                name = it.get("name") or it.get("title") or "Item"
+                qty = it.get("quantity") or it.get("qty") or 1
+                try:
+                    qty = int(qty)
+                except Exception:
+                    qty = 1
+                price = it.get("price") or 0
+                try:
+                    price = float(price)
+                except Exception:
+                    price = 0.0
+
+                if name not in items_map:
+                    items_map[name] = {"name": name, "count": 0, "total_spent": 0.0}
+                items_map[name]["count"] += qty
+                items_map[name]["total_spent"] = round(items_map[name]["total_spent"] + (qty * price), 2)
+
+        sorted_items = sorted(items_map.values(), key=lambda x: x["count"], reverse=True)
+
+        # Provider determination:
+        # If uid starts with wa_, it's Phone OTP.
+        # If email exists and not wa_, it's Google Sign-In.
+        if uid.startswith("wa_"):
+            provider = "phone"
+        elif email and not uid.startswith("wa_"):
+            provider = "google"
+        elif phone:
+            provider = "phone"
+        else:
+            provider = "google"
+
+        last_active = c.get("updated_at") or c.get("created_at") or ""
+        if user_orders and str(user_orders[0].get("created_at") or "") > last_active:
+            last_active = str(user_orders[0].get("created_at") or "")
+        if user_res and str(user_res[0].get("created_at") or "") > last_active:
+            last_active = str(user_res[0].get("created_at") or "")
+
+        processed_customers.append({
+            "_id": c.get("_id"),
+            "uid": uid,
+            "name": c.get("name") or "Customer",
+            "phone": c.get("phone", ""),
+            "email": c.get("email", ""),
+            "picture": c.get("picture", ""),
+            "address": c.get("address", ""),
+            "addresses": c.get("addresses", []),
+            "pd_coins": c.get("pd_coins", 0) or 0,
+            "coins_history": c.get("coins_history", [])[-15:],
+            "provider": provider,
+            "is_registered": True,
+            "is_guest": False,
+            "created_at": c.get("created_at", ""),
+            "updated_at": c.get("updated_at", ""),
+            "last_active": last_active,
+            "total_orders": len(user_orders),
+            "total_spent": round(total_spent, 2),
+            "total_reservations": len(user_res),
+            "favorite_items": sorted_items,
+            "orders": user_orders,
+            "reservations": user_res
+        })
+
+    # Discover guest customers who ordered or reserved via phone
+    guest_phones = set()
+    for p in orders_by_phone.keys():
+        if p and p not in seen_customer_phones:
+            guest_phones.add(p)
+    for p in res_by_phone.keys():
+        if p and p not in seen_customer_phones:
+            guest_phones.add(p)
+
+    for gp in guest_phones:
+        user_orders = orders_by_phone.get(gp, [])
+        user_res = res_by_phone.get(gp, [])
+
+        user_orders.sort(key=lambda x: str(x.get("created_at") or x.get("timestamp") or ""), reverse=True)
+        user_res.sort(key=lambda x: str(x.get("created_at") or x.get("date") or ""), reverse=True)
+
+        g_name = ""
+        g_email = ""
+        for o in user_orders:
+            if not g_name and (o.get("customer_name") or o.get("name")):
+                g_name = o.get("customer_name") or o.get("name")
+            if not g_email and o.get("email"):
+                g_email = o.get("email")
+        for r in user_res:
+            if not g_name and (r.get("name") or r.get("customer_name")):
+                g_name = r.get("name") or r.get("customer_name")
+            if not g_email and r.get("email"):
+                g_email = r.get("email")
+
+        items_map = {}
+        total_spent = 0.0
+        for o in user_orders:
+            amt = o.get("total") or o.get("total_amount") or o.get("final_amount") or 0
+            try:
+                total_spent += float(amt)
+            except Exception:
+                pass
+            for it in o.get("items", []):
+                name = it.get("name") or it.get("title") or "Item"
+                qty = it.get("quantity") or it.get("qty") or 1
+                try:
+                    qty = int(qty)
+                except Exception:
+                    qty = 1
+                price = it.get("price") or 0
+                try:
+                    price = float(price)
+                except Exception:
+                    price = 0.0
+                if name not in items_map:
+                    items_map[name] = {"name": name, "count": 0, "total_spent": 0.0}
+                items_map[name]["count"] += qty
+                items_map[name]["total_spent"] = round(items_map[name]["total_spent"] + (qty * price), 2)
+
+        sorted_items = sorted(items_map.values(), key=lambda x: x["count"], reverse=True)
+        first_date = ""
+        if user_orders:
+            first_date = str(user_orders[-1].get("created_at") or "")
+        elif user_res:
+            first_date = str(user_res[-1].get("created_at") or "")
+
+        last_date = ""
+        if user_orders:
+            last_date = str(user_orders[0].get("created_at") or "")
+        elif user_res:
+            last_date = str(user_res[0].get("created_at") or "")
+
+        processed_customers.append({
+            "_id": f"guest_{gp}",
+            "uid": f"guest_{gp}",
+            "name": g_name or f"Guest ({gp[-4:]})",
+            "phone": gp,
+            "email": g_email,
+            "picture": "",
+            "address": "",
+            "addresses": [],
+            "pd_coins": 0,
+            "coins_history": [],
+            "provider": "phone",
+            "is_registered": False,
+            "is_guest": True,
+            "created_at": first_date,
+            "updated_at": last_date,
+            "last_active": last_date,
+            "total_orders": len(user_orders),
+            "total_spent": round(total_spent, 2),
+            "total_reservations": len(user_res),
+            "favorite_items": sorted_items,
+            "orders": user_orders,
+            "reservations": user_res
+        })
+
+    # Overall stats
+    google_count = sum(1 for c in processed_customers if c["provider"] == "google")
+    phone_count = sum(1 for c in processed_customers if c["provider"] == "phone")
+    total_orders_sum = sum(c["total_orders"] for c in processed_customers)
+    total_spent_sum = sum(c["total_spent"] for c in processed_customers)
+    total_res_sum = sum(c["total_reservations"] for c in processed_customers)
+
+    return {
+        "success": True,
+        "total_count": len(processed_customers),
+        "google_count": google_count,
+        "phone_count": phone_count,
+        "total_orders_all": total_orders_sum,
+        "total_spent_all": round(total_spent_sum, 2),
+        "total_reservations_all": total_res_sum,
+        "customers": processed_customers
+    }
+
+
 # =============================================================================
 # CUSTOMER ROUTER (Swiggy/Zomato style public user dashboard & history)
 # =============================================================================

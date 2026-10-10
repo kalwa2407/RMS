@@ -22,6 +22,7 @@ import {
   Coins,
   Sparkles,
   Tag,
+  Users,
 } from "lucide-react";
 import logoImg from "../../assets/logo.png";
 import API_BASE from "../../lib/config";
@@ -42,6 +43,7 @@ const SECTIONS = [
   {
     label: "Management",
     items: [
+      { name: "Customers",    path: "/admin/customers",      icon: Users },
       { name: "Reports",      path: "/admin/reports",        icon: BarChart3 },
       { name: "Offers",       path: "/admin/offers",         icon: Tag },
       { name: "Inventory",    path: "/admin/inventory",      icon: Package },

@@ -42,6 +42,7 @@ import KitchenStaffManagement from "./pages/admin/KitchenStaffManagement";
 import LoyaltyManagement from "./pages/admin/LoyaltyManagement";
 import EventsManagement from "./pages/admin/EventsManagement";
 import OffersManagement from "./pages/admin/OffersManagement";
+import CustomersManagement from "./pages/admin/CustomersManagement";
 
 // Captain & Delivery Imports
 import CaptainLogin from "./pages/captain/CaptainLogin";
@@ -245,6 +246,7 @@ function App() {
             <Route path="kitchen-staff" element={<KitchenStaffManagement />} />
             <Route path="loyalty" element={<LoyaltyManagement />} />
             <Route path="offers" element={<OffersManagement />} />
+            <Route path="customers" element={<CustomersManagement />} />
           </Route>
 
           {/* ---------------- CAPTAIN ROUTES ---------------- */}
