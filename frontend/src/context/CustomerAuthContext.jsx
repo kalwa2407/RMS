@@ -169,9 +169,65 @@ export const CustomerAuthProvider = ({ children }) => {
     }
   };
 
+  // Send WhatsApp OTP
+  const sendWhatsAppOtp = async (phone) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/customer/auth/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.detail || 'Failed to send verification code');
+      }
+      return { success: true, message: data.message, resendCoolDown: data.resend_cool_down };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  };
+
+  // Verify WhatsApp OTP
+  const verifyWhatsAppOtp = async (phone, otp, name = '') => {
+    try {
+      const res = await fetch(`${API_BASE}/api/customer/auth/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, otp, name })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.detail || 'Invalid verification code');
+      }
+
+      localStorage.setItem('customer_jwt', data.token);
+      if (data.customer?.phone) localStorage.setItem('customer_phone', data.customer.phone);
+      if (data.customer?.address) localStorage.setItem('customer_address', data.customer.address);
+
+      const userObj = {
+        uid: data.customer.uid,
+        displayName: data.customer.name,
+        name: data.customer.name,
+        phone: data.customer.phone,
+        email: data.customer.email,
+        isWhatsAppUser: true,
+        getIdToken: async () => data.token
+      };
+
+      setCurrentUser(userObj);
+      setIdToken(data.token);
+      setCustomerProfile(data.customer);
+      return { success: true, customer: data.customer };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  };
+
   // Sign Out
   const signOutCustomer = async () => {
     try {
+      localStorage.removeItem('customer_jwt');
+      localStorage.removeItem('customer_phone');
       await firebaseSignOut(auth);
       setCurrentUser(null);
       setIdToken(null);
@@ -188,6 +244,7 @@ export const CustomerAuthProvider = ({ children }) => {
     getRedirectResult(auth)
       .then(async (result) => {
         if (result?.user) {
+          localStorage.removeItem('customer_jwt');
           const user = result.user;
           const token = await user.getIdToken();
           setCurrentUser(user);
@@ -202,7 +259,7 @@ export const CustomerAuthProvider = ({ children }) => {
       });
   }, [fetchCustomerProfile]);
 
-  // Listen to Auth State
+  // Listen to Auth State + Check stored JWT on boot
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -215,12 +272,45 @@ export const CustomerAuthProvider = ({ children }) => {
           console.error('Auth state change error:', err);
           setCurrentUser(user);
         }
+        setLoading(false);
       } else {
-        setCurrentUser(null);
-        setIdToken(null);
-        setCustomerProfile(null);
+        // If not logged in via Firebase Google Auth, check for stored WhatsApp JWT
+        const storedJwt = localStorage.getItem('customer_jwt');
+        if (storedJwt) {
+          try {
+            const res = await fetch(`${API_BASE}/api/customer/profile`, {
+              headers: { 'Authorization': `Bearer ${storedJwt}` }
+            });
+            if (res.ok) {
+              const profile = await res.json();
+              const userObj = {
+                uid: profile.uid,
+                displayName: profile.name,
+                name: profile.name,
+                phone: profile.phone,
+                email: profile.email,
+                isWhatsAppUser: true,
+                getIdToken: async () => storedJwt
+              };
+              setCurrentUser(userObj);
+              setIdToken(storedJwt);
+              setCustomerProfile(profile);
+            } else {
+              localStorage.removeItem('customer_jwt');
+              setCurrentUser(null);
+              setIdToken(null);
+              setCustomerProfile(null);
+            }
+          } catch (jwtErr) {
+            console.warn('Stored JWT restore failed:', jwtErr);
+          }
+        } else {
+          setCurrentUser(null);
+          setIdToken(null);
+          setCustomerProfile(null);
+        }
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -271,6 +361,8 @@ export const CustomerAuthProvider = ({ children }) => {
         customerProfile,
         loading,
         signInWithGoogle,
+        sendWhatsAppOtp,
+        verifyWhatsAppOtp,
         signOutCustomer,
         updateProfile,
         fetchWithAuth,

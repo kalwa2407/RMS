@@ -323,6 +323,14 @@ class CustomerProfileUpdate(BaseModel):
     address: Optional[str] = None
     addresses: Optional[List[str]] = None
 
+class CustomerSendOtpRequest(BaseModel):
+    phone: str
+
+class CustomerVerifyOtpRequest(BaseModel):
+    phone: str
+    otp: str
+    name: Optional[str] = None
+
 # Review Models
 class Review(BaseModel):
     id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")

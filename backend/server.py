@@ -34,7 +34,9 @@ from whatsapp_service import (
     send_order_confirmation,
     send_order_delivered_bill,
     send_whatsapp_text_message,
-    send_whatsapp_template_message
+    send_whatsapp_template_message,
+    send_customer_otp,
+    format_whatsapp_number
 )
 
 ROOT_DIR = Path(__file__).parent
@@ -4446,6 +4448,160 @@ async def admin_loyalty_transactions(
 # CUSTOMER ROUTER (Swiggy/Zomato style public user dashboard & history)
 # =============================================================================
 customer_router = APIRouter(prefix="/api/customer", tags=["customer"])
+
+# In-memory storage for active customer login OTPs:
+# { formatted_phone: { "otp": "123456", "expires_at": datetime, "attempts": 0, "last_sent_at": datetime } }
+CUSTOMER_ACTIVE_OTPS: Dict[str, Dict[str, Any]] = {}
+
+@customer_router.post("/auth/send-otp")
+async def customer_send_otp(payload: CustomerSendOtpRequest):
+    """
+    Generate and dispatch 6-digit verification code to customer via Meta WhatsApp Cloud API.
+    """
+    phone = payload.phone.strip()
+    formatted = format_whatsapp_number(phone)
+    if not formatted or len(formatted) < 10:
+        raise HTTPException(status_code=400, detail="Please enter a valid 10-digit mobile number")
+
+    now = datetime.utcnow()
+    # Rate limit check: wait at least 25 seconds before requesting another OTP
+    if formatted in CUSTOMER_ACTIVE_OTPS:
+        last_sent = CUSTOMER_ACTIVE_OTPS[formatted].get("last_sent_at")
+        if last_sent and (now - last_sent).total_seconds() < 25:
+            remaining = int(25 - (now - last_sent).total_seconds())
+            raise HTTPException(status_code=429, detail=f"Please wait {remaining}s before requesting a new code")
+
+    # Generate random 6-digit OTP
+    otp_code = f"{random.randint(100000, 999999)}"
+
+    # Send via WhatsApp
+    wa_res = await send_customer_otp(to_phone=formatted, otp=otp_code)
+
+    if not wa_res.get("success"):
+        logging.error(f"[WhatsApp OTP] Delivery failed: {wa_res.get('error')}")
+        error_msg = wa_res.get("error") or "Failed to deliver code via WhatsApp. Please check your number."
+        raise HTTPException(status_code=502, detail=f"WhatsApp delivery issue: {error_msg}")
+
+    # Store in memory with 5-minute expiry
+    CUSTOMER_ACTIVE_OTPS[formatted] = {
+        "otp": otp_code,
+        "expires_at": now + timedelta(minutes=5),
+        "last_sent_at": now,
+        "attempts": 0
+    }
+
+    logging.info(f"[OTP] Login OTP dispatched to ...{formatted[-4:]}")
+    return {
+        "success": True,
+        "message": f"Verification code sent to +91 {formatted[-10:]}",
+        "resend_cool_down": 30
+    }
+
+@customer_router.post("/auth/verify-otp")
+async def customer_verify_otp(
+    payload: CustomerVerifyOtpRequest,
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """
+    Verify 6-digit WhatsApp OTP, fetch/create customer profile, and issue JWT session token.
+    """
+    phone = payload.phone.strip()
+    formatted = format_whatsapp_number(phone)
+    if not formatted:
+        raise HTTPException(status_code=400, detail="Invalid phone number")
+
+    otp_record = CUSTOMER_ACTIVE_OTPS.get(formatted)
+    if not otp_record:
+        raise HTTPException(status_code=400, detail="No active verification code found. Please request a new code.")
+
+    now = datetime.utcnow()
+    if now > otp_record.get("expires_at", now):
+        CUSTOMER_ACTIVE_OTPS.pop(formatted, None)
+        raise HTTPException(status_code=400, detail="Verification code has expired. Please request a new one.")
+
+    if otp_record.get("attempts", 0) >= 5:
+        CUSTOMER_ACTIVE_OTPS.pop(formatted, None)
+        raise HTTPException(status_code=429, detail="Too many invalid attempts. Please request a new code.")
+
+    if otp_record.get("otp") != payload.otp.strip():
+        otp_record["attempts"] = otp_record.get("attempts", 0) + 1
+        remaining_attempts = 5 - otp_record["attempts"]
+        raise HTTPException(status_code=400, detail=f"Invalid code. {remaining_attempts} attempts remaining.")
+
+    # OTP is valid! Clean up
+    CUSTOMER_ACTIVE_OTPS.pop(formatted, None)
+
+    # Normalize standard 10-digit phone for storage
+    standard_10_phone = formatted[2:] if (len(formatted) == 12 and formatted.startswith("91")) else formatted
+
+    # Find or create customer
+    customers = await manager._read("customers")
+    matched_idx = None
+    for i, c in enumerate(customers):
+        c_phone = "".join(ch for ch in str(c.get("phone", "")) if ch.isdigit())
+        if c_phone and (c_phone == standard_10_phone or c_phone == formatted or c_phone.endswith(standard_10_phone)):
+            matched_idx = i
+            break
+        elif c.get("uid") == f"wa_{standard_10_phone}":
+            matched_idx = i
+            break
+
+    now_ist = get_ist_now().isoformat()
+    if matched_idx is not None:
+        customer = customers[matched_idx]
+        if not customer.get("phone"):
+            customer["phone"] = standard_10_phone
+        if payload.name and (not customer.get("name") or customer.get("name") == "Customer"):
+            customer["name"] = payload.name.strip()
+        customer["updated_at"] = now_ist
+        customers[matched_idx] = customer
+        await manager._write("customers", customers)
+    else:
+        # Create new customer profile
+        cust_uid = f"wa_{standard_10_phone}"
+        customer_name = payload.name.strip() if payload.name else f"Guest {standard_10_phone[-4:]}"
+        customer = {
+            "_id": str(uuid.uuid4()),
+            "uid": cust_uid,
+            "email": "",
+            "name": customer_name,
+            "phone": standard_10_phone,
+            "picture": "",
+            "address": "",
+            "addresses": [],
+            "pd_coins": 100,  # 100 welcome joining bonus coins
+            "coins_history": [
+                {
+                    "amount": 100,
+                    "type": "credit",
+                    "reason": "Welcome Joining Bonus",
+                    "timestamp": now_ist
+                }
+            ],
+            "created_at": now_ist,
+            "updated_at": now_ist
+        }
+        customers.append(customer)
+        await manager._write("customers", customers)
+
+    # Issue customer JWT
+    token = create_access_token(
+        data={
+            "sub": customer["uid"],
+            "uid": customer["uid"],
+            "name": customer.get("name", "Customer"),
+            "phone": customer.get("phone", standard_10_phone),
+            "email": customer.get("email", ""),
+            "role": "customer"
+        },
+        expires_delta=timedelta(days=30)
+    )
+
+    return {
+        "success": True,
+        "token": token,
+        "customer": customer
+    }
 
 @customer_router.get("/profile")
 async def get_customer_profile(

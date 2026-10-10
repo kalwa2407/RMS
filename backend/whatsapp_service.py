@@ -334,6 +334,110 @@ async def send_reservation_confirmation(
 
     return await send_whatsapp_text_message(to_phone=customer_phone, message_text=text_message)
 
+# ─── FAST2SMS OTP DISPATCH ───
+async def send_fast2sms_otp(to_phone: str, otp: str) -> Dict[str, Any]:
+    """
+    Sends 6-digit OTP SMS to Indian mobile number via Fast2SMS API.
+    Attempts route=otp first, falls back to route=q.
+    """
+    api_key = os.getenv("FAST2SMS_API_KEY", "").strip()
+    if not api_key:
+        return {"success": False, "error": "FAST2SMS_API_KEY_NOT_CONFIGURED"}
+
+    clean_digits = "".join(ch for ch in str(to_phone) if ch.isdigit())
+    if len(clean_digits) == 12 and clean_digits.startswith("91"):
+        clean_digits = clean_digits[2:]
+
+    url = "https://www.fast2sms.com/dev/bulkV2"
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        # 1. Try OTP route (cheapest, 25 paise)
+        try:
+            params_otp = {
+                "authorization": api_key,
+                "route": "otp",
+                "variables_values": str(otp),
+                "numbers": clean_digits
+            }
+            r = await client.get(url, params=params_otp)
+            data = r.json()
+            if data.get("return") is True:
+                logger.info(f"[Fast2SMS] OTP sent via otp route to ...{clean_digits[-4:]}")
+                return {"success": True, "provider": "fast2sms_otp", "data": data}
+        except Exception as e:
+            logger.debug(f"[Fast2SMS] OTP route notice: {e}")
+
+        # 2. Try Quick SMS route (q) - works immediately after recharge
+        try:
+            params_q = {
+                "authorization": api_key,
+                "route": "q",
+                "message": f"Your Persian Darbar verification code is {otp}. Valid for 5 minutes.",
+                "language": "english",
+                "numbers": clean_digits
+            }
+            r2 = await client.get(url, params=params_q)
+            data2 = r2.json()
+            if data2.get("return") is True:
+                logger.info(f"[Fast2SMS] OTP sent via quick route to ...{clean_digits[-4:]}")
+                return {"success": True, "provider": "fast2sms_quick", "data": data2}
+            else:
+                error_msg = data2.get("message", "Fast2SMS error")
+                logger.error(f"[Fast2SMS] Error: {error_msg}")
+                return {"success": False, "error": error_msg}
+        except Exception as e:
+            logger.error(f"[Fast2SMS] Exception: {e}")
+            return {"success": False, "error": str(e)}
+
+# ─── CUSTOMER LOGIN OTP DISPATCH ───
+async def send_customer_otp(
+    to_phone: str,
+    otp: str,
+    template_name: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Sends 6-digit login verification OTP.
+    Prioritizes Fast2SMS direct mobile SMS, then WhatsApp template.
+    """
+    # 1. First Priority: Direct Indian SMS via Fast2SMS
+    fast2sms_res = await send_fast2sms_otp(to_phone=to_phone, otp=otp)
+    if fast2sms_res.get("success"):
+        return fast2sms_res
+
+    # 2. Second Priority: WhatsApp Meta Cloud API
+    customer_phone = format_whatsapp_number(to_phone)
+    if not customer_phone:
+        return {"success": False, "error": "INVALID_PHONE_NUMBER"}
+
+    active_template = template_name or os.getenv("WHATSAPP_OTP_TEMPLATE", "customer_login_otp").strip()
+
+    if active_template:
+        simple_components = [
+            {
+                "type": "body",
+                "parameters": [
+                    {"type": "text", "text": str(otp)}
+                ]
+            }
+        ]
+        res_simple = await send_whatsapp_template_message(
+            to_phone=customer_phone,
+            template_name=active_template,
+            language_code=os.getenv("WHATSAPP_TEMPLATE_LANG", "en"),
+            components=simple_components
+        )
+        if res_simple.get("success"):
+            return res_simple
+
+    # 3. Direct WhatsApp text message fallback
+    text_message = (
+        f"*PERSIAN DARBAR — LOGIN CODE*\n\n"
+        f"Your verification code is: *{otp}*\n\n"
+        f"Valid for 5 minutes. Do not share this code with anyone for security.\n\n"
+        f"Persian Darbar, Camp, Pune"
+    )
+    return await send_whatsapp_text_message(to_phone=customer_phone, message_text=text_message)
+
 # ─── ONLINE ORDER CONFIRMATION DISPATCH (NO EMOJIS, DYNAMIC TOKEN) ───
 async def send_order_confirmation(order: Dict[str, Any]) -> Dict[str, Any]:
     """

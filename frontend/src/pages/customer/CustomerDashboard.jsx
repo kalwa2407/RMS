@@ -15,6 +15,7 @@ import {
   ShieldCheck, MessageSquare, ExternalLink, Share2,
   Tag, Flame, Percent, ChefHat, Repeat, Leaf, Bike
 } from 'lucide-react';
+import CustomerPwaInstallModal from '../../components/CustomerPwaInstallModal';
 
 /* â”€â”€â”€ Design tokens â”€â”€â”€ */
 const GOLD = '#EAB308';
@@ -720,6 +721,8 @@ const CustomerDashboard = () => {
   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
   return (
     <div className="relative h-[100dvh] flex flex-col overflow-hidden text-white" style={{ fontFamily:"'Inter',system-ui,sans-serif" }}>
+      {/* Customer PWA Install Prompt */}
+      <CustomerPwaInstallModal />
 
       {/* â•â•â• FULLSCREEN HEAVILY BLURRED RESTAURANT INTERIOR BACKGROUND â•â•â• */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden select-none">

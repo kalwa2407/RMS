@@ -178,7 +178,8 @@ def _verify_token_claims(token: str) -> Optional[dict]:
                 "uid": payload.get("sub"),
                 "email": payload.get("email"),
                 "name": payload.get("name", "Customer"),
-                "picture": payload.get("picture")
+                "picture": payload.get("picture"),
+                "phone": payload.get("phone", "")
             }
     except Exception:
         pass
