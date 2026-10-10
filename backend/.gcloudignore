@@ -1,0 +1,11 @@
+.gcloudignore
+.git
+.gitignore
+__pycache__/
+*.pyc
+.env
+db_mock/
+static/uploads/*
+!static/uploads/.gitkeep
+static/invoices/*
+!static/invoices/.gitkeep
