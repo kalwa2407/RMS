@@ -169,9 +169,30 @@ export function getLogoBase64() {
     img.crossOrigin = "anonymous";
     img.onload = () => {
       const canvas = document.createElement("canvas");
-      canvas.width  = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      canvas.getContext("2d").drawImage(img, 0, 0);
+      canvas.width  = img.naturalWidth || 200;
+      canvas.height = img.naturalHeight || 200;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+
+      // Convert any colored pixels to crisp, high-density pitch black
+      // so thermal and monochrome receipt printers produce a bold, sharp logo
+      try {
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imgData.data;
+        for (let i = 0; i < data.length; i += 4) {
+          if (data[i + 3] > 30) {
+            data[i] = 0;     // R
+            data[i + 1] = 0; // G
+            data[i + 2] = 0; // B
+            data[i + 3] = 255;
+          } else {
+            data[i + 3] = 0;
+          }
+        }
+        ctx.putImageData(imgData, 0, 0);
+      } catch (e) {
+        // Fallback to normal canvas export
+      }
       resolve(canvas.toDataURL("image/png"));
     };
     img.onerror = () => resolve("");
@@ -183,12 +204,12 @@ export function getLogoBase64() {
 export async function buildReceiptHtml(order, billNo) {
   const logoBase64 = await getLogoBase64();
   const logoHtml   = logoBase64
-    ? `<img src="${logoBase64}" style="width:64px;height:64px;object-fit:contain;margin-bottom:3px;" /><br/>`
+    ? `<div style="text-align:center;margin-bottom:4px;"><img src="${logoBase64}" alt="Persian Darbar" style="width:85px;height:auto;max-height:55px;object-fit:contain;margin:0 auto;display:inline-block;filter:contrast(200%) brightness(0);" /></div>`
     : "";
 
   const now = new Date();
   const dateStr = now.toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" });
-  const timeStr = now.toLocaleTimeString("en-IN", { hour:"2-digit", minute:"2-digit" });
+  const timeStr = now.toLocaleTimeString("en-IN", { hour:"2-digit", minute:"2-digit", hour12:true });
 
   const items    = order.items || [];
   const subtotal = (order.subtotal     || 0).toFixed(2);
@@ -200,35 +221,42 @@ export async function buildReceiptHtml(order, billNo) {
   return `<!DOCTYPE html><html><head>
     <title>Bill - ${billNo}</title>
     <style>
-      @page { size: 80mm auto; margin: 4mm; }
+      @page { size: 80mm auto; margin: 3mm; }
       * { margin:0; padding:0; box-sizing:border-box; }
-      body { font-family:'Courier New',Courier,monospace; font-size:11px; width:72mm; color:#000; }
+      body {
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 13px;
+        font-weight: 700;
+        width: 72mm;
+        color: #000;
+        line-height: 1.35;
+      }
       .center { text-align:center; }
-      .bold   { font-weight:bold; }
-      .dashed { border-top:1px dashed #000; margin:5px 0; }
-      .solid  { border-top:2px solid #000; margin:5px 0; }
-      .row    { display:flex; justify-content:space-between; }
-      .row-3  { display:flex; }
-      .row-3 .col-name { flex:1; }
-      .row-3 .col-qty  { width:28px; text-align:center; }
-      .row-3 .col-amt  { width:52px; text-align:right; }
-      .brand  { font-size:17px; font-weight:bold; letter-spacing:1.5px; }
-      .tag    { font-size:9px; letter-spacing:1px; margin-bottom:2px; }
-      .billno { font-size:13px; font-weight:bold; }
-      .grand  { font-size:14px; font-weight:bold; }
-      .footer { font-size:9px; }
-      .col-hd { font-weight:bold; border-bottom:1px solid #000; padding-bottom:2px; margin-bottom:3px; }
+      .bold   { font-weight:900; }
+      .dashed { border-top:1.5px dashed #000; margin:6px 0; }
+      .solid  { border-top:2.5px solid #000; margin:6px 0; }
+      .row    { display:flex; justify-content:space-between; font-weight:700; }
+      .row-3  { display:flex; font-weight:700; }
+      .row-3 .col-name { flex:1; font-weight:800; padding-right:4px; }
+      .row-3 .col-qty  { width:32px; text-align:center; font-weight:800; }
+      .row-3 .col-amt  { width:58px; text-align:right; font-weight:900; }
+      .brand  { font-size:20px; font-weight:900; letter-spacing:1px; margin-top:2px; }
+      .sub    { font-size:11px; font-weight:700; }
+      .billno { font-size:14px; font-weight:900; }
+      .grand  { font-size:17px; font-weight:900; padding:2px 0; }
+      .footer { font-size:11px; font-weight:700; }
+      .col-hd { font-size:13px; font-weight:900; border-bottom:2px solid #000; padding-bottom:3px; margin-bottom:4px; }
     </style>
   </head><body>
     <div class="center">
       ${logoHtml}
       <div class="brand">PERSIAN DARBAR</div>
-      <div style="font-size:9px">Camp, Pune, Maharashtra 411004</div>
-      <div style="font-size:9px">Ph: +91 9594287868</div>
-      <div style="font-size:9px">GSTIN: 27XXXXX1234X1Z5</div>
+      <div class="sub">Camp, Pune, Maharashtra 411004</div>
+      <div class="sub">Ph: +91 9594287868</div>
+      <div class="sub">GSTIN: 27XXXXX1234X1Z5</div>
     </div>
     <div class="dashed"></div>
-    <div class="center bold" style="font-size:12px">BILL / TAX INVOICE</div>
+    <div class="center bold" style="font-size:14px;letter-spacing:1px;">BILL / TAX INVOICE</div>
     <div class="dashed"></div>
     <div class="row">
       <span><b>Bill No:</b> <span class="billno">${billNo}</span></span>
@@ -239,8 +267,8 @@ export async function buildReceiptHtml(order, billNo) {
       <span>${timeStr}</span>
     </div>
     <div><b>Customer:</b> ${order.customer_name || "Guest"}</div>
-    ${order.phone        ? `<div style="font-size:9px"><b>Phone:</b> ${order.phone}</div>` : ""}
-    ${order.address      ? `<div style="font-size:9px"><b>Addr:</b> ${order.address}</div>` : ""}
+    ${order.phone        ? `<div class="sub"><b>Phone:</b> ${order.phone}</div>` : ""}
+    ${order.address      ? `<div class="sub"><b>Addr:</b> ${order.address}</div>` : ""}
     ${order.table_number ? `<div><b>Table:</b> ${order.table_number}</div>` : ""}
     <div class="dashed"></div>
     <div class="col-hd row-3">
@@ -249,7 +277,7 @@ export async function buildReceiptHtml(order, billNo) {
       <span class="col-amt">AMT</span>
     </div>
     ${items.map(i => `
-      <div class="row-3">
+      <div class="row-3" style="padding:2px 0;">
         <span class="col-name">${i.name}${i.variant ? ` (${i.variant})` : ""}</span>
         <span class="col-qty">${i.quantity}</span>
         <span class="col-amt">&#8377;${(i.price * (i.quantity||1)).toFixed(0)}</span>
@@ -263,8 +291,8 @@ export async function buildReceiptHtml(order, billNo) {
     <div class="solid"></div>
     <div class="row grand"><span>GRAND TOTAL</span><span>&#8377;${total}</span></div>
     <div class="solid"></div>
-    ${order.payment_method ? `<div class="center" style="font-size:9px;margin-top:3px">Payment: ${order.payment_method.toUpperCase()}</div>` : ""}
-    <div class="center footer" style="margin-top:6px">
+    ${order.payment_method ? `<div class="center bold" style="font-size:12px;margin-top:4px;">Payment: ${order.payment_method.toUpperCase()}</div>` : ""}
+    <div class="center footer" style="margin-top:8px;">
       <div>Thank you for your order!</div>
       <div>www.persiandarbar.in</div>
     </div>

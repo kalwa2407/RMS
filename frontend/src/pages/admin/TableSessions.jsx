@@ -231,8 +231,17 @@ const TableSessions = () => {
   const formatDateTime = (dateStr) => {
     const d = new Date(dateStr);
     const date = d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
-    const time = d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+    const time = d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
     return { date, time };
+  };
+
+  const formatTime = (ts) => {
+    if (!ts) return "";
+    try {
+      return new Date(ts).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+    } catch (e) {
+      return "";
+    }
   };
 
   const getLogoBase64 = () => {
@@ -241,9 +250,30 @@ const TableSessions = () => {
       img.crossOrigin = "anonymous";
       img.onload = () => {
         const canvas = document.createElement("canvas");
-        canvas.width  = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        canvas.getContext("2d").drawImage(img, 0, 0);
+        canvas.width  = img.naturalWidth || 200;
+        canvas.height = img.naturalHeight || 200;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+
+        // Convert any colored pixels to crisp, high-density pitch black
+        // so thermal and monochrome receipt printers produce a bold, sharp logo
+        try {
+          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imgData.data;
+          for (let i = 0; i < data.length; i += 4) {
+            if (data[i + 3] > 30) {
+              data[i] = 0;     // R
+              data[i + 1] = 0; // G
+              data[i + 2] = 0; // B
+              data[i + 3] = 255;
+            } else {
+              data[i + 3] = 0;
+            }
+          }
+          ctx.putImageData(imgData, 0, 0);
+        } catch (e) {
+          // Fallback to normal canvas export
+        }
         resolve(canvas.toDataURL("image/png"));
       };
       img.onerror = () => resolve("");
@@ -286,7 +316,7 @@ const TableSessions = () => {
     // Convert logo to base64 so it works inside the sandboxed print window
     const logoBase64 = await getLogoBase64();
     const logoHtml   = logoBase64
-      ? `<img src="${logoBase64}" alt="Persian Darbar" style="width:60px;height:60px;object-fit:contain;margin-bottom:4px;" /><br/>`
+      ? `<div style="text-align:center;margin-bottom:4px;"><img src="${logoBase64}" alt="Persian Darbar" style="width:85px;height:auto;max-height:55px;object-fit:contain;margin:0 auto;display:inline-block;filter:contrast(200%) brightness(0);" /></div>`
       : "";
 
     const w = window.open("", "_blank", "width=340,height=700");
@@ -294,34 +324,42 @@ const TableSessions = () => {
     w.document.write(`<!DOCTYPE html><html><head>
       <title>Bill - ${billNo}</title>
       <style>
-        @page { size: 80mm auto; margin: 4mm; }
+        @page { size: 80mm auto; margin: 3mm; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Courier New', Courier, monospace; font-size: 11px; width: 72mm; color: #000; }
+        body {
+          font-family: 'Courier New', Courier, monospace;
+          font-size: 13px;
+          font-weight: 700;
+          width: 72mm;
+          color: #000;
+          line-height: 1.35;
+        }
         .center { text-align: center; }
-        .bold   { font-weight: bold; }
-        .dashed { border-top: 1px dashed #000; margin: 5px 0; }
-        .solid  { border-top: 2px solid #000; margin: 5px 0; }
-        .row    { display: flex; justify-content: space-between; }
-        .row-3  { display: flex; }
-        .row-3 .col-name  { flex: 1; }
-        .row-3 .col-qty   { width: 30px; text-align: center; }
-        .row-3 .col-amt   { width: 50px; text-align: right; }
-        .header-name { font-size: 16px; font-weight: bold; letter-spacing: 1px; }
-        .bill-no { font-size: 13px; font-weight: bold; }
-        .grand-total { font-size: 14px; font-weight: bold; }
-        .footer { font-size: 9px; }
-        .items-header { font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 2px; margin-bottom: 3px; }
+        .bold   { font-weight: 900; }
+        .dashed { border-top: 1.5px dashed #000; margin: 6px 0; }
+        .solid  { border-top: 2.5px solid #000; margin: 6px 0; }
+        .row    { display: flex; justify-content: space-between; font-weight: 700; }
+        .row-3  { display: flex; font-weight: 700; }
+        .row-3 .col-name  { flex: 1; font-weight: 800; padding-right: 4px; }
+        .row-3 .col-qty   { width: 32px; text-align: center; font-weight: 800; }
+        .row-3 .col-amt   { width: 58px; text-align: right; font-weight: 900; }
+        .header-name { font-size: 20px; font-weight: 900; letter-spacing: 1px; margin-top: 2px; }
+        .sub { font-size: 11px; font-weight: 700; }
+        .bill-no { font-size: 14px; font-weight: 900; }
+        .grand-total { font-size: 17px; font-weight: 900; padding: 2px 0; }
+        .footer { font-size: 11px; font-weight: 700; }
+        .items-header { font-size: 13px; font-weight: 900; border-bottom: 2px solid #000; padding-bottom: 3px; margin-bottom: 4px; }
       </style>
     </head><body>
       <div class="center">
         ${logoHtml}
         <div class="header-name">PERSIAN DARBAR</div>
-        <div style="font-size:9px">Camp, Pune, Maharashtra 411004</div>
-        <div style="font-size:9px">Ph: +91 9594287868</div>
-        <div style="font-size:9px">GSTIN: 27XXXXX1234X1Z5</div>
+        <div class="sub">Camp, Pune, Maharashtra 411004</div>
+        <div class="sub">Ph: +91 9594287868</div>
+        <div class="sub">GSTIN: 27XXXXX1234X1Z5</div>
       </div>
       <div class="dashed"></div>
-      <div class="center bold" style="font-size:12px">BILL / TAX INVOICE</div>
+      <div class="center bold" style="font-size:14px;letter-spacing:1px;">BILL / TAX INVOICE</div>
       <div class="dashed"></div>
       <div class="row">
         <span><b>Bill No:</b> <span class="bill-no">${billNo}</span></span>
@@ -339,7 +377,7 @@ const TableSessions = () => {
         <span class="col-amt">AMT</span>
       </div>
       ${rows.map(r => `
-        <div class="row-3">
+        <div class="row-3" style="padding:2px 0;">
           <span class="col-name">${r.name}</span>
           <span class="col-qty">${r.quantity}</span>
           <span class="col-amt">&#8377;${r.total.toFixed(0)}</span>
@@ -353,7 +391,7 @@ const TableSessions = () => {
       <div class="row grand-total"><span>GRAND TOTAL</span><span>&#8377;${total.toFixed(2)}</span></div>
       <div class="solid"></div>
       <div class="dashed"></div>
-      <div class="center footer" style="margin-top:6px">
+      <div class="center footer" style="margin-top:8px;">
         <div>Thank you for dining with us!</div>
         <div>Powered by Persian Darbar POS</div>
       </div>
