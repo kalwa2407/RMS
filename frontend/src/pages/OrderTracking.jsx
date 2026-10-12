@@ -338,6 +338,9 @@ const OrderTracking = () => {
                           </div>
                           <p className="text-xs text-gray-300 mt-0.5">
                             Order Ref: <span className="font-mono text-white/80">{order.porter_order_id.slice(-10)}</span>
+                            {order.porter_rider_vehicle && (
+                              <span className="ml-2 text-[#EAB308]/90 font-medium">• {order.porter_rider_vehicle}</span>
+                            )}
                           </p>
                           <p className="text-[10px] text-orange-300 font-medium mt-0.5 flex items-center gap-1">
                             <span>⚡ Express Dispatch</span>

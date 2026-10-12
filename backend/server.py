@@ -491,7 +491,7 @@ async def submit_review(review_data: dict, manager: BaseDataManager = Depends(ge
 async def get_public_settings(manager: BaseDataManager = Depends(get_data_manager)):
     """Get public settings like contact info"""
     settings = await manager.get_settings()
-    public_keys = ["contact_address", "contact_phone", "contact_email", "opening_hours"]
+    public_keys = ["contact_address", "contact_phone", "contact_email", "opening_hours", "order_acceptance_mode"]
     return {k: v for k, v in settings.items() if k in public_keys}
 
 # =============================================================================
@@ -2081,13 +2081,15 @@ async def admin_porter_status(
 async def admin_porter_config(username: str = Depends(verify_token)):
     """Check Porter integration config status for the Settings page."""
     from porter_service import (
-        is_porter_configured, PORTER_API_BASE, RESTAURANT_LAT,
+        is_porter_configured, is_porter_mock_enabled, PORTER_API_BASE, RESTAURANT_LAT,
         RESTAURANT_LNG, RESTAURANT_ADDRESS, RESTAURANT_NAME
     )
+    is_mock = is_porter_mock_enabled()
     return {
         "configured":         is_porter_configured(),
-        "environment":        "sandbox" if "uat" in PORTER_API_BASE else "production",
-        "api_base":           PORTER_API_BASE,
+        "mock_mode":          is_mock,
+        "environment":        "mock" if is_mock else ("sandbox" if "uat" in PORTER_API_BASE else "production"),
+        "api_base":           "Mock Simulation Engine (Active)" if is_mock else PORTER_API_BASE,
         "restaurant_name":    RESTAURANT_NAME,
         "restaurant_lat":     RESTAURANT_LAT,
         "restaurant_lng":     RESTAURANT_LNG,
@@ -2173,6 +2175,184 @@ async def porter_webhook(
 
     await manager.update_order(rms_order_id, update_data)
     return {"received": True, "matched": True, "rms_order_id": rms_order_id}
+
+
+# =============================================================================
+# AUTO-ACCEPTANCE & DISPATCH LOGIC & ENDPOINTS
+# =============================================================================
+
+async def perform_auto_accept_order(order_id: str, manager: BaseDataManager) -> Optional[dict]:
+    """
+    Auto-accept an order:
+    1. Verify status is 'placed'.
+    2. Generate KOT number for Kitchen (dispatches receipt to kitchen panel & printer).
+    3. Generate bill number and tax invoice for online orders.
+    4. Auto-assign Porter rider (mock/live) for delivery orders.
+    5. Dispatch WhatsApp order confirmation to customer.
+    6. Record audit note in status_history and persist update.
+    """
+    order = await manager.get_order_by_id(order_id)
+    if not order:
+        return None
+    if order.get("status") != "placed":
+        logger.info(f"Order {order_id} is already in '{order.get('status')}', skipping auto-accept")
+        return order
+
+    now = get_ist_now()
+    kot_num = generate_kot_number()
+    history = order.get("status_history", [])
+    history.append({
+        "status": "accepted",
+        "timestamp": now.isoformat(),
+        "note": f"Order auto-accepted — KOT#{kot_num} dispatched to kitchen"
+    })
+
+    update_data = {
+        "status": "accepted",
+        "accepted_at": now.isoformat(),
+        "kot_number": kot_num,
+        "auto_accepted": True,
+        "updated_at": now.isoformat(),
+    }
+
+    # Invoice & Monthly Bill Number
+    if order.get("order_type") != "DINE_IN":
+        try:
+            if not order.get("bill_number"):
+                bill_number, year_month = await generate_bill_number(manager)
+                update_data["bill_number"] = bill_number
+                update_data["bill_year_month"] = year_month
+                order["bill_number"] = bill_number
+                order["bill_year_month"] = year_month
+            invoice_url = await create_order_invoice(order_id, manager)
+            if invoice_url:
+                update_data["invoice_url"] = invoice_url
+        except Exception as inv_err:
+            logger.warning(f"Auto-accept invoice generation warning for {order_id}: {inv_err}")
+
+    # Porter Rider Auto-Assignment for Delivery orders
+    is_delivery = order.get("order_type") in ("DELIVERY", "online", "ONLINE") or not order.get("order_type")
+    if is_delivery and not order.get("porter_order_id") and not order.get("delivery_partner_id"):
+        try:
+            from porter_service import create_porter_order
+            customer_name = order.get("customer_name") or order.get("name") or "Guest"
+            customer_phone = order.get("phone") or "+919999999999"
+            drop_lat = float(order.get("drop_lat") or order.get("latitude") or 18.5204)
+            drop_lng = float(order.get("drop_lng") or order.get("longitude") or 73.8567)
+            drop_address = order.get("address") or "Camp, Pune"
+            amount = float(order.get("total") or order.get("subtotal") or 0.0)
+            payment_method = "cash" if order.get("payment_method") == "cod" else "prepaid"
+
+            porter_res = await create_porter_order(
+                rms_order_id=order_id,
+                customer_name=customer_name,
+                customer_phone=customer_phone,
+                drop_lat=drop_lat,
+                drop_lng=drop_lng,
+                drop_address=drop_address,
+                amount=amount,
+                payment_method=payment_method,
+                vehicle_type="2-wheeler"
+            )
+
+            if porter_res.get("success"):
+                update_data["porter_order_id"] = porter_res.get("porter_order_id", "")
+                update_data["porter_status"] = porter_res.get("status", "accepted")
+                update_data["porter_tracking_url"] = porter_res.get("tracking_url", "")
+                update_data["porter_rider_name"] = porter_res.get("rider_name", "Porter Rider")
+                update_data["porter_rider_phone"] = porter_res.get("rider_phone", "")
+                update_data["porter_rider_vehicle"] = porter_res.get("rider_vehicle", "Porter Two-Wheeler")
+                update_data["delivery_partner_vehicle"] = porter_res.get("rider_vehicle", "Porter Two-Wheeler")
+                update_data["delivery_fleet"] = "Porter Delivery Fleet"
+                update_data["porter_booked_at"] = now.isoformat()
+                history.append({
+                    "status": "accepted",
+                    "timestamp": now.isoformat(),
+                    "note": f"Porter rider assigned: {porter_res.get('rider_name')} ({porter_res.get('rider_phone')})"
+                })
+                logger.info(f"Porter rider assigned automatically for order {order_id}: {porter_res.get('rider_name')}")
+            else:
+                logger.warning(f"Porter auto-booking failed for order {order_id}: {porter_res.get('error')}")
+        except Exception as porter_err:
+            logger.error(f"Error in auto-assigning Porter rider for {order_id}: {porter_err}")
+
+    # WhatsApp confirmation
+    if order.get("order_type") != "DINE_IN":
+        try:
+            order_for_wa = {**order, **update_data}
+            wa_res = await send_order_confirmation(order_for_wa)
+            if wa_res.get("success"):
+                update_data["whatsapp_order_sent"] = True
+                update_data["whatsapp_order_id"] = wa_res.get("message_id")
+                logger.info(f"[WhatsApp] Online order confirmation dispatched for {order_id}")
+            else:
+                update_data["whatsapp_order_error"] = wa_res.get("error")
+        except Exception as wa_err:
+            logger.warning(f"[WhatsApp] Error dispatching order confirmation: {wa_err}")
+
+    update_data["status_history"] = history
+    await manager.update_order(order_id, update_data)
+    logger.info(f"Order {order_id} successfully auto-accepted with KOT#{kot_num}")
+    return await manager.get_order_by_id(order_id)
+
+
+@admin_router.get("/order-acceptance-settings")
+async def admin_get_order_acceptance_settings(
+    username: str = Depends(verify_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Get current order acceptance settings (manual vs auto mode, delay, Porter mock mode)."""
+    from porter_service import is_porter_mock_enabled
+    mode = await manager.get_setting("order_acceptance_mode") or "manual"
+    delay_str = await manager.get_setting("order_auto_accept_delay_seconds") or "45"
+    auto_assign_str = await manager.get_setting("auto_assign_porter") or "true"
+    try:
+        delay = int(delay_str)
+    except:
+        delay = 45
+    return {
+        "mode": mode,
+        "delay_seconds": delay,
+        "auto_assign_porter": auto_assign_str.lower() in ("true", "1", "yes"),
+        "porter_mock_mode": is_porter_mock_enabled()
+    }
+
+
+@admin_router.put("/order-acceptance-settings")
+async def admin_update_order_acceptance_settings(
+    settings: OrderAcceptanceSettingsUpdate,
+    username: str = Depends(verify_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Update order acceptance settings (toggle auto mode, delay 45-60s, Porter mock)."""
+    from porter_service import set_porter_mock_mode
+    mode = "auto" if settings.mode.lower() == "auto" else "manual"
+    delay = max(10, min(300, settings.delay_seconds))
+    await manager.update_setting("order_acceptance_mode", mode)
+    await manager.update_setting("order_auto_accept_delay_seconds", str(delay))
+    await manager.update_setting("auto_assign_porter", str(settings.auto_assign_porter).lower())
+    await manager.update_setting("porter_mock_mode", str(settings.porter_mock_mode).lower())
+    set_porter_mock_mode(settings.porter_mock_mode)
+    logger.info(f"Order acceptance mode updated to '{mode}' (delay: {delay}s, mock: {settings.porter_mock_mode})")
+    return {
+        "mode": mode,
+        "delay_seconds": delay,
+        "auto_assign_porter": settings.auto_assign_porter,
+        "porter_mock_mode": settings.porter_mock_mode
+    }
+
+
+@admin_router.post("/orders/{order_id}/auto-accept")
+async def admin_order_auto_accept(
+    order_id: str,
+    username: str = Depends(verify_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Trigger auto-acceptance immediately for an order (called on 45s timer)."""
+    result = await perform_auto_accept_order(order_id, manager)
+    if not result:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return result
 
 
 # Invoice Download Endpoints
@@ -3271,6 +3451,9 @@ async def admin_get_kitchen_orders(username: str = Depends(verify_token), manage
             } for item in order.get("items", [])],
             "special_instructions": order.get("special_instructions") or order.get("cooking_instructions") or order.get("notes") or "",
             "status": order.get("status"),
+            "auto_accepted": order.get("auto_accepted", False),
+            "porter_order_id": order.get("porter_order_id"),
+            "porter_rider_name": order.get("porter_rider_name"),
             "accepted_at": order.get("accepted_at"),
             "created_at": order.get("created_at"),
             "customer_name": order.get("customer_name")
@@ -3898,6 +4081,9 @@ async def kitchen_get_orders(staff_id: str = Depends(verify_kitchen_token),
                   for i in o.get("items", [])],
         "special_instructions": o.get("special_instructions") or o.get("cooking_instructions") or o.get("notes") or "",
         "status": o.get("status"),
+        "auto_accepted": o.get("auto_accepted", False),
+        "porter_order_id": o.get("porter_order_id"),
+        "porter_rider_name": o.get("porter_rider_name"),
         "created_at": o.get("created_at"),
         "accepted_at": o.get("accepted_at"),
         "customer_name": o.get("customer_name")
@@ -5071,6 +5257,54 @@ async def get_customer_reservations_list(
     return sorted(matched, key=lambda x: x.get("created_at", ""), reverse=True)
 
 
+# Background Worker for Auto-Accepting Orders
+_auto_accept_worker_task = None
+
+async def auto_accept_orders_worker():
+    """Background task to poll and auto-accept orders older than delay_seconds when auto mode is active."""
+    logger.info("Auto-accept orders background worker started.")
+    import asyncio
+    while True:
+        try:
+            await asyncio.sleep(4)
+            manager = get_data_manager()
+            mode = await manager.get_setting("order_acceptance_mode") or "manual"
+            if mode != "auto":
+                continue
+
+            delay_str = await manager.get_setting("order_auto_accept_delay_seconds") or "45"
+            try:
+                delay_seconds = int(delay_str)
+            except Exception:
+                delay_seconds = 45
+
+            orders = await manager._read("orders")
+            now_utc = datetime.now(timezone.utc)
+
+            for order in orders:
+                if order.get("status") == "placed":
+                    created_at_str = order.get("created_at")
+                    if not created_at_str:
+                        continue
+                    try:
+                        clean_ts = created_at_str.replace("Z", "+00:00")
+                        created_dt = datetime.fromisoformat(clean_ts)
+                        if created_dt.tzinfo is None:
+                            created_dt = created_dt.replace(tzinfo=timezone.utc)
+                        age = (now_utc - created_dt).total_seconds()
+                        if age >= delay_seconds:
+                            logger.info(f"Auto-accept timer triggered for order {order.get('order_id')} (age: {age:.1f}s >= threshold: {delay_seconds}s)")
+                            await perform_auto_accept_order(order.get("order_id"), manager)
+                    except Exception as order_err:
+                        logger.warning(f"Error checking order age for auto-accept: {order_err}")
+        except asyncio.CancelledError:
+            logger.info("Auto-accept background worker cancelled.")
+            break
+        except Exception as e:
+            logger.error(f"Error in auto_accept_orders_worker: {e}")
+            await asyncio.sleep(5)
+
+
 # =============================================================================
 # STARTUP AND SHUTDOWN EVENTS
 # =============================================================================
@@ -5078,6 +5312,10 @@ async def get_customer_reservations_list(
 @app.on_event("startup")
 async def startup_event():
     """Initialize database and warm cache on startup"""
+    global _auto_accept_worker_task
+    import asyncio
+    _auto_accept_worker_task = asyncio.create_task(auto_accept_orders_worker())
+
     db_mode = os.environ.get("DB_MODE", "POSTGRES")
     if db_mode == "POSTGRES":
         logger.info("Initializing PostgreSQL database...")
@@ -5096,7 +5334,6 @@ async def startup_event():
             # ----------------------------------------------------------------
             try:
                 logger.info("Warming cache: fetching menu, reviews, gallery from Firestore...")
-                import asyncio
                 await asyncio.gather(
                     manager.get_menu(),            # warms menu_public cache
                     manager.get_all_menu_items(),  # warms menu_admin cache
@@ -5113,6 +5350,9 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     """Close database on shutdown"""
+    global _auto_accept_worker_task
+    if _auto_accept_worker_task:
+        _auto_accept_worker_task.cancel()
     if os.environ.get("DB_MODE") == "POSTGRES":
         await close_db()
         logger.info("Database connection closed")

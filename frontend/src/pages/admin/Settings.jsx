@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   Save, Key, MapPin, Phone, Mail, Clock, Eye, EyeOff,
   RefreshCw, Image, CheckCircle, AlertCircle, Volume2,
-  Upload, Play, Music, ShoppingBag, UtensilsCrossed, Loader2
+  Upload, Play, Music, ShoppingBag, UtensilsCrossed, Loader2, Zap
 } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
@@ -95,6 +95,220 @@ const PorterConfigPanel = () => {
           </div>
         </div>
       </div>
+    </div>
+  );
+};
+
+
+// ── Order Acceptance & Dispatch Automation Panel ─────────────────────────────
+const OrderAcceptanceConfigPanel = () => {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [acceptanceSettings, setAcceptanceSettings] = useState({
+    mode: "manual",
+    delay_seconds: 45,
+    auto_assign_porter: true,
+    porter_mock_mode: true
+  });
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const token = localStorage.getItem("admin_token");
+        const { data } = await axios.get(`${API_BASE}/api/admin/order-acceptance-settings`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (data) {
+          setAcceptanceSettings({
+            mode: data.mode || "manual",
+            delay_seconds: data.delay_seconds || 45,
+            auto_assign_porter: data.auto_assign_porter !== false,
+            porter_mock_mode: data.porter_mock_mode !== false
+          });
+        }
+      } catch (e) {
+        console.error("Failed to load acceptance settings:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const token = localStorage.getItem("admin_token");
+      await axios.put(`${API_BASE}/api/admin/order-acceptance-settings`, acceptanceSettings, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      localStorage.setItem("pd_order_acceptance_mode", acceptanceSettings.mode);
+      setSaved(true);
+      toast({
+        title: "Settings Saved",
+        description: `Order acceptance mode set to ${acceptanceSettings.mode.toUpperCase()} (${acceptanceSettings.delay_seconds}s timeout).`
+      });
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      toast({
+        title: "Save Failed",
+        description: err.response?.data?.detail || "Could not save acceptance settings",
+        variant: "destructive"
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <div className="text-gray-500 text-sm animate-pulse">Loading acceptance settings...</div>;
+
+  return (
+    <div className="space-y-6">
+      {/* Mode Selection Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Manual Mode Card */}
+        <div
+          onClick={() => setAcceptanceSettings(prev => ({ ...prev, mode: "manual" }))}
+          className={`cursor-pointer rounded-2xl p-4 border transition-all ${
+            acceptanceSettings.mode === "manual"
+              ? "bg-[#0f2933] border-[#EAB308] ring-2 ring-[#EAB308]/20 shadow-lg shadow-black/40"
+              : "bg-[#0f2933]/50 border-white/10 hover:border-white/20 opacity-70 hover:opacity-100"
+          }`}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-lg">
+                🖐️
+              </div>
+              <div>
+                <h4 className="text-white font-bold text-sm">Mode 1: Manual Acceptance</h4>
+                <p className="text-gray-400 text-xs">Standard Restaurant Review</p>
+              </div>
+            </div>
+            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+              acceptanceSettings.mode === "manual" ? "border-[#EAB308] bg-[#EAB308]" : "border-gray-500"
+            }`}>
+              {acceptanceSettings.mode === "manual" && <div className="w-2 h-2 rounded-full bg-black" />}
+            </div>
+          </div>
+          <p className="text-xs text-gray-300">
+            Incoming orders remain in <strong>placed</strong> status until a restaurant manager or captain reviews the items and manually clicks <strong>Accept</strong>.
+          </p>
+        </div>
+
+        {/* Auto Mode Card */}
+        <div
+          onClick={() => setAcceptanceSettings(prev => ({ ...prev, mode: "auto" }))}
+          className={`cursor-pointer rounded-2xl p-4 border transition-all ${
+            acceptanceSettings.mode === "auto"
+              ? "bg-gradient-to-br from-emerald-950/40 to-[#0f2933] border-emerald-400 ring-2 ring-emerald-400/20 shadow-lg shadow-emerald-950/40"
+              : "bg-[#0f2933]/50 border-white/10 hover:border-white/20 opacity-70 hover:opacity-100"
+          }`}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg">
+                ⚡
+              </div>
+              <div>
+                <h4 className="text-white font-bold text-sm">Mode 2: Auto-Acceptance</h4>
+                <p className="text-emerald-400 text-xs font-semibold">Automatic Kitchen & Rider Dispatch</p>
+              </div>
+            </div>
+            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+              acceptanceSettings.mode === "auto" ? "border-emerald-400 bg-emerald-400" : "border-gray-500"
+            }`}>
+              {acceptanceSettings.mode === "auto" && <div className="w-2 h-2 rounded-full bg-black" />}
+            </div>
+          </div>
+          <p className="text-xs text-gray-300">
+            If not accepted within <strong>{acceptanceSettings.delay_seconds}s</strong>, order is automatically accepted, KOT receipt dispatched to kitchen, and Porter rider assigned.
+          </p>
+        </div>
+      </div>
+
+      {/* Auto-Accept Timeout Config */}
+      <div className="bg-[#0f2933] rounded-2xl p-4 border border-white/10 space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <label className="text-white text-xs font-bold uppercase tracking-wider">
+              Auto-Accept Timeout Window (45–60 Seconds)
+            </label>
+            <p className="text-gray-400 text-xs mt-0.5">
+              Staff has this duration to review before the system automatically accepts & dispatches
+            </p>
+          </div>
+          <span className="font-mono text-emerald-400 font-extrabold text-sm px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+            {acceptanceSettings.delay_seconds}s
+          </span>
+        </div>
+
+        {/* Preset pill buttons */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {[45, 50, 60].map(sec => (
+            <button
+              key={sec}
+              type="button"
+              onClick={() => setAcceptanceSettings(prev => ({ ...prev, delay_seconds: sec }))}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                acceptanceSettings.delay_seconds === sec
+                  ? "bg-emerald-500 text-white border-emerald-400 shadow-md shadow-emerald-500/20"
+                  : "bg-white/5 text-gray-300 border-white/10 hover:border-white/20"
+              }`}
+            >
+              {sec} Seconds {sec === 45 && "(Recommended)"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Porter Service Provider Mode */}
+      <div className="bg-[#0f2933] rounded-2xl p-4 border border-white/10 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="text-white font-bold text-sm flex items-center gap-2">
+              <span>🛵 Porter Delivery Rider Service</span>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                acceptanceSettings.porter_mock_mode
+                  ? "bg-orange-500/20 text-orange-300 border-orange-500/30"
+                  : "bg-blue-500/20 text-blue-300 border-blue-500/30"
+              }`}>
+                {acceptanceSettings.porter_mock_mode ? "Mock Simulation Active" : "Live API"}
+              </span>
+            </h4>
+            <p className="text-gray-400 text-xs mt-0.5">
+              Assigns a Porter delivery rider automatically whenever a delivery order is accepted
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setAcceptanceSettings(prev => ({ ...prev, porter_mock_mode: !prev.porter_mock_mode }))}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+              acceptanceSettings.porter_mock_mode
+                ? "bg-orange-500/20 text-orange-300 border-orange-500/40"
+                : "bg-white/5 text-gray-300 border-white/10"
+            }`}
+          >
+            {acceptanceSettings.porter_mock_mode ? "🧪 Mock Active (Client Demo)" : "🚀 Live Mode"}
+          </button>
+        </div>
+        <p className="text-xs text-gray-400 bg-black/20 p-2.5 rounded-xl border border-white/5">
+          ℹ️ <strong>Mock Mode:</strong> Simulates Porter order creation with realistic rider names, contact details, bike numbers, and live tracking URLs so you can demonstrate the full rider service to the client without Porter API charges.
+        </p>
+      </div>
+
+      {/* Save Button */}
+      <button
+        type="button"
+        onClick={handleSave}
+        disabled={saving}
+        className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-sm shadow-lg shadow-emerald-950/40 transition-all flex items-center justify-center gap-2 active:scale-98"
+      >
+        {saved ? <CheckCircle className="w-4 h-4 text-white" /> : saving ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <Save className="w-4 h-4 text-white" />}
+        <span>{saved ? "Settings Saved Successfully!" : saving ? "Saving Settings..." : "Save Acceptance Settings"}</span>
+      </button>
     </div>
   );
 };
@@ -724,6 +938,21 @@ const Settings = () => {
             {pwSaved ? "Password Changed Successfully!" : pwSaving ? "Updating Password..." : "Change Admin Password"}
           </button>
         </form>
+      </div>
+
+      {/* ===== Order Acceptance & Dispatch Automation Section ===== */}
+      <div className="bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl p-6 shadow-xl">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-900/30">
+            <Zap className="text-white w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-white font-bold text-lg">Order Acceptance & Auto-Dispatch</h3>
+            <p className="text-gray-400 text-xs">Configure manual vs auto acceptance (45–60s), kitchen KOT routing, and Porter rider allocation</p>
+          </div>
+        </div>
+
+        <OrderAcceptanceConfigPanel />
       </div>
 
       {/* ===== Porter Integration Section ===== */}

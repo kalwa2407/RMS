@@ -391,6 +391,12 @@ class SettingUpdate(BaseModel):
     key: str
     value: str
 
+class OrderAcceptanceSettingsUpdate(BaseModel):
+    mode: str = "manual"  # 'manual' or 'auto'
+    delay_seconds: int = 45  # 45 to 60 seconds
+    auto_assign_porter: bool = True
+    porter_mock_mode: bool = True
+
 # Coupon Models
 class Coupon(BaseModel):
     id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")

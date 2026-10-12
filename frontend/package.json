@@ -7,6 +7,7 @@
     "@capacitor/app": "^8.1.1",
     "@capacitor/cli": "^8.5.1",
     "@capacitor/core": "^8.5.1",
+    "@capacitor/ios": "^8.5.3",
     "@capacitor/splash-screen": "^8.0.2",
     "@hookform/resolvers": "^5.0.1",
     "@radix-ui/react-accordion": "^1.2.8",
@@ -73,7 +74,9 @@
     "build:staff": "set REACT_APP_APP_MODE=staff && craco build",
     "build:customer": "set REACT_APP_APP_MODE=customer && craco build",
     "sync:staff": "set REACT_APP_APP_MODE=staff && craco build && npx cap sync android",
-    "sync:customer": "set REACT_APP_APP_MODE=customer && craco build && node scripts/sync-customer.js"
+    "sync:customer": "set REACT_APP_APP_MODE=customer && craco build && node scripts/sync-customer.js",
+    "sync:staff:ios": "set REACT_APP_APP_MODE=staff && craco build && npx cap sync ios",
+    "sync:customer:ios": "set REACT_APP_APP_MODE=customer && craco build && node scripts/sync-customer-ios.js"
   },
   "browserslist": {
     "production": [

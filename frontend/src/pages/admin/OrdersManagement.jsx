@@ -96,6 +96,130 @@ const OrdersManagement = () => {
     }
   };
 
+  // ── Order Acceptance Mode (Mode 1: Manual vs Mode 2: Auto 45-60s) ──────────
+  const [acceptanceMode, setAcceptanceMode] = useState(
+    () => localStorage.getItem("pd_order_acceptance_mode") || "manual"
+  );
+  const [autoAcceptDelaySeconds, setAutoAcceptDelaySeconds] = useState(45);
+  const [currentTime, setCurrentTime] = useState(Date.now());
+  const [autoAcceptingIds, setAutoAcceptingIds] = useState(new Set());
+  const autoAcceptingRef = useRef(new Set());
+
+  // Real-time ticking clock for second-by-second countdown
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Fetch acceptance settings from backend on mount
+  useEffect(() => {
+    const fetchAcceptanceSettings = async () => {
+      try {
+        const token = localStorage.getItem("admin_token");
+        const { data } = await axios.get(`${API_BASE}/api/admin/order-acceptance-settings`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (data?.mode) {
+          setAcceptanceMode(data.mode);
+          localStorage.setItem("pd_order_acceptance_mode", data.mode);
+        }
+        if (data?.delay_seconds) {
+          setAutoAcceptDelaySeconds(data.delay_seconds);
+        }
+      } catch {
+        const saved = localStorage.getItem("pd_order_acceptance_mode") || "manual";
+        setAcceptanceMode(saved);
+      }
+    };
+    fetchAcceptanceSettings();
+  }, []);
+
+  const toggleAcceptanceMode = async (targetMode) => {
+    const next = targetMode || (acceptanceMode === "manual" ? "auto" : "manual");
+    setAcceptanceMode(next);
+    localStorage.setItem("pd_order_acceptance_mode", next);
+    try {
+      const token = localStorage.getItem("admin_token");
+      await axios.put(`${API_BASE}/api/admin/order-acceptance-settings`, {
+        mode: next,
+        delay_seconds: autoAcceptDelaySeconds,
+        auto_assign_porter: true,
+        porter_mock_mode: true
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (next === "auto") {
+        toast({
+          title: "⚡ Auto Acceptance Mode Enabled",
+          description: `Orders will auto-accept in ${autoAcceptDelaySeconds}s. KOT dispatched to kitchen & Porter rider auto-assigned (Mock).`,
+          duration: 5000
+        });
+      } else {
+        toast({
+          title: "🖐️ Manual Acceptance Mode Enabled",
+          description: "Incoming orders require staff/admin manual acceptance.",
+          duration: 4000
+        });
+      }
+    } catch (err) {
+      console.error("Failed to sync acceptance mode to server:", err);
+    }
+  };
+
+  const getCountdownSeconds = (order) => {
+    if (!order.created_at) return autoAcceptDelaySeconds;
+    try {
+      const created = new Date(order.created_at).getTime();
+      const elapsed = Math.floor((currentTime - created) / 1000);
+      return Math.max(0, autoAcceptDelaySeconds - elapsed);
+    } catch {
+      return autoAcceptDelaySeconds;
+    }
+  };
+
+  const triggerAutoAccept = async (order) => {
+    if (autoAcceptingRef.current.has(order.order_id)) return;
+    autoAcceptingRef.current.add(order.order_id);
+    setAutoAcceptingIds(prev => new Set(prev).add(order.order_id));
+    try {
+      const token = localStorage.getItem("admin_token");
+      const { data } = await axios.post(
+        `${API_BASE}/api/admin/orders/${order.order_id}/auto-accept`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast({
+        title: "⚡ Order Auto-Accepted!",
+        description: `Order #${order.bill_number || order.order_id.slice(-6)} accepted automatically. KOT sent to kitchen${data?.porter_rider_name ? ` & Porter rider ${data.porter_rider_name} assigned!` : '!'}`
+      });
+      fetchOrders();
+    } catch (err) {
+      console.error("Auto accept trigger error:", err);
+    } finally {
+      setTimeout(() => {
+        autoAcceptingRef.current.delete(order.order_id);
+        setAutoAcceptingIds(prev => {
+          const next = new Set(prev);
+          next.delete(order.order_id);
+          return next;
+        });
+      }, 3000);
+    }
+  };
+
+  // Check placed orders for auto-accept trigger
+  useEffect(() => {
+    if (acceptanceMode !== "auto") return;
+    orders.forEach(order => {
+      if (order.status === "placed") {
+        const remaining = getCountdownSeconds(order);
+        if (remaining <= 0 && !autoAcceptingRef.current.has(order.order_id)) {
+          triggerAutoAccept(order);
+        }
+      }
+    });
+  }, [currentTime, orders, acceptanceMode]);
+
 
   useEffect(() => {
     const loadSound = async () => {
@@ -517,6 +641,71 @@ const OrdersManagement = () => {
         </div>
       </div>
 
+      {/* ── Order Acceptance Mode (Mode 1: Manual vs Mode 2: Auto 45-60s) ── */}
+      <div className={`mb-4 rounded-2xl border px-4 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 transition-all shadow-xl ${
+        acceptanceMode === "auto"
+          ? "bg-gradient-to-r from-emerald-950/60 via-[#10333d] to-[#0f2933] border-emerald-500/40 shadow-emerald-950/30"
+          : "bg-[#1a4855] border-[#EAB308]/20 shadow-black/20"
+      }`}>
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-lg ${
+            acceptanceMode === "auto"
+              ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-emerald-500/20"
+              : "bg-[#EAB308]/15 text-[#EAB308]"
+          }`}>
+            {acceptanceMode === "auto" ? <Zap className="w-5 h-5 text-white" /> : <Clock className="w-5 h-5 text-[#EAB308]" />}
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h4 className={`text-sm font-bold ${acceptanceMode === "auto" ? "text-emerald-300" : "text-white"}`}>
+                {acceptanceMode === "auto" ? "⚡ Auto-Acceptance Mode (Active)" : "🖐️ Manual Acceptance Mode"}
+              </h4>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                acceptanceMode === "auto"
+                  ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                  : "bg-[#EAB308]/15 text-[#EAB308] border-[#EAB308]/30"
+              }`}>
+                {acceptanceMode === "auto" ? `${autoAcceptDelaySeconds}s Auto-Accept` : "Manual Review"}
+              </span>
+            </div>
+            <p className="text-xs text-gray-300/80 mt-0.5">
+              {acceptanceMode === "auto"
+                ? `Orders not accepted within ${autoAcceptDelaySeconds}s are automatically accepted → KOT sent to kitchen → Porter rider auto-assigned (Mock)`
+                : "Orders stay in 'placed' status until manually accepted by admin or captain"}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+          <div className="bg-[#0f2933] p-1 rounded-xl border border-white/10 flex items-center gap-1">
+            <button
+              onClick={() => toggleAcceptanceMode("manual")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                acceptanceMode === "manual"
+                  ? "bg-white/15 text-white shadow-md border border-white/20"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              <ToggleLeft className="w-4 h-4 text-gray-400" />
+              <span>Manual</span>
+            </button>
+
+            <button
+              onClick={() => toggleAcceptanceMode("auto")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                acceptanceMode === "auto"
+                  ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25 border border-emerald-400/50"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <ToggleRight className="w-4 h-4 text-white" />
+              <span>Auto ({autoAcceptDelaySeconds}s)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Order Type Tabs (Online vs Dine-In) */}
       <div className="mb-4 grid grid-cols-3 gap-2">
         {orderTypeTabs.map(tab => {
@@ -680,6 +869,11 @@ const OrdersManagement = () => {
                         {order.kot_number && (
                           <span className="bg-orange-500/20 text-orange-400 border border-orange-500/30 px-2 py-0.5 rounded text-xs font-bold">{order.kot_number}</span>
                         )}
+                        {order.auto_accepted && (
+                          <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded text-xs font-bold flex items-center gap-1">
+                            <Zap className="w-3 h-3 text-emerald-400" /> Auto-Accepted
+                          </span>
+                        )}
                       </div>
                       <p className="text-gray-400 text-xs mt-0.5 flex items-center gap-1">
                         <Clock className="w-3 h-3" /> {formatOrderTime(order.created_at)}
@@ -720,6 +914,35 @@ const OrdersManagement = () => {
                       </div>
                     )}
                   </div>
+
+                  {/* Auto-Accept Live Countdown Banner for placed orders */}
+                  {order.status === "placed" && acceptanceMode === "auto" && (
+                    <div className="mb-3 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500/20 via-[#133742] to-[#0f2933] border border-amber-500/40 flex items-center justify-between gap-3 shadow-inner">
+                      <div className="flex items-center gap-2.5">
+                        <div className="relative flex items-center justify-center shrink-0">
+                          <div className="w-3.5 h-3.5 rounded-full bg-amber-400 animate-ping absolute opacity-75" />
+                          <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-amber-200 flex items-center gap-1.5 flex-wrap">
+                            <span>⚡ Auto-Accepting in</span>
+                            <span className="font-mono text-sm px-2 py-0.5 bg-amber-400/20 rounded-md border border-amber-400/40 text-amber-300 font-extrabold shadow-sm">
+                              {getCountdownSeconds(order)}s
+                            </span>
+                          </p>
+                          <p className="text-[10px] text-gray-300/80 mt-0.5">
+                            Receipt auto-dispatched to Kitchen & Porter rider assigned
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => updateStatus(order, "accepted")}
+                        className="px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-md transition-all active:scale-95 flex items-center gap-1 shrink-0"
+                      >
+                        <Check className="w-3.5 h-3.5" /> Accept Now
+                      </button>
+                    </div>
+                  )}
 
                   {/* Items */}
                   <div className="mb-3">
@@ -804,10 +1027,13 @@ const OrdersManagement = () => {
                         {order.porter_order_id && (
                           <div className="mb-2 rounded-xl border overflow-hidden" style={{ background: "rgba(15,41,51,0.8)" }}>
                             <div className={`flex items-center justify-between px-3 py-2 border-b ${(PORTER_STATUS_DISPLAY[order.porter_status] || PORTER_STATUS_DISPLAY["open"]).bg}`}>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <Zap className={`w-3.5 h-3.5 ${(PORTER_STATUS_DISPLAY[order.porter_status] || PORTER_STATUS_DISPLAY["open"]).color}`} />
                                 <span className={`text-xs font-bold ${(PORTER_STATUS_DISPLAY[order.porter_status] || PORTER_STATUS_DISPLAY["open"]).color}`}>
                                   Porter: {(PORTER_STATUS_DISPLAY[order.porter_status] || { label: order.porter_status || "Booked" }).label}
+                                </span>
+                                <span className="bg-orange-500/20 text-orange-300 text-[10px] font-semibold px-2 py-0.5 rounded border border-orange-500/30">
+                                  Mock Courier Service
                                 </span>
                               </div>
                               <div className="flex items-center gap-1.5">

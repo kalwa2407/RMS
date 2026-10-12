@@ -24,6 +24,8 @@ Restaurant Pickup Coordinates (Persian Darbar, Pune):
 import os
 import logging
 import httpx
+import uuid
+import random
 from typing import Optional
 
 logger = logging.getLogger(__name__)
@@ -33,6 +35,8 @@ logger = logging.getLogger(__name__)
 PORTER_API_KEY      = os.environ.get("PORTER_API_KEY", "")
 PORTER_API_BASE     = os.environ.get("PORTER_API_BASE_URL", "https://pfe-apigw-uat.porter.in")
 PORTER_WEBHOOK_SEC  = os.environ.get("PORTER_WEBHOOK_SECRET", "")
+# Default to True for client demo and development while Porter is under development
+PORTER_MOCK_MODE    = os.environ.get("PORTER_MOCK_MODE", "true").lower() in ("true", "1", "yes")
 
 # Persian Darbar restaurant fixed pickup location
 RESTAURANT_LAT      = float(os.environ.get("RESTAURANT_LAT", "18.519514"))
@@ -54,9 +58,20 @@ def _headers() -> dict:
     }
 
 
+def is_porter_mock_enabled() -> bool:
+    """Check whether Porter mock mode is enabled (defaults to true for development & demo)."""
+    return PORTER_MOCK_MODE or not bool(PORTER_API_KEY and PORTER_API_KEY.strip())
+
+
+def set_porter_mock_mode(enabled: bool) -> None:
+    """Dynamically toggle mock mode."""
+    global PORTER_MOCK_MODE
+    PORTER_MOCK_MODE = enabled
+
+
 def is_porter_configured() -> bool:
-    """Check whether Porter API key is set and non-empty."""
-    return bool(PORTER_API_KEY and PORTER_API_KEY.strip())
+    """Check whether Porter service is configured or mock mode is active."""
+    return is_porter_mock_enabled() or bool(PORTER_API_KEY and PORTER_API_KEY.strip())
 
 
 # ── Quote ──────────────────────────────────────────────────────────────────────
@@ -85,6 +100,17 @@ async def get_porter_quote(
           - porter_quote_id (str)    — quote reference (if provided)
           - error (str)              — present only if success=False
     """
+    if is_porter_mock_enabled():
+        mock_fare = 48.0 if drop_lat and drop_lng else 50.0
+        return {
+            "success": True,
+            "estimated_fare": mock_fare,
+            "eta_minutes": 6,
+            "vehicle_type": vehicle_type,
+            "porter_quote_id": f"QUOTE-MOCK-{uuid.uuid4().hex[:8].upper()}",
+            "mock": True
+        }
+
     if not is_porter_configured():
         return {
             "success": False,
@@ -194,6 +220,27 @@ async def create_porter_order(
           - estimated_pickup_eta (int) — Minutes to pickup
           - error (str)               — Present only if success=False
     """
+    if is_porter_mock_enabled():
+        mock_riders = [
+            {"name": "Rahul Sharma (Porter Moto)", "phone": "+91 98201 44782", "vehicle": "Honda Activa 6G (MH 12 AB 1234)"},
+            {"name": "Suresh Patil (Porter Express)", "phone": "+91 98231 88921", "vehicle": "Hero Splendor Plus (MH 12 DE 5678)"},
+            {"name": "Amit Shinde (Porter Fleet)", "phone": "+91 98901 33412", "vehicle": "TVS Jupiter 125 (MH 12 XY 9012)"},
+            {"name": "Vikas Verma (Porter Fast)", "phone": "+91 97654 22109", "vehicle": "Bajaj Pulsar 150 (MH 12 GH 3456)"}
+        ]
+        chosen = random.choice(mock_riders)
+        mock_order_id = f"CRN-PTR-{uuid.uuid4().hex[:8].upper()}"
+        return {
+            "success": True,
+            "porter_order_id": mock_order_id,
+            "tracking_url": f"https://porter.in/track/demo/{mock_order_id}",
+            "rider_name": chosen["name"],
+            "rider_phone": chosen["phone"],
+            "rider_vehicle": chosen["vehicle"],
+            "estimated_pickup_eta": 6,
+            "status": "accepted",
+            "mock": True
+        }
+
     if not is_porter_configured():
         return {
             "success": False,
@@ -290,6 +337,16 @@ async def get_porter_order_status(porter_order_id: str) -> dict:
           - rider_phone (str)
           - error (str)           — Present only if success=False
     """
+    if is_porter_mock_enabled() or (porter_order_id and str(porter_order_id).startswith("CRN-PTR-")):
+        return {
+            "success":      True,
+            "status":       "accepted",
+            "tracking_url": f"https://porter.in/track/demo/{porter_order_id}",
+            "rider_name":   "Rahul Sharma (Porter Moto)",
+            "rider_phone":  "+91 98201 44782",
+            "mock":         True
+        }
+
     if not is_porter_configured():
         return {"success": False, "error": "Porter not configured."}
 
@@ -332,6 +389,9 @@ async def cancel_porter_order(porter_order_id: str, reason: str = "Cancelled by 
           - message (str)
           - error (str)  — present if success=False
     """
+    if is_porter_mock_enabled() or (porter_order_id and str(porter_order_id).startswith("CRN-PTR-")):
+        return {"success": True, "message": "Porter mock booking cancelled successfully.", "mock": True}
+
     if not is_porter_configured():
         return {"success": False, "error": "Porter not configured."}
 

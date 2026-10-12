@@ -17,9 +17,13 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any, List
 from collections import OrderedDict
 import httpx
+from pathlib import Path
 from dotenv import load_dotenv
 
-# Load local environment variables
+# Load local environment variables reliably
+_env_path = Path(__file__).resolve().parent / ".env"
+if _env_path.exists():
+    load_dotenv(_env_path)
 load_dotenv()
 
 logger = logging.getLogger("whatsapp_service")

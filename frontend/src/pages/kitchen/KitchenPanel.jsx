@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ChefHat, Clock, RefreshCw, CheckCircle, LogOut,
-  AlertCircle, Bell, Flame, UtensilsCrossed, Volume2, Printer
+  AlertCircle, Bell, Flame, UtensilsCrossed, Volume2, Printer, Zap
 } from "lucide-react";
 import axios from "axios";
 import API_BASE from "../../lib/config";
@@ -301,6 +301,16 @@ const KitchenPanel = () => {
                       <div className="flex items-center gap-2 flex-wrap mb-1.5">
                         <span className="text-white font-black text-xl" style={{ fontFamily:"'Playfair Display',serif" }}>{order.kot_number || `#${order.order_id?.slice(-6)}`}</span>
                         <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${tag.cls}`}>{tag.label}</span>
+                        {order.auto_accepted && (
+                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full border bg-emerald-500/15 text-emerald-300 border-emerald-500/30 flex items-center gap-0.5 shadow-sm">
+                            <Zap className="h-2.5 w-2.5 text-emerald-400" /> AUTO
+                          </span>
+                        )}
+                        {order.porter_order_id && (
+                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full border bg-orange-500/15 text-orange-300 border-orange-500/30 flex items-center gap-0.5 shadow-sm" title={order.porter_rider_name ? `Rider: ${order.porter_rider_name}` : "Porter Courier"}>
+                            🛵 PORTER
+                          </span>
+                        )}
                         <button
                           onClick={() => handlePrintKot(order)}
                           disabled={printingId === order.order_id}
