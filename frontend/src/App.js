@@ -300,18 +300,22 @@ function App() {
           <Route
             path="*"
             element={
-              <>
-                <Navbar />
-                <div className="min-h-screen bg-[#0f2933] flex flex-col items-center justify-center text-center px-4">
-                  <p className="text-[#EAB308] text-8xl font-bold mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>404</p>
-                  <h1 className="text-white text-2xl font-semibold mb-2">Page Not Found</h1>
-                  <p className="text-gray-400 mb-8">The page you're looking for doesn't exist.</p>
-                  <a href="/" className="bg-[#EAB308] text-black px-8 py-3 rounded-full font-bold hover:bg-white transition-all">
-                    Go Home
-                  </a>
-                </div>
-                <Footer />
-              </>
+              isStandaloneApp() ? (
+                <CustomerDashboard />
+              ) : (
+                <>
+                  <Navbar />
+                  <div className="min-h-screen bg-[#0f2933] flex flex-col items-center justify-center text-center px-4">
+                    <p className="text-[#EAB308] text-8xl font-bold mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>404</p>
+                    <h1 className="text-white text-2xl font-semibold mb-2">Page Not Found</h1>
+                    <p className="text-gray-400 mb-8">The page you're looking for doesn't exist.</p>
+                    <a href="/" className="bg-[#EAB308] text-black px-8 py-3 rounded-full font-bold hover:bg-white transition-all">
+                      Go Home
+                    </a>
+                  </div>
+                  <Footer />
+                </>
+              )
             }
           />
 

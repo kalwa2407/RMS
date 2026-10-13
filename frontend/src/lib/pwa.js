@@ -11,6 +11,11 @@ export const isStandaloneApp = () => {
   if (typeof window === "undefined") return false;
 
   try {
+    // 0. Injected app mode for Native Customer / Staff bundles (instant synchronous check)
+    if (window.__RMS_APP_MODE__ === "customer" || window.__RMS_APP_MODE__ === "staff") {
+      return true;
+    }
+
     // 1. Capacitor Native Android / iOS wrapper
     if (
       window.Capacitor &&
