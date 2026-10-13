@@ -74,9 +74,9 @@
     "build:staff": "set REACT_APP_APP_MODE=staff && craco build",
     "build:customer": "set REACT_APP_APP_MODE=customer && craco build",
     "sync:staff": "set REACT_APP_APP_MODE=staff && craco build && npx cap sync android",
-    "sync:customer": "set REACT_APP_APP_MODE=customer && craco build && node scripts/sync-customer.js",
+    "sync:customer": "node scripts/sync-customer.js",
     "sync:staff:ios": "set REACT_APP_APP_MODE=staff && craco build && npx cap sync ios",
-    "sync:customer:ios": "set REACT_APP_APP_MODE=customer && craco build && node scripts/sync-customer-ios.js"
+    "sync:customer:ios": "node scripts/sync-customer-ios.js"
   },
   "browserslist": {
     "production": [

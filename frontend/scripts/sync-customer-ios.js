@@ -1,3 +1,4 @@
+const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -6,6 +7,10 @@ const srcDir = path.join(rootDir, 'build');
 const destPublicDir = path.join(rootDir, 'ios', 'App', 'App', 'public');
 const customerConfigFile = path.join(rootDir, 'capacitor.customer.config.json');
 const destConfigFile = path.join(rootDir, 'ios', 'App', 'App', 'capacitor.config.json');
+
+console.log('Building customer web app for iOS...');
+process.env.REACT_APP_APP_MODE = 'customer';
+execSync('npx craco build', { stdio: 'inherit', cwd: rootDir, env: process.env });
 
 function copyRecursive(src, dest) {
   if (!fs.existsSync(src)) return;
