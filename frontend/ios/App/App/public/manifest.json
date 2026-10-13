@@ -1,0 +1,34 @@
+{
+  "short_name": "Persian Darbar",
+  "name": "Persian Darbar Staff",
+  "icons": [
+    {
+      "src": "/pwa-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/pwa-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "type": "image/png",
+      "sizes": "180x180"
+    },
+    {
+      "src": "/logo.png",
+      "type": "image/png",
+      "sizes": "380x190"
+    }
+  ],
+  "start_url": "/staff-entry?source=pwa",
+  "scope": "/",
+  "background_color": "#0a1f28",
+  "theme_color": "#0a1f28",
+  "display": "standalone",
+  "orientation": "portrait"
+}
