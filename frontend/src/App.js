@@ -69,23 +69,53 @@ import { useLocation } from "react-router-dom";
 import { App as CapApp } from "@capacitor/app";
 
 // Standalone / Native root redirect
-// Staff app (default): /staff-entry
-// Customer app (REACT_APP_APP_MODE=customer): /customer/login
+// Staff app (in.persiandarbar.staff): /staff-entry
+// Customer app (in.persiandarbar.customer): /customer/dashboard
 const NativeRootRedirect = () => {
   const navigate = useNavigate();
-  const isCustomerApp = process.env.REACT_APP_APP_MODE === "customer";
-  const shouldGoToStaff = isStandaloneApp() && !isCustomerApp && sessionStorage.getItem("allow_public_website") !== "true";
-  const shouldGoToCustomer = isStandaloneApp() && isCustomerApp;
 
   useEffect(() => {
-    if (shouldGoToCustomer) {
-      navigate("/customer/login", { replace: true });
-    } else if (shouldGoToStaff) {
-      navigate("/staff-entry", { replace: true });
-    }
-  }, [shouldGoToStaff, shouldGoToCustomer, navigate]);
+    const handleNativeRedirect = async () => {
+      if (!isStandaloneApp()) {
+        return;
+      }
 
-  if (shouldGoToStaff || shouldGoToCustomer) {
+      // Check Customer App detection:
+      // 1. Static injected flag: window.__RMS_APP_MODE__ === "customer"
+      // 2. Build env var: process.env.REACT_APP_APP_MODE === "customer"
+      let isCustomer =
+        window.__RMS_APP_MODE__ === "customer" ||
+        process.env.REACT_APP_APP_MODE === "customer";
+
+      // 3. Native Capacitor App ID runtime check (100% foolproof)
+      if (
+        window.Capacitor &&
+        typeof window.Capacitor.isNativePlatform === "function" &&
+        window.Capacitor.isNativePlatform()
+      ) {
+        try {
+          const info = await CapApp.getInfo();
+          if (info && info.id === "in.persiandarbar.customer") {
+            isCustomer = true;
+          } else if (info && info.id === "in.persiandarbar.staff") {
+            isCustomer = false;
+          }
+        } catch (e) {
+          console.warn("CapApp.getInfo error:", e);
+        }
+      }
+
+      if (isCustomer) {
+        navigate("/customer/dashboard", { replace: true });
+      } else if (sessionStorage.getItem("allow_public_website") !== "true") {
+        navigate("/staff-entry", { replace: true });
+      }
+    };
+
+    handleNativeRedirect();
+  }, [navigate]);
+
+  if (isStandaloneApp()) {
     return (
       <div className="min-h-screen bg-[#0a1f28] flex items-center justify-center">
         <div className="w-10 h-10 border-4 border-[#EAB308] border-t-transparent rounded-full animate-spin" />
@@ -113,7 +143,12 @@ const AndroidBackButtonHandler = () => {
     if (window.Capacitor && typeof window.Capacitor.isNativePlatform === "function" && window.Capacitor.isNativePlatform()) {
       CapApp.addListener("backButton", ({ canGoBack }) => {
         const path = location.pathname;
-        if (path === "/staff-entry" || path === "/") {
+        if (
+          path === "/staff-entry" ||
+          path === "/customer/dashboard" ||
+          path === "/customer/login" ||
+          path === "/"
+        ) {
           CapApp.exitApp();
         } else if (
           path === "/admin/dashboard" ||

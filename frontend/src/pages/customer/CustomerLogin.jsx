@@ -12,8 +12,10 @@ import {
   RefreshCw,
   Zap,
   Lock,
-  ChevronLeft
+  ChevronLeft,
+  UtensilsCrossed
 } from 'lucide-react';
+import { isStandaloneApp } from '../../lib/pwa';
 
 const CustomerLogin = () => {
   const { currentUser, signInWithGoogle, sendWhatsAppOtp, verifyWhatsAppOtp, loading } = useCustomerAuth();
@@ -506,16 +508,28 @@ const CustomerLogin = () => {
                 <span>Continue with Google</span>
               </button>
 
-              {/* Return to Home */}
-              <Link to="/" className="block">
-                <button
-                  type="button"
-                  className="w-full flex items-center justify-center gap-1.5 bg-transparent border border-white/10 hover:border-[#EAB308]/40 hover:bg-[#EAB308]/5 text-gray-400 hover:text-[#EAB308] font-medium py-2.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-all duration-300 cursor-pointer"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                  Return to Main Site
-                </button>
-              </Link>
+              {/* Return to Home / Explore as Guest */}
+              {isStandaloneApp() ? (
+                <Link to="/customer/dashboard" className="block">
+                  <button
+                    type="button"
+                    className="w-full flex items-center justify-center gap-1.5 bg-transparent border border-[#EAB308]/30 hover:border-[#EAB308] bg-[#EAB308]/5 hover:bg-[#EAB308]/15 text-[#EAB308] font-bold py-2.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-all duration-300 cursor-pointer"
+                  >
+                    <UtensilsCrossed className="w-3.5 h-3.5 text-[#EAB308]" />
+                    Explore Menu as Guest
+                  </button>
+                </Link>
+              ) : (
+                <Link to="/" className="block">
+                  <button
+                    type="button"
+                    className="w-full flex items-center justify-center gap-1.5 bg-transparent border border-white/10 hover:border-[#EAB308]/40 hover:bg-[#EAB308]/5 text-gray-400 hover:text-[#EAB308] font-medium py-2.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-all duration-300 cursor-pointer"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    Return to Main Site
+                  </button>
+                </Link>
+              )}
 
               {/* Trust Badge & Legal */}
               <div className="mt-5 pt-4 border-t border-white/10 flex flex-col items-center justify-center gap-1.5 text-center text-gray-500 text-[11px]">
