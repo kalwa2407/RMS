@@ -51,4 +51,8 @@ if (fs.existsSync(destHtml)) {
   }
 }
 
+// Run capacitor sync
+console.log('Running Capacitor sync for iOS...');
+execSync('npx cap sync ios', { stdio: 'inherit', cwd: rootDir });
+
 console.log('✅ Successfully synced customer web assets to iOS App.');
