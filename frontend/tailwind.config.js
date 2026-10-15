@@ -56,7 +56,19 @@ module.exports = {
   			'persian-teal': '#1a3d47',
   			'persian-gold': '#f0c419',
   			'persian-dark': '#0f2933',
-  			'persian-light': '#234854'
+  			'persian-light': '#234854',
+  			zomato: {
+  				red: '#E23744',
+  				redHover: '#EF4F5F',
+  				redDark: '#CB202D',
+  				gold: '#C59A3F',
+  				darkGold: '#291e0a',
+  				bgLight: '#FCFCFC',
+  				vegGreen: '#24963F',
+  				districtPurple: '#5925dc',
+  				healthyGreen: '#526E48',
+  				healthyDark: '#3A4D39'
+  			}
   		},
   		keyframes: {
   			'accordion-down': {

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Zomato Food Delivery App</title>
+<!-- Tailwind CSS v3 with Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Custom Configuration -->
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            zomato: {
+              red: '#E23744',
+              gold: '#C59A3F',
+              darkGold: '#291e0a',
+              bgLight: '#FCFCFC',
+              vegGreen: '#24963F',
+              districtPurple: '#5925dc',
+              healthyGreen: '#526E48',
+              healthyDark: '#3A4D39'
+            }
+          },
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+          },
+          boxShadow: {
+            'floating-dock': '0 8px 30px rgba(0, 0, 0, 0.12)',
+            'soft-card': '0 2px 10px rgba(0, 0, 0, 0.05)',
+            'glow-action': '0 4px 15px rgba(226, 55, 68, 0.4)'
+          }
+        }
+      }
+    }
+  </script>
+<!-- BEGIN: Custom App Styles -->
+<style data-purpose="scroll-and-display">
+    /* Hide scrollbars for slick mobile horizontal scrolling */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    body {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+  </style>
+<style data-purpose="glassmorphism-dock">
+    .dock-blur {
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      background-color: rgba(255, 255, 255, 0.88);
+    }
+  </style>
+<!-- END: Custom App Styles -->
+</head>
+<body class="bg-[#F8F9FA] text-[#1C1C1C] flex justify-center min-h-screen antialiased selection:bg-red-100">
+<!-- Mobile Viewport Wrapper (iOS iPhone Form Factor) -->
+<div class="w-full max-w-[430px] bg-white min-h-screen flex flex-col relative shadow-2xl overflow-x-hidden pb-28">
+<!-- BEGIN: iOSStatusBar -->
+<header class="sticky top-0 z-50 bg-[#F5EED8]/90 backdrop-blur-md pt-2 px-6 pb-2 flex items-center justify-between text-black">
+<!-- Time Display -->
+<span class="text-[15px] font-semibold tracking-tight">3:37</span>
+<!-- iPhone Dynamic Island Replica -->
+<div class="h-[25px] w-[100px] bg-black rounded-full flex items-center justify-between px-2.5">
+<svg class="w-3.5 h-3.5 text-green-500 fill-current" viewbox="0 0 24 24">
+<path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"></path>
+</svg>
+<span class="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse"></span>
+</div>
+<!-- Network and Battery Indicators -->
+<div class="flex items-center space-x-1.5 text-black">
+<svg class="w-4 h-3.5 fill-current" viewbox="0 0 24 24">
+<path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 18.23C2.89 16.51 2 14.36 2 12 2 6.48 6.48 2 12 2s10 4.48 10 10c0 2.36-.89 4.51-2.35 6.23l-.62-.62C20.26 16.07 21 14.12 21 12c0-4.97-4.03-9-9-9zm0 4c-2.76 0-5 2.24-5 5 0 1.34.53 2.56 1.39 3.46l.71-.71C8.42 14.07 8 13.08 8 12c0-2.21 1.79-4 4-4s4 1.79 4 4c0 1.08-.42 2.07-1.1 2.75l.71.71c.86-.9 1.39-2.12 1.39-3.46 0-2.76-2.24-5-5-5zm0 4c-.55 0-1 .45-1 1 0 .34.17.63.43.81l.57.57.57-.57c.26-.18.43-.47.43-.81 0-.55-.45-1-1-1z"></path>
+</svg>
+<span class="text-[12px] font-bold">5G</span>
+<div class="w-5 h-2.5 border border-black rounded-sm p-[1px] flex items-center">
+<div class="w-full h-full bg-black rounded-xs"></div>
+</div>
+</div>
+</header>
+<!-- END: iOSStatusBar -->
+<!-- BEGIN: TopBarAndLocation -->
+<section class="bg-gradient-to-b from-[#F5EED8] via-[#FAF3E3] to-[#FFFBF2] px-4 pt-1 pb-3">
+<!-- Address & Quick Controls Header -->
+<div class="flex items-center justify-between">
+<!-- Location details -->
+<div class="flex items-start space-x-1.5 cursor-pointer">
+<svg class="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="currentColor" viewbox="0 0 24 24">
+<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"></path>
+</svg>
+<div class="leading-tight">
+<div class="flex items-center space-x-1">
+<span class="text-base font-extrabold tracking-tight text-neutral-900">Modi Colony</span>
+<svg class="w-3.5 h-3.5 text-neutral-800" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<p class="text-[11px] font-medium text-neutral-500 truncate max-w-[170px]">Pune, Maharashtra, India</p>
+</div>
+</div>
+<!-- Right action icons -->
+<div class="flex items-center space-x-2">
+<!-- District Badge -->
+<span class="bg-[#5925dc] text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm tracking-tight">district</span>
+<!-- Wallet / Passbook Icon -->
+<div class="w-8 h-8 rounded-full bg-white border border-neutral-200 shadow-sm flex items-center justify-center text-neutral-700">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<!-- User Profile Avatar -->
+<div class="w-8 h-8 rounded-full bg-[#3B82F6] text-white flex items-center justify-center font-bold text-xs shadow-sm">
+            A
+          </div>
+</div>
+</div>
+<!-- Search Bar & VEG Switch Row -->
+<div class="mt-3.5 flex items-center space-x-2">
+<div class="relative flex-1">
+<input class="w-full bg-white rounded-xl py-2.5 pl-9 pr-9 text-xs font-medium text-neutral-800 placeholder-neutral-400 border border-neutral-200 focus:outline-none focus:ring-1 focus:ring-red-500 shadow-sm" placeholder='Search "binge night"' type="text"/>
+<!-- Search Icon -->
+<svg class="w-4 h-4 text-neutral-500 absolute left-3 top-3" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<!-- Mic Icon -->
+<svg class="w-4 h-4 text-red-500 absolute right-3 top-3 cursor-pointer" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 003-3V5a3 3 0 10-6 0v6a3 3 0 003 3z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<!-- VEG Toggle Switch -->
+<div class="flex flex-col items-center">
+<span class="text-[9px] font-extrabold text-neutral-600 tracking-wider">VEG</span>
+<label class="relative inline-flex items-center cursor-pointer mt-0.5">
+<input class="sr-only peer" type="checkbox" value=""/>
+<div class="w-8 h-4 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-green-600"></div>
+</label>
+</div>
+</div>
+</section>
+<!-- END: TopBarAndLocation -->
+<!-- BEGIN: GoldPromoBanner -->
+<section class="bg-gradient-to-b from-[#FFFBF2] to-white px-4 pt-1 pb-4">
+<div class="relative bg-gradient-to-r from-[#FDE8B3] via-[#F9DC96] to-[#F7D37E] rounded-2xl p-4 shadow-sm border border-amber-200/60 overflow-hidden text-center">
+<!-- Delivery Scooter Decorative Graphic -->
+<div class="absolute -left-2 bottom-3 opacity-25">
+<svg class="w-16 h-16 text-amber-900" fill="currentColor" viewbox="0 0 24 24">
+<path d="M19 7a1 1 0 00-1 1v2.1l-1.92-2.88A2 2 0 0014.42 6H12a1 1 0 000 2h2.42l1.6 2.4-2.87 2.15A2.99 2.99 0 0010 11H5a1 1 0 00-1 1v3H3a1 1 0 000 2h1a3 3 0 106 0h4a3 3 0 106 0h2a1 1 0 001-1v-8a1 1 0 00-1-1zm-12 9a1 1 0 110-2 1 1 0 010 2zm10 0a1 1 0 110-2 1 1 0 010 2z"></path>
+</svg>
+</div>
+<div class="absolute -right-3 top-2 opacity-25">
+<svg class="w-16 h-16 text-amber-900" fill="currentColor" viewbox="0 0 24 24">
+<path d="M19 7a1 1 0 00-1 1v2.1l-1.92-2.88A2 2 0 0014.42 6H12a1 1 0 000 2h2.42l1.6 2.4-2.87 2.15A2.99 2.99 0 0010 11H5a1 1 0 00-1 1v3H3a1 1 0 000 2h1a3 3 0 106 0h4a3 3 0 106 0h2a1 1 0 001-1v-8a1 1 0 00-1-1zm-12 9a1 1 0 110-2 1 1 0 010 2zm10 0a1 1 0 110-2 1 1 0 010 2z"></path>
+</svg>
+</div>
+<!-- Envelope Style Banner Graphic -->
+<div class="bg-gradient-to-b from-[#F5DE9B] to-[#ECD080] rounded-xl px-4 py-3 mx-2 border border-amber-300 shadow-inner">
+<p class="text-xs font-semibold text-amber-900 tracking-wider">EXCLUSIVE PERK</p>
+<h2 class="text-2xl font-black text-[#5C3F0A] tracking-tight leading-none mt-1">FREE DELIVERY</h2>
+<p class="text-xs font-bold text-[#7A5816] mt-0.5">above ₹99</p>
+</div>
+<!-- Pill Button CTA -->
+<div class="mt-3 inline-flex items-center justify-center bg-[#1B1915] text-[#FFD77D] text-[11px] font-bold px-4 py-1.5 rounded-full shadow cursor-pointer space-x-1">
+<span>Renew <strong class="text-[#FFC72C] font-black">GOLD</strong> for 3 months at ₹1</span>
+<svg class="w-3 h-3 text-[#FFC72C]" fill="none" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24">
+<path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<!-- Carousel Pagination Dots -->
+<div class="flex justify-center space-x-1.5 mt-2.5">
+<span class="w-1.5 h-1.5 bg-neutral-800 rounded-full"></span>
+<span class="w-1.5 h-1.5 bg-neutral-400 rounded-full"></span>
+<span class="w-1.5 h-1.5 bg-neutral-400 rounded-full"></span>
+</div>
+</div>
+</section>
+<!-- END: GoldPromoBanner -->
+<!-- BEGIN: DishesCategoryHorizontalScroll -->
+<section class="mt-1">
+<div class="flex items-center space-x-3 overflow-x-auto no-scrollbar px-4 pb-2">
+<!-- Best Offers Card -->
+<div class="flex flex-col items-center flex-shrink-0 cursor-pointer">
+<div class="w-16 h-16 rounded-xl bg-gradient-to-br from-[#E23744] to-[#C11F2C] text-white p-1.5 flex flex-col items-center justify-between shadow-sm">
+<span class="text-[8px] font-extrabold uppercase leading-tight text-center">BEST OFFERS<br/>APPLIED</span>
+<span class="text-[9px] bg-white/20 px-1 rounded-sm">Explore &gt;</span>
+</div>
+<span class="text-[11px] font-medium text-neutral-700 mt-1.5 text-center">Offers</span>
+</div>
+<!-- Category: All (Active) -->
+<div class="flex flex-col items-center flex-shrink-0 cursor-pointer relative pb-1">
+<div class="w-16 h-16 rounded-full overflow-hidden bg-orange-50 border border-orange-100 p-0.5 flex items-center justify-center">
+<img alt="All Food" class="w-full h-full object-cover rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCrRydXqzXt6L9msdsk5NyAHp1tqtyvm1j-tUmjjvxHSojG2QZ5tfhlZ-APMB8iQ4plgZF9fXRQ8568R0T0uyH9t0RotlLx4Mo5UzSnTFzaSALzJ1YBYXk5s9tpHABypRNjeOr1CR7DAgxOPPxG9N_jlSJYOac2rvWNJooSzRzn71LosPpFV3codEkddk-MX0Gnad_JJYJcaUO7hxvzT0detJ_we0fn3iMiCHbq5xq0XNrlAO_DQj-T8A"/>
+</div>
+<span class="text-[11px] font-bold text-neutral-900 mt-1 text-center">All</span>
+<!-- Active Tab Underline Indicator -->
+<div class="absolute bottom-0 w-8 h-[2.5px] bg-[#E23744] rounded-full"></div>
+</div>
+<!-- Category: Paratha -->
+<div class="flex flex-col items-center flex-shrink-0 cursor-pointer">
+<div class="w-16 h-16 rounded-full overflow-hidden bg-amber-50 border border-amber-100 p-0.5 flex items-center justify-center">
+<img alt="Paratha" class="w-full h-full object-cover rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-qeHNDpTHq96DeV45ZEc8TSXnm9NqDr3kf_WDjG8kV2Gh5jOoymgiRxWjBEByNUbP4f1bBkBZ9GmowTOJVjLJKY9sk3aJ_DacGw0IU5-PtWNLKH86UB8umAcMiRYQmWs53ihVYsbbYrkVR_qu7FHGffguGc4jnEH2jq5tGk-G4JmB97k5YQH01Uc-G1L9_Os2rpcsqJj2rt_c2jzyiQnemaqRVJMvEj1w4BmlKqwq5EHurSteYc3GqQ"/>
+</div>
+<span class="text-[11px] font-medium text-neutral-600 mt-1 text-center">Paratha</span>
+</div>
+<!-- Category: Chicken Curry -->
+<div class="flex flex-col items-center flex-shrink-0 cursor-pointer">
+<div class="w-16 h-16 rounded-full overflow-hidden bg-red-50 border border-red-100 p-0.5 flex items-center justify-center">
+<img alt="Chicken Curry" class="w-full h-full object-cover rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvQSmciChQGzYuM58eHKKwj9iu5zhyvXApX31r0zi27rW1wAF8RaRfzOWHuzmRBqmHlJAd6hQmeAMzcrlSiM8HMT_YKCYyzeKqBapptt-5enk0uK7TUV20-AHgd8KcZEhLqRSPJRz7ALx4p_MD5bt9C-8W7dSg-ChZH4dTRMGb87mx7IiQbkLlaq8BAjE-cc1VPViv8WaZCW6Hh-bQiniFKyleWwmaV41_eGMDQoKc4LxKkR48EJNuMA"/>
+</div>
+<span class="text-[11px] font-medium text-neutral-600 mt-1 text-center truncate max-w-[64px]">Chicken C...</span>
+</div>
+<!-- Category: Mutton -->
+<div class="flex flex-col items-center flex-shrink-0 cursor-pointer">
+<div class="w-16 h-16 rounded-full overflow-hidden bg-amber-50 border border-amber-100 p-0.5 flex items-center justify-center">
+<img alt="Mutton" class="w-full h-full object-cover rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBT6JP8t2T6vNinH5cuHoalLaeMI3Bj2ECQU3KZZD0eMVofg4pLJkVuUw76ajjou4xCWZu4zGLpYn5dBRH4jK-XsJJZLmrCyXOFweDWnq7r1-qtPXI0mq7ivz_HmDaFjLQ0Wypq6IL164ahadDnm-soyyA4fQzNFtaQI536MljdSTMXEHMAA4N6T22pF0ERtGrkSxaaXIrJQoS-VkxIWzQi2d9C1A0m7AUB2yfJhwkxpUUjvh3TY3dThg"/>
+</div>
+<span class="text-[11px] font-medium text-neutral-600 mt-1 text-center">Mutton</span>
+</div>
+<!-- Category: Biryani -->
+<div class="flex flex-col items-center flex-shrink-0 cursor-pointer">
+<div class="w-16 h-16 rounded-full overflow-hidden bg-yellow-50 border border-yellow-100 p-0.5 flex items-center justify-center">
+<img alt="Biryani" class="w-full h-full object-cover rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBT7p9ZXtVziXkvS7aJaLRmFPIX161FPlg-_fgbCUH-cGaPMCYTwgiORU6dTDgZ8EE5nbfgB0nmPRVhbB7nEEPJbpqKmNC7EEILzMXZX_uOvHPRvJYj9jbrQBzRy5EBMjFAb2b4FO8O5IjHZ9V46IXXy9vYS11xFEXtDtGTDeSn8mSa5LRe2Q623JMcx2e3XHhX19UfZh5YB8O3BvXWsG6xRTeiSmgwzcD6_wdsjAgXiVBcn85vwgfiMg"/>
+</div>
+<span class="text-[11px] font-medium text-neutral-600 mt-1 text-center">Biryani</span>
+</div>
+</div>
+</section>
+<!-- END: DishesCategoryHorizontalScroll -->
+<!-- BEGIN: QuickFiltersChips -->
+<section class="mt-2 px-4">
+<div class="flex items-center space-x-2 overflow-x-auto no-scrollbar py-1">
+<!-- Filters dropdown button -->
+<button class="flex items-center space-x-1 border border-neutral-300 bg-white px-2.5 py-1.2 rounded-lg text-xs font-semibold text-neutral-700 shadow-sm whitespace-nowrap">
+<svg class="w-3.5 h-3.5 text-neutral-500" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Filters</span>
+<svg class="w-3 h-3 text-neutral-500" fill="currentColor" viewbox="0 0 20 20">
+<path clip-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" fill-rule="evenodd"></path>
+</svg>
+</button>
+<!-- Near & Fast filter pill -->
+<button class="flex items-center space-x-1 border border-neutral-300 bg-white px-2.5 py-1.2 rounded-lg text-xs font-semibold text-neutral-700 shadow-sm whitespace-nowrap">
+<span class="text-green-600 text-sm">⚡</span>
+<span>Near &amp; Fast</span>
+</button>
+<!-- No packaging charges -->
+<button class="border border-neutral-300 bg-white px-2.5 py-1.2 rounded-lg text-xs font-semibold text-neutral-700 shadow-sm whitespace-nowrap">
+          No packaging charges
+        </button>
+<!-- Pure Veg -->
+<button class="border border-neutral-300 bg-white px-2.5 py-1.2 rounded-lg text-xs font-semibold text-neutral-700 shadow-sm whitespace-nowrap">
+          Pure Veg
+        </button>
+</div>
+</section>
+<!-- END: QuickFiltersChips -->
+<!-- BEGIN: RecommendedSection -->
+<main class="mt-4 px-4 flex-1">
+<div class="flex items-center justify-between mb-3">
+<h2 class="text-xs font-extrabold tracking-wider text-neutral-400 uppercase">RECOMMENDED FOR YOU</h2>
+</div>
+<!-- Restaurant Cards Horizontal / Grid Row -->
+<div class="flex space-x-3 overflow-x-auto no-scrollbar pb-3">
+<!-- Card 1: Meher Cafe & Bakery -->
+<div class="w-[170px] flex-shrink-0 bg-white rounded-2xl border border-neutral-100 shadow-sm overflow-hidden flex flex-col cursor-pointer">
+<div class="relative h-28 w-full">
+<img alt="Meher Cafe" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAEICo_R5lnQ0EDLSmv6Bpk_5h5bbWs2_geeYRa3IlHcVs5iBCUUJnq3nmybJsdsM3KQQUiZuRST8jUKeZqN7y2YQlBWRzWsdpEriYVwIqrIxhae19hl8JrfmcdzrSHnvxberZEL_Z2Ctc2ICK1QZNj1ANckwk24P0dXDBT-DnCtWzzbxD5i_sl79852MRp7Zq-mFNShPEf3DqUfjI8-92O4isRQVJzZGENZbd_ekupiYtB4QFxooiuZA"/>
+<span class="absolute bottom-2 left-2 bg-emerald-800 text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center shadow-md">
+              ★ 4.5
+            </span>
+</div>
+<div class="p-2.5 flex-1 flex flex-col justify-between">
+<div>
+<h3 class="font-bold text-xs text-neutral-900 truncate">Meher Cafe &amp; Ba...</h3>
+<p class="text-[10px] text-neutral-500 mt-0.5 flex items-center">
+<span>⏱ 35–40 mins</span>
+</p>
+</div>
+</div>
+</div>
+<!-- Card 2: Bhiwandi Darbar -->
+<div class="w-[170px] flex-shrink-0 bg-white rounded-2xl border border-neutral-100 shadow-sm overflow-hidden flex flex-col cursor-pointer">
+<div class="relative h-28 w-full">
+<img alt="Bhiwandi Darbar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC7GWAtvTmnJVgWSn4H1PxIs03t5lpP4LqpZ0M634djbtiqyiL2Z6wuQJ43lmuN018zArJ379woG0uWZe_ILzEs0acnw5xIxmMzLUmOS-oXQvHYrDyyiPaIdkmAEmCK3tfmLI1ceCetnIv8TpwGjAsmoYdTJz8T79eAqTyZbq1P9gpw65zoa1iU8js4VCi4Wh3sOWIaZ2h_ZbWKfbsQC7-bFTng1udMdvJHiHdxsu69lBAUUHjMl8ZxxQ"/>
+<!-- Discount Badge Overlay -->
+<span class="absolute top-1.5 left-1.5 bg-neutral-900/80 backdrop-blur-xs text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+              ₹125 OFF above ₹499
+            </span>
+<span class="absolute bottom-2 left-2 bg-emerald-800 text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center shadow-md">
+              ★ 4.0
+            </span>
+</div>
+<div class="p-2.5 flex-1 flex flex-col justify-between">
+<div>
+<h3 class="font-bold text-xs text-neutral-900 truncate">Bhiwandi Darbar...</h3>
+<p class="text-[10px] text-neutral-700 mt-0.5 flex items-center font-medium">
+<span class="text-green-600 mr-1">⚡</span> Near &amp; Fast
+              </p>
+</div>
+</div>
+</div>
+<!-- Card 3: Oh Aai -->
+<div class="w-[170px] flex-shrink-0 bg-white rounded-2xl border border-neutral-100 shadow-sm overflow-hidden flex flex-col cursor-pointer">
+<div class="relative h-28 w-full">
+<img alt="Oh Aai Noodle Bowl" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC58TbzSTATflzv9rpzx-SkKCCsVgk8Z16-qsRhroXy7W6gySi1ucgeWYZ_L7aWArSR54uNiKMm1R9-i33NzEVHiEcPv_t9c_ccfRR5153CiS8Okbl-RAzk5KGMHz8tHKzgvzZLzvW7ar-ja2nwsAG_C83DgM-lNEv-NA0IdlVuzsj3JiXRmOswBNpUl3XYzO_oTyg0drUyOOWQTQ114eVYUKWMWGJdKXMuQDO0rIBbnmOY-Q8iGfuRkg"/>
+<!-- Discount Tag -->
+<span class="absolute top-1.5 left-1.5 bg-neutral-900/80 backdrop-blur-xs text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+              ₹125 OFF above ₹499
+            </span>
+<span class="absolute bottom-2 left-2 bg-emerald-800 text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center shadow-md">
+              ★ 4.2
+            </span>
+</div>
+<div class="p-2.5 flex-1 flex flex-col justify-between">
+<div>
+<h3 class="font-bold text-xs text-neutral-900 truncate">Oh Aai</h3>
+<p class="text-[10px] text-neutral-700 mt-0.5 flex items-center font-medium">
+<span class="text-green-600 mr-1">⚡</span> Near &amp; Fast
+              </p>
+</div>
+</div>
+</div>
+</div>
+<!-- Feature Highlight Row (Irani Cafe Promo Item) -->
+<div class="mt-4 bg-white rounded-2xl p-3 border border-neutral-100 shadow-sm">
+<div class="flex items-center justify-between mb-2">
+<div>
+<div class="flex items-center space-x-1.5">
+<h4 class="font-bold text-sm text-neutral-900">Irani Cafe</h4>
+<span class="text-[9px] bg-neutral-100 text-neutral-500 px-1 rounded font-semibold">Ad</span>
+</div>
+<p class="text-[11px] text-neutral-600 flex items-center mt-0.5">
+<span class="text-green-600 mr-1">⚡</span> 20-25 mins
+            </p>
+</div>
+<span class="bg-emerald-800 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+            ★ 4.5
+          </span>
+</div>
+<div class="flex items-center space-x-3 bg-neutral-50 p-2 rounded-xl">
+<img alt="Samosa" class="w-16 h-16 rounded-lg object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3vWIlf2qsiMpWmtxSln4Bj_Md6pQnv_hUpqtQkR7GCrHl_DPxB0Q4AKOu4g5PRHrtsBROn6LWmNpWP_4KSvIIG2UHdOIcwXTbwIuWDWrcbDjF0Zscv2S-RxKQ_iQifk0U8_H8L_tJnCOs9vp0JD3iq9SNAMBnhGKH1iv6SzIdsDe-t7GD-oFTAL6kbeOlqigcD1gTFepAx1rtR7gjwOVeVI067eEidz07lanet5-yWBnm3fsXnk4KXw"/>
+<div class="flex-1">
+<div class="flex items-center space-x-1">
+<span class="w-3 h-3 border border-red-600 flex items-center justify-center p-[2px]">
+<span class="w-1.5 h-1.5 bg-red-600 rounded-full"></span>
+</span>
+<p class="text-xs font-bold text-neutral-800 truncate">1 x Chicken Samosa</p>
+</div>
+<p class="text-[11px] font-bold text-neutral-900 mt-1">₹162.72</p>
+</div>
+<button class="bg-red-50 text-red-600 border border-red-200 text-xs font-bold px-3 py-1.5 rounded-lg active:scale-95 transition-transform">
+            View cart ›
+          </button>
+</div>
+</div>
+</main>
+<!-- END: RecommendedSection -->
+<!-- BEGIN: FloatingiOSDockNavigation -->
+<nav class="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[430px] px-3 pb-4 pt-1 z-50 pointer-events-none">
+<!-- Glassmorphic Dock Container -->
+<div class="dock-blur rounded-[28px] border border-white/60 shadow-floating-dock px-3 py-2 flex items-center justify-between pointer-events-auto">
+<!-- Tab: Delivery / Home (Active) -->
+<button class="flex flex-col items-center justify-center flex-1 py-1">
+<div class="relative">
+<svg class="w-5 h-5 text-red-500 fill-current" viewbox="0 0 20 20">
+<path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
+</svg>
+</div>
+<span class="text-[10px] font-extrabold text-red-600 mt-0.5">Home</span>
+</button>
+<!-- Tab: Under ₹250 -->
+<button class="flex flex-col items-center justify-center flex-1 py-1 opacity-70 hover:opacity-100 transition-opacity">
+<svg class="w-5 h-5 text-neutral-600" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="text-[10px] font-bold text-neutral-600 mt-0.5">Under ₹250</span>
+</button>
+<!-- Tab: Dining -->
+<button class="flex flex-col items-center justify-center flex-1 py-1 opacity-70 hover:opacity-100 transition-opacity">
+<svg class="w-5 h-5 text-neutral-600" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M12 4v1m6 11h2m-6 0h-4v4m8-4v4m-8-4a6 6 0 1112 0H6z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="text-[10px] font-bold text-neutral-600 mt-0.5">Dining</span>
+</button>
+<!-- Center Glowing Action Button (AI Assistant / Special Feature) -->
+<div class="px-1 flex items-center justify-center">
+<button class="w-10 h-10 rounded-full bg-gradient-to-tr from-[#EA384D] to-[#D31027] text-white flex items-center justify-center shadow-glow-action transform active:scale-90 transition-transform">
+<svg class="w-5 h-5 fill-current animate-pulse" viewbox="0 0 24 24">
+<path d="M12 2L9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z"></path>
+</svg>
+</button>
+</div>
+<!-- Tab: Healthy Mode Pill -->
+<button class="flex items-center space-x-1.5 bg-[#4A5D4E] text-[#E8F5E9] px-3 py-1.5 rounded-full shadow-sm active:scale-95 transition-transform ml-1">
+<svg class="w-3.5 h-3.5 fill-current text-green-300" viewbox="0 0 24 24">
+<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path>
+</svg>
+<span class="text-[10px] font-bold tracking-tight">Healthy Mode</span>
+</button>
+</div>
+<!-- iOS Home Indicator -->
+<div class="w-32 h-1 bg-black/40 rounded-full mx-auto mt-2"></div>
+</nav>
+<!-- END: FloatingiOSDockNavigation -->
+</div>
+</body></html>

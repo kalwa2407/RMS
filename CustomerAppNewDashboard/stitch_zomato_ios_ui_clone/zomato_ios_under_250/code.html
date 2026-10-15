@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Zomato - Meals Under ₹250</title>
+<!-- Tailwind CSS v3 -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts for iOS System Font look -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<script data-purpose="tailwind-config">
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+          },
+          colors: {
+            zomatoRed: '#E23744',
+            zomatoDark: '#1C1C1C',
+            districtPurple: '#5925dc',
+            healthyGreen: '#5A6E4D',
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-layout">
+    /* Hide scrollbars for slick mobile app feel */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* iOS Glassmorphism Dock effect */
+    .glass-dock {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 -4px 25px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Ribbon folded ends effect */
+    .ribbon-banner {
+      position: relative;
+    }
+    .ribbon-banner::before,
+    .ribbon-banner::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      border-top: 14px solid #b91c1c;
+      border-bottom: 14px solid #b91c1c;
+    }
+    .ribbon-banner::before {
+      left: -8px;
+      border-left: 8px solid transparent;
+    }
+    .ribbon-banner::after {
+      right: -8px;
+      border-right: 8px solid transparent;
+    }
+  </style>
+</head>
+<body class="bg-[#F8F9FA] text-[#1C1C1C] font-sans antialiased flex justify-center min-h-screen">
+<!-- Mobile Viewport Container (iOS Dimensions 375px) -->
+<div class="w-full max-w-[390px] bg-white min-h-screen shadow-2xl relative overflow-x-hidden pb-28 select-none">
+<!-- BEGIN: IOSStatusBar -->
+<header class="sticky top-0 z-50 bg-[#E8F4FA]/80 backdrop-blur-md pt-2 px-6 pb-1" data-purpose="ios-status-bar">
+<div class="flex justify-between items-center h-8">
+<!-- Time -->
+<span class="text-[14px] font-bold tracking-tight text-black pl-1">3:37</span>
+<!-- Dynamic Island with active call/sound pill -->
+<div class="w-[98px] h-[26px] bg-black rounded-full flex items-center justify-between px-2.5 shadow-sm">
+<div class="flex items-center gap-1.5">
+<!-- Active green call / app icon -->
+<svg class="w-3.5 h-3.5 text-[#25D366]" fill="currentColor" viewbox="0 0 24 24">
+<path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM16.64 15.58C16.45 16.12 15.54 16.59 15.01 16.67C14.65 16.73 14.18 16.76 12.6 16.11C10.59 15.28 9.29 13.25 9.19 13.11C9.09 12.98 8.39 12.04 8.39 11.08C8.39 10.11 8.88 9.64 9.06 9.44C9.21 9.28 9.43 9.2 9.65 9.2C9.72 9.2 9.79 9.21 9.85 9.21C10.03 9.22 10.12 9.23 10.24 9.51C10.39 9.87 10.74 10.73 10.78 10.82C10.83 10.91 10.86 11.02 10.8 11.14C10.74 11.26 10.69 11.31 10.6 11.42C10.51 11.52 10.43 11.6 10.33 11.72C10.22 11.83 10.11 11.95 10.23 12.16C10.36 12.38 10.81 13.11 11.47 13.7C12.32 14.46 13.01 14.7 13.26 14.8C13.45 14.88 13.67 14.86 13.8 14.72C13.97 14.54 14.19 14.23 14.41 13.92C14.57 13.7 14.76 13.67 14.96 13.75C15.17 13.83 16.29 14.38 16.52 14.49C16.75 14.6 16.9 14.66 16.96 14.76C17.02 14.86 17.02 15.34 16.64 15.58Z"></path>
+</svg>
+</div>
+<div class="w-2.5 h-2.5 rounded-full bg-[#111]"></div>
+</div>
+<!-- Network, 5G & Battery Icons -->
+<div class="flex items-center space-x-1.5 text-black pr-1">
+<svg class="w-4 h-3.5" fill="currentColor" viewbox="0 0 24 24">
+<path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 18.25C2.9 16.48 2 14.34 2 12c0-5.52 4.48-10 10-10s10 4.48 10 10c0 2.34-.9 4.48-2.35 6.25l-.62-.64C20.26 16.07 21 14.12 21 12c0-4.97-4.03-9-9-9zm0 4c-2.76 0-5 2.24-5 5 0 1.25.46 2.39 1.22 3.28l-.72.72C6.54 15.01 6 13.57 6 12c0-3.31 2.69-6 6-6s6 2.69 6 6c0 1.57-.54 3.01-1.5 4l-.72-.72C16.54 14.39 17 13.25 17 12c0-2.76-2.24-5-5-5zm0 4c-.55 0-1 .45-1 1 0 .28.11.53.29.71l-.71.71A1.99 1.99 0 0 1 10 12c0-1.1.9-2 2-2s2 .9 2 2c0 .55-.22 1.05-.58 1.41l-.71-.71c.18-.18.29-.43.29-.7 0-.55-.45-1-1-1z" opacity="0"></path>
+<path d="M2 17h3v4H2v-4zm5-4h3v8H7v-8zm5-4h3v12h-3V9zm5-4h3v16h-3V5z"></path>
+</svg>
+<span class="text-[11px] font-extrabold tracking-tight">5G</span>
+<!-- iOS Battery shape -->
+<div class="w-[21px] h-[10.5px] border border-black rounded-[3.5px] p-[1px] flex items-center relative">
+<div class="h-full w-full bg-black rounded-[2px]"></div>
+<div class="absolute -right-[3px] top-[2.5px] w-[2px] h-[4px] bg-black rounded-r-sm"></div>
+</div>
+</div>
+</div>
+</header>
+<!-- END: IOSStatusBar -->
+<!-- BEGIN: TopBar -->
+<section class="bg-gradient-to-b from-[#E8F4FA] to-[#DEF0FA] px-4 pt-1 pb-3" data-purpose="location-and-profile">
+<div class="flex items-center justify-between">
+<!-- Location details -->
+<div class="flex items-start space-x-1.5">
+<svg class="w-5 h-5 text-zomatoRed mt-0.5 flex-shrink-0" fill="currentColor" viewbox="0 0 24 24">
+<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"></path>
+</svg>
+<div>
+<div class="flex items-center gap-1">
+<span class="text-base font-extrabold text-[#111827] tracking-tight">Modi Colony</span>
+<svg class="w-3.5 h-3.5 text-gray-700" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+</svg>
+</div>
+<p class="text-[11.5px] font-medium text-gray-500 leading-tight">Pune, Maharashtra, India</p>
+</div>
+</div>
+<!-- Right Quick Actions -->
+<div class="flex items-center space-x-2">
+<!-- District Button -->
+<button class="bg-[#5925dc] text-white px-2.5 py-1 rounded-full flex items-center shadow-sm">
+<span class="text-[11px] font-extrabold tracking-tight font-serif italic">district</span>
+</button>
+<!-- Wallet / Money Icon -->
+<button class="w-8 h-8 rounded-full bg-white/90 border border-gray-200/80 flex items-center justify-center text-gray-700 shadow-sm">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+</svg>
+</button>
+<!-- User Profile Avatar with letter 'A' -->
+<button class="w-8 h-8 rounded-full bg-[#BFDBFE] flex items-center justify-center text-blue-700 font-bold text-[13px] border border-white shadow-sm">
+            A
+          </button>
+</div>
+</div>
+</section>
+<!-- END: TopBar -->
+<!-- BEGIN: HeroPromoBanner -->
+<section class="relative bg-gradient-to-b from-[#DEF0FA] via-[#EAF5FA] to-white pt-2 pb-5 overflow-hidden" data-purpose="hero-promo-section">
+<!-- Floating Decorative elements (Gold Coins & Green Coupons) -->
+<!-- Left side floating coupon -->
+<div class="absolute -left-2 top-8 transform -rotate-12 pointer-events-none opacity-90">
+<div class="w-10 h-6 bg-[#2ECC71] rounded-sm shadow-md flex items-center justify-center border border-emerald-400">
+<span class="text-white text-[10px] font-black">%</span>
+</div>
+</div>
+<!-- Right side floating gold coins & coupon -->
+<div class="absolute right-4 top-2 pointer-events-none">
+<div class="w-7 h-7 rounded-full bg-gradient-to-br from-[#FFE066] to-[#F39C12] border-2 border-[#FFF275] shadow-md transform rotate-12 flex items-center justify-center text-[10px] text-amber-900 font-bold">₹</div>
+</div>
+<div class="absolute -right-2 top-8 pointer-events-none">
+<div class="w-10 h-10 rounded-full bg-gradient-to-br from-[#FFD700] via-[#F1C40F] to-[#E67E22] border-2 border-yellow-200 shadow-lg transform -rotate-6"></div>
+</div>
+<div class="absolute right-2 top-16 transform rotate-12 pointer-events-none">
+<div class="w-9 h-5 bg-[#27AE60] rounded shadow-md flex items-center justify-center text-white text-[9px] font-black">%</div>
+</div>
+<!-- Main Parchment Paper Banner Container -->
+<div class="relative mx-auto w-[86%] max-w-[310px] mt-1 text-center">
+<!-- Parchment style background -->
+<div class="bg-[#FFF4D9] border-t-2 border-b-2 border-[#E7CD98] py-2.5 px-4 shadow-sm relative rounded-[3px]">
+<!-- Corner paper notches / subtle borders -->
+<div class="text-[#204079] font-black tracking-wider text-[21px] leading-tight flex items-center justify-center gap-1.5 font-sans uppercase">
+<span>MEALS UNDER</span>
+<span class="text-[22px]">₹250</span>
+</div>
+</div>
+<!-- Red Ribbon Badge Overlay -->
+<div class="relative -mt-2 inline-block z-10">
+<div class="ribbon-banner bg-[#DE2832] text-white font-extrabold text-[10px] tracking-wider uppercase px-4 py-1.5 shadow-md rounded-[1px]">
+            FINAL PRICE, BEST OFFER APPLIED
+          </div>
+</div>
+</div>
+<!-- Category Filter Carousel (All, Bowl, Biryani, Khichdi, Pav Bhaji) -->
+<div class="mt-5 px-3">
+<div class="flex items-center space-x-3.5 overflow-x-auto no-scrollbar pt-1 pb-1 text-center">
+<!-- Category 1: All (Active) -->
+<div class="flex flex-col items-center flex-shrink-0 cursor-pointer min-w-[54px] relative pb-1.5">
+<div class="w-14 h-14 rounded-full bg-orange-50/70 p-0.5 border border-amber-100/50 flex items-center justify-center mb-1">
+<img alt="All" class="w-12 h-12 rounded-full object-cover shadow-sm" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBtcD7jjU97P0D3n3xHCJt7C497-XO5vCmxn6js6lB8HcRmoLKDayLb5FbH_FIFxoHtV_ygSOT0sJ0_7PlqRw5FAiEfideasXmiAv9vGxNMQtUnCwmmTJB4_u5W-R3FkgYFfnNEA-oE5hLxBQk5VLRHNRKxnI1AJOitaO49afY6rujhJXe8t1wDwjt8gyxq174Lun0Sf1NmhiuKuCsqu0Zo6gH79gNcQp9TwNqatZKTSgcjZvh4aeh6tA"/>
+</div>
+<span class="text-[12px] font-bold text-gray-800">All</span>
+<!-- Red active indicator bar -->
+<div class="absolute bottom-0 left-2 right-2 h-[2.5px] bg-zomatoRed rounded-full"></div>
+</div>
+<!-- Category 2: Bowl -->
+<div class="flex flex-col items-center flex-shrink-0 cursor-pointer min-w-[54px]">
+<div class="w-14 h-14 rounded-full bg-gray-50 p-0.5 flex items-center justify-center mb-1">
+<img alt="Bowl" class="w-12 h-12 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDkqP_HY3psvk5WDlOFmo_ISsB-dnO18dJEHaoWvsDpx2pYQ6_uAtXCrrq_NvVJ3jwk1jNqQSHl1VIBhaXCARKPaKj0GsneweYQFMkUcd8_lY7X-6am5m9-dgMYuhe9dpuLOkvy93bfB5Men08fX8Vl1gOEiw1oSWQ7qB5QafbcJUWt7wTfHOlBNDL_X6k0NSfm-_QzVfoXJgruy-wzfdAWfmgImn5TWqxb04uu5KHwkJXVfwT14G9zhw"/>
+</div>
+<span class="text-[12px] font-medium text-gray-500">Bowl</span>
+</div>
+<!-- Category 3: Biryani -->
+<div class="flex flex-col items-center flex-shrink-0 cursor-pointer min-w-[54px]">
+<div class="w-14 h-14 rounded-full bg-gray-50 p-0.5 flex items-center justify-center mb-1">
+<img alt="Biryani" class="w-12 h-12 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5MhhmTjoEEGN0oKTFu54FrCBIiHzffxOlcfWpBL_si2M-GtmtuNjMl8JN8mPD1lueC46Icca4abwNMAJcjlnUMvuwSjDXKIcXRFdp_c2qMAeRQSEKIj962iLIbBFX0TBV9GQpUDVuZh5Gjh5kgd6KZymw0VWXpaGANV1XWi0dswyrCZBHwRPcFdcUvQTTL--sEQjiWJL0qhCa4HTXWvBuCQp-8YCGvTdbznLbZdvamcXOHpzdLxMQ6Q"/>
+</div>
+<span class="text-[12px] font-medium text-gray-500">Biryani</span>
+</div>
+<!-- Category 4: Khichdi -->
+<div class="flex flex-col items-center flex-shrink-0 cursor-pointer min-w-[54px]">
+<div class="w-14 h-14 rounded-full bg-gray-50 p-0.5 flex items-center justify-center mb-1">
+<img alt="Khichdi" class="w-12 h-12 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBaNfhFD6AEfWdrDEZDZ6C4W40SPo4pzDYylQKQ8I0tcZT9YGGPCV8rzlYyJS1pf3dqcTvTuZSONeDDvgI6RDuIXTMhL0dNTkN0v9rFHB8WpPwTzmaDDIp-L-2iuems9Nhbrd1pKQWBrkepDeMXWbNB0DeKz_ut_B9bdP88td5JgADgq9M1dwRerepj7SJAQ7_-35jcI8ZynYD4DHxZEhDJEm4muDRXeGvAQdEio05BN8q6csvrtQwOrA"/>
+</div>
+<span class="text-[12px] font-medium text-gray-500">Khichdi</span>
+</div>
+<!-- Category 5: Pav Bhaji -->
+<div class="flex flex-col items-center flex-shrink-0 cursor-pointer min-w-[54px]">
+<div class="w-14 h-14 rounded-full bg-gray-50 p-0.5 flex items-center justify-center mb-1">
+<img alt="Pav Bhaji" class="w-12 h-12 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDWrs1QQUsogjRdg_ds-vdB1BVLSLEzRWxuoh9hKq_quxRa2xua-xnjO8y0nGeM6fGRs1YyPDizemxT9gcJzlNYpw1PWdbKnTbYfcvVYG5o8l7j38stusUtcLU795GwHX73QCMW-pSNNtsxeB3xepe-NDnO5JkxbSJccwC-R5TJdXAYW67exJCJX1TCBZqnGtKjdEEU8Lx1l_zgAYheZCNDzETojEGouUrQZTZs6_Ekacx-bZXONgCbfg"/>
+</div>
+<span class="text-[12px] font-medium text-gray-500">Pav Bhaji</span>
+</div>
+</div>
+</div>
+</section>
+<!-- END: HeroPromoBanner -->
+<!-- BEGIN: QuickFilters -->
+<section class="px-3.5 py-1" data-purpose="filter-bar">
+<div class="flex items-center space-x-2 overflow-x-auto no-scrollbar">
+<!-- Filter: Sort -->
+<button class="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-lg shadow-xs text-xs font-semibold text-gray-800 whitespace-nowrap">
+<svg class="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Sort</span>
+<svg class="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+</svg>
+</button>
+<!-- Filter: Loved by friends -->
+<button class="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-lg shadow-xs text-xs font-semibold text-gray-800 whitespace-nowrap">
+<!-- Heart / friends icon -->
+<svg class="w-3.5 h-3.5 text-[#E77A5B]" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Loved by friends</span>
+</button>
+<!-- Filter: Pure Veg -->
+<button class="flex items-center space-x-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg shadow-xs text-xs font-semibold text-gray-800 whitespace-nowrap">
+<span>Pure Veg</span>
+</button>
+</div>
+</section>
+<!-- END: QuickFilters -->
+<!-- BEGIN: RestaurantSection -->
+<section class="mt-4 px-3.5" data-purpose="restaurant-listing">
+<!-- Restaurant Header Info -->
+<div class="flex items-center justify-between">
+<div>
+<h2 class="text-[17px] font-black text-gray-900 tracking-tight">Irani Cafe</h2>
+<div class="flex items-center space-x-2 text-[12px] font-semibold text-gray-500 mt-0.5">
+<!-- Delivery time with lightning icon -->
+<span class="text-[#059669] flex items-center font-bold">
+<svg class="w-3 h-3 mr-0.5 fill-current text-[#059669]" viewbox="0 0 24 24">
+<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+</svg>
+              20-25 mins
+            </span>
+<span class="text-gray-300">|</span>
+<span class="text-gray-400 font-normal">Ad</span>
+</div>
+</div>
+<!-- Rating Pill -->
+<div class="bg-[#247E3D] text-white px-2 py-0.5 rounded-md flex items-center space-x-1 shadow-xs">
+<svg class="w-3 h-3 fill-current" viewbox="0 0 20 20">
+<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+</svg>
+<span class="text-[12px] font-bold">4.5</span>
+</div>
+</div>
+<!-- Food Menu Item Cards (Side-by-side horizontal scroll) -->
+<div class="mt-3 flex space-x-3 overflow-x-auto no-scrollbar pb-1">
+<!-- Card 1: 1 x Chicken Samosa -->
+<div class="w-[220px] flex-shrink-0 bg-white rounded-2xl border border-gray-100 shadow-sm p-2 flex flex-col justify-between">
+<!-- Item Dish Image -->
+<div class="w-full h-[140px] rounded-xl overflow-hidden bg-[#FCECEE] relative">
+<img alt="Chicken Samosa" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXaoGPI8_3NkcPIPD50DE-Peh_ExCz81LyQdfZK6SkGrm9CCCHMeoE-uXxdj5ZKIP69Cy_xeT6W5L8uEQmW8N-TqvMX5NTeg1Snmo_hLR6wqf8e9SSISDVP0Ds-Q6IFoxI07PXSxyecelNbiBnlFOzL5tZQXKC_ryEzoYI-cBOb9NwLqTeQQXoEBWL63nkSX35cJhaiS_jjpTG-uB1Gc75jqowIup3WzQM49LhG6fpLhdP8p0do50Z6Q"/>
+</div>
+<!-- Item Details -->
+<div class="mt-2.5 px-1">
+<div class="flex items-start space-x-1.5">
+<!-- Non-veg symbol (red triangle inside square) -->
+<div class="w-3.5 h-3.5 border border-[#B91C1C] flex items-center justify-center p-[1px] mt-0.5 flex-shrink-0 rounded-[2px]">
+<div class="w-2 h-2 bg-[#B91C1C] rounded-[1px] transform rotate-45 scale-75"></div>
+</div>
+<p class="text-[12.5px] font-bold text-gray-800 leading-snug line-clamp-2">
+                1 x Chicken Samosa (1 piece)
+              </p>
+</div>
+<!-- Price and Cart Button -->
+<div class="mt-3 flex items-end justify-between">
+<div>
+<span class="text-sm font-extrabold text-gray-900 tracking-tight">₹162.72</span>
+<span class="block text-[10px] text-gray-400 font-medium">Best price</span>
+</div>
+<!-- View Cart button -->
+<button class="border border-[#E23744] text-[#E23744] bg-[#FFF5F6] px-2 py-1 rounded-lg text-[11px] font-bold flex items-center space-x-0.5 active:bg-rose-100">
+<span>View cart</span>
+<span class="text-xs">›</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 2: 1 x Grilled Bun / Sandwich -->
+<div class="w-[220px] flex-shrink-0 bg-white rounded-2xl border border-gray-100 shadow-sm p-2 flex flex-col justify-between">
+<!-- Item Dish Image -->
+<div class="w-full h-[140px] rounded-xl overflow-hidden bg-[#F8F9FA] relative">
+<img alt="Grilled Sandwich" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDMXtdcPdcujXMNaa3JGH7VKlmqUmAlqnAu5ZEcc4am4g0UwIADmplfWe_ZEK2i_qZoBS1Oy66OInbIGP1ajT5eNTdEyOdrNzIu0WnyhLmPkPomXrQEQNzp9EbrXqFBGSXVIsecbEYgRxj01P607gx64IPU1sdvN_La805ViQFkri48JlVLHIQ38LFcv-X1WJiMgoTzVF9Alf8US58AbGLjVXlCLicJdf3ur_f7TZ5ucJWk54R3NkYICw"/>
+</div>
+<!-- Item Details -->
+<div class="mt-2.5 px-1">
+<div class="flex items-start space-x-1.5">
+<!-- Veg symbol (green dot inside square) -->
+<div class="w-3.5 h-3.5 border border-[#16A34A] flex items-center justify-center p-[1px] mt-0.5 flex-shrink-0 rounded-[2px]">
+<div class="w-2 h-2 rounded-full bg-[#16A34A]"></div>
+</div>
+<p class="text-[12.5px] font-bold text-gray-800 leading-snug truncate">
+                1 x Grilled Bun Maska
+              </p>
+</div>
+<!-- Price and Subtext -->
+<div class="mt-3 flex items-end justify-between">
+<div>
+<span class="text-sm font-extrabold text-gray-900 tracking-tight">₹222.79</span>
+<span class="block text-[10px] text-gray-400 font-medium">Best price</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- View Full Menu Button -->
+<div class="mt-4 flex justify-center">
+<button class="bg-white border border-gray-200 shadow-xs px-4 py-1.5 rounded-full text-xs font-bold text-gray-700 flex items-center space-x-1 hover:bg-gray-50 active:scale-95 transition-transform">
+<span>View full menu</span>
+<span class="text-gray-400 text-sm">›</span>
+</button>
+</div>
+</section>
+<!-- END: RestaurantSection -->
+<!-- BEGIN: FloatingBottomNavBar -->
+<div class="fixed bottom-0 left-0 right-0 max-w-[390px] mx-auto z-40 px-3 pb-3" data-purpose="bottom-navigation-dock">
+<!-- Glassmorphism Dock -->
+<nav class="glass-dock rounded-[32px] p-1.5 flex items-center justify-between border border-white/60">
+<!-- Tab 1: Home -->
+<a class="flex flex-col items-center justify-center flex-1 py-1 text-gray-500" href="#">
+<svg class="w-5 h-5 stroke-[1.8]" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="text-[10px] font-semibold mt-0.5">Home</span>
+</a>
+<!-- Tab 2: Under ₹250 (Active) -->
+<a class="flex flex-col items-center justify-center flex-1 py-1 text-[#DE2832]" href="#">
+<div class="relative">
+<div class="w-7 h-7 rounded-full bg-[#FFEAEB] flex items-center justify-center">
+<svg class="w-4 h-4 text-[#DE2832]" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+</div>
+<span class="text-[10px] font-extrabold mt-0.5">Under ₹250</span>
+</a>
+<!-- Tab 3: Dining -->
+<a class="flex flex-col items-center justify-center flex-1 py-1 text-gray-500" href="#">
+<!-- Food Cloche Cover icon -->
+<svg class="w-5 h-5 stroke-[1.8]" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M12 4v2m0 0a8 8 0 018 8H4a8 8 0 018-8zm-8 10h16a1 1 0 011 1v1H3v-1a1 1 0 011-1z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="text-[10px] font-semibold mt-0.5">Dining</span>
+</a>
+<!-- Middle Action: Radiant Gradient Magic Pill Button -->
+<button class="w-9 h-9 rounded-full bg-gradient-to-tr from-[#DE2832] via-[#9B51E0] to-[#56CCF2] p-[1.5px] shadow-sm flex items-center justify-center mx-0.5">
+<div class="w-full h-full bg-gradient-to-tr from-[#FF5E62] to-[#FF9966] rounded-full flex items-center justify-center">
+<svg class="w-4 h-4 text-white" fill="currentColor" viewbox="0 0 24 24">
+<path d="M12 2L14.2 8.2L20.4 10.4L14.2 12.6L12 18.8L9.8 12.6L3.6 10.4L9.8 8.2L12 2Z"></path>
+</svg>
+</div>
+</button>
+<!-- Tab 4: Healthy Mode (Distinct Green Capsule) -->
+<div class="pl-1">
+<button class="bg-[#5C7252] text-white px-3 py-1.5 rounded-full flex items-center space-x-1 shadow-sm">
+<!-- Heart / Leaf inside outline -->
+<svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span class="text-[10.5px] font-bold tracking-tight whitespace-nowrap">Healthy Mode</span>
+</button>
+</div>
+</nav>
+<!-- iOS Home Bar Indicator -->
+<div class="w-full flex justify-center pt-2">
+<div class="w-32 h-1 bg-black/40 rounded-full"></div>
+</div>
+</div>
+<!-- END: FloatingBottomNavBar -->
+</div>
+</body></html>
