@@ -293,9 +293,11 @@ class ReservationCreate(BaseModel):
     date: str
     time: str
     guests: int
+    dining_mood: Optional[str] = "Royal Dastarkhwan"
     table_number: Optional[int] = None
     special_requests: Optional[str] = None
     status: Optional[str] = "confirmed"
+
 
 
 class ReservationStatusUpdate(BaseModel):

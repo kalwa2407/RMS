@@ -16,7 +16,9 @@ import CustomerSearchExplore from './components/CustomerSearchExplore';
 import CustomerDockNav from './components/CustomerDockNav';
 import CustomerCartSheet from './components/CustomerCartSheet';
 import CustomerProfileSheet from './components/CustomerProfileSheet';
+import CustomerProfileTab from './components/CustomerProfileTab';
 import CustomerAddressModal from './components/CustomerAddressModal';
+
 import CustomerPwaInstallModal from '../../components/CustomerPwaInstallModal';
 import CustomerAppSplash from './components/CustomerAppSplash';
 import {
@@ -43,13 +45,23 @@ const CustomerDashboard = () => {
 
   // ── Navigation & Views State ──
   // 'home' | 'order' | 'reserve' | 'rewards' | 'profile'
-  const [activeTab, setActiveTab] = useState('home');
+  const [activeTab, setActiveTab] = useState(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam && ['home', 'order', 'reserve', 'rewards', 'profile'].includes(tabParam)) {
+        return tabParam;
+      }
+    } catch (e) {}
+    return 'home';
+  });
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [profileInitialTab, setProfileInitialTab] = useState('orders');
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+
 
   // ── Persian Darbar 4 Official Branches Location & True Haversine Distance Engine ──
   const [selectedBranch, setSelectedBranch] = useState(() => {
@@ -552,8 +564,9 @@ const CustomerDashboard = () => {
         description: `Order #${String(data.order_id || data.id).slice(-8)} is being prepared!`,
       });
       setProfileInitialTab('orders');
-      setIsProfileOpen(true);
+      setActiveTab('profile');
     } catch (err) {
+
       alert(err.message || 'Order failed. Please try again.');
     } finally {
       setPlacingOrder(false);
@@ -561,7 +574,7 @@ const CustomerDashboard = () => {
   };
 
   // ── Book Table Handler ──
-  const handleBookTable = async ({ date, time, guests, special_requests }) => {
+  const handleBookTable = async ({ date, time, guests, special_requests, dining_mood }) => {
     setBookingLoading(true);
     try {
       let activeToken = idToken;
@@ -581,9 +594,11 @@ const CustomerDashboard = () => {
         date,
         time,
         guests: parseInt(guests, 10),
-        special_requests: `${special_requests || 'Table reservation'} [Outlet: ${selectedBranch?.name || 'Bandra Flagship'}]`,
+        dining_mood: dining_mood || 'Royal Dastarkhwan',
+        special_requests: `${dining_mood ? `[Dining Mood: ${dining_mood}] ` : ''}${special_requests || 'Table reservation'} [Outlet: ${selectedBranch?.name || 'Bandra Flagship'}]`,
         status: 'confirmed'
       };
+
 
       const res = await fetch(`${API_BASE}/api/reservations`, {
         method: 'POST',
@@ -632,10 +647,6 @@ const CustomerDashboard = () => {
 
   // Bottom dock tab selector
   const handleDockSelect = (tabId) => {
-    if (tabId === 'profile') {
-      navigate('/customer/profile');
-      return;
-    }
     setActiveTab(tabId);
     mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -653,13 +664,17 @@ const CustomerDashboard = () => {
           selectedBranch={selectedBranch}
           distanceKm={distanceKm}
           onOpenLocationModal={() => setIsLocationModalOpen(true)}
-          onOpenProfile={() => navigate('/customer/profile')}
+          onOpenProfile={() => {
+            setActiveTab('profile');
+            mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
           onOpenWallet={() => setActiveTab('rewards')}
           onOpenSearch={() => setIsSearchOpen(true)}
           searchQuery={searchQuery}
           userInitial={currentUser?.displayName?.[0] || 'A'}
           userPhoto={currentUser?.photoURL}
         />
+
 
         {/* ── Scrollable Body ── */}
         <main ref={mainScrollRef} className="flex-1 overflow-y-auto no-scrollbar">
@@ -731,7 +746,47 @@ const CustomerDashboard = () => {
               onApplyVoucher={(code) => applyCouponCode(code)}
             />
           )}
+
+          {/* Tab 5: Dedicated Zomato-style Profile Page (In-App Tab) */}
+          {activeTab === 'profile' && (
+            <CustomerProfileTab
+              currentUser={currentUser}
+              customerProfile={customerProfile}
+              orders={orders}
+              reservations={reservations}
+              pdCoins={customerProfile?.coins ?? customerProfile?.loyalty_points ?? 450}
+              onReorder={(order) => {
+                if (!order?.items) return;
+                order.items.forEach((item) => {
+                  const dish = menu.find(
+                    (m) => String(m._id) === String(item.item_id) || m.name === item.name
+                  );
+                  if (dish) addToCart(dish);
+                });
+                setIsCartOpen(true);
+              }}
+              onSavePhone={async (phone) => {
+                await updateProfile({ phone });
+                toast({ title: 'Phone Saved', description: 'Contact number updated.' });
+              }}
+              onSaveAddress={async (address) => {
+                await updateProfile({ address });
+                setDeliveryAddress(address);
+                updateDistanceForBranch(selectedBranch, userCoords, address);
+                toast({ title: 'Address Saved', description: 'Default address updated.' });
+              }}
+              onSignOut={async () => {
+                await signOutCustomer();
+                setActiveTab('home');
+                toast({ title: 'Signed Out', description: 'See you again at Persian Darbar!' });
+              }}
+              onGoToOrder={() => setActiveTab('order')}
+              onGoToReserve={() => setActiveTab('reserve')}
+              initialSection={profileInitialTab === 'orders' ? 'orders' : 'overview'}
+            />
+          )}
         </main>
+
 
         {/* ── Search & Explore Overlay (Real Menu Items & Categories) ── */}
         {isSearchOpen && (

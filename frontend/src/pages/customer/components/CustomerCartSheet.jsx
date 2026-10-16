@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { X, Trash2, Plus, Minus, Tag, MapPin, Check, Sparkles, AlertCircle, Navigation, Banknote, CreditCard, Coins, Bike } from 'lucide-react';
+import { X, Trash2, Plus, Minus, Tag, MapPin, Check, Sparkles, AlertCircle, Navigation, Banknote, CreditCard, Coins, Bike, ShoppingBag } from 'lucide-react';
+
 
 const CustomerCartSheet = ({
   isOpen = false,
@@ -92,7 +93,10 @@ const CustomerCartSheet = ({
                   : 'text-neutral-500'
               }`}
             >
-              🛵 Home Delivery
+              <span className="flex items-center justify-center gap-1.5">
+                <Bike className="w-3.5 h-3.5" />
+                <span>Home Delivery</span>
+              </span>
             </button>
             <button
               onClick={() => onSetOrderType('TAKEAWAY')}
@@ -102,9 +106,13 @@ const CustomerCartSheet = ({
                   : 'text-neutral-500'
               }`}
             >
-              🥡 Takeaway Pickup
+              <span className="flex items-center justify-center gap-1.5">
+                <ShoppingBag className="w-3.5 h-3.5" />
+                <span>Takeaway Pickup</span>
+              </span>
             </button>
           </div>
+
 
           {/* Takeaway Info (if Takeaway) */}
           {orderType === 'TAKEAWAY' && (

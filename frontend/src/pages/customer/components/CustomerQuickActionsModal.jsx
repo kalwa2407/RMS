@@ -1,5 +1,6 @@
 import React from 'react';
-import { X, Sparkles, ShoppingBag, Clock, Phone, Calendar, Heart } from 'lucide-react';
+import { X, Sparkles, ShoppingBag, Clock, Phone, Calendar, Heart, Crown } from 'lucide-react';
+
 
 const CustomerQuickActionsModal = ({
   isOpen = false,
@@ -88,8 +89,9 @@ const CustomerQuickActionsModal = ({
             className="w-full bg-amber-50 hover:bg-amber-100 border border-amber-200 p-3 rounded-2xl flex items-center justify-between text-left transition-colors"
           >
             <div className="flex items-center space-x-2.5">
-              <span className="text-base">👑</span>
+              <Crown className="w-4 h-4 text-amber-600 fill-amber-400 shrink-0" />
               <div>
+
                 <h4 className="text-xs font-black text-amber-900">
                   Chef's Special Recommendation
                 </h4>

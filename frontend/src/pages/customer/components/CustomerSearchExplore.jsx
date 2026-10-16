@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
-import { ChevronLeft, Search, X, Mic, Plus, Minus, Sparkles } from 'lucide-react';
+import { ChevronLeft, Search, X, Mic, Plus, Minus, Sparkles, UtensilsCrossed } from 'lucide-react';
 import { SEARCH_CRAVINGS, SEARCH_ROUNDELS_GRID } from '../customerAssets';
+
 
 const CustomerSearchExplore = ({
   searchQuery,
@@ -73,9 +74,10 @@ const CustomerSearchExplore = ({
 
           {searchResults.length === 0 ? (
             <div className="text-center py-16 px-4">
-              <div className="w-16 h-16 rounded-full bg-red-50 text-[#E23744] mx-auto flex items-center justify-center mb-3 text-2xl font-black">
-                🍽️
+              <div className="w-16 h-16 rounded-full bg-red-50 text-[#E23744] mx-auto flex items-center justify-center mb-3">
+                <UtensilsCrossed className="w-7 h-7" />
               </div>
+
               <h3 className="font-extrabold text-base text-neutral-900">No dishes matched</h3>
               <p className="text-xs text-neutral-500 mt-1 max-w-xs mx-auto">
                 Try searching for "Biryani", "Tandoori Mumtaz", "Mutton Barra", "Butter Chicken" or "Naan".

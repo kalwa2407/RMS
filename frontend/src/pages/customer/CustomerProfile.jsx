@@ -36,6 +36,11 @@ const CustomerProfile = () => {
   const { currentUser, customerProfile, updateProfile, signOutCustomer, idToken, fetchWithAuth } = useCustomerAuth();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    navigate('/customer?tab=profile', { replace: true });
+  }, [navigate]);
+
+
   // Active view tab: 'membership' | 'orders' | 'reservations' | 'details'
   const [activeTab, setActiveTab] = useState('membership');
 

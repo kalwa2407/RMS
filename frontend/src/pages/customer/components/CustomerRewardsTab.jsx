@@ -12,7 +12,15 @@ import {
   Zap,
   ArrowRight,
   Clock,
-  Tag
+  Tag,
+  MessageCircle,
+  Bike,
+  UtensilsCrossed,
+  Users,
+  X,
+  Copy,
+  Check,
+  MessageSquare
 } from 'lucide-react';
 import { REWARD_TIERS, REWARD_VOUCHERS, ROYAL_MEMBERSHIP_PRIVILEGES } from '../customerAssets';
 
@@ -30,6 +38,34 @@ const CustomerRewardsTab = ({
   const [activeTab, setActiveTab] = useState('perks'); // 'perks' | 'vouchers' | 'passbook'
   const [redeemedCode, setRedeemedCode] = useState(null);
 
+  // Interactive Earn Modals
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [copiedInvite, setCopiedInvite] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewText, setReviewText] = useState('');
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [inviteClaimed, setInviteClaimed] = useState(false);
+
+  // Passbook history state
+  const [passbookItems, setPassbookItems] = useState([
+    {
+      title: 'Mutton Biryani Order Cash Back',
+      time: 'Yesterday, 8:45 PM · Order #PD-88214',
+      amount: '+57 Coins'
+    },
+    {
+      title: 'Welcome to Royalty Club Bonus',
+      time: 'Persian Darbar Patron Sign-up',
+      amount: '+100 Coins'
+    },
+    {
+      title: 'Royal Table Dining at Camp Pune',
+      time: '12 Oct 2026 · Dine-In Cashback',
+      amount: '+45 Coins'
+    }
+  ]);
+
   // Real user display data without dummy email
   const patronName = customerProfile?.name || currentUser?.displayName || 'Aman Talukdar';
   const patronPhone = customerProfile?.phone || localStorage.getItem('customer_phone') || '7028033763';
@@ -40,6 +76,14 @@ const CustomerRewardsTab = ({
     if (dailyClaimed) return;
     setDailyClaimed(true);
     setCoinsBalance((prev) => prev + 25);
+    setPassbookItems((prev) => [
+      {
+        title: 'Daily Shahi Loyalty Check-In',
+        time: 'Just now · Free Daily Bonus',
+        amount: '+25 Coins'
+      },
+      ...prev
+    ]);
   };
 
   const handleRedeemVoucher = (voucher) => {
@@ -49,18 +93,86 @@ const CustomerRewardsTab = ({
     }
     setCoinsBalance((prev) => prev - voucher.requiredCoins);
     setRedeemedCode(voucher.code);
+    setPassbookItems((prev) => [
+      {
+        title: `Voucher Redeemed: ${voucher.title}`,
+        time: 'Just now · Coupon Unlocked',
+        amount: `-${voucher.requiredCoins} Coins`
+      },
+      ...prev
+    ]);
     if (onApplyVoucher) onApplyVoucher(voucher.code);
+  };
+
+  const handleShareInvite = () => {
+    const shareText = `Order royal Mughlai feasts on Persian Darbar with my exclusive invite code DARBAR-ROYAL-100 to get Flat ₹150 OFF & 100 PD Coins! https://persiandarbar.in?ref=ROYAL100`;
+    if (navigator.share) {
+      navigator.share({
+        title: 'Persian Darbar Royalty Club',
+        text: shareText,
+        url: 'https://persiandarbar.in'
+      }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(shareText);
+    }
+    setCopiedInvite(true);
+    setTimeout(() => setCopiedInvite(false), 2500);
+
+    if (!inviteClaimed) {
+      setInviteClaimed(true);
+      setCoinsBalance((prev) => prev + 100);
+      setPassbookItems((prev) => [
+        {
+          title: 'Patron Referral Link Shared',
+          time: 'Just now · Invite Bonus Credited',
+          amount: '+100 Coins'
+        },
+        ...prev
+      ]);
+    }
+  };
+
+  const handleSubmitReview = (e) => {
+    e.preventDefault();
+    setReviewSubmitted(true);
+    setCoinsBalance((prev) => prev + 50);
+    setPassbookItems((prev) => [
+      {
+        title: `Patron Review (${reviewRating} Stars)`,
+        time: 'Just now · Review Feedback Reward',
+        amount: '+50 Coins'
+      },
+      ...prev
+    ]);
+    setTimeout(() => {
+      setIsReviewOpen(false);
+      setReviewSubmitted(false);
+      setReviewText('');
+    }, 1500);
+  };
+
+  const renderPrivIcon = (name) => {
+    switch (name) {
+      case 'Coins':
+        return <Coins className="w-5 h-5 text-amber-600 shrink-0" />;
+      case 'Bike':
+        return <Bike className="w-5 h-5 text-emerald-600 shrink-0" />;
+      case 'Crown':
+        return <Crown className="w-5 h-5 text-amber-600 shrink-0" />;
+      case 'Gift':
+        return <Gift className="w-5 h-5 text-rose-600 shrink-0" />;
+      default:
+        return <Sparkles className="w-5 h-5 text-amber-600 shrink-0" />;
+    }
   };
 
   return (
     <div className="flex-1 pb-32 pt-2 px-4 space-y-4">
       {/* ── 1. ZOMATO GOLD STYLE OBSIDIAN & GOLD METALLIC VIP PASS ── */}
       <section className="relative overflow-hidden rounded-[30px] bg-gradient-to-br from-[#1C1917] via-[#26221F] to-[#0A0908] text-white p-6 shadow-2xl border border-amber-400/40">
-        {/* Ambient Gold Radial Glows */}
         <div className="absolute -top-16 -right-16 w-48 h-48 bg-amber-400/20 rounded-full blur-2xl pointer-events-none" />
         <div className="absolute -bottom-16 -left-16 w-44 h-44 bg-rose-500/10 rounded-full blur-2xl pointer-events-none" />
 
-        {/* Card Header */}
         <div className="flex items-start justify-between relative z-10">
           <div className="flex items-center space-x-3.5">
             <div className="relative">
@@ -134,11 +246,11 @@ const CustomerRewardsTab = ({
         </div>
       </section>
 
-      {/* ── 2. DAILY ROYAL REWARD / CLAIM COINS ── */}
+      {/* ── 2. DAILY ROYAL REWARD / CLAIM COINS (No Emojis) ── */}
       <section className="bg-gradient-to-r from-amber-50 via-[#FFF9ED] to-rose-50 border border-amber-300/80 rounded-2xl p-4 shadow-xs flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 rounded-2xl bg-amber-400/30 border border-amber-500/40 text-2xl flex items-center justify-center shrink-0 shadow-sm">
-            🎁
+          <div className="w-12 h-12 rounded-2xl bg-amber-400/20 border border-amber-500/30 text-amber-800 flex items-center justify-center shrink-0 shadow-xs">
+            <Gift className="w-6 h-6 text-amber-700" />
           </div>
           <div>
             <span className="text-[10px] font-black uppercase text-amber-900 bg-amber-200/70 px-2 py-0.5 rounded-full">
@@ -166,25 +278,27 @@ const CustomerRewardsTab = ({
         </button>
       </section>
 
-      {/* ── 3. SEGMENTED VIEWS: Perks | Vouchers | Passbook ── */}
+      {/* ── 3. SEGMENTED VIEWS: Perks | Vouchers | Passbook (Clean Lucide Icons) ── */}
       <div className="bg-white p-1 rounded-2xl border border-neutral-200/80 shadow-xs flex space-x-1">
         {[
-          { id: 'perks', label: '👑 VIP Privileges' },
-          { id: 'vouchers', label: '🏷️ Redeem Vouchers' },
-          { id: 'passbook', label: '📜 Coins Passbook' }
+          { id: 'perks', label: 'VIP Privileges', icon: Crown },
+          { id: 'vouchers', label: 'Redeem Vouchers', icon: Tag },
+          { id: 'passbook', label: 'Coins Passbook', icon: Clock }
         ].map((tab) => {
           const isActive = activeTab === tab.id;
+          const TabIcon = tab.icon;
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all text-center whitespace-nowrap cursor-pointer ${
+              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer ${
                 isActive
                   ? 'bg-neutral-900 text-white shadow-xs'
                   : 'text-neutral-600 hover:text-neutral-950 hover:bg-neutral-50'
               }`}
             >
-              {tab.label}
+              <TabIcon className="w-3.5 h-3.5 shrink-0" />
+              <span>{tab.label}</span>
             </button>
           );
         })}
@@ -203,7 +317,9 @@ const CustomerRewardsTab = ({
                   key={idx}
                   className="p-3 rounded-xl bg-[#FAF8F5] border border-amber-900/5 flex items-start space-x-3"
                 >
-                  <span className="text-xl leading-none">{priv.icon}</span>
+                  <div className="w-9 h-9 rounded-xl bg-white border border-amber-200/60 flex items-center justify-center shrink-0 shadow-xs">
+                    {renderPrivIcon(priv.icon)}
+                  </div>
                   <div>
                     <h4 className="text-xs font-bold text-neutral-900">{priv.title}</h4>
                     <p className="text-[11px] text-neutral-500 mt-0.5">{priv.desc}</p>
@@ -292,7 +408,7 @@ const CustomerRewardsTab = ({
                     disabled={!canRedeem}
                     className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all shrink-0 ${
                       canRedeem
-                        ? 'bg-amber-400 hover:bg-amber-500 text-neutral-950 active:scale-95 shadow-sm'
+                        ? 'bg-amber-400 hover:bg-amber-500 text-neutral-950 active:scale-95 shadow-sm cursor-pointer'
                         : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
                     }`}
                   >
@@ -313,89 +429,244 @@ const CustomerRewardsTab = ({
           </h3>
 
           <div className="space-y-2.5 text-xs">
-            <div className="flex items-center justify-between pb-2 border-b border-neutral-100">
-              <div className="flex items-center space-x-2">
-                <span className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                  +
-                </span>
-                <div>
-                  <h5 className="font-bold text-neutral-900">Mutton Biryani Order Cash Back</h5>
-                  <p className="text-[10px] text-neutral-500">Yesterday, 8:45 PM · Order #PD-88214</p>
+            {passbookItems.map((item, idx) => (
+              <div key={idx} className="flex items-center justify-between pb-2 border-b border-neutral-100">
+                <div className="flex items-center space-x-2">
+                  <span className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold ${item.amount.startsWith('-') ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                    {item.amount.startsWith('-') ? '-' : '+'}
+                  </span>
+                  <div>
+                    <h5 className="font-bold text-neutral-900">{item.title}</h5>
+                    <p className="text-[10px] text-neutral-500">{item.time}</p>
+                  </div>
                 </div>
-              </div>
-              <span className="font-black text-emerald-600">+57 Coins</span>
-            </div>
-
-            <div className="flex items-center justify-between pb-2 border-b border-neutral-100">
-              <div className="flex items-center space-x-2">
-                <span className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                  +
+                <span className={`font-black ${item.amount.startsWith('-') ? 'text-rose-600' : 'text-emerald-600'}`}>
+                  {item.amount}
                 </span>
-                <div>
-                  <h5 className="font-bold text-neutral-900">Welcome to Royalty Club Bonus</h5>
-                  <p className="text-[10px] text-neutral-500">Persian Darbar Patron Sign-up</p>
-                </div>
               </div>
-              <span className="font-black text-emerald-600">+100 Coins</span>
-            </div>
-
-            <div className="flex items-center justify-between pb-2 border-b border-neutral-100">
-              <div className="flex items-center space-x-2">
-                <span className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                  +
-                </span>
-                <div>
-                  <h5 className="font-bold text-neutral-900">Royal Table Dining at Camp</h5>
-                  <p className="text-[10px] text-neutral-500">12 Oct 2026 · Dine-In Cashback</p>
-                </div>
-              </div>
-              <span className="font-black text-emerald-600">+45 Coins</span>
-            </div>
+            ))}
           </div>
         </div>
       )}
 
-      {/* ── 4. HOW TO EARN MORE COINS ── */}
+      {/* ── 4. ALL 4 FUNCTIONAL WAYS TO EARN MORE COINS (Interactive - No emojis) ── */}
       <section className="bg-white rounded-2xl p-4 border border-neutral-200/80 shadow-xs space-y-3">
         <h3 className="text-xs font-black uppercase tracking-wider text-neutral-500 flex items-center space-x-1.5">
           <Coins className="w-4 h-4 text-amber-500" />
           <span>Ways to Earn Royalty Coins</span>
         </h3>
 
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="p-3 rounded-xl bg-neutral-50 border border-neutral-100">
-            <span className="text-lg">🛵</span>
-            <h5 className="font-bold text-neutral-900 mt-1">10% On Delivery</h5>
-            <p className="text-[10px] text-neutral-500">Every bite earns coins back</p>
+        <div className="grid grid-cols-2 gap-2.5 text-xs">
+          {/* Card 1: 10% on Delivery */}
+          <div
+            onClick={onGoToOrder}
+            className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-amber-900/10 hover:border-amber-400 hover:shadow-xs cursor-pointer active:scale-98 transition-all flex flex-col justify-between"
+          >
+            <div>
+              <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-700 flex items-center justify-center mb-2">
+                <Bike className="w-4 h-4" />
+              </div>
+              <h5 className="font-bold text-neutral-900">10% On Delivery</h5>
+              <p className="text-[10px] text-neutral-500 mt-0.5">Instant cashback on orders</p>
+            </div>
+            <span className="text-[10px] font-black text-amber-700 mt-2 flex items-center gap-0.5">
+              <span>Order Now</span>
+              <ChevronRight className="w-3 h-3" />
+            </span>
           </div>
-          <div className="p-3 rounded-xl bg-neutral-50 border border-neutral-100">
-            <span className="text-lg">🍽️</span>
-            <h5 className="font-bold text-neutral-900 mt-1">10% On Dine-In</h5>
-            <p className="text-[10px] text-neutral-500">Pay bill at all 4 branches</p>
+
+          {/* Card 2: 10% on Dine-In */}
+          <div
+            onClick={onGoToReserve}
+            className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-amber-900/10 hover:border-amber-400 hover:shadow-xs cursor-pointer active:scale-98 transition-all flex flex-col justify-between"
+          >
+            <div>
+              <div className="w-8 h-8 rounded-xl bg-orange-500/10 text-orange-700 flex items-center justify-center mb-2">
+                <UtensilsCrossed className="w-4 h-4" />
+              </div>
+              <h5 className="font-bold text-neutral-900">10% On Dine-In</h5>
+              <p className="text-[10px] text-neutral-500 mt-0.5">Pay bill at all 4 branches</p>
+            </div>
+            <span className="text-[10px] font-black text-orange-700 mt-2 flex items-center gap-0.5">
+              <span>Book Table</span>
+              <ChevronRight className="w-3 h-3" />
+            </span>
           </div>
-          <div className="p-3 rounded-xl bg-neutral-50 border border-neutral-100">
-            <span className="text-lg">👥</span>
-            <h5 className="font-bold text-neutral-900 mt-1">100 Coins / Invite</h5>
-            <p className="text-[10px] text-neutral-500">When friend orders biryani</p>
+
+          {/* Card 3: 100 Coins / Invite */}
+          <div
+            onClick={() => setIsInviteOpen(true)}
+            className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-amber-900/10 hover:border-amber-400 hover:shadow-xs cursor-pointer active:scale-98 transition-all flex flex-col justify-between"
+          >
+            <div>
+              <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-700 flex items-center justify-center mb-2">
+                <Users className="w-4 h-4" />
+              </div>
+              <h5 className="font-bold text-neutral-900">100 Coins / Invite</h5>
+              <p className="text-[10px] text-neutral-500 mt-0.5">When friend signs up</p>
+            </div>
+            <span className="text-[10px] font-black text-purple-700 mt-2 flex items-center gap-0.5">
+              <span>Invite Friends</span>
+              <ChevronRight className="w-3 h-3" />
+            </span>
           </div>
-          <div className="p-3 rounded-xl bg-neutral-50 border border-neutral-100">
-            <span className="text-lg">⭐</span>
-            <h5 className="font-bold text-neutral-900 mt-1">50 Coins / Review</h5>
-            <p className="text-[10px] text-neutral-500">Share your dining story</p>
+
+          {/* Card 4: 50 Coins / Review */}
+          <div
+            onClick={() => setIsReviewOpen(true)}
+            className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-amber-900/10 hover:border-amber-400 hover:shadow-xs cursor-pointer active:scale-98 transition-all flex flex-col justify-between"
+          >
+            <div>
+              <div className="w-8 h-8 rounded-xl bg-yellow-500/10 text-yellow-800 flex items-center justify-center mb-2">
+                <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
+              </div>
+              <h5 className="font-bold text-neutral-900">50 Coins / Review</h5>
+              <p className="text-[10px] text-neutral-500 mt-0.5">Share dining experience</p>
+            </div>
+            <span className="text-[10px] font-black text-yellow-800 mt-2 flex items-center gap-0.5">
+              <span>Rate Now</span>
+              <ChevronRight className="w-3 h-3" />
+            </span>
           </div>
         </div>
       </section>
 
-      {/* ── 5. WHATSAPP CONCIERGE BUTTON ── */}
+      {/* ── 5. WHATSAPP CONCIERGE BUTTON (No emojis) ── */}
       <a
         href="https://wa.me/917028033763?text=Hello%20Persian%20Darbar,%20I%20am%20a%20Royalty%20Member%20and%20would%20like%20assistance."
         target="_blank"
         rel="noreferrer"
         className="w-full py-3.5 rounded-2xl bg-[#25D366] hover:bg-[#20BD5A] text-white font-black text-xs flex items-center justify-center space-x-2 shadow-md active:scale-98 transition-all"
       >
-        <span>💬</span>
+        <MessageCircle className="w-4 h-4 text-white" />
         <span>Contact Royal Concierge on WhatsApp</span>
       </a>
+
+      {/* ── INVITE MODAL ── */}
+      {isInviteOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-5 max-w-sm w-full space-y-4 shadow-2xl border border-neutral-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
+                  <Users className="w-4 h-4" />
+                </div>
+                <h3 className="font-black text-sm text-neutral-900">Invite & Earn 100 Coins</h3>
+              </div>
+              <button
+                onClick={() => setIsInviteOpen(false)}
+                className="w-7 h-7 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-500 hover:text-neutral-900"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-neutral-600 leading-relaxed">
+              Share your royal referral link with your family and friends. When they place their first order, they get ₹150 OFF and you instantly receive 100 PD Coins!
+            </p>
+
+            <div className="p-3 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-center justify-between">
+              <span className="font-mono font-black text-neutral-800 text-sm">DARBAR-ROYAL-100</span>
+              <button
+                onClick={handleShareInvite}
+                className="px-3 py-1.5 rounded-xl bg-neutral-900 text-white text-xs font-bold flex items-center gap-1 active:scale-95"
+              >
+                {copiedInvite ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>Copy</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            <button
+              onClick={handleShareInvite}
+              className="w-full py-3 rounded-2xl bg-[#25D366] hover:bg-[#20BD5A] text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm active:scale-98"
+            >
+              <Share2 className="w-4 h-4" />
+              <span>Share via WhatsApp</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── REVIEW MODAL ── */}
+      {isReviewOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-5 max-w-sm w-full space-y-4 shadow-2xl border border-neutral-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-yellow-100 text-yellow-800 flex items-center justify-center">
+                  <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
+                </div>
+                <h3 className="font-black text-sm text-neutral-900">Review & Earn 50 Coins</h3>
+              </div>
+              <button
+                onClick={() => setIsReviewOpen(false)}
+                className="w-7 h-7 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-500 hover:text-neutral-900"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {reviewSubmitted ? (
+              <div className="py-8 text-center space-y-2">
+                <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-7 h-7" />
+                </div>
+                <h4 className="font-black text-sm text-neutral-900">Thank You, Patron!</h4>
+                <p className="text-xs text-neutral-500">50 PD Coins have been credited to your royalty balance.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmitReview} className="space-y-3">
+                <p className="text-xs text-neutral-600">
+                  Rate your latest Persian Darbar dining or delivery experience:
+                </p>
+
+                <div className="flex items-center justify-center gap-2 py-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewRating(star)}
+                      className="p-1 cursor-pointer transition-transform active:scale-125"
+                    >
+                      <Star
+                        className={`w-7 h-7 ${
+                          star <= reviewRating
+                            ? 'fill-amber-400 text-amber-400'
+                            : 'text-neutral-300'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+
+                <textarea
+                  value={reviewText}
+                  onChange={(e) => setReviewText(e.target.value)}
+                  placeholder="Share what you loved about our Biryani, Barra Chop, or hospitality..."
+                  rows={3}
+                  className="w-full text-xs p-3 rounded-2xl border border-neutral-200 focus:outline-none focus:border-amber-500 resize-none"
+                />
+
+                <button
+                  type="submit"
+                  className="w-full py-3 rounded-2xl bg-neutral-900 hover:bg-neutral-800 text-amber-300 text-xs font-black shadow-md active:scale-98"
+                >
+                  Submit & Claim +50 Coins
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

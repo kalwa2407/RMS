@@ -179,11 +179,13 @@ const CustomerAddressModal = ({
                         {branch.shortAddress}
                       </p>
                     </div>
-                    <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg shrink-0 ${
+                    <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-lg shrink-0 flex items-center gap-1 ${
                       isFar ? 'bg-amber-500 text-black' : 'bg-white text-neutral-900 shadow'
                     }`}>
-                      {dist ? `📍 ~${dist} km` : 'Open'}
+                      <Navigation className="w-2.5 h-2.5" />
+                      <span>{dist ? `~${dist} km` : 'Open'}</span>
                     </span>
+
                   </div>
                 </div>
 

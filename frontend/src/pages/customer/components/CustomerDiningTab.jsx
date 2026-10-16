@@ -42,10 +42,12 @@ const CustomerDiningTab = ({
       date: selectedDate,
       time: selectedTime,
       guests: guestCount,
+      dining_mood: selectedMood,
       branch_name: selectedBranch?.name || 'Persian Darbar, Camp Pune',
-      special_requests: [selectedMood ? `Mood: ${selectedMood}` : '', specialNote.trim()].filter(Boolean).join(' | ')
+      special_requests: [selectedMood ? `Dining Mood: ${selectedMood}` : '', specialNote.trim()].filter(Boolean).join(' | ')
     });
   };
+
 
   return (
     <div className="flex-1 pb-32 pt-2 px-4 space-y-4">
@@ -87,11 +89,15 @@ const CustomerDiningTab = ({
               {selectedBranch?.fullAddress || selectedBranch?.shortAddress || 'Renaissance Centre, Wellesley Rd, Camp, Pune'}
             </p>
             <div className="flex items-center space-x-3 text-[10px] text-neutral-600 font-semibold mt-1">
-              <span>🕒 {selectedBranch?.timing || '11:00 AM - 1:00 AM'}</span>
+              <span className="flex items-center gap-1">
+                <Clock className="w-3 h-3 text-neutral-500 shrink-0" />
+                <span>{selectedBranch?.timing || '11:00 AM - 1:00 AM'}</span>
+              </span>
               <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.2 rounded-full border border-emerald-200">
                 ● {availableTablesCount} Tables Open
               </span>
             </div>
+
           </div>
         </div>
       </section>
@@ -344,11 +350,20 @@ const CustomerDiningTab = ({
                     Reserved for <strong className="text-neutral-900">{res.customer_name}</strong>
                   </p>
 
+                  {(res.dining_mood || (res.special_requests && res.special_requests.includes('Mood:'))) && (
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <span className="text-[10px] font-black uppercase text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full">
+                        {res.dining_mood || (res.special_requests.match(/Mood:\s*([^|\]]+)/)?.[1]?.trim()) || 'Royal Dastarkhwan'}
+                      </span>
+                    </div>
+                  )}
+
                   {res.special_requests && (
-                    <p className="text-[11px] text-neutral-500 bg-neutral-50 p-2 rounded-xl">
+                    <p className="text-[11px] text-neutral-500 bg-neutral-50 p-2 rounded-xl mt-1">
                       {res.special_requests}
                     </p>
                   )}
+
                 </div>
               ))
             )}

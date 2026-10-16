@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Plus, Minus, Star, Search, Tag, Sparkles, Crown } from 'lucide-react';
-import { PERSIAN_DARBAR_CATEGORIES } from '../customerAssets';
+import { Plus, Minus, Star, Search, Tag, Sparkles, Crown, UtensilsCrossed } from 'lucide-react';
+import { PERSIAN_DARBAR_CATEGORIES, getDishMetrics } from '../customerAssets';
+
 
 const CustomerOrderTab = ({
   menu = [],
@@ -245,7 +246,8 @@ const CustomerOrderTab = ({
               : 'bg-white text-emerald-800 border border-emerald-200'
           }`}
         >
-          <span>🌱 Veg Only</span>
+          <Sparkles className="w-3 h-3 text-emerald-600" />
+          <span>Veg Only</span>
         </button>
       </section>
 
@@ -253,8 +255,8 @@ const CustomerOrderTab = ({
       <section className="px-4 py-2 space-y-3">
         {filteredDishes.length === 0 ? (
           <div className="bg-white rounded-3xl p-8 text-center border border-neutral-200/80 shadow-xs space-y-3">
-            <div className="w-12 h-12 rounded-full bg-red-50 text-[#E23744] flex items-center justify-center mx-auto text-xl font-black">
-              🍽️
+            <div className="w-12 h-12 rounded-full bg-red-50 text-[#E23744] flex items-center justify-center mx-auto">
+              <UtensilsCrossed className="w-6 h-6" />
             </div>
             <h4 className="font-extrabold text-sm text-neutral-900">
               No dishes found under "{selectedCat}"
@@ -272,22 +274,26 @@ const CustomerOrderTab = ({
         ) : (
           filteredDishes.map((dish) => {
             const inCart = cart.find((c) => c._id === dish._id);
+            const { rating, orderCount } = getDishMetrics(dish);
             return (
               <div
                 key={dish._id}
                 className="bg-white rounded-3xl p-4 border border-neutral-200/80 shadow-xs flex items-center justify-between gap-3 transition-all hover:border-neutral-300"
               >
                 <div className="flex-1 pr-1">
-                  <div className="flex items-center space-x-1.5 mb-1">
+                  <div className="flex items-center space-x-1.5 mb-1 flex-wrap gap-y-1">
                     <span className="text-[10px] font-black text-[#E23744] bg-red-50 px-2 py-0.5 rounded-md uppercase tracking-wide">
                       {dish.category}
                     </span>
-                    {dish.popular && (
-                      <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md">
-                        ★ Must Try
-                      </span>
-                    )}
+                    <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
+                      <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                      <span>{dish.rating ? Number(dish.rating).toFixed(1) : rating}</span>
+                    </span>
+                    <span className="text-[9px] font-semibold text-neutral-400">
+                      ({dish.order_count || orderCount})
+                    </span>
                   </div>
+
 
                   <h3 className="font-extrabold text-sm text-neutral-900 leading-tight">
                     {dish.name}
