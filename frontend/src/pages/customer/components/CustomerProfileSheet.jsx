@@ -57,7 +57,8 @@ const CustomerProfileSheet = ({
 
   const patronName = customerProfile?.name || currentUser?.displayName || 'Aman Talukdar';
   const patronPhone = phoneVal || '7028033763';
-  const patronInitial = patronName?.[0] || 'A';
+  const patronEmail = customerProfile?.email || currentUser?.email || localStorage.getItem('customer_email');
+  const patronInitial = (patronName?.[0] || 'A').toUpperCase();
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200">
@@ -82,7 +83,7 @@ const CustomerProfileSheet = ({
                 <Crown className="w-4 h-4 text-amber-500 fill-amber-400" />
               </div>
               <p className="text-xs font-semibold text-neutral-500 mt-0.5">
-                +91 {patronPhone} · {currentUser?.email || 'patron@persiandarbar.in'}
+                +91 {patronPhone} {patronEmail ? `· ${patronEmail}` : '· Verified Patron'}
               </p>
             </div>
           </div>

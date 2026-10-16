@@ -42,6 +42,7 @@ const CustomerProfile = () => {
   // Contact & Address edit states
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
   const [addresses, setAddresses] = useState([]);
   const [newAddressInput, setNewAddressInput] = useState('');
@@ -57,14 +58,16 @@ const CustomerProfile = () => {
 
   // Sync profile details
   useEffect(() => {
+    const savedEmail = customerProfile?.email || currentUser?.email || localStorage.getItem('customer_email') || '';
+    setEmail(savedEmail);
     if (customerProfile) {
       setName(customerProfile.name || currentUser?.displayName || 'Aman Talukdar');
-      setPhone(customerProfile.phone || '7028033763');
+      setPhone(customerProfile.phone || localStorage.getItem('customer_phone') || '7028033763');
       setAddress(customerProfile.address || 'Kondhwa, Pune');
       setAddresses(customerProfile.addresses || ['Kondhwa, Pune', 'Bandra West, Mumbai']);
     } else if (currentUser) {
       setName(currentUser.displayName || 'Aman Talukdar');
-      setPhone('7028033763');
+      setPhone(localStorage.getItem('customer_phone') || '7028033763');
       setAddress('Kondhwa, Pune');
     }
   }, [customerProfile, currentUser]);
@@ -121,9 +124,11 @@ const CustomerProfile = () => {
 
     setSaving(true);
     try {
+      if (email.trim()) localStorage.setItem('customer_email', email.trim());
       const res = await updateProfile({
         name,
         phone: cleanPhone,
+        email: email.trim(),
         address,
         addresses
       });
@@ -255,7 +260,7 @@ const CustomerProfile = () => {
                   </span>
                 </div>
                 <p className="text-xs text-stone-300 font-medium mt-0.5">
-                  +91 {phone} · {currentUser?.email || 'patron@persiandarbar.in'}
+                  +91 {phone} {email ? `· ${email}` : '· Verified Patron'}
                 </p>
               </div>
             </div>
@@ -630,17 +635,18 @@ const CustomerProfile = () => {
               />
             </div>
 
-            {/* Email (Read-Only) */}
+            {/* Email Address */}
             <div>
               <label className="block text-xs font-bold text-neutral-700 mb-1 flex items-center space-x-1.5">
                 <Mail className="w-3.5 h-3.5 text-amber-500" />
-                <span>Google Account Email</span>
+                <span>Account Email Address</span>
               </label>
               <input
                 type="email"
-                value={currentUser?.email || 'patron@persiandarbar.in'}
-                disabled
-                className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs text-neutral-500 bg-neutral-100 cursor-not-allowed"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your personal or Google email address"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-semibold text-neutral-900 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 bg-neutral-50/50"
               />
             </div>
 

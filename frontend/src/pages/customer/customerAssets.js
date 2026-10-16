@@ -192,27 +192,147 @@ export const KNOWN_LOCALITIES = {
   'chembur': { lat: 19.0522, lng: 72.8994, city: 'Mumbai' }
 };
 
-// Dining moods for table reservations
+// Dining moods for table reservations with verified authentic high-res imagery
 export const DINING_MOODS = [
   {
     title: 'Royal Dastarkhwan',
     tag: 'Authentic Seating',
-    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
+    description: 'Traditional low diwan & royal carpet dining',
+    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?crop=entropy&cs=srgb&fm=jpg&w=600&q=80'
   },
   {
     title: 'Family Feasts',
     tag: 'Spacious Tables',
-    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
+    description: 'Generous banquets for large family reunions',
+    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?crop=entropy&cs=srgb&fm=jpg&w=600&q=80'
   },
   {
     title: 'Candlelight & Intimate',
     tag: 'Romantic Corners',
-    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
+    description: 'Warm ambient lighting & quiet corner tables',
+    image: 'https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?crop=entropy&cs=srgb&fm=jpg&w=600&q=80'
   },
   {
     title: 'Celebrations',
     tag: 'Birthdays & Parties',
-    image: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
+    description: 'Party decor, royal cakes & group feast sets',
+    image: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?crop=entropy&cs=srgb&fm=jpg&w=600&q=80'
+  }
+];
+
+// Royalty Club Tiers & Milestones for Dedicated Rewards Page
+export const REWARD_TIERS = [
+  {
+    id: 'silver',
+    name: 'Silver Patron',
+    minCoins: 0,
+    maxCoins: 250,
+    perk: '5% Cashback on orders',
+    badge: 'SILVER',
+    color: '#94A3B8'
+  },
+  {
+    id: 'gold',
+    name: 'Gold Patron',
+    minCoins: 251,
+    maxCoins: 750,
+    perk: '10% Cashback + VIP Table Priority',
+    badge: 'GOLD VIP',
+    color: '#F59E0B'
+  },
+  {
+    id: 'emperor',
+    name: 'Emperor Sovereign',
+    minCoins: 751,
+    maxCoins: 1500,
+    perk: '15% Cashback + Free Delivery + Concierge',
+    badge: 'EMPEROR ELITE',
+    color: '#E11D48'
+  }
+];
+
+// Redeemable Royalty Vouchers
+export const REWARD_VOUCHERS = [
+  {
+    id: 'vouch_1',
+    title: 'Flat ₹100 Off on Biryani',
+    requiredCoins: 100,
+    category: 'Discount',
+    code: 'ROYAL100',
+    validity: 'Valid across Bandra & Pune'
+  },
+  {
+    id: 'vouch_2',
+    title: 'Complimentary Shahi Tukda',
+    requiredCoins: 200,
+    category: 'Free Dessert',
+    code: 'FREEDESSERT',
+    validity: 'On orders above ₹499'
+  },
+  {
+    id: 'vouch_3',
+    title: 'VIP Weekend Dine-In Pass (20% OFF)',
+    requiredCoins: 350,
+    category: 'Dine-In Privilege',
+    code: 'VIPDINE20',
+    validity: 'Priority table allocation'
+  },
+  {
+    id: 'vouch_4',
+    title: 'Free Murgh Dum Biryani',
+    requiredCoins: 500,
+    category: 'Free Dish',
+    code: 'FREEBIRYANI',
+    validity: 'Signature slow-cooked handi'
+  }
+];
+
+// Persian Darbar Hallmarks for Home Tab Enrichment
+export const PERSIAN_DARBAR_HALLMARKS = [
+  {
+    icon: '🏺',
+    title: 'Sealed Handi Dum',
+    desc: 'Slow-cooked in dough-sealed clay handis for 4+ hours to trap aromatic juices.'
+  },
+  {
+    icon: '🔥',
+    title: 'Charcoal Tandoor',
+    desc: 'Skewered and roasted on real charcoal for that signature smoky Persian crust.'
+  },
+  {
+    icon: '✨',
+    title: 'Pure Saffron & Nuts',
+    desc: 'Infused with authentic Kashmiri saffron, cashew paste, and hand-ground spices.'
+  },
+  {
+    icon: '⚡',
+    title: '30-Min Valet Delivery',
+    desc: 'Special insulated royal carriers keep your feast sizzling hot to your door.'
+  }
+];
+
+// Authentic Patron Testimonials
+export const PATRON_REVIEWS = [
+  {
+    name: 'Karan Mehra',
+    outlet: 'Bandra West',
+    rating: 5,
+    date: '3 days ago',
+    comment: 'The Mutton Barra Chop and Dum Biryani have been our family staple for 15 years. Absolutely unmatched tenderness!'
+  },
+  {
+    name: 'Zoya Qureshi',
+    outlet: 'Camp, Pune',
+    rating: 5,
+    date: '1 week ago',
+    comment: 'Booked a table for our anniversary through the app. VIP seating was ready, no waiting, and the Shahi Tukda was pure heaven.'
+  },
+  {
+    name: 'Rohan Deshmukh',
+    outlet: 'Andheri East',
+    rating: 5,
+    date: '2 weeks ago',
+    comment: 'Used my PD Coins for ₹150 off on my midnight order. Delivery was under 25 minutes and piping hot!'
   }
 ];
 

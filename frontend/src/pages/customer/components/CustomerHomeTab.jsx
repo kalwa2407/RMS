@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Minus, Star, Tag, Sparkles, Clock, Crown, ChevronRight, Award, ShieldCheck } from 'lucide-react';
-import { PERSIAN_DARBAR_CATEGORIES, DEFAULT_PERSIAN_DARBAR_OFFERS } from '../customerAssets';
+import { Plus, Minus, Star, Tag, Sparkles, Clock, Crown, ChevronRight, Award, ShieldCheck, Heart, Flame, Utensils, MessageSquareQuote } from 'lucide-react';
+import {
+  PERSIAN_DARBAR_CATEGORIES,
+  DEFAULT_PERSIAN_DARBAR_OFFERS,
+  PERSIAN_DARBAR_HALLMARKS,
+  PATRON_REVIEWS
+} from '../customerAssets';
 
 const CustomerHomeTab = ({
   menu = [],
@@ -35,22 +40,25 @@ const CustomerHomeTab = ({
   const currentOffer = activeOffersList[activeOfferIdx] || activeOffersList[0];
 
   // Signature chef specials from real menu
-  const chefSpecials = menu.filter(item => item.popular || (item.rating && item.rating >= 4.5)).slice(0, 6);
+  const chefSpecials = menu.filter((item) => item.popular || (item.rating && item.rating >= 4.5)).slice(0, 6);
   const displayedChefSpecials = chefSpecials.length > 0 ? chefSpecials : menu.slice(0, 6);
 
+  // Trending Delicacies (different selection for rich feed)
+  const trendingDelicacies = menu.slice(6, 12).length > 0 ? menu.slice(6, 12) : menu.slice(0, 5);
+
   return (
-    <div className="flex-1 pb-28">
-      {/* ── BEGIN: Grand Royal Offer Hero Section (Expanded & Matching Screenshot 4 Aesthetics) ── */}
-      <section className="bg-gradient-to-b from-[#FFF5D6] via-[#FFF8E7] to-[#F8F9FA] px-4 pt-2 pb-4">
+    <div className="flex-1 pb-32 space-y-5">
+      {/* ── 1. GRAND ROYAL OFFER HERO SECTION (Matching Screenshot 4) ── */}
+      <section className="bg-gradient-to-b from-[#FFF5D6] via-[#FFF8E7] to-[#F8F9FA] px-4 pt-2 pb-2">
         {currentOffer && (
           <div
             onClick={() => onOfferClick && onOfferClick(currentOffer)}
             className="relative rounded-3xl p-5 shadow-sm border border-amber-300/80 overflow-hidden cursor-pointer active:scale-[0.99] transition-all"
             style={{
-              background: currentOffer.bg_gradient || 'linear-gradient(135deg, #FFF5D6 0%, #FDE8B3 50%, #F9DC96 100%)',
+              background: currentOffer.bg_gradient || 'linear-gradient(135deg, #FFF5D6 0%, #FDE8B3 50%, #F9DC96 100%)'
             }}
           >
-            {/* Ambient Watermark Crest Graphics */}
+            {/* Ambient Watermark Graphics */}
             <div className="absolute -right-6 -bottom-6 w-32 h-32 opacity-15 pointer-events-none">
               <svg className="w-full h-full text-amber-900" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
@@ -68,7 +76,7 @@ const CustomerHomeTab = ({
                 </span>
               </div>
 
-              {/* Big Golden Envelope Style Headline */}
+              {/* Big Golden Envelope Headline */}
               <div className="bg-white/80 backdrop-blur-xs rounded-2xl p-3.5 border border-amber-300 shadow-inner">
                 <p className="text-[11px] font-black text-amber-900 tracking-wider uppercase">
                   {currentOffer.subtitle || 'SPECIAL OFFER'}
@@ -81,7 +89,7 @@ const CustomerHomeTab = ({
                 </p>
               </div>
 
-              {/* Bottom Action & Coupon Row */}
+              {/* Action & Coupon Row */}
               <div className="flex items-center justify-between pt-1">
                 {currentOffer.coupon_code ? (
                   <div className="inline-flex items-center space-x-1.5 bg-[#1C1917] text-amber-300 px-3 py-1.5 rounded-full border border-amber-400/50 shadow-xs">
@@ -121,13 +129,12 @@ const CustomerHomeTab = ({
           </div>
         )}
       </section>
-      {/* ── END: Grand Royal Offer Hero Section ── */}
 
-      {/* ── BEGIN: Category Quick Roundels (Matching Screenshot 4) ── */}
-      <section className="mt-2 px-4">
-        <div className="flex items-center justify-between mb-2">
+      {/* ── 2. CATEGORY QUICK ROUNDELS (Matching Screenshot 4) ── */}
+      <section className="px-4">
+        <div className="flex items-center justify-between mb-2.5">
           <h2 className="text-xs font-black text-neutral-400 uppercase tracking-wider">
-            EXPLORE PERSIAN DARBAR MENU
+            WHAT'S ON YOUR MIND?
           </h2>
           <button
             onClick={onGoToOrder}
@@ -138,7 +145,7 @@ const CustomerHomeTab = ({
         </div>
 
         <div className="flex items-center space-x-3 overflow-x-auto no-scrollbar pb-2">
-          {/* First Card: BEST OFFERS APPLIED (as in Screenshot 4) */}
+          {/* Best Offers Applied Card */}
           <div
             onClick={() => onSelectCat('All')}
             className="flex flex-col items-center shrink-0 cursor-pointer active:scale-95 transition-transform"
@@ -183,26 +190,21 @@ const CustomerHomeTab = ({
                 </div>
                 <span
                   className={`text-[11px] mt-1.5 text-center whitespace-nowrap transition-colors ${
-                    isActive
-                      ? 'font-black text-[#E23744]'
-                      : 'font-semibold text-neutral-700'
+                    isActive ? 'font-black text-[#E23744]' : 'font-semibold text-neutral-700'
                   }`}
                 >
                   {item.title}
                 </span>
-                {isActive && (
-                  <span className="w-4 h-0.5 bg-[#E23744] rounded-full mt-0.5" />
-                )}
+                {isActive && <span className="w-4 h-0.5 bg-[#E23744] rounded-full mt-0.5" />}
               </div>
             );
           })}
         </div>
       </section>
-      {/* ── END: Category Quick Roundels ── */}
 
-      {/* ── BEGIN: Chef's Royal Specials Carousel ── */}
+      {/* ── 3. CHEF'S ROYAL SPECIALS (Handcrafted Masterpieces) ── */}
       {displayedChefSpecials.length > 0 && (
-        <section className="mt-5 px-4">
+        <section className="px-4">
           <div className="flex items-center justify-between mb-3">
             <div>
               <h2 className="text-sm font-black text-neutral-900 uppercase tracking-tight flex items-center space-x-1.5">
@@ -210,7 +212,7 @@ const CustomerHomeTab = ({
                 <span className="text-amber-500">👑</span>
               </h2>
               <p className="text-[11px] text-neutral-500 font-medium">
-                Persian Darbar signature culinary masterpieces
+                Persian Darbar legendary culinary creations
               </p>
             </div>
             <button
@@ -223,7 +225,7 @@ const CustomerHomeTab = ({
 
           <div className="flex space-x-3 overflow-x-auto no-scrollbar pb-2">
             {displayedChefSpecials.map((dish) => {
-              const inCart = cart.find(c => c._id === dish._id);
+              const inCart = cart.find((c) => c._id === dish._id);
               return (
                 <div
                   key={dish._id}
@@ -272,7 +274,7 @@ const CustomerHomeTab = ({
                       ) : (
                         <button
                           onClick={() => onAddToCart(dish)}
-                          className="bg-red-50 hover:bg-[#E23744] hover:text-white text-[#E23744] border border-red-200 font-black text-[11px] px-3 py-1 rounded-lg transition-colors active:scale-95"
+                          className="bg-red-50 hover:bg-[#E23744] hover:text-white text-[#E23744] border border-red-200 font-black text-[11px] px-3 py-1 rounded-lg transition-colors active:scale-95 cursor-pointer"
                         >
                           + ADD
                         </button>
@@ -286,8 +288,110 @@ const CustomerHomeTab = ({
         </section>
       )}
 
-      {/* ── BEGIN: Table Reservation Royal Showcase ── */}
-      <section className="mt-5 px-4">
+      {/* ── 4. TRENDING THIS WEEK (Social Proof / High Order Volume) ── */}
+      {trendingDelicacies.length > 0 && (
+        <section className="px-4">
+          <div className="bg-gradient-to-r from-orange-50 via-amber-50 to-rose-50 border border-amber-200/80 rounded-3xl p-4 shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <span className="p-1 rounded-lg bg-orange-500 text-white text-xs">
+                  <Flame className="w-3.5 h-3.5" />
+                </span>
+                <div>
+                  <h3 className="text-xs font-black text-neutral-900 uppercase tracking-tight">
+                    MOST ORDERED THIS WEEK
+                  </h3>
+                  <p className="text-[10px] text-amber-900 font-medium">
+                    Loved by 5,000+ patrons across Bandra, Kurla & Pune
+                  </p>
+                </div>
+              </div>
+              <span className="text-[9px] font-black uppercase text-orange-700 bg-orange-100 px-2 py-0.5 rounded-full">
+                HOT
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5">
+              {trendingDelicacies.slice(0, 4).map((dish) => {
+                const inCart = cart.find((c) => c._id === dish._id);
+                return (
+                  <div
+                    key={dish._id}
+                    className="bg-white rounded-2xl p-2.5 border border-amber-900/10 flex flex-col justify-between shadow-xs"
+                  >
+                    <div className="h-20 w-full rounded-xl overflow-hidden bg-neutral-100 mb-2 relative">
+                      <img
+                        src={dish.image || '/dynamic_images/img2.jpeg'}
+                        alt={dish.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.src = '/no-image.png';
+                        }}
+                      />
+                      <span className="absolute bottom-1 right-1 bg-black/60 text-white text-[8px] font-black px-1.5 py-0.2 rounded">
+                        1.4k+ ordered
+                      </span>
+                    </div>
+
+                    <div>
+                      <h4 className="text-xs font-black text-neutral-900 leading-tight truncate">
+                        {dish.name}
+                      </h4>
+                      <div className="flex items-center justify-between mt-1.5">
+                        <span className="text-xs font-black text-neutral-900">
+                          ₹{dish.price}
+                        </span>
+                        {inCart ? (
+                          <div className="flex items-center space-x-1 bg-red-50 text-[#E23744] border border-[#E23744] rounded px-1.5 py-0.2 text-[11px] font-bold">
+                            <button onClick={() => onUpdateCartQty(dish._id, -1)}>-</button>
+                            <span className="font-black px-1">{inCart.quantity}</span>
+                            <button onClick={() => onUpdateCartQty(dish._id, 1)}>+</button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => onAddToCart(dish)}
+                            className="bg-red-50 text-[#E23744] hover:bg-[#E23744] hover:text-white border border-red-200 text-[10px] font-black px-2 py-0.5 rounded transition-colors"
+                          >
+                            + ADD
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── 5. PERSIAN DARBAR CULINARY HALLMARKS (Why Patrons Swear By Us) ── */}
+      <section className="px-4">
+        <div className="bg-white rounded-3xl p-4 border border-neutral-200/80 shadow-xs space-y-3">
+          <div className="flex items-center space-x-2">
+            <span className="text-amber-500 font-bold">✨</span>
+            <h3 className="text-xs font-black uppercase tracking-wider text-neutral-900">
+              THE PERSIAN DARBAR HALLMARKS
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 text-left">
+            {PERSIAN_DARBAR_HALLMARKS.map((item, idx) => (
+              <div
+                key={idx}
+                className="p-3 rounded-2xl bg-[#FAF8F5] border border-amber-900/5 space-y-1"
+              >
+                <span className="text-xl leading-none">{item.icon}</span>
+                <h4 className="text-xs font-black text-neutral-900">{item.title}</h4>
+                <p className="text-[10px] text-neutral-500 leading-tight">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── 6. TABLE RESERVATION SHOWCASE ── */}
+      <section className="px-4">
         <div
           onClick={onGoToReserve}
           className="bg-gradient-to-r from-[#1C1917] via-[#2A241E] to-[#1C1917] border border-amber-400/40 text-white rounded-3xl p-5 flex items-center justify-between shadow-lg cursor-pointer active:scale-[0.99] transition-transform"
@@ -310,32 +414,61 @@ const CustomerHomeTab = ({
         </div>
       </section>
 
-      {/* ── BEGIN: Persian Darbar Heritage & Trust ── */}
-      <section className="mt-6 px-4">
+      {/* ── 7. PATRON REVIEWS & TESTIMONIALS ── */}
+      <section className="px-4">
         <div className="bg-white rounded-3xl p-4 border border-neutral-200/80 shadow-xs space-y-3">
-          <div className="flex items-center space-x-2">
-            <ShieldCheck className="w-5 h-5 text-amber-500" />
-            <h3 className="text-xs font-black uppercase tracking-wider text-neutral-900">
-              ORIGINAL PERSIA TO INDIA · SINCE 1978
-            </h3>
-          </div>
-          <p className="text-xs text-neutral-600 leading-relaxed font-medium">
-            Over 45 years of authentic Mughlai, Persian & coastal recipes crafted with slow-cooked aromatic basmati, hand-ground spices, and charcoal roasted tandoors.
-          </p>
-          <div className="grid grid-cols-3 gap-2 pt-1 border-t border-neutral-100 text-center">
-            <div className="p-2 bg-neutral-50 rounded-xl">
-              <span className="text-sm font-black text-neutral-900 block">45+</span>
-              <span className="text-[10px] text-neutral-500 font-bold">Years Legacy</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-1.5">
+              <MessageSquareQuote className="w-4 h-4 text-amber-500" />
+              <h3 className="text-xs font-black uppercase tracking-wider text-neutral-900">
+                WHAT FOOD LOVERS SAY
+              </h3>
             </div>
-            <div className="p-2 bg-neutral-50 rounded-xl">
-              <span className="text-sm font-black text-neutral-900 block">4.8 ★</span>
-              <span className="text-[10px] text-neutral-500 font-bold">Patron Rating</span>
-            </div>
-            <div className="p-2 bg-neutral-50 rounded-xl">
-              <span className="text-sm font-black text-neutral-900 block">4 Hubs</span>
-              <span className="text-[10px] text-neutral-500 font-bold">Bandra · Pune</span>
+            <div className="flex items-center space-x-1 text-xs font-black text-neutral-900">
+              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+              <span>4.8 / 5 Rating</span>
             </div>
           </div>
+
+          <div className="flex space-x-2.5 overflow-x-auto no-scrollbar pb-1">
+            {PATRON_REVIEWS.map((rev, idx) => (
+              <div
+                key={idx}
+                className="w-60 shrink-0 p-3 rounded-2xl bg-[#FAF8F5] border border-neutral-200/60 flex flex-col justify-between"
+              >
+                <p className="text-[11px] text-neutral-700 font-medium italic">
+                  "{rev.comment}"
+                </p>
+                <div className="mt-2 pt-2 border-t border-neutral-200/60 flex items-center justify-between text-[10px]">
+                  <span className="font-bold text-neutral-900">{rev.name} · {rev.outlet}</span>
+                  <span className="text-neutral-400">{rev.date}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── 8. MIDNIGHT CRAVINGS & 45-YEAR HERITAGE ── */}
+      <section className="px-4">
+        <div className="bg-[#1C1917] text-white rounded-3xl p-4.5 border border-amber-400/30 flex items-center justify-between">
+          <div>
+            <span className="text-[9px] font-black uppercase tracking-wider text-amber-400 bg-amber-400/20 px-2 py-0.5 rounded-full">
+              🌙 Open Till 1:00 AM
+            </span>
+            <h4 className="text-sm font-black text-white mt-1.5">
+              Midnight Biryani Cravings?
+            </h4>
+            <p className="text-[11px] text-stone-300 font-medium">
+              Hot clay-handi delivery straight to your doorstep across Mumbai & Pune.
+            </p>
+          </div>
+          <button
+            onClick={onGoToOrder}
+            className="px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-neutral-950 font-black text-xs shrink-0 active:scale-95 transition-transform"
+          >
+            Order Now
+          </button>
         </div>
       </section>
     </div>

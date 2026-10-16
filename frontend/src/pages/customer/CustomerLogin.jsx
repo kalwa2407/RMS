@@ -508,28 +508,28 @@ const CustomerLogin = () => {
                 <span>Continue with Google</span>
               </button>
 
-              {/* Return to Home / Explore as Guest */}
-              {isStandaloneApp() ? (
+              {/* Explore as Guest & Return links */}
+              <div className="space-y-2 mt-1">
                 <Link to="/customer/dashboard" className="block">
                   <button
                     type="button"
-                    className="w-full flex items-center justify-center gap-1.5 bg-transparent border border-[#EAB308]/30 hover:border-[#EAB308] bg-[#EAB308]/5 hover:bg-[#EAB308]/15 text-[#EAB308] font-bold py-2.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-all duration-300 cursor-pointer"
+                    className="w-full flex items-center justify-center gap-2 bg-[#EAB308]/10 hover:bg-[#EAB308]/20 border border-[#EAB308]/40 text-[#EAB308] font-black py-3 px-4 rounded-2xl text-xs uppercase tracking-wider transition-all duration-300 active:scale-[0.98] cursor-pointer shadow-sm"
                   >
-                    <UtensilsCrossed className="w-3.5 h-3.5 text-[#EAB308]" />
-                    Explore Menu as Guest
+                    <UtensilsCrossed className="w-4 h-4 text-[#EAB308]" />
+                    <span>Explore Menu as Guest ›</span>
                   </button>
                 </Link>
-              ) : (
-                <Link to="/" className="block">
-                  <button
-                    type="button"
-                    className="w-full flex items-center justify-center gap-1.5 bg-transparent border border-white/10 hover:border-[#EAB308]/40 hover:bg-[#EAB308]/5 text-gray-400 hover:text-[#EAB308] font-medium py-2.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-all duration-300 cursor-pointer"
+
+                <div className="text-center pt-1">
+                  <Link
+                    to="/"
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-gray-400 hover:text-white transition-colors"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
-                    Return to Main Site
-                  </button>
-                </Link>
-              )}
+                    <span>Return to Main Website</span>
+                  </Link>
+                </div>
+              </div>
 
               {/* Trust Badge & Legal */}
               <div className="mt-5 pt-4 border-t border-white/10 flex flex-col items-center justify-center gap-1.5 text-center text-gray-500 text-[11px]">

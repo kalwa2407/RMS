@@ -11,6 +11,7 @@ import CustomerTopBar from './components/CustomerTopBar';
 import CustomerHomeTab from './components/CustomerHomeTab';
 import CustomerOrderTab from './components/CustomerOrderTab';
 import CustomerDiningTab from './components/CustomerDiningTab';
+import CustomerRewardsTab from './components/CustomerRewardsTab';
 import CustomerSearchExplore from './components/CustomerSearchExplore';
 import CustomerDockNav from './components/CustomerDockNav';
 import CustomerCartSheet from './components/CustomerCartSheet';
@@ -562,14 +563,8 @@ const CustomerDashboard = () => {
 
   // Bottom dock tab selector
   const handleDockSelect = (tabId) => {
-    if (tabId === 'rewards') {
-      setProfileInitialTab('membership');
-      setIsProfileOpen(true);
-      return;
-    }
     if (tabId === 'profile') {
-      setProfileInitialTab('details');
-      setIsProfileOpen(true);
+      navigate('/customer/profile');
       return;
     }
     setActiveTab(tabId);
@@ -586,14 +581,8 @@ const CustomerDashboard = () => {
           selectedBranch={selectedBranch}
           distanceKm={distanceKm}
           onOpenLocationModal={() => setIsLocationModalOpen(true)}
-          onOpenProfile={() => {
-            setProfileInitialTab('details');
-            setIsProfileOpen(true);
-          }}
-          onOpenWallet={() => {
-            setProfileInitialTab('membership');
-            setIsProfileOpen(true);
-          }}
+          onOpenProfile={() => navigate('/customer/profile')}
+          onOpenWallet={() => setActiveTab('rewards')}
           onOpenSearch={() => setIsSearchOpen(true)}
           searchQuery={searchQuery}
           userInitial={currentUser?.displayName?.[0] || 'A'}
@@ -613,10 +602,7 @@ const CustomerDashboard = () => {
               onAddToCart={addToCart}
               onUpdateCartQty={updateCartQty}
               onOpenCart={() => setIsCartOpen(true)}
-              onOpenWallet={() => {
-                setProfileInitialTab('membership');
-                setIsProfileOpen(true);
-              }}
+              onOpenWallet={() => setActiveTab('rewards')}
               onOpenSearch={() => setIsSearchOpen(true)}
               offers={offers}
               onOfferClick={handleOfferClick}
@@ -638,6 +624,9 @@ const CustomerDashboard = () => {
               onOpenSearch={() => setIsSearchOpen(true)}
               searchQuery={searchQuery}
               appliedCoupon={appliedCoupon}
+              offers={offers}
+              onApplyCoupon={applyCouponCode}
+              onRemoveCoupon={removeCoupon}
             />
           )}
 
@@ -646,6 +635,7 @@ const CustomerDashboard = () => {
             <CustomerDiningTab
               selectedBranch={selectedBranch}
               onSelectBranch={handleSelectBranch}
+              onOpenLocationModal={() => setIsLocationModalOpen(true)}
               reservations={reservations}
               tables={tables}
               currentUser={currentUser}
@@ -655,6 +645,18 @@ const CustomerDashboard = () => {
               bookingSuccess={bookingSuccess}
               onResetBookingSuccess={() => setBookingSuccess(null)}
               onOpenSearch={() => setIsSearchOpen(true)}
+            />
+          )}
+
+          {/* Tab 4: Rewards & Royalty Club (Proper Dedicated Rewards Page) */}
+          {activeTab === 'rewards' && (
+            <CustomerRewardsTab
+              currentUser={currentUser}
+              customerProfile={customerProfile}
+              pdCoins={customerProfile?.coins ?? customerProfile?.loyalty_points ?? 450}
+              onGoToOrder={() => setActiveTab('order')}
+              onGoToReserve={() => setActiveTab('reserve')}
+              onApplyVoucher={(code) => applyCouponCode(code)}
             />
           )}
         </main>

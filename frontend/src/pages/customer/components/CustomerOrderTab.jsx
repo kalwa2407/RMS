@@ -12,7 +12,10 @@ const CustomerOrderTab = ({
   onOpenCart,
   onOpenSearch,
   searchQuery = '',
-  appliedCoupon
+  appliedCoupon,
+  offers = [],
+  onApplyCoupon,
+  onRemoveCoupon
 }) => {
   const [filterType, setFilterType] = useState('all'); // 'all' | 'veg' | 'bestseller'
 
@@ -100,22 +103,55 @@ const CustomerOrderTab = ({
 
   return (
     <div className="flex-1 pb-28">
-      {/* ── Top Offer Bar Integrated with Search (Matching Screenshot 4) ── */}
-      <section className="bg-gradient-to-b from-[#FFF5D6] via-[#FFF8E7] to-white px-4 pt-2 pb-3 border-b border-amber-200/50">
-        <div className="flex items-center justify-between bg-white/90 border border-amber-300/80 rounded-2xl px-3.5 py-2 shadow-xs">
-          <div className="flex items-center space-x-2">
-            <span className="w-5 h-5 rounded-full bg-[#E23744] text-white flex items-center justify-center text-[10px] font-black">
-              %
-            </span>
-            <span className="text-xs font-black text-neutral-900">
-              {appliedCoupon ? `Code ${appliedCoupon.code} Applied` : 'FLAT 30% OFF with code DARBAR30'}
-            </span>
-          </div>
-          <span className="text-[10px] font-bold text-[#E23744] bg-red-50 border border-red-200 px-2 py-0.5 rounded-md">
-            Save on Bill
-          </span>
-        </div>
-      </section>
+      {/* ── Top Offer Bar: Only shown when active offers exist in Admin, and fully clickable ── */}
+      {(() => {
+        const activeOffers = (offers || []).filter(
+          (o) => o.active !== false && o.is_active !== false && (o.coupon_code || o.code || o.title)
+        );
+        if (activeOffers.length === 0) return null;
+
+        const currentOffer = activeOffers[0];
+        const couponCode = currentOffer.coupon_code || currentOffer.code || 'DARBAR30';
+        const isApplied = appliedCoupon?.code?.toUpperCase() === couponCode.toUpperCase();
+
+        return (
+          <section className="bg-gradient-to-b from-[#FFF5D6] via-[#FFF8E7] to-white px-4 pt-2 pb-3 border-b border-amber-200/50">
+            <div
+              onClick={() => {
+                if (isApplied) {
+                  onRemoveCoupon && onRemoveCoupon();
+                } else {
+                  onApplyCoupon && onApplyCoupon(couponCode);
+                }
+              }}
+              className="flex items-center justify-between bg-white/95 hover:bg-white border border-amber-300/80 rounded-2xl px-3.5 py-2 shadow-xs cursor-pointer active:scale-98 transition-all"
+            >
+              <div className="flex items-center space-x-2">
+                <span className="w-5 h-5 rounded-full bg-[#E23744] text-white flex items-center justify-center text-[10px] font-black shrink-0">
+                  %
+                </span>
+                <span className="text-xs font-black text-neutral-900 truncate">
+                  {isApplied
+                    ? `Coupon ${couponCode} Applied!`
+                    : (currentOffer.title
+                        ? `${currentOffer.title} with code ${couponCode}`
+                        : `Save with code ${couponCode}`)}
+                </span>
+              </div>
+              <button
+                type="button"
+                className={`text-[10px] font-black px-2.5 py-1 rounded-md shrink-0 transition-colors ${
+                  isApplied
+                    ? 'text-emerald-700 bg-emerald-50 border border-emerald-300'
+                    : 'text-[#E23744] bg-red-50 border border-red-200 hover:bg-[#E23744] hover:text-white'
+                }`}
+              >
+                {isApplied ? 'Applied ✓' : 'Save on Bill'}
+              </button>
+            </div>
+          </section>
+        );
+      })()}
 
       {/* ── Category Roundels Scroll Bar (Matching Screenshot 4) ── */}
       <section className="sticky top-[102px] z-20 bg-white/95 backdrop-blur-md border-b border-neutral-100 py-2.5">
