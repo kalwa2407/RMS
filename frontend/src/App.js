@@ -145,6 +145,7 @@ const AndroidBackButtonHandler = () => {
         const path = location.pathname;
         if (
           path === "/staff-entry" ||
+          path === "/customer" ||
           path === "/customer/dashboard" ||
           path === "/customer/login" ||
           path === "/"
