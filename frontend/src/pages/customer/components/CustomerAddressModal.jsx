@@ -134,71 +134,65 @@ const CustomerAddressModal = ({
                   }
                   onClose();
                 }}
-                className={`rounded-2xl border transition-all cursor-pointer overflow-hidden active:scale-[0.99] flex flex-col ${
+                className={`p-3.5 rounded-2xl border transition-all cursor-pointer relative overflow-hidden active:scale-[0.99] flex items-center justify-between ${
                   isSelected
-                    ? 'border-[#E23744] bg-red-50/20 shadow-md ring-2 ring-[#E23744]/20'
-                    : 'border-neutral-200/80 bg-white hover:border-neutral-300'
+                    ? 'border-[#E23744] bg-red-50/40 shadow-xs ring-1 ring-[#E23744]/30'
+                    : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/50'
                 }`}
               >
-                {/* Branch Real Image Banner */}
-                <div className="relative h-28 w-full bg-neutral-900 overflow-hidden">
-                  <img
-                    src={branch.image}
-                    alt={branch.name}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-
-                  {/* Branch Tag & City */}
-                  <div className="absolute top-2.5 left-2.5 flex items-center space-x-1.5">
-                    <span
-                      className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md text-white shadow-xs"
-                      style={{ background: branch.accent }}
-                    >
-                      {branch.badge}
-                    </span>
-                    <span className="text-[10px] font-bold bg-black/60 backdrop-blur-md text-white px-2 py-0.5 rounded-md">
-                      {branch.city}
-                    </span>
+                <div className="flex items-start space-x-3 flex-1 min-w-0 pr-3">
+                  <div
+                    className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 text-white font-black text-xs shadow-xs"
+                    style={{ background: branch.accent || '#E23744' }}
+                  >
+                    <MapPin className="w-4 h-4 text-white" />
                   </div>
-
-                  {/* Selection Checkmark */}
-                  {isSelected && (
-                    <div className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-[#E23744] text-white flex items-center justify-center shadow-lg">
-                      <Check className="w-3.5 h-3.5 stroke-[3]" />
-                    </div>
-                  )}
-
-                  {/* Title & Distance on Bottom of Image */}
-                  <div className="absolute bottom-2 left-3 right-3 flex items-end justify-between text-white">
-                    <div>
-                      <h4 className="text-sm font-black leading-tight text-white drop-shadow">
+                  <div className="space-y-0.5 flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                      <h4 className="text-xs font-black text-neutral-900 leading-tight">
                         {branch.name}
                       </h4>
-                      <p className="text-[10px] text-neutral-300 line-clamp-1 mt-0.5">
-                        {branch.shortAddress}
-                      </p>
+                      <span
+                        className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md"
+                        style={{
+                          background: `${branch.accent}18`,
+                          color: branch.accent,
+                          border: `1px solid ${branch.accent}35`
+                        }}
+                      >
+                        {branch.badge}
+                      </span>
+                      <span className="text-[9px] font-bold bg-neutral-100 text-neutral-600 px-1.5 py-0.5 rounded-md">
+                        {branch.city}
+                      </span>
                     </div>
-                    <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-lg shrink-0 flex items-center gap-1 ${
-                      isFar ? 'bg-amber-500 text-black' : 'bg-white text-neutral-900 shadow'
-                    }`}>
-                      <Navigation className="w-2.5 h-2.5" />
-                      <span>{dist ? `~${dist} km` : 'Open'}</span>
-                    </span>
-
+                    <p className="text-[11px] text-neutral-500 font-medium truncate mt-0.5">
+                      {branch.shortAddress}
+                    </p>
+                    <div className="flex items-center space-x-3 text-[10px] text-neutral-400 pt-1">
+                      <span className="flex items-center space-x-1">
+                        <Clock className="w-3 h-3 text-neutral-400" />
+                        <span>{branch.timing}</span>
+                      </span>
+                      <span className={`flex items-center space-x-1 font-bold px-2 py-0.5 rounded-md text-[10px] ${
+                        isFar ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200/70'
+                      }`}>
+                        <Navigation className="w-2.5 h-2.5" />
+                        <span>{dist ? `~${dist} km away` : 'Open'}</span>
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Footer details: timing & phones */}
-                <div className="px-3.5 py-2 flex items-center justify-between text-[11px] text-neutral-600 bg-neutral-50/70 border-t border-neutral-100">
-                  <div className="flex items-center space-x-1">
-                    <Clock className="w-3 h-3 text-neutral-400" />
-                    <span className="font-medium text-[10px]">{branch.timing}</span>
-                  </div>
-                  <div className="flex items-center space-x-1 text-neutral-700 font-bold text-[10px]">
-                    <Phone className="w-3 h-3 text-neutral-400" />
-                    <span>{branch.phones[0]}</span>
-                  </div>
+                {/* Right Selection Radio Circle */}
+                <div className="shrink-0">
+                  {isSelected ? (
+                    <div className="w-6 h-6 rounded-full bg-[#E23744] text-white flex items-center justify-center shadow-xs">
+                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                    </div>
+                  ) : (
+                    <div className="w-6 h-6 rounded-full border-2 border-neutral-300" />
+                  )}
                 </div>
               </div>
             );
