@@ -67,8 +67,8 @@ const CustomerRewardsTab = ({
   ]);
 
   // Real user display data without dummy email
-  const patronName = customerProfile?.name || currentUser?.displayName || 'Aman Talukdar';
-  const patronPhone = customerProfile?.phone || localStorage.getItem('customer_phone') || '7028033763';
+  const patronName = currentUser?.displayName || customerProfile?.name || 'Valued Guest';
+  const patronPhone = customerProfile?.phone || localStorage.getItem('customer_phone') || '';
   const patronEmail = customerProfile?.email || currentUser?.email || localStorage.getItem('customer_email');
   const patronInitial = (patronName?.[0] || 'A').toUpperCase();
 

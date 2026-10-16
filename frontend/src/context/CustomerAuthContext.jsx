@@ -4,18 +4,66 @@ import {
   signInWithRedirect,
   getRedirectResult,
   signOut as firebaseSignOut, 
-  onAuthStateChanged 
+  onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence
 } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import API_BASE from '../lib/config';
 
+// Ensure Firebase Auth session is persisted across all app restarts
+try {
+  setPersistence(auth, browserLocalPersistence).catch(() => {});
+} catch (e) {}
+
 const CustomerAuthContext = createContext(null);
 
 export const CustomerAuthProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [idToken, setIdToken] = useState(null);
-  const [customerProfile, setCustomerProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Initialize auth state directly from localStorage so user stays logged in across app restarts
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const token = localStorage.getItem('customer_jwt');
+      const savedProfileStr = localStorage.getItem('customer_profile');
+      const name = localStorage.getItem('customer_name');
+      const phone = localStorage.getItem('customer_phone');
+      const email = localStorage.getItem('customer_email');
+      const photo = localStorage.getItem('customer_photo');
+      const uid = localStorage.getItem('customer_uid');
+      const provider = localStorage.getItem('customer_login_provider');
+
+      if (token && (uid || phone || email || name)) {
+        return {
+          uid: uid || (phone ? `wa_${phone}` : 'cust_stored'),
+          displayName: name || (phone ? `Guest ${phone.slice(-4)}` : 'Valued Patron'),
+          name: name || '',
+          phone: phone || '',
+          email: email || '',
+          photoURL: photo || null,
+          isWhatsAppUser: provider === 'phone',
+          getIdToken: async () => token
+        };
+      }
+    } catch (e) {}
+    return null;
+  });
+
+  const [idToken, setIdToken] = useState(() => {
+    try {
+      return localStorage.getItem('customer_jwt') || null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  const [customerProfile, setCustomerProfile] = useState(() => {
+    try {
+      const saved = localStorage.getItem('customer_profile');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return null;
+  });
+
+  const [loading, setLoading] = useState(false);
 
   // Sync / fetch customer profile from backend with auto-refresh on 401
   const fetchCustomerProfile = useCallback(async (token, user) => {
@@ -28,10 +76,11 @@ export const CustomerAuthProvider = ({ children }) => {
       });
 
       // If 401 Unauthorized, force-refresh token once from Firebase and retry
-      if (res.status === 401 && user) {
+      if (res.status === 401 && user && typeof user.getIdToken === 'function') {
         try {
           activeToken = await user.getIdToken(true);
           setIdToken(activeToken);
+          localStorage.setItem('customer_jwt', activeToken);
           res = await fetch(`${API_BASE}/api/customer/profile`, {
             headers: {
               'Authorization': `Bearer ${activeToken}`
@@ -45,12 +94,11 @@ export const CustomerAuthProvider = ({ children }) => {
       if (res.ok) {
         const data = await res.json();
         setCustomerProfile(data);
-        if (data.phone) {
-          localStorage.setItem('customer_phone', data.phone);
-        }
-        if (data.address) {
-          localStorage.setItem('customer_address', data.address);
-        }
+        localStorage.setItem('customer_profile', JSON.stringify(data));
+        if (data.name) localStorage.setItem('customer_name', data.name);
+        if (data.phone) localStorage.setItem('customer_phone', data.phone);
+        if (data.address) localStorage.setItem('customer_address', data.address);
+        if (data.email) localStorage.setItem('customer_email', data.email);
         return data;
       }
     } catch (err) {
@@ -59,35 +107,43 @@ export const CustomerAuthProvider = ({ children }) => {
 
     // Fallback profile if backend route unavailable
     const fallbackProfile = {
-      uid: user.uid,
-      name: user.displayName || 'Customer',
-      email: user.email,
-      picture: user.photoURL,
-      phone: localStorage.getItem('customer_phone') || '',
+      uid: user?.uid || 'cust_guest',
+      name: user?.displayName || user?.name || localStorage.getItem('customer_name') || 'Valued Patron',
+      email: user?.email || localStorage.getItem('customer_email') || '',
+      picture: user?.photoURL || localStorage.getItem('customer_photo') || '',
+      phone: user?.phoneNumber || localStorage.getItem('customer_phone') || '',
       address: localStorage.getItem('customer_address') || '',
       addresses: []
     };
     setCustomerProfile(fallbackProfile);
+    localStorage.setItem('customer_profile', JSON.stringify(fallbackProfile));
     return fallbackProfile;
   }, []);
 
   // Update customer profile (Phone number, Address, Name)
   const updateProfile = async (updateData) => {
+    if (updateData.name) localStorage.setItem('customer_name', updateData.name);
+    if (updateData.phone) localStorage.setItem('customer_phone', updateData.phone);
+    if (updateData.address) localStorage.setItem('customer_address', updateData.address);
+
+    setCustomerProfile(prev => {
+      const merged = { ...(prev || {}), ...updateData };
+      localStorage.setItem('customer_profile', JSON.stringify(merged));
+      return merged;
+    });
+
     if (!currentUser || !idToken) {
-      // If guest or no token, save to localStorage
-      if (updateData.phone) localStorage.setItem('customer_phone', updateData.phone);
-      if (updateData.address) localStorage.setItem('customer_address', updateData.address);
-      setCustomerProfile(prev => ({ ...(prev || {}), ...updateData }));
       return { success: true };
     }
 
     try {
-      // Get fresh token
       let token = idToken;
-      try {
-        token = await currentUser.getIdToken();
-        setIdToken(token);
-      } catch (e) { /* use existing */ }
+      if (currentUser && typeof currentUser.getIdToken === 'function') {
+        try {
+          token = await currentUser.getIdToken();
+          setIdToken(token);
+        } catch (e) { /* use existing */ }
+      }
 
       let res = await fetch(`${API_BASE}/api/customer/profile`, {
         method: 'PUT',
@@ -98,57 +154,39 @@ export const CustomerAuthProvider = ({ children }) => {
         body: JSON.stringify(updateData)
       });
 
-      // Auto-refresh on 401
-      if (res.status === 401 && currentUser) {
-        try {
-          const freshToken = await currentUser.getIdToken(true);
-          setIdToken(freshToken);
-          res = await fetch(`${API_BASE}/api/customer/profile`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${freshToken}`
-            },
-            body: JSON.stringify(updateData)
-          });
-        } catch (refreshErr) {
-          console.warn('Token refresh for profile update failed:', refreshErr);
-        }
-      }
-
       if (res.ok) {
         const updated = await res.json();
         setCustomerProfile(updated);
+        localStorage.setItem('customer_profile', JSON.stringify(updated));
         if (updated.phone) localStorage.setItem('customer_phone', updated.phone);
         if (updated.address) localStorage.setItem('customer_address', updated.address);
         return { success: true, profile: updated };
-      } else {
-        const err = await res.json();
-        throw new Error(err.detail || 'Failed to update profile');
       }
     } catch (err) {
-      console.error('Profile update error:', err);
-      // Still update locally for smooth UX
-      setCustomerProfile(prev => ({ ...(prev || {}), ...updateData }));
-      if (updateData.phone) localStorage.setItem('customer_phone', updateData.phone);
-      if (updateData.address) localStorage.setItem('customer_address', updateData.address);
-      return { success: true, warning: 'Saved locally' };
+      console.warn('Profile update remote sync error:', err);
     }
+    return { success: true, warning: 'Saved locally' };
   };
 
   // Google Sign-In — try popup first, fallback to redirect for COOP-blocked environments
   const signInWithGoogle = async () => {
     try {
-      // Try popup first (works on localhost and same-origin)
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
       const token = await user.getIdToken();
+      
+      localStorage.setItem('customer_jwt', token);
+      localStorage.setItem('customer_login_provider', 'google');
+      if (user.uid) localStorage.setItem('customer_uid', user.uid);
+      if (user.displayName) localStorage.setItem('customer_name', user.displayName);
+      if (user.email) localStorage.setItem('customer_email', user.email);
+      if (user.photoURL) localStorage.setItem('customer_photo', user.photoURL);
+
       setCurrentUser(user);
       setIdToken(token);
       await fetchCustomerProfile(token, user);
       return { success: true, user };
     } catch (error) {
-      // If popup blocked by COOP or browser policy, fall back to redirect
       if (
         error.code === 'auth/popup-blocked' ||
         error.code === 'auth/popup-closed-by-user' ||
@@ -157,7 +195,6 @@ export const CustomerAuthProvider = ({ children }) => {
       ) {
         try {
           await signInWithRedirect(auth, googleProvider);
-          // Page will reload — result handled by getRedirectResult in useEffect
           return { success: true, redirecting: true };
         } catch (redirectError) {
           console.error('Redirect Sign-In Error:', redirectError);
@@ -201,8 +238,13 @@ export const CustomerAuthProvider = ({ children }) => {
       }
 
       localStorage.setItem('customer_jwt', data.token);
+      localStorage.setItem('customer_login_provider', 'phone');
+      if (data.customer?.uid) localStorage.setItem('customer_uid', data.customer.uid);
+      if (data.customer?.name) localStorage.setItem('customer_name', data.customer.name);
       if (data.customer?.phone) localStorage.setItem('customer_phone', data.customer.phone);
       if (data.customer?.address) localStorage.setItem('customer_address', data.customer.address);
+      if (data.customer?.email) localStorage.setItem('customer_email', data.customer.email);
+      localStorage.setItem('customer_profile', JSON.stringify(data.customer));
 
       const userObj = {
         uid: data.customer.uid,
@@ -223,20 +265,29 @@ export const CustomerAuthProvider = ({ children }) => {
     }
   };
 
-  // Sign Out
+  // Sign Out — strictly clears all cached session data
   const signOutCustomer = async () => {
     try {
       localStorage.removeItem('customer_jwt');
       localStorage.removeItem('customer_phone');
-      await firebaseSignOut(auth);
+      localStorage.removeItem('customer_address');
+      localStorage.removeItem('customer_email');
+      localStorage.removeItem('customer_name');
+      localStorage.removeItem('customer_photo');
+      localStorage.removeItem('customer_uid');
+      localStorage.removeItem('customer_login_provider');
+      localStorage.removeItem('customer_profile');
+      localStorage.removeItem('customer_saved_addresses');
+      sessionStorage.clear();
+      await firebaseSignOut(auth).catch(() => {});
+    } catch (error) {
+      console.warn('Sign Out Error:', error);
+    } finally {
       setCurrentUser(null);
       setIdToken(null);
       setCustomerProfile(null);
-      return { success: true };
-    } catch (error) {
-      console.error('Sign Out Error:', error);
-      return { success: false, error: error.message };
     }
+    return { success: true };
   };
 
   // Handle redirect result (for signInWithRedirect fallback)
@@ -244,9 +295,15 @@ export const CustomerAuthProvider = ({ children }) => {
     getRedirectResult(auth)
       .then(async (result) => {
         if (result?.user) {
-          localStorage.removeItem('customer_jwt');
           const user = result.user;
           const token = await user.getIdToken();
+          localStorage.setItem('customer_jwt', token);
+          localStorage.setItem('customer_login_provider', 'google');
+          if (user.uid) localStorage.setItem('customer_uid', user.uid);
+          if (user.displayName) localStorage.setItem('customer_name', user.displayName);
+          if (user.email) localStorage.setItem('customer_email', user.email);
+          if (user.photoURL) localStorage.setItem('customer_photo', user.photoURL);
+
           setCurrentUser(user);
           setIdToken(token);
           await fetchCustomerProfile(token, user);
@@ -265,6 +322,13 @@ export const CustomerAuthProvider = ({ children }) => {
       if (user) {
         try {
           const token = await user.getIdToken();
+          localStorage.setItem('customer_jwt', token);
+          localStorage.setItem('customer_login_provider', 'google');
+          if (user.uid) localStorage.setItem('customer_uid', user.uid);
+          if (user.displayName) localStorage.setItem('customer_name', user.displayName);
+          if (user.email) localStorage.setItem('customer_email', user.email);
+          if (user.photoURL) localStorage.setItem('customer_photo', user.photoURL);
+
           setCurrentUser(user);
           setIdToken(token);
           await fetchCustomerProfile(token, user);
@@ -274,37 +338,44 @@ export const CustomerAuthProvider = ({ children }) => {
         }
         setLoading(false);
       } else {
-        // If not logged in via Firebase Google Auth, check for stored WhatsApp JWT
+        // If not logged in via Firebase Google Auth, verify if user is logged in via Phone / stored JWT
         const storedJwt = localStorage.getItem('customer_jwt');
-        if (storedJwt) {
-          try {
-            const res = await fetch(`${API_BASE}/api/customer/profile`, {
-              headers: { 'Authorization': `Bearer ${storedJwt}` }
-            });
-            if (res.ok) {
-              const profile = await res.json();
-              const userObj = {
-                uid: profile.uid,
-                displayName: profile.name,
-                name: profile.name,
-                phone: profile.phone,
-                email: profile.email,
-                isWhatsAppUser: true,
-                getIdToken: async () => storedJwt
-              };
-              setCurrentUser(userObj);
-              setIdToken(storedJwt);
-              setCustomerProfile(profile);
-            } else {
-              localStorage.removeItem('customer_jwt');
-              setCurrentUser(null);
-              setIdToken(null);
-              setCustomerProfile(null);
-            }
-          } catch (jwtErr) {
-            console.warn('Stored JWT restore failed:', jwtErr);
-          }
-        } else {
+        const storedProvider = localStorage.getItem('customer_login_provider');
+
+        if (storedJwt && storedProvider === 'phone') {
+          // Keep user logged in via Phone OTP!
+          const storedPhone = localStorage.getItem('customer_phone') || '';
+          const storedName = localStorage.getItem('customer_name') || `Guest ${storedPhone.slice(-4)}`;
+          const storedEmail = localStorage.getItem('customer_email') || '';
+          const storedUid = localStorage.getItem('customer_uid') || `wa_${storedPhone}`;
+
+          const userObj = {
+            uid: storedUid,
+            displayName: storedName,
+            name: storedName,
+            phone: storedPhone,
+            email: storedEmail,
+            isWhatsAppUser: true,
+            getIdToken: async () => storedJwt
+          };
+
+          setCurrentUser(userObj);
+          setIdToken(storedJwt);
+
+          // Background revalidate
+          fetch(`${API_BASE}/api/customer/profile`, {
+            headers: { 'Authorization': `Bearer ${storedJwt}` }
+          })
+            .then(res => res.ok ? res.json() : null)
+            .then(profile => {
+              if (profile) {
+                setCustomerProfile(profile);
+                localStorage.setItem('customer_profile', JSON.stringify(profile));
+              }
+            })
+            .catch(() => {});
+        } else if (!storedJwt) {
+          // Truly logged out or fresh install
           setCurrentUser(null);
           setIdToken(null);
           setCustomerProfile(null);

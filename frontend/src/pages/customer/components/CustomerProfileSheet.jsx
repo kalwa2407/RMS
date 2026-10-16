@@ -40,9 +40,9 @@ const CustomerProfileSheet = ({
   // 'membership' | 'orders' | 'reservations' | 'details'
   const [activeTab, setActiveTab] = useState(initialTab);
   const [editPhone, setEditPhone] = useState(false);
-  const [phoneVal, setPhoneVal] = useState(customerProfile?.phone || '7028033763');
+  const [phoneVal, setPhoneVal] = useState(customerProfile?.phone || localStorage.getItem('customer_phone') || '');
   const [editAddr, setEditAddr] = useState(false);
-  const [addrVal, setAddrVal] = useState(customerProfile?.address || 'Kondhwa, Pune');
+  const [addrVal, setAddrVal] = useState(customerProfile?.address || localStorage.getItem('customer_address') || '');
 
   useEffect(() => {
     if (initialTab) setActiveTab(initialTab);
@@ -55,8 +55,8 @@ const CustomerProfileSheet = ({
 
   if (!isOpen) return null;
 
-  const patronName = customerProfile?.name || currentUser?.displayName || 'Aman Talukdar';
-  const patronPhone = phoneVal || '7028033763';
+  const patronName = currentUser?.displayName || customerProfile?.name || 'Valued Guest';
+  const patronPhone = phoneVal || '';
   const patronEmail = customerProfile?.email || currentUser?.email || localStorage.getItem('customer_email');
   const patronInitial = (patronName?.[0] || 'A').toUpperCase();
 

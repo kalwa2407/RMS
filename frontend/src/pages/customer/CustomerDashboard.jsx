@@ -671,7 +671,7 @@ const CustomerDashboard = () => {
           onOpenWallet={() => setActiveTab('rewards')}
           onOpenSearch={() => setIsSearchOpen(true)}
           searchQuery={searchQuery}
-          userInitial={currentUser?.displayName?.[0] || 'A'}
+          userInitial={currentUser?.displayName ? currentUser.displayName[0].toUpperCase() : null}
           userPhoto={currentUser?.photoURL}
         />
 

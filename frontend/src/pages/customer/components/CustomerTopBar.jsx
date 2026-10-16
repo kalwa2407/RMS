@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, ChevronDown, Mic, Search, Crown } from 'lucide-react';
+import { MapPin, ChevronDown, Mic, Search, Crown, User } from 'lucide-react';
 
 const CustomerTopBar = ({
   selectedBranch,
@@ -10,7 +10,7 @@ const CustomerTopBar = ({
   onOpenSearch,
   searchQuery = '',
   searchPlaceholder = 'Search "biryani, tandoori, curries..."',
-  userInitial = 'A',
+  userInitial = null,
   userPhoto = null
 }) => {
   const branchName = selectedBranch?.name || 'Bandra (Flagship)';
@@ -67,8 +67,10 @@ const CustomerTopBar = ({
             >
               {userPhoto ? (
                 <img src={userPhoto} alt="" className="w-full h-full object-cover" />
-              ) : (
+              ) : userInitial ? (
                 userInitial
+              ) : (
+                <User className="w-4 h-4 text-amber-400" />
               )}
             </button>
           </div>

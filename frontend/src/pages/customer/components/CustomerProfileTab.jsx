@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   User,
   Phone,
@@ -46,36 +47,47 @@ const CustomerProfileTab = ({
   pdCoins = 450,
   initialSection = 'overview'
 }) => {
+  const navigate = useNavigate();
   const [section, setSection] = useState(initialSection); // 'overview' | 'orders' | 'reservations' | 'addresses' | 'rewards'
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [nameVal, setNameVal] = useState(customerProfile?.name || currentUser?.displayName || 'Aman Talukdar');
-  const [phoneVal, setPhoneVal] = useState(customerProfile?.phone || localStorage.getItem('customer_phone') || '7028033763');
-  const [addressVal, setAddressVal] = useState(customerProfile?.address || localStorage.getItem('customer_address') || 'Kondhwa, Pune');
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  const [nameVal, setNameVal] = useState(currentUser?.displayName || customerProfile?.name || localStorage.getItem('customer_name') || '');
+  const [phoneVal, setPhoneVal] = useState(customerProfile?.phone || currentUser?.phoneNumber || localStorage.getItem('customer_phone') || '');
+  const [addressVal, setAddressVal] = useState(customerProfile?.address || localStorage.getItem('customer_address') || '');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
-  // Address book management
-  const [savedAddresses, setSavedAddresses] = useState([
-    {
-      id: 'addr_1',
-      tag: 'Home',
-      address: customerProfile?.address || 'Flat 402, Royal Palms, Kondhwa, Pune 411048',
-      isDefault: true
-    },
-    {
-      id: 'addr_2',
-      tag: 'Office',
-      address: 'Tower B, Cybercity, Magarpatta, Pune 411028',
-      isDefault: false
+  useEffect(() => {
+    if (currentUser?.displayName || customerProfile?.name) {
+      setNameVal(currentUser?.displayName || customerProfile?.name || '');
     }
-  ]);
+    if (customerProfile?.phone || currentUser?.phoneNumber) {
+      setPhoneVal(customerProfile?.phone || currentUser?.phoneNumber || '');
+    }
+    if (customerProfile?.address) {
+      setAddressVal(customerProfile.address);
+    }
+  }, [currentUser, customerProfile]);
+
+  // Address book management
+  const [savedAddresses, setSavedAddresses] = useState(() => {
+    if (customerProfile?.addresses && customerProfile.addresses.length > 0) {
+      return customerProfile.addresses;
+    }
+    const curr = customerProfile?.address || localStorage.getItem('customer_address');
+    if (curr) {
+      return [{ id: 'addr_1', tag: 'Home', address: curr, isDefault: true }];
+    }
+    return [];
+  });
   const [isAddAddressOpen, setIsAddAddressOpen] = useState(false);
   const [newAddressTag, setNewAddressTag] = useState('Home');
   const [newAddressText, setNewAddressText] = useState('');
 
-  const patronName = nameVal;
+  const patronName = nameVal || (currentUser ? 'Valued Patron' : 'Guest');
   const patronPhone = phoneVal;
-  const patronEmail = customerProfile?.email || currentUser?.email || 'aman@persiandarbar.in';
-  const patronInitial = (patronName?.[0] || 'A').toUpperCase();
+  const patronEmail = customerProfile?.email || currentUser?.email || localStorage.getItem('customer_email') || '';
+  const patronInitial = (patronName?.[0] || 'P').toUpperCase();
 
   const handleSaveProfile = async (e) => {
     e.preventDefault();
@@ -83,6 +95,7 @@ const CustomerProfileTab = ({
     if (onSaveAddress) await onSaveAddress(addressVal);
     localStorage.setItem('customer_phone', phoneVal);
     localStorage.setItem('customer_address', addressVal);
+    localStorage.setItem('customer_name', nameVal);
     setSavedSuccess(true);
     setTimeout(() => {
       setSavedSuccess(false);
@@ -97,7 +110,7 @@ const CustomerProfileTab = ({
       id: `addr_${Date.now()}`,
       tag: newAddressTag,
       address: newAddressText.trim(),
-      isDefault: false
+      isDefault: savedAddresses.length === 0
     };
     setSavedAddresses(prev => [...prev, newAddr]);
     if (onSaveAddress) onSaveAddress(newAddressText.trim());
@@ -107,96 +120,137 @@ const CustomerProfileTab = ({
 
   return (
     <div className="flex-1 pb-32 pt-2 px-4 space-y-4">
-      {/* ── 1. ZOMATO STYLE PATRON HEADER CARD ── */}
-      <section className="bg-white rounded-3xl p-5 border border-neutral-200/80 shadow-xs relative overflow-hidden">
-        {/* Subtle royal background glow */}
-        <div className="absolute top-0 right-0 w-36 h-36 bg-gradient-to-bl from-amber-400/10 via-amber-200/5 to-transparent rounded-bl-full pointer-events-none" />
+      {/* ── 1. ZOMATO STYLE PATRON HEADER CARD OR GUEST STATE ── */}
+      {!currentUser ? (
+        <section className="bg-white rounded-3xl p-6 border border-neutral-200/80 shadow-xs relative overflow-hidden text-center space-y-4">
+          <div className="absolute top-0 right-0 w-36 h-36 bg-gradient-to-bl from-amber-400/10 via-amber-200/5 to-transparent rounded-bl-full pointer-events-none" />
+          
+          <div className="w-16 h-16 rounded-2xl bg-[#1C1917] text-amber-300 flex items-center justify-center shadow-md border-2 border-amber-400/70 mx-auto">
+            <Crown className="w-8 h-8 text-amber-400 fill-amber-400" />
+          </div>
 
-        <div className="flex items-start justify-between relative z-10">
-          <div className="flex items-center space-x-3.5">
-            <div className="relative">
-              <div className="w-16 h-16 rounded-2xl bg-[#1C1917] text-amber-300 flex items-center justify-center font-black text-2xl shadow-md border-2 border-amber-400/70">
-                {patronInitial}
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-amber-400 border-2 border-white flex items-center justify-center shadow-xs">
-                <Crown className="w-3 h-3 text-neutral-950 fill-neutral-950" />
-              </div>
-            </div>
+          <div>
+            <h2 className="text-lg font-black text-neutral-900 leading-tight">
+              Welcome to Persian Darbar
+            </h2>
+            <p className="text-xs text-neutral-500 mt-1.5 max-w-xs mx-auto leading-relaxed">
+              Log in to track live biryani orders, redeem your Royalty PD Coins, and view saved delivery addresses.
+            </p>
+          </div>
 
-            <div>
-              <div className="flex items-center space-x-1.5">
-                <h2 className="text-base font-black text-neutral-900 leading-tight">
-                  {patronName}
-                </h2>
-                <div className="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[9px] font-black" title="Verified Patron">
-                  ✓
+          <div className="pt-1 space-y-2">
+            <button
+              onClick={() => navigate('/customer/login')}
+              className="w-full py-3.5 px-4 rounded-2xl bg-[#E23744] hover:bg-[#C11F2C] text-white font-black text-xs uppercase tracking-wider shadow-md active:scale-98 transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+            >
+              <span>Log in or Sign up</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </section>
+      ) : (
+        <section className="bg-white rounded-3xl p-5 border border-neutral-200/80 shadow-xs relative overflow-hidden">
+          {/* Subtle royal background glow */}
+          <div className="absolute top-0 right-0 w-36 h-36 bg-gradient-to-bl from-amber-400/10 via-amber-200/5 to-transparent rounded-bl-full pointer-events-none" />
+
+          <div className="flex items-start justify-between relative z-10">
+            <div className="flex items-center space-x-3.5">
+              <div className="relative">
+                {currentUser?.photoURL ? (
+                  <img
+                    src={currentUser.photoURL}
+                    alt={patronName}
+                    className="w-16 h-16 rounded-2xl object-cover shadow-md border-2 border-amber-400/70"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-2xl bg-[#1C1917] text-amber-300 flex items-center justify-center font-black text-2xl shadow-md border-2 border-amber-400/70">
+                    {patronInitial}
+                  </div>
+                )}
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-amber-400 border-2 border-white flex items-center justify-center shadow-xs">
+                  <Crown className="w-3 h-3 text-neutral-950 fill-neutral-950" />
                 </div>
               </div>
-              <p className="text-xs font-semibold text-neutral-500 mt-0.5">
-                +91 {patronPhone}
-              </p>
-              <p className="text-[11px] text-neutral-400 truncate max-w-[200px]">
-                {patronEmail}
-              </p>
-              <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-400/20 text-amber-800 border border-amber-400/40">
-                <Sparkles className="w-2.5 h-2.5" />
-                <span>GOLD VIP PATRON</span>
+
+              <div>
+                <div className="flex items-center space-x-1.5">
+                  <h2 className="text-base font-black text-neutral-900 leading-tight">
+                    {patronName}
+                  </h2>
+                  <div className="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[9px] font-black" title="Verified Patron">
+                    ✓
+                  </div>
+                </div>
+                {patronPhone && (
+                  <p className="text-xs font-semibold text-neutral-500 mt-0.5">
+                    +91 {patronPhone}
+                  </p>
+                )}
+                {patronEmail && (
+                  <p className="text-[11px] text-neutral-400 truncate max-w-[200px]">
+                    {patronEmail}
+                  </p>
+                )}
+                <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-400/20 text-amber-800 border border-amber-400/40">
+                  <Sparkles className="w-2.5 h-2.5" />
+                  <span>GOLD VIP PATRON</span>
+                </div>
               </div>
             </div>
+
+            <button
+              onClick={() => setIsEditModalOpen(true)}
+              className="p-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 active:scale-95 transition-all shrink-0 cursor-pointer"
+              title="Edit Profile Details"
+            >
+              <Edit2 className="w-4 h-4" />
+            </button>
           </div>
 
-          <button
-            onClick={() => setIsEditModalOpen(true)}
-            className="p-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 active:scale-95 transition-all shrink-0"
-            title="Edit Profile Details"
-          >
-            <Edit2 className="w-4 h-4" />
-          </button>
-        </div>
+          {/* ── 2. ZOMATO 4-CARD QUICK STATS ── */}
+          <div className="grid grid-cols-4 gap-2 mt-5 pt-4 border-t border-neutral-100 text-center">
+            <div
+              onClick={() => setSection('orders')}
+              className={`p-2 rounded-2xl cursor-pointer transition-all ${
+                section === 'orders' ? 'bg-red-50 border border-red-200 text-[#E23744]' : 'bg-[#FAF8F5] text-neutral-800 hover:bg-neutral-100'
+              }`}
+            >
+              <span className="block text-base font-black">{orders.length}</span>
+              <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-tight block">Orders</span>
+            </div>
 
-        {/* ── 2. ZOMATO 4-CARD QUICK STATS ── */}
-        <div className="grid grid-cols-4 gap-2 mt-5 pt-4 border-t border-neutral-100 text-center">
-          <div
-            onClick={() => setSection('orders')}
-            className={`p-2 rounded-2xl cursor-pointer transition-all ${
-              section === 'orders' ? 'bg-red-50 border border-red-200 text-[#E23744]' : 'bg-[#FAF8F5] text-neutral-800 hover:bg-neutral-100'
-            }`}
-          >
-            <span className="block text-base font-black">{orders.length}</span>
-            <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-tight block">Orders</span>
-          </div>
+            <div
+              onClick={() => setSection('reservations')}
+              className={`p-2 rounded-2xl cursor-pointer transition-all ${
+                section === 'reservations' ? 'bg-red-50 border border-red-200 text-[#E23744]' : 'bg-[#FAF8F5] text-neutral-800 hover:bg-neutral-100'
+              }`}
+            >
+              <span className="block text-base font-black">{reservations.length}</span>
+              <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-tight block">Tables</span>
+            </div>
 
-          <div
-            onClick={() => setSection('reservations')}
-            className={`p-2 rounded-2xl cursor-pointer transition-all ${
-              section === 'reservations' ? 'bg-red-50 border border-red-200 text-[#E23744]' : 'bg-[#FAF8F5] text-neutral-800 hover:bg-neutral-100'
-            }`}
-          >
-            <span className="block text-base font-black">{reservations.length}</span>
-            <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-tight block">Tables</span>
-          </div>
+            <div
+              onClick={() => setSection('rewards')}
+              className={`p-2 rounded-2xl cursor-pointer transition-all ${
+                section === 'rewards' ? 'bg-amber-50 border border-amber-300 text-amber-800' : 'bg-[#FAF8F5] text-neutral-800 hover:bg-neutral-100'
+              }`}
+            >
+              <span className="block text-base font-black text-amber-700">{pdCoins}</span>
+              <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-tight block">Coins</span>
+            </div>
 
-          <div
-            onClick={() => setSection('rewards')}
-            className={`p-2 rounded-2xl cursor-pointer transition-all ${
-              section === 'rewards' ? 'bg-amber-50 border border-amber-300 text-amber-800' : 'bg-[#FAF8F5] text-neutral-800 hover:bg-neutral-100'
-            }`}
-          >
-            <span className="block text-base font-black text-amber-700">{pdCoins}</span>
-            <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-tight block">Coins</span>
+            <div
+              onClick={() => setSection('addresses')}
+              className={`p-2 rounded-2xl cursor-pointer transition-all ${
+                section === 'addresses' ? 'bg-red-50 border border-red-200 text-[#E23744]' : 'bg-[#FAF8F5] text-neutral-800 hover:bg-neutral-100'
+              }`}
+            >
+              <span className="block text-base font-black">{savedAddresses.length}</span>
+              <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-tight block">Saved</span>
+            </div>
           </div>
-
-          <div
-            onClick={() => setSection('addresses')}
-            className={`p-2 rounded-2xl cursor-pointer transition-all ${
-              section === 'addresses' ? 'bg-red-50 border border-red-200 text-[#E23744]' : 'bg-[#FAF8F5] text-neutral-800 hover:bg-neutral-100'
-            }`}
-          >
-            <span className="block text-base font-black">{savedAddresses.length}</span>
-            <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-tight block">Saved</span>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ── 3. SECTION SELECTOR PILLS (Zomato Style) ── */}
       <div className="flex space-x-1.5 overflow-x-auto no-scrollbar pb-1">
@@ -357,19 +411,18 @@ const CustomerProfileTab = ({
           </a>
 
           {/* Logout Action */}
-          <div className="pt-2 text-center">
-            <button
-              onClick={() => {
-                if (window.confirm('Do you want to log out of your Persian Darbar account?')) {
-                  if (onSignOut) onSignOut();
-                }
-              }}
-              className="text-xs font-black text-red-600 hover:text-red-700 flex items-center justify-center space-x-1.5 mx-auto py-2 px-4 rounded-xl hover:bg-red-50 transition-colors"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>Sign Out of Account</span>
-            </button>
-          </div>
+          {currentUser && (
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setShowLogoutModal(true)}
+                className="w-full py-3.5 rounded-2xl bg-red-50 hover:bg-red-100 text-[#E23744] font-black text-xs flex items-center justify-center space-x-2 border border-red-200 active:scale-98 transition-all cursor-pointer shadow-xs"
+              >
+                <LogOut className="w-4 h-4 text-[#E23744]" />
+                <span>Log Out from Persian Darbar</span>
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -778,6 +831,42 @@ const CustomerProfileTab = ({
                 </button>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── CUSTOM IN-APP LOGOUT CONFIRMATION MODAL ── */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl border border-neutral-200 text-center animate-in zoom-in-95 duration-200">
+            <div className="w-14 h-14 rounded-2xl bg-red-50 text-[#E23744] flex items-center justify-center mx-auto border border-red-100">
+              <LogOut className="w-7 h-7 text-[#E23744]" />
+            </div>
+            <div>
+              <h3 className="font-black text-base text-neutral-900">Sign Out of Persian Darbar?</h3>
+              <p className="text-xs text-neutral-500 mt-1 leading-relaxed">
+                You will need to sign in again to view your past orders, track live food delivery, and redeem your royalty coins.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowLogoutModal(false)}
+                className="py-3 rounded-2xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-bold text-xs active:scale-98 transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setShowLogoutModal(false);
+                  if (onSignOut) await onSignOut();
+                }}
+                className="py-3 rounded-2xl bg-[#E23744] hover:bg-[#C11F2C] text-white font-black text-xs shadow-md active:scale-98 transition-all cursor-pointer"
+              >
+                Yes, Sign Out
+              </button>
+            </div>
           </div>
         </div>
       )}

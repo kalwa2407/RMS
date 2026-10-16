@@ -66,14 +66,14 @@ const CustomerProfile = () => {
     const savedEmail = customerProfile?.email || currentUser?.email || localStorage.getItem('customer_email') || '';
     setEmail(savedEmail);
     if (customerProfile) {
-      setName(customerProfile.name || currentUser?.displayName || 'Aman Talukdar');
-      setPhone(customerProfile.phone || localStorage.getItem('customer_phone') || '7028033763');
-      setAddress(customerProfile.address || 'Kondhwa, Pune');
-      setAddresses(customerProfile.addresses || ['Kondhwa, Pune', 'Bandra West, Mumbai']);
+      setName(customerProfile.name || currentUser?.displayName || 'Valued Guest');
+      setPhone(customerProfile.phone || localStorage.getItem('customer_phone') || '');
+      setAddress(customerProfile.address || localStorage.getItem('customer_address') || '');
+      setAddresses(customerProfile.addresses || []);
     } else if (currentUser) {
-      setName(currentUser.displayName || 'Aman Talukdar');
-      setPhone(localStorage.getItem('customer_phone') || '7028033763');
-      setAddress('Kondhwa, Pune');
+      setName(currentUser.displayName || 'Valued Guest');
+      setPhone(currentUser.phoneNumber || localStorage.getItem('customer_phone') || '');
+      setAddress(localStorage.getItem('customer_address') || '');
     }
   }, [customerProfile, currentUser]);
 
