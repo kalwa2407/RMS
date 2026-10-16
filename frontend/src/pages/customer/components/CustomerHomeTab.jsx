@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Minus, Star, Zap, Clock, Tag, Sparkles } from 'lucide-react';
+import { Plus, Minus, Star, Tag, Sparkles, Clock, Crown, ChevronRight, Award, ShieldCheck } from 'lucide-react';
 import { PERSIAN_DARBAR_CATEGORIES, DEFAULT_PERSIAN_DARBAR_OFFERS } from '../customerAssets';
 
 const CustomerHomeTab = ({
@@ -14,6 +14,7 @@ const CustomerHomeTab = ({
   onOpenSearch,
   offers = [],
   onOfferClick,
+  onGoToOrder,
   onGoToReserve
 }) => {
   // Offer Carousel State
@@ -31,169 +32,78 @@ const CustomerHomeTab = ({
     return () => clearInterval(interval);
   }, [activeOffersList]);
 
-  // Robust, flexible category matcher so clicking ANY category displays dishes instantly
-  const matchCategory = (item, cat) => {
-    if (!cat || cat === 'All') return true;
-    const itemCat = (item.category || '').toLowerCase();
-    const itemName = (item.name || '').toLowerCase();
-    const targetCat = cat.toLowerCase();
+  const currentOffer = activeOffersList[activeOfferIdx] || activeOffersList[0];
 
-    if (itemCat === targetCat) return true;
-
-    if (targetCat === 'biryani') {
-      return itemCat.includes('biryani') || itemName.includes('biryani');
-    }
-    if (targetCat === 'kebabs') {
-      return (
-        itemCat.includes('kebab') ||
-        itemCat.includes('starter') ||
-        itemName.includes('kebab') ||
-        itemName.includes('tikka') ||
-        itemName.includes('tandoor') ||
-        itemName.includes('chop')
-      );
-    }
-    if (targetCat === 'mughlai') {
-      return (
-        itemCat.includes('mughlai') ||
-        itemCat.includes('curry') ||
-        itemCat.includes('main') ||
-        itemName.includes('chicken') ||
-        itemName.includes('mutton')
-      );
-    }
-    if (targetCat === 'starters') {
-      return itemCat.includes('starter') || itemName.includes('fry') || itemName.includes('roll');
-    }
-    if (targetCat === 'main course') {
-      return itemCat.includes('main') || itemCat.includes('curry') || itemCat.includes('mughlai');
-    }
-    if (targetCat === 'breads') {
-      return (
-        itemCat.includes('bread') ||
-        itemCat.includes('roti') ||
-        itemName.includes('naan') ||
-        itemName.includes('roti') ||
-        itemName.includes('paratha')
-      );
-    }
-    if (targetCat === 'desserts') {
-      return (
-        itemCat.includes('dessert') ||
-        itemCat.includes('sweet') ||
-        itemName.includes('tukda') ||
-        itemName.includes('firni') ||
-        itemName.includes('kulfi') ||
-        itemName.includes('halwa')
-      );
-    }
-    if (targetCat === 'beverages') {
-      return (
-        itemCat.includes('beverage') ||
-        itemCat.includes('drink') ||
-        itemName.includes('chai') ||
-        itemName.includes('lassi') ||
-        itemName.includes('juice')
-      );
-    }
-
-    return itemCat.includes(targetCat);
-  };
-
-  // Filtered dishes
-  const filteredDishes = menu.filter((item) => {
-    return matchCategory(item, selectedCat) && item.available !== false;
-  });
-
-  // Recommended chef specials from real menu
+  // Signature chef specials from real menu
   const chefSpecials = menu.filter(item => item.popular || (item.rating && item.rating >= 4.5)).slice(0, 6);
   const displayedChefSpecials = chefSpecials.length > 0 ? chefSpecials : menu.slice(0, 6);
 
-  const currentOffer = activeOffersList[activeOfferIdx] || activeOffersList[0];
-
   return (
     <div className="flex-1 pb-28">
-      {/* ── BEGIN: Connected Admin Offers Carousel Banner ── */}
-      <section className="bg-gradient-to-b from-[#FFFBF2] to-white px-4 pt-2 pb-3">
+      {/* ── BEGIN: Grand Royal Offer Hero Section (Expanded & Matching Screenshot 4 Aesthetics) ── */}
+      <section className="bg-gradient-to-b from-[#FFF5D6] via-[#FFF8E7] to-[#F8F9FA] px-4 pt-2 pb-4">
         {currentOffer && (
           <div
             onClick={() => onOfferClick && onOfferClick(currentOffer)}
-            className="relative rounded-3xl p-4 shadow-md border overflow-hidden cursor-pointer transition-all active:scale-[0.99] text-white"
+            className="relative rounded-3xl p-5 shadow-sm border border-amber-300/80 overflow-hidden cursor-pointer active:scale-[0.99] transition-all"
             style={{
-              background: currentOffer.bg_gradient || 'linear-gradient(135deg, #1C1917 0%, #292524 100%)',
-              borderColor: `${currentOffer.accent_color || '#EAB308'}40`,
+              background: currentOffer.bg_gradient || 'linear-gradient(135deg, #FFF5D6 0%, #FDE8B3 50%, #F9DC96 100%)',
             }}
           >
-            {/* Ambient Lighting Glow */}
-            <div
-              className="absolute -right-8 -bottom-8 w-44 h-44 rounded-full blur-2xl opacity-25 pointer-events-none"
-              style={{ background: currentOffer.accent_color || '#EAB308' }}
-            />
+            {/* Ambient Watermark Crest Graphics */}
+            <div className="absolute -right-6 -bottom-6 w-32 h-32 opacity-15 pointer-events-none">
+              <svg className="w-full h-full text-amber-900" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
+            </div>
 
-            <div className="flex items-center justify-between relative z-10">
-              <div className="space-y-1 max-w-[62%]">
-                <span
-                  className="inline-block text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full"
-                  style={{
-                    background: `${currentOffer.accent_color || '#EAB308'}25`,
-                    color: currentOffer.accent_color || '#EAB308',
-                    border: `1px solid ${currentOffer.accent_color || '#EAB308'}50`
-                  }}
-                >
-                  {currentOffer.badge_text || 'ROYAL OFFER'}
+            <div className="relative z-10 flex flex-col justify-between space-y-3">
+              {/* Badge & Outlet Guarantee */}
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#1C1917] text-amber-300 border border-amber-400/50 shadow-xs">
+                  {currentOffer.badge_text || 'ROYAL PRIVILEGE'}
                 </span>
+                <span className="text-[10px] font-extrabold text-amber-900/80 bg-white/70 px-2.5 py-0.5 rounded-full border border-amber-300/60">
+                  ⚡ 4 Outlets Connected
+                </span>
+              </div>
 
-                <h3 className="text-base font-black text-white leading-tight line-clamp-1 mt-0.5">
-                  {currentOffer.title}
-                </h3>
-
-                <p className="text-[11px] text-neutral-300 font-medium line-clamp-1">
-                  {currentOffer.subtitle}
+              {/* Big Golden Envelope Style Headline */}
+              <div className="bg-white/80 backdrop-blur-xs rounded-2xl p-3.5 border border-amber-300 shadow-inner">
+                <p className="text-[11px] font-black text-amber-900 tracking-wider uppercase">
+                  {currentOffer.subtitle || 'SPECIAL OFFER'}
                 </p>
+                <h2 className="text-2xl sm:text-3xl font-black text-[#451A03] tracking-tight leading-none mt-1">
+                  {currentOffer.title}
+                </h2>
+                <p className="text-xs font-bold text-amber-800 mt-1 flex items-center space-x-1">
+                  <span>🛵 {currentOffer.highlight_text || 'FREE DELIVERY ON ORDERS ABOVE ₹99'}</span>
+                </p>
+              </div>
 
-                {currentOffer.coupon_code && (
-                  <div className="inline-flex items-center space-x-1.5 bg-white/10 backdrop-blur-xs border border-white/20 px-2 py-0.5 rounded-lg mt-0.5">
-                    <Tag className="w-3 h-3 text-amber-400" />
+              {/* Bottom Action & Coupon Row */}
+              <div className="flex items-center justify-between pt-1">
+                {currentOffer.coupon_code ? (
+                  <div className="inline-flex items-center space-x-1.5 bg-[#1C1917] text-amber-300 px-3 py-1.5 rounded-full border border-amber-400/50 shadow-xs">
+                    <Tag className="w-3.5 h-3.5 text-amber-400" />
                     <span className="text-[10px] text-neutral-300 font-bold">Code:</span>
-                    <span className="text-xs font-black text-[#FFD77D] tracking-wide">
+                    <span className="text-xs font-black tracking-wider text-amber-300">
                       {currentOffer.coupon_code}
                     </span>
                   </div>
+                ) : (
+                  <div />
                 )}
 
-                <div className="pt-1">
-                  <span
-                    className="inline-flex items-center space-x-1 text-[11px] font-black px-3 py-1 rounded-full shadow-xs active:scale-95 transition-transform"
-                    style={{
-                      background: currentOffer.accent_color || '#E23744',
-                      color: '#FFFFFF'
-                    }}
-                  >
-                    <span>
-                      {currentOffer.action === 'reserve'
-                        ? 'Book Royal Table 🍽️'
-                        : 'Tap to Apply Offer 🎟️'}
-                    </span>
-                  </span>
-                </div>
-              </div>
-
-              {/* Offer Image */}
-              <div className="w-24 h-24 rounded-2xl overflow-hidden shrink-0 border border-white/20 shadow-md relative bg-neutral-900">
-                <img
-                  src={currentOffer.image_url || '/dynamic_images/img1.jpeg'}
-                  alt={currentOffer.title}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.src = '/dynamic_images/img1.jpeg';
-                  }}
-                />
+                <span className="inline-flex items-center space-x-1 text-xs font-black bg-[#E23744] text-white px-4 py-2 rounded-full shadow-md active:scale-95 transition-transform">
+                  <span>{currentOffer.action === 'reserve' ? 'Book Table ›' : 'Order Now ›'}</span>
+                </span>
               </div>
             </div>
 
             {/* Pagination Dots */}
             {activeOffersList.length > 1 && (
-              <div className="flex justify-center space-x-1.5 mt-2.5 pt-1 border-t border-white/10 relative z-10">
+              <div className="flex justify-center space-x-1.5 mt-3 pt-2 border-t border-amber-300/60 relative z-10">
                 {activeOffersList.map((_, i) => (
                   <button
                     key={i}
@@ -202,7 +112,7 @@ const CustomerHomeTab = ({
                       setActiveOfferIdx(i);
                     }}
                     className={`h-1.5 rounded-full transition-all ${
-                      i === activeOfferIdx ? 'w-5 bg-amber-400' : 'w-1.5 bg-white/40'
+                      i === activeOfferIdx ? 'w-6 bg-[#451A03]' : 'w-1.5 bg-amber-900/30'
                     }`}
                   />
                 ))}
@@ -211,21 +121,55 @@ const CustomerHomeTab = ({
           </div>
         )}
       </section>
-      {/* ── END: Connected Admin Offers Carousel Banner ── */}
+      {/* ── END: Grand Royal Offer Hero Section ── */}
 
-      {/* ── BEGIN: Dishes Category Horizontal Scroll ── */}
-      <section className="mt-1">
-        <div className="flex items-center space-x-3 overflow-x-auto no-scrollbar px-4 pb-2">
+      {/* ── BEGIN: Category Quick Roundels (Matching Screenshot 4) ── */}
+      <section className="mt-2 px-4">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-xs font-black text-neutral-400 uppercase tracking-wider">
+            EXPLORE PERSIAN DARBAR MENU
+          </h2>
+          <button
+            onClick={onGoToOrder}
+            className="text-xs font-black text-[#E23744] hover:underline"
+          >
+            See All Menu ›
+          </button>
+        </div>
+
+        <div className="flex items-center space-x-3 overflow-x-auto no-scrollbar pb-2">
+          {/* First Card: BEST OFFERS APPLIED (as in Screenshot 4) */}
+          <div
+            onClick={() => onSelectCat('All')}
+            className="flex flex-col items-center shrink-0 cursor-pointer active:scale-95 transition-transform"
+          >
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#E23744] to-[#B91C1C] text-white p-2 flex flex-col items-center justify-between shadow-xs">
+              <span className="text-[8px] font-black uppercase leading-tight text-center">
+                BEST OFFERS<br />APPLIED
+              </span>
+              <span className="text-[9px] bg-white/20 font-bold px-1.5 py-0.2 rounded-md">
+                Explore ›
+              </span>
+            </div>
+            <span className="text-[11px] font-extrabold text-neutral-800 mt-1.5 text-center">
+              Offers
+            </span>
+          </div>
+
+          {/* Dish Category Roundels with Clean Food Cutout Aesthetic */}
           {PERSIAN_DARBAR_CATEGORIES.map((item) => {
             const isActive = selectedCat.toLowerCase() === item.id.toLowerCase();
             return (
               <div
                 key={item.id}
-                onClick={() => onSelectCat(item.id)}
+                onClick={() => {
+                  onSelectCat(item.id);
+                  onGoToOrder();
+                }}
                 className="flex flex-col items-center shrink-0 cursor-pointer active:scale-95 transition-transform"
               >
                 <div
-                  className={`w-16 h-16 rounded-full overflow-hidden p-[2px] transition-all ${
+                  className={`w-16 h-16 rounded-full overflow-hidden p-[2px] transition-all bg-white ${
                     isActive
                       ? 'border-2 border-[#E23744] shadow-md scale-105'
                       : 'border border-neutral-200/80 shadow-xs'
@@ -254,11 +198,11 @@ const CustomerHomeTab = ({
           })}
         </div>
       </section>
-      {/* ── END: Dishes Category Horizontal Scroll ── */}
+      {/* ── END: Category Quick Roundels ── */}
 
-      {/* ── BEGIN: Chef's Royal Specials Section ── */}
-      {selectedCat === 'All' && displayedChefSpecials.length > 0 && (
-        <section className="mt-4 px-4">
+      {/* ── BEGIN: Chef's Royal Specials Carousel ── */}
+      {displayedChefSpecials.length > 0 && (
+        <section className="mt-5 px-4">
           <div className="flex items-center justify-between mb-3">
             <div>
               <h2 className="text-sm font-black text-neutral-900 uppercase tracking-tight flex items-center space-x-1.5">
@@ -266,11 +210,11 @@ const CustomerHomeTab = ({
                 <span className="text-amber-500">👑</span>
               </h2>
               <p className="text-[11px] text-neutral-500 font-medium">
-                Persian Darbar signature delicacies
+                Persian Darbar signature culinary masterpieces
               </p>
             </div>
             <button
-              onClick={() => onSelectCat('Biryani')}
+              onClick={onGoToOrder}
               className="text-xs font-black text-[#E23744] hover:underline"
             >
               Full Menu ›
@@ -283,7 +227,7 @@ const CustomerHomeTab = ({
               return (
                 <div
                   key={dish._id}
-                  className="w-44 shrink-0 bg-white rounded-2xl border border-neutral-200/80 overflow-hidden shadow-xs flex flex-col justify-between"
+                  className="w-44 shrink-0 bg-white rounded-3xl border border-neutral-200/80 overflow-hidden shadow-xs flex flex-col justify-between"
                 >
                   <div className="relative h-28 w-full bg-neutral-100">
                     <img
@@ -342,130 +286,56 @@ const CustomerHomeTab = ({
         </section>
       )}
 
-      {/* ── BEGIN: All Filtered Dishes Feed ── */}
-      <section className="mt-4 px-4 space-y-3">
-        <div className="flex items-center justify-between pb-1 border-b border-neutral-100">
-          <h2 className="text-sm font-black text-neutral-900 uppercase tracking-tight">
-            {selectedCat === 'All' ? 'ALL DISHES' : selectedCat.toUpperCase()} ({filteredDishes.length})
-          </h2>
-          {selectedCat !== 'All' && (
-            <button
-              onClick={() => onSelectCat('All')}
-              className="text-xs font-bold text-neutral-500 hover:text-neutral-900"
-            >
-              Clear Filter ✕
-            </button>
-          )}
-        </div>
-
-        {filteredDishes.length === 0 ? (
-          <div className="bg-white rounded-3xl p-8 text-center border border-neutral-200/80 shadow-xs space-y-3">
-            <div className="w-12 h-12 rounded-full bg-red-50 text-[#E23744] flex items-center justify-center mx-auto text-xl font-black">
-              🍽️
-            </div>
-            <h4 className="font-extrabold text-sm text-neutral-900">
-              No dishes found under "{selectedCat}"
-            </h4>
-            <p className="text-xs text-neutral-500 max-w-xs mx-auto">
-              Please choose another royal category or tap "All Dishes".
-            </p>
-            <button
-              onClick={() => onSelectCat('All')}
-              className="bg-[#E23744] text-white text-xs font-black px-4 py-2 rounded-xl shadow-xs"
-            >
-              Show All Dishes
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filteredDishes.map((dish) => {
-              const inCart = cart.find(c => c._id === dish._id);
-              return (
-                <div
-                  key={dish._id}
-                  className="bg-white rounded-2xl p-3.5 border border-neutral-200/80 shadow-xs flex items-center justify-between gap-3 transition-all hover:border-neutral-300"
-                >
-                  <div className="flex-1 pr-1">
-                    <span className="text-[10px] font-black text-[#E23744] bg-red-50 px-2 py-0.5 rounded-md uppercase tracking-wide">
-                      {dish.category}
-                    </span>
-                    <h3 className="font-extrabold text-sm text-neutral-900 mt-1 leading-tight">
-                      {dish.name}
-                    </h3>
-                    <p className="text-xs font-black text-neutral-900 mt-1">
-                      ₹{dish.price}
-                    </p>
-                    {dish.description && (
-                      <p className="text-[11px] text-neutral-500 line-clamp-2 mt-0.5">
-                        {dish.description}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Dish Image & Add Action */}
-                  <div className="relative w-24 h-24 rounded-2xl overflow-hidden shrink-0 bg-neutral-100 border border-neutral-100">
-                    <img
-                      src={dish.image || '/dynamic_images/img1.jpeg'}
-                      alt={dish.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.src = '/no-image.png';
-                      }}
-                    />
-                    <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-[88%]">
-                      {inCart ? (
-                        <div className="flex items-center justify-between bg-white text-[#E23744] border border-[#E23744] rounded-lg shadow-md px-2 py-0.5 text-xs font-bold">
-                          <button
-                            onClick={() => onUpdateCartQty(dish._id, -1)}
-                            className="p-0.5 active:scale-75 transition-transform"
-                          >
-                            <Minus className="w-3 h-3" />
-                          </button>
-                          <span className="font-black">{inCart.quantity}</span>
-                          <button
-                            onClick={() => onUpdateCartQty(dish._id, 1)}
-                            className="p-0.5 active:scale-75 transition-transform"
-                          >
-                            <Plus className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => onAddToCart(dish)}
-                          className="w-full bg-white text-[#E23744] border border-red-200 hover:border-[#E23744] rounded-lg shadow-xs py-1 text-[11px] font-black uppercase tracking-wider active:scale-95 transition-all text-center"
-                        >
-                          ADD
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      {/* ── Table Reservation Quick Banner ── */}
+      {/* ── BEGIN: Table Reservation Royal Showcase ── */}
       <section className="mt-5 px-4">
         <div
           onClick={onGoToReserve}
-          className="bg-neutral-900 text-white rounded-3xl p-4 flex items-center justify-between shadow-md cursor-pointer active:scale-[0.99] transition-transform"
+          className="bg-gradient-to-r from-[#1C1917] via-[#2A241E] to-[#1C1917] border border-amber-400/40 text-white rounded-3xl p-5 flex items-center justify-between shadow-lg cursor-pointer active:scale-[0.99] transition-transform"
         >
-          <div className="space-y-1">
-            <span className="text-[10px] font-black text-amber-400 uppercase tracking-wider">
-              FINE DINING · SINCE 1978
+          <div className="space-y-1 max-w-[70%]">
+            <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest flex items-center space-x-1">
+              <Crown className="w-3 h-3 fill-amber-400" />
+              <span>DINE IN ROYAL AMBIANCE</span>
             </span>
-            <h3 className="text-sm font-black leading-tight text-white">
-              Reserve Your Royal Table
+            <h3 className="text-base font-black leading-tight text-white mt-1">
+              Book Your Royal Table
             </h3>
-            <p className="text-[11px] text-neutral-400">
-              Guaranteed seating across all 4 Persian Darbar outlets
+            <p className="text-[11px] text-neutral-300 font-medium">
+              Guaranteed seating across all 4 Persian Darbar outlets with 10% PD Coins on bill.
             </p>
           </div>
-          <button className="bg-[#E23744] text-white text-xs font-black px-3.5 py-2 rounded-xl shadow-xs shrink-0">
-            Book Table ›
+          <button className="bg-[#E23744] hover:bg-[#C11F2C] text-white text-xs font-black px-4 py-2.5 rounded-2xl shadow-md shrink-0">
+            Reserve ›
           </button>
+        </div>
+      </section>
+
+      {/* ── BEGIN: Persian Darbar Heritage & Trust ── */}
+      <section className="mt-6 px-4">
+        <div className="bg-white rounded-3xl p-4 border border-neutral-200/80 shadow-xs space-y-3">
+          <div className="flex items-center space-x-2">
+            <ShieldCheck className="w-5 h-5 text-amber-500" />
+            <h3 className="text-xs font-black uppercase tracking-wider text-neutral-900">
+              ORIGINAL PERSIA TO INDIA · SINCE 1978
+            </h3>
+          </div>
+          <p className="text-xs text-neutral-600 leading-relaxed font-medium">
+            Over 45 years of authentic Mughlai, Persian & coastal recipes crafted with slow-cooked aromatic basmati, hand-ground spices, and charcoal roasted tandoors.
+          </p>
+          <div className="grid grid-cols-3 gap-2 pt-1 border-t border-neutral-100 text-center">
+            <div className="p-2 bg-neutral-50 rounded-xl">
+              <span className="text-sm font-black text-neutral-900 block">45+</span>
+              <span className="text-[10px] text-neutral-500 font-bold">Years Legacy</span>
+            </div>
+            <div className="p-2 bg-neutral-50 rounded-xl">
+              <span className="text-sm font-black text-neutral-900 block">4.8 ★</span>
+              <span className="text-[10px] text-neutral-500 font-bold">Patron Rating</span>
+            </div>
+            <div className="p-2 bg-neutral-50 rounded-xl">
+              <span className="text-sm font-black text-neutral-900 block">4 Hubs</span>
+              <span className="text-[10px] text-neutral-500 font-bold">Bandra · Pune</span>
+            </div>
+          </div>
         </div>
       </section>
     </div>

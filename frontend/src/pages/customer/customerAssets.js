@@ -1,51 +1,51 @@
 // High-definition assets and imagery tailored for Persian Darbar Customer App
 
-// 1. Authentic Persian Darbar Categories
+// 1. Authentic Persian Darbar Categories with Clean Cutout Aesthetics (Matching Screenshot 4)
 export const PERSIAN_DARBAR_CATEGORIES = [
   {
     id: 'All',
     title: 'All Dishes',
-    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
   },
   {
     id: 'Biryani',
     title: 'Royal Biryani',
-    image: 'https://images.unsplash.com/photo-1701579231349-d7459c40919d?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+    image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
   },
   {
     id: 'Kebabs',
     title: 'Tandoor & Kebabs',
-    image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+    image: 'https://images.unsplash.com/photo-1610057099443-fde8c4d50f91?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
   },
   {
     id: 'Mughlai',
     title: 'Mughlai Curries',
-    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+    image: 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
   },
   {
     id: 'Starters',
     title: 'Starters',
-    image: 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+    image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
   },
   {
     id: 'Main Course',
     title: 'Main Course',
-    image: 'https://images.unsplash.com/photo-1589302168068-964664d93dc0?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+    image: 'https://images.unsplash.com/photo-1633945274405-b6c8069047b0?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
   },
   {
     id: 'Breads',
     title: 'Roti & Naans',
-    image: 'https://images.unsplash.com/photo-1626074353765-517a681e40be?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+    image: 'https://images.unsplash.com/photo-1626074353765-517a681e40be?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
   },
   {
     id: 'Desserts',
     title: 'Shahi Desserts',
-    image: 'https://images.unsplash.com/photo-1617622163466-d1d56ec8b127?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+    image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
   },
   {
     id: 'Beverages',
     title: 'Chai & Drinks',
-    image: 'https://images.unsplash.com/photo-1592861956120-e524fc739696?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+    image: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
   }
 ];
 
@@ -61,56 +61,56 @@ export const SEARCH_CRAVINGS = [
   '✦ Irani Chai'
 ];
 
-// Real Persian Darbar Roundels for Search "WHAT'S ON YOUR MIND?"
+// 100% Working, Authentic Food Photos for Search Modal (Clean plate aesthetics, NO aquariums!)
 export const SEARCH_ROUNDELS_GRID = [
   {
     title: 'Chicken Biryani',
     category: 'Biryani',
-    image: 'https://images.unsplash.com/photo-1701579231305-d7d8af9a3fd?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+    image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
   },
   {
     title: 'Mutton Biryani',
     category: 'Biryani',
-    image: 'https://images.unsplash.com/photo-1701579231349-d7459c40919d?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+    image: 'https://images.unsplash.com/photo-1633945274405-b6c8069047b0?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
   },
   {
     title: 'Tandoori Mumtaz',
     category: 'Kebabs',
-    image: 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+    image: 'https://images.unsplash.com/photo-1610057099443-fde8c4d50f91?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
   },
   {
     title: 'Mutton Barra Chop',
     category: 'Kebabs',
-    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+    image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
   },
   {
     title: 'Butter Chicken',
     category: 'Mughlai',
-    image: 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+    image: 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
   },
   {
     title: 'Roti & Naans',
     category: 'Breads',
-    image: 'https://images.unsplash.com/photo-1626074353765-517a681e40be?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+    image: 'https://images.unsplash.com/photo-1626074353765-517a681e40be?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
   },
   {
     title: 'Shahi Tukda',
     category: 'Desserts',
-    image: 'https://images.unsplash.com/photo-1617622163466-d1d56ec8b127?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+    image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
   },
   {
     title: 'Prawns Biryani',
     category: 'Biryani',
-    image: 'https://images.unsplash.com/photo-1589302168068-964664d93dc0?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+    image: 'https://images.unsplash.com/photo-1589302168068-964664d93dc0?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
   },
   {
     title: 'Irani Chai',
     category: 'Beverages',
-    image: 'https://images.unsplash.com/photo-1592861956120-e524fc739696?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+    image: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
   }
 ];
 
-// 2. All 4 Official Persian Darbar Royal Branches with Real Photos & True Coordinates
+// All 4 Official Persian Darbar Royal Branches with Real Photos & True Coordinates
 export const PERSIAN_DARBAR_BRANCHES = [
   {
     id: 'bandra',
@@ -216,39 +216,66 @@ export const DINING_MOODS = [
   }
 ];
 
-// Fallback Authentic Offers matching Admin Panel presets
+// Fallback Authentic Offers matching Admin Panel presets & Screenshot 4
 export const DEFAULT_PERSIAN_DARBAR_OFFERS = [
   {
     id: 'offer_weekend_feast',
     title: 'Royal Feast Weekend',
-    subtitle: 'UP TO 30% OFF + 2X PD Coins',
+    subtitle: 'FLAT 30% OFF on all Biryanis & Kebabs',
+    highlight_text: 'FREE DELIVERY ABOVE ₹99',
     coupon_code: 'DARBAR30',
     badge_text: 'WEEKEND SPECIAL',
-    image_url: '/dynamic_images/offer_royal_feast.jpg',
-    bg_gradient: 'linear-gradient(135deg, #1C1917 0%, #292524 100%)',
-    accent_color: '#EAB308',
+    image_url: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?crop=entropy&cs=srgb&fm=jpg&w=600&q=80',
+    bg_gradient: 'linear-gradient(135deg, #FFF5D6 0%, #FDE8B3 50%, #F9DC96 100%)',
+    accent_color: '#B45309',
     action: 'order'
   },
   {
     id: 'offer_double_coins',
-    title: 'Double PD Coins Weekend',
-    subtitle: 'Earn 2X Coins on every Mutton & Biryani feast',
+    title: '2X PD Royalty Coins',
+    subtitle: 'Earn double coins on all dine-in & delivery bills',
+    highlight_text: 'DOUBLE CASHBACK ON EVERY BITE',
     coupon_code: '2XCOINS',
-    badge_text: '2X REWARDS',
-    image_url: '/dynamic_images/offer_double_coins.jpg',
-    bg_gradient: 'linear-gradient(135deg, #0A192F 0%, #061120 100%)',
-    accent_color: '#38BDF8',
+    badge_text: 'ROYAL PRIVILEGE',
+    image_url: 'https://images.unsplash.com/photo-1610057099443-fde8c4d50f91?crop=entropy&cs=srgb&fm=jpg&w=600&q=80',
+    bg_gradient: 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 50%, #FCD34D 100%)',
+    accent_color: '#92400E',
     action: 'order'
   },
   {
-    id: 'offer_festive_celebration',
+    id: 'offer_table_privilege',
     title: 'Royal Table Reservation',
-    subtitle: 'Reserve Table & Get 15% Off Your Entire Dine-In Bill',
+    subtitle: 'Book your table & get 15% off your entire banquet bill',
+    highlight_text: 'VIP HOST SEATING GUARANTEED',
     coupon_code: 'DINEIN15',
     badge_text: 'TABLE PRIVILEGE',
-    image_url: '/dynamic_images/offer_festive_feast.jpg',
-    bg_gradient: 'linear-gradient(135deg, #3B0764 0%, #1E0534 100%)',
-    accent_color: '#F43F5E',
+    image_url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?crop=entropy&cs=srgb&fm=jpg&w=600&q=80',
+    bg_gradient: 'linear-gradient(135deg, #FFF1F2 0%, #FFE4E6 50%, #FECDD3 100%)',
+    accent_color: '#E23744',
     action: 'reserve'
+  }
+];
+
+// Royal PD Membership Privileges (Zomato Gold style!)
+export const ROYAL_MEMBERSHIP_PRIVILEGES = [
+  {
+    title: '10% PD Coins on Every Bill',
+    desc: 'Redeem coins directly like real cash at checkout.',
+    icon: 'Coins'
+  },
+  {
+    title: 'Free Delivery on Orders above ₹199',
+    desc: 'No delivery fee from any of our 4 Persian Darbar hubs.',
+    icon: 'Bike'
+  },
+  {
+    title: 'VIP Table Allocation',
+    desc: 'Guaranteed preferred seating during busy dinner hours.',
+    icon: 'Crown'
+  },
+  {
+    title: 'Complimentary Birthday Dessert',
+    desc: 'Enjoy authentic Shahi Tukda or Firni on your special day.',
+    icon: 'Gift'
   }
 ];

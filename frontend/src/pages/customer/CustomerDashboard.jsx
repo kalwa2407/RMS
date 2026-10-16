@@ -9,6 +9,7 @@ import { menuItems as fallbackMenu } from '../../mockData';
 // Zomato iOS Inspired Customer App Components
 import CustomerTopBar from './components/CustomerTopBar';
 import CustomerHomeTab from './components/CustomerHomeTab';
+import CustomerOrderTab from './components/CustomerOrderTab';
 import CustomerDiningTab from './components/CustomerDiningTab';
 import CustomerSearchExplore from './components/CustomerSearchExplore';
 import CustomerDockNav from './components/CustomerDockNav';
@@ -562,12 +563,12 @@ const CustomerDashboard = () => {
   // Bottom dock tab selector
   const handleDockSelect = (tabId) => {
     if (tabId === 'rewards') {
-      setProfileInitialTab('rewards');
+      setProfileInitialTab('membership');
       setIsProfileOpen(true);
       return;
     }
     if (tabId === 'profile') {
-      setProfileInitialTab('profile');
+      setProfileInitialTab('details');
       setIsProfileOpen(true);
       return;
     }
@@ -586,11 +587,11 @@ const CustomerDashboard = () => {
           distanceKm={distanceKm}
           onOpenLocationModal={() => setIsLocationModalOpen(true)}
           onOpenProfile={() => {
-            setProfileInitialTab('profile');
+            setProfileInitialTab('details');
             setIsProfileOpen(true);
           }}
           onOpenWallet={() => {
-            setProfileInitialTab('rewards');
+            setProfileInitialTab('membership');
             setIsProfileOpen(true);
           }}
           onOpenSearch={() => setIsSearchOpen(true)}
@@ -602,8 +603,8 @@ const CustomerDashboard = () => {
         {/* ── Scrollable Body ── */}
         <main ref={mainScrollRef} className="flex-1 overflow-y-auto no-scrollbar">
 
-          {/* Tab 1 & 2: Home & Order Feed */}
-          {(activeTab === 'home' || activeTab === 'order') && (
+          {/* Tab 1: Home (Royal Discovery & Showcase) */}
+          {activeTab === 'home' && (
             <CustomerHomeTab
               menu={menu}
               selectedCat={selectedCat}
@@ -613,13 +614,30 @@ const CustomerDashboard = () => {
               onUpdateCartQty={updateCartQty}
               onOpenCart={() => setIsCartOpen(true)}
               onOpenWallet={() => {
-                setProfileInitialTab('rewards');
+                setProfileInitialTab('membership');
                 setIsProfileOpen(true);
               }}
               onOpenSearch={() => setIsSearchOpen(true)}
               offers={offers}
               onOfferClick={handleOfferClick}
+              onGoToOrder={() => setActiveTab('order')}
               onGoToReserve={() => setActiveTab('reserve')}
+            />
+          )}
+
+          {/* Tab 2: Order (Dedicated Menu & Fast Ordering with Screenshot 4 style roundels) */}
+          {activeTab === 'order' && (
+            <CustomerOrderTab
+              menu={menu}
+              selectedCat={selectedCat}
+              onSelectCat={setSelectedCat}
+              cart={cart}
+              onAddToCart={addToCart}
+              onUpdateCartQty={updateCartQty}
+              onOpenCart={() => setIsCartOpen(true)}
+              onOpenSearch={() => setIsSearchOpen(true)}
+              searchQuery={searchQuery}
+              appliedCoupon={appliedCoupon}
             />
           )}
 
@@ -765,7 +783,7 @@ const CustomerDashboard = () => {
             setIsProfileOpen(false);
             toast({ title: 'Signed Out', description: 'See you again at Persian Darbar!' });
           }}
-          pdCoins={customerProfile?.coins || 0}
+          pdCoins={customerProfile?.coins ?? customerProfile?.loyalty_points ?? 450}
           initialTab={profileInitialTab}
         />
 
