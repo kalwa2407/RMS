@@ -168,13 +168,29 @@ export const CustomerAuthProvider = ({ children }) => {
     return { success: true, warning: 'Saved locally' };
   };
 
-  // Google Sign-In — try popup first, fallback to redirect for COOP-blocked environments
+  // Google Sign-In — use redirect on mobile/iOS (where COOP blocks popups), popup on desktop
   const signInWithGoogle = async () => {
+    // Detect iOS or any mobile browser — popups are unreliable due to COOP
+    const isMobile = /iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent);
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    if (isMobile || isIOS) {
+      // On mobile/iOS: go straight to redirect — no popup attempt
+      try {
+        await signInWithRedirect(auth, googleProvider);
+        return { success: true, redirecting: true };
+      } catch (redirectError) {
+        console.error('Redirect Sign-In Error:', redirectError);
+        return { success: false, error: redirectError.message };
+      }
+    }
+
+    // Desktop: try popup first
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
       const token = await user.getIdToken();
-      
+
       localStorage.setItem('customer_jwt', token);
       localStorage.setItem('customer_login_provider', 'google');
       if (user.uid) localStorage.setItem('customer_uid', user.uid);
@@ -187,10 +203,11 @@ export const CustomerAuthProvider = ({ children }) => {
       await fetchCustomerProfile(token, user);
       return { success: true, user };
     } catch (error) {
+      // Fallback to redirect if popup fails on desktop too
       if (
         error.code === 'auth/popup-blocked' ||
         error.code === 'auth/popup-closed-by-user' ||
-        error.code === 'auth/unauthorized-domain' ||
+        error.code === 'auth/cancelled-popup-request' ||
         error.message?.includes('Cross-Origin-Opener-Policy')
       ) {
         try {

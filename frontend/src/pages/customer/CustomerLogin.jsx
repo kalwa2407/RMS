@@ -128,6 +128,10 @@ const CustomerLogin = () => {
     setSigningInGoogle(true);
     setError(null);
     const res = await signInWithGoogle();
+    if (res.redirecting) {
+      // Page will navigate away during redirect — keep spinner showing
+      return;
+    }
     if (res.success) {
       navigate(from, { replace: true });
     } else {
@@ -254,6 +258,11 @@ const CustomerLogin = () => {
                     placeholder="Enter phone number"
                     value={phone}
                     onChange={handlePhoneChange}
+                    autoComplete="tel-national"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                    enterKeyHint="done"
                     className="w-full bg-transparent px-3 py-3 text-neutral-900 font-bold text-base tracking-wider placeholder:tracking-normal placeholder:font-normal placeholder:text-neutral-400 placeholder:text-xs outline-none"
                   />
 
@@ -315,7 +324,7 @@ const CustomerLogin = () => {
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                   </svg>
                 )}
-                <span>Continue with Google</span>
+                <span>{signingInGoogle ? 'Redirecting to Google...' : 'Continue with Google'}</span>
               </button>
 
               {/* Guest Explore Pill */}
@@ -380,6 +389,11 @@ const CustomerLogin = () => {
                   placeholder="• • • • • •"
                   value={otp}
                   onChange={handleOtpChange}
+                  autoComplete="one-time-code"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                  enterKeyHint="done"
                   className="w-full bg-white border-2 border-neutral-300 focus:border-[#E40000] focus:ring-2 focus:ring-red-100 rounded-2xl px-4 py-4 text-center text-3xl font-black tracking-[0.4em] text-neutral-900 placeholder:tracking-[0.3em] placeholder:text-neutral-300 outline-none transition-all shadow-inner"
                 />
               </div>
@@ -394,6 +408,11 @@ const CustomerLogin = () => {
                   placeholder="e.g. Rahul Sharma"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
+                  autoComplete="name"
+                  autoCorrect="off"
+                  autoCapitalize="words"
+                  spellCheck={false}
+                  enterKeyHint="done"
                   className="w-full bg-white border border-neutral-300 focus:border-[#E40000] focus:ring-2 focus:ring-red-100 rounded-2xl px-4 py-3 text-sm font-bold text-neutral-900 placeholder:text-neutral-400 outline-none transition-all"
                 />
               </div>
@@ -413,7 +432,7 @@ const CustomerLogin = () => {
                     className="text-[#E40000] hover:underline font-black flex items-center gap-1 cursor-pointer"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Resend SMS</span>
+                    <span>Resend Code</span>
                   </button>
                 )}
               </div>
