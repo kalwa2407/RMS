@@ -637,33 +637,44 @@ async def admin_delete_offer(
 
 @api_router.post("/coupons/validate")
 async def validate_coupon(coupon_validation: CouponValidation, manager: BaseDataManager = Depends(get_data_manager)):
-    """Validate a coupon code"""
+    """Validate a coupon code with strict min order value check and flat/percentage support"""
     coupon = await manager.validate_coupon(coupon_validation.code)
     
     if not coupon:
-        raise HTTPException(status_code=404, detail="Invalid coupon code")
+        raise HTTPException(status_code=404, detail=f"Coupon code '{coupon_validation.code}' is not valid or expired.")
     
-    if coupon_validation.order_value < coupon.get("min_order_value", 0):
+    order_val = coupon_validation.value
+    min_order = float(coupon.get("min_order_value", 0) or 0)
+    if order_val < min_order:
+        diff = round(min_order - order_val, 0)
         raise HTTPException(
             status_code=400,
-            detail=f"Minimum order value of â‚¹{coupon.get('min_order_value')} required"
+            detail=f"Add items worth ₹{diff:.0f} more to apply code {coupon.get('code')}. (Minimum order ₹{min_order:.0f} required)"
         )
     
-    # In Mock mode, we'll assume basic validation for now to keep it simple
     discount = 0.0
-    if coupon.get("discount_type") == "percentage":
-        discount = (coupon_validation.order_value * coupon.get("discount_value", 0)) / 100
+    disc_type = str(coupon.get("discount_type") or "flat").lower()
+    disc_val = float(coupon.get("discount_value", 0) or 0)
+
+    if disc_type in ["percentage", "percent"]:
+        discount = (order_val * disc_val) / 100.0
         if coupon.get("max_discount"):
-            discount = min(discount, coupon.get("max_discount"))
+            discount = min(discount, float(coupon.get("max_discount")))
     else:
-        discount = coupon.get("discount_value", 0)
+        # Flat discount (e.g. order > ₹500 gives ₹199 off!)
+        discount = min(disc_val, order_val)
+    
+    discount = round(discount, 2)
     
     return {
         "valid": True,
         "discount": discount,
-        "discount_type": coupon.get("discount_type"),
-        "discount_value": coupon.get("discount_value"),
-        "code": coupon.get("code")
+        "discount_amount": discount,
+        "discount_type": disc_type,
+        "discount_value": disc_val,
+        "min_order_value": min_order,
+        "code": coupon.get("code"),
+        "coupon": coupon
     }
 
 
@@ -2878,24 +2889,43 @@ async def admin_create_coupon(
     username: str = Depends(verify_token),
     manager: BaseDataManager = Depends(get_data_manager)
 ):
-    """Create new coupon"""
+    """Create new coupon with full rules support (min order, flat/percent off)"""
     coupons = await manager._read("coupons")
-    if any(c.get("code") == coupon.code.upper() for c in coupons):
-        raise HTTPException(status_code=400, detail="Coupon code already exists")
+    code_clean = coupon.code.strip().upper()
+    if any(c.get("code") == code_clean for c in coupons):
+        raise HTTPException(status_code=400, detail=f"Coupon code '{code_clean}' already exists")
+    
+    now = datetime.utcnow()
+    valid_from = coupon.valid_from.isoformat() if coupon.valid_from else now.isoformat()
+    valid_until = coupon.valid_until.isoformat() if coupon.valid_until else (now + timedelta(days=365)).isoformat()
+    
+    disc_val = float(coupon.discount_value)
+    min_order = float(coupon.min_order_value or 0.0)
+    disc_type = str(coupon.discount_type or "flat").lower()
+    
+    description = coupon.description
+    if not description:
+        if disc_type == "flat":
+            description = f"Flat ₹{disc_val:.0f} OFF on orders above ₹{min_order:.0f}"
+        else:
+            description = f"{disc_val:.0f}% OFF on orders above ₹{min_order:.0f}"
+            if coupon.max_discount:
+                description += f" (Up to ₹{coupon.max_discount:.0f})"
     
     new_coupon = {
         "id": str(uuid.uuid4()),
-        "code": coupon.code.upper(),
-        "discount_type": coupon.discount_type,
-        "discount_value": coupon.discount_value,
-        "min_order_value": coupon.min_order_value,
-        "max_discount": coupon.max_discount,
-        "valid_from": coupon.valid_from.isoformat() if hasattr(coupon.valid_from, 'isoformat') else coupon.valid_from,
-        "valid_until": coupon.valid_until.isoformat() if hasattr(coupon.valid_until, 'isoformat') else coupon.valid_until,
+        "code": code_clean,
+        "discount_type": disc_type,
+        "discount_value": disc_val,
+        "min_order_value": min_order,
+        "max_discount": float(coupon.max_discount) if coupon.max_discount is not None else None,
+        "description": description,
+        "valid_from": valid_from,
+        "valid_until": valid_until,
         "usage_limit": coupon.usage_limit,
         "active": coupon.active,
         "used_count": 0,
-        "created_at": datetime.utcnow().isoformat()
+        "created_at": now.isoformat()
     }
     
     coupons.append(new_coupon)

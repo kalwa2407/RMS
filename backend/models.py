@@ -419,20 +419,23 @@ class Coupon(BaseModel):
 
 class CouponCreate(BaseModel):
     code: str
-    discount_type: str
+    discount_type: str = "flat"  # 'flat' or 'percentage'
     discount_value: float
     min_order_value: float = 0.0
     max_discount: Optional[float] = None
-    valid_from: datetime
-    valid_until: datetime
+    description: Optional[str] = None
+    valid_from: Optional[datetime] = None
+    valid_until: Optional[datetime] = None
     usage_limit: Optional[int] = None
     active: bool = True
 
 class CouponUpdate(BaseModel):
+    code: Optional[str] = None
     discount_type: Optional[str] = None
     discount_value: Optional[float] = None
     min_order_value: Optional[float] = None
     max_discount: Optional[float] = None
+    description: Optional[str] = None
     valid_from: Optional[datetime] = None
     valid_until: Optional[datetime] = None
     usage_limit: Optional[int] = None
@@ -440,7 +443,16 @@ class CouponUpdate(BaseModel):
 
 class CouponValidation(BaseModel):
     code: str
-    order_value: float
+    order_value: Optional[float] = None
+    order_amount: Optional[float] = None
+
+    @property
+    def value(self) -> float:
+        if self.order_value is not None:
+            return float(self.order_value)
+        if self.order_amount is not None:
+            return float(self.order_amount)
+        return 0.0
 
 # Delivery Partner Models
 class DeliveryPartner(BaseModel):

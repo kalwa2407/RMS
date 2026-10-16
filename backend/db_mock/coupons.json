@@ -1,5 +1,23 @@
 [
   {
+    "id": "cpn_flat199",
+    "code": "FLAT199",
+    "discount_type": "flat",
+    "discount_value": 199,
+    "min_order_value": 500,
+    "description": "Flat ₹199 OFF on royal orders above ₹500",
+    "active": true
+  },
+  {
+    "id": "cpn_darbar100",
+    "code": "DARBAR100",
+    "discount_type": "flat",
+    "discount_value": 100,
+    "min_order_value": 399,
+    "description": "Flat ₹100 OFF on orders above ₹399",
+    "active": true
+  },
+  {
     "id": "cpn_royal30",
     "code": "ROYAL30",
     "discount_type": "percentage",

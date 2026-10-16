@@ -20,45 +20,45 @@ const CustomerTopBar = ({
     <header className="sticky top-0 z-40 bg-gradient-to-b from-[#FFF5D6] via-[#FFF8E7] to-[#FFFBF2] border-b border-amber-200/50 shadow-xs">
       <section className="px-4 pt-3 pb-3">
         {/* Top Row: Branch Selector & Royal Membership Pill */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           {/* Branch Selector: User directly selects from the 4 Persian Darbar Outlets */}
           <div
             onClick={onOpenLocationModal}
-            className="flex items-center space-x-2 cursor-pointer active:opacity-75 transition-opacity max-w-[70%]"
+            className="flex items-center space-x-2 cursor-pointer active:opacity-75 transition-opacity flex-1 min-w-0"
           >
             <div className="w-8 h-8 rounded-full bg-[#1C1917] text-amber-400 flex items-center justify-center shrink-0 shadow-xs border border-amber-400/40">
               <MapPin className="w-4 h-4 fill-current" />
             </div>
-            <div className="leading-tight truncate">
+            <div className="leading-tight min-w-0 flex-1 truncate">
               <div className="flex items-center space-x-1">
-                <span className="text-sm font-black text-neutral-900 truncate">
+                <span className="text-xs sm:text-sm font-black text-neutral-900 truncate">
                   {branchName}
                 </span>
                 <ChevronDown className="w-3.5 h-3.5 text-neutral-800 stroke-[3] shrink-0" />
               </div>
-              <p className="text-[11px] font-bold text-amber-900/80 truncate mt-0.5">
+              <p className="text-[10px] sm:text-[11px] font-bold text-amber-900/80 truncate mt-0.5">
                 {distanceKm ? `${distanceKm} km · ` : ''}{branchAddress}
               </p>
             </div>
           </div>
 
           {/* Right Action Icons: Zomato Gold Style Royalty Pill & Profile Avatar */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1.5 shrink-0">
             {/* Royal Club Pill */}
             <button
               onClick={onOpenWallet}
               aria-label="Royalty Membership"
-              className="px-2.5 py-1 rounded-full bg-[#1C1917] text-amber-300 border border-amber-400/50 text-xs font-black flex items-center space-x-1 shadow-xs active:scale-95 transition-transform"
+              className="px-2 py-1 rounded-full bg-[#1C1917] text-amber-300 border border-amber-400/50 text-xs font-black flex items-center space-x-1 shadow-xs active:scale-95 transition-transform shrink-0"
             >
               <Crown className="w-3 h-3 fill-amber-400 text-amber-400" />
-              <span className="text-[10px] tracking-wider uppercase">Royalty</span>
+              <span className="text-[9.5px] font-extrabold tracking-wider uppercase">Royalty</span>
             </button>
 
             {/* Profile Avatar */}
             <button
               onClick={onOpenProfile}
               aria-label="Customer Profile"
-              className="w-8 h-8 rounded-full bg-[#1C1C1C] text-amber-300 flex items-center justify-center font-bold text-xs shadow-xs active:scale-95 transition-transform overflow-hidden border border-amber-300/60"
+              className="w-8 h-8 rounded-full bg-[#1C1C1C] text-amber-300 flex items-center justify-center font-bold text-xs shadow-xs active:scale-95 transition-transform overflow-hidden border border-amber-300/60 shrink-0"
             >
               {userPhoto ? (
                 <img src={userPhoto} alt="" className="w-full h-full object-cover" />

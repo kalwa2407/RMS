@@ -270,6 +270,8 @@ export async function buildReceiptHtml(order, billNo) {
     ${order.phone        ? `<div class="sub"><b>Phone:</b> ${order.phone}</div>` : ""}
     ${order.address      ? `<div class="sub"><b>Addr:</b> ${order.address}</div>` : ""}
     ${order.table_number ? `<div><b>Table:</b> ${order.table_number}</div>` : ""}
+    ${order.cooking_instructions ? `<div class="sub" style="margin-top:2px;font-weight:bold;"><b>Chef Note:</b> ${order.cooking_instructions}</div>` : ""}
+    ${order.delivery_instructions ? `<div class="sub" style="margin-top:2px;font-weight:bold;"><b>Delivery Note:</b> ${order.delivery_instructions}</div>` : ""}
     <div class="dashed"></div>
     <div class="col-hd row-3">
       <span class="col-name">ITEM</span>
@@ -377,12 +379,32 @@ export async function buildKotHtml(order) {
     `;
   }).join("");
 
-  const specialRequest = order.special_instructions || order.cooking_instructions || order.delivery_instructions;
-  const specialReqHtml = specialRequest ? `
-    <div class="solid"></div>
-    <div class="bold" style="font-size:11px; color:#000;">SPECIAL INSTRUCTION:</div>
-    <div style="font-size:11px; font-weight:bold; margin-top:2px;">${specialRequest}</div>
-  ` : "";
+  const cookingNotes = order.cooking_instructions || order.special_instructions || (order.items && order.items[0]?.special_instructions);
+  const deliveryNotes = order.delivery_instructions;
+  const addressStr = order.address;
+
+  let specialReqHtml = "";
+  if (cookingNotes) {
+    specialReqHtml += `
+      <div class="solid"></div>
+      <div class="bold" style="font-size:11px; color:#000; text-transform:uppercase;">CHEF COOKING NOTE:</div>
+      <div style="font-size:11px; font-weight:bold; margin-top:2px; background:#f0f0f0; padding:3px; border-left:3px solid #000;">${cookingNotes}</div>
+    `;
+  }
+  if (deliveryNotes) {
+    specialReqHtml += `
+      <div class="dashed" style="margin-top:4px;"></div>
+      <div class="bold" style="font-size:11px; color:#000; text-transform:uppercase;">DELIVERY INSTRUCTIONS:</div>
+      <div style="font-size:11px; font-weight:bold; margin-top:2px; background:#f0f0f0; padding:3px; border-left:3px solid #000;">${deliveryNotes}</div>
+    `;
+  }
+  if (addressStr && (orderType === "DELIVERY" || order.order_type === "DELIVERY")) {
+    specialReqHtml += `
+      <div class="dashed" style="margin-top:4px;"></div>
+      <div class="bold" style="font-size:10px; color:#000; text-transform:uppercase;">DROP LOCATION:</div>
+      <div style="font-size:10px; margin-top:1px;">${addressStr}</div>
+    `;
+  }
 
   return `<!DOCTYPE html><html><head>
     <title>KOT - ${kotNo}</title>

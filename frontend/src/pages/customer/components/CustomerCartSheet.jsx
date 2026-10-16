@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Trash2, Plus, Minus, Tag, MapPin, Check, Sparkles, AlertCircle } from 'lucide-react';
+import { X, Trash2, Plus, Minus, Tag, MapPin, Check, Sparkles, AlertCircle, Navigation, Banknote, CreditCard, Coins, Bike } from 'lucide-react';
 
 const CustomerCartSheet = ({
   isOpen = false,
@@ -133,9 +133,10 @@ const CustomerCartSheet = ({
                 <button
                   onClick={onDetectLocation}
                   disabled={detectingLocation}
-                  className="text-[11px] font-bold text-[#E23744] hover:underline"
+                  className="text-[11px] font-bold text-[#E23744] hover:underline flex items-center space-x-1"
                 >
-                  {detectingLocation ? 'Locating...' : '⚡ GPS Auto-detect'}
+                  <Navigation className={`w-3 h-3 ${detectingLocation ? 'animate-spin' : ''}`} />
+                  <span>{detectingLocation ? 'Detecting GPS...' : 'GPS Auto-detect'}</span>
                 </button>
               </div>
               <input
@@ -148,7 +149,7 @@ const CustomerCartSheet = ({
               {distanceKm && (
                 <div className="flex items-center justify-between text-[11px] text-neutral-600 font-medium pt-0.5">
                   <span className="flex items-center space-x-1">
-                    <span>📍</span>
+                    <MapPin className="w-3 h-3 text-[#E23744]" />
                     <span>Distance from <strong>{selectedBranch?.name || 'Persian Darbar'}</strong>:</span>
                   </span>
                   <span className="font-black text-neutral-900 bg-neutral-200/60 px-2 py-0.5 rounded-md">
@@ -163,10 +164,10 @@ const CustomerCartSheet = ({
           {orderType === 'DELIVERY' && (
             <div className="bg-amber-50 border border-amber-200/80 rounded-xl p-2.5 flex items-center justify-between">
               <div className="flex items-center space-x-1.5 text-xs text-amber-900 font-bold">
-                <span>🛵</span>
+                <Bike className="w-4 h-4 text-amber-700 shrink-0" />
                 <span>
                   {freeDeliveryDiff === 0
-                    ? '🎉 You unlocked FREE Delivery!'
+                    ? 'FREE Delivery Unlocked on this order!'
                     : `Add ₹${freeDeliveryDiff} more for FREE Delivery`}
                 </span>
               </div>
@@ -325,7 +326,9 @@ const CustomerCartSheet = ({
           {pdCoins > 0 && (
             <div className="bg-gradient-to-r from-amber-50 to-yellow-50 p-3 rounded-2xl border border-amber-200 flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <span className="text-lg">🪙</span>
+                <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0 border border-amber-300">
+                  <Coins className="w-4 h-4 text-amber-600" />
+                </div>
                 <div>
                   <h4 className="text-xs font-black text-amber-900">
                     Redeem PD Coins
@@ -451,24 +454,30 @@ const CustomerCartSheet = ({
               <button
                 type="button"
                 onClick={() => onSetPayMethod('cod')}
-                className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center justify-center space-y-1 transition-all ${
+                className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center justify-center space-y-1.5 transition-all ${
                   payMethod === 'cod'
-                    ? 'border-[#E23744] bg-red-50 text-[#E23744]'
+                    ? 'border-[#E23744] bg-red-50 text-[#E23744] ring-1 ring-[#E23744]'
                     : 'border-neutral-200 bg-white text-neutral-700'
                 }`}
               >
-                <span>💵 Cash on Delivery</span>
+                <div className="flex items-center space-x-1.5">
+                  <Banknote className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Cash on Delivery</span>
+                </div>
               </button>
               <button
                 type="button"
                 onClick={() => onSetPayMethod('online')}
-                className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center justify-center space-y-1 transition-all ${
+                className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center justify-center space-y-1.5 transition-all ${
                   payMethod === 'online'
-                    ? 'border-[#E23744] bg-red-50 text-[#E23744]'
+                    ? 'border-[#E23744] bg-red-50 text-[#E23744] ring-1 ring-[#E23744]'
                     : 'border-neutral-200 bg-white text-neutral-700'
                 }`}
               >
-                <span>💳 UPI / Online (Razorpay)</span>
+                <div className="flex items-center space-x-1.5">
+                  <CreditCard className="w-4 h-4 text-sky-600 shrink-0" />
+                  <span>UPI / Online (Razorpay)</span>
+                </div>
               </button>
             </div>
           </div>

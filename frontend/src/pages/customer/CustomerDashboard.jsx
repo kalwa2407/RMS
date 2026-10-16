@@ -18,6 +18,7 @@ import CustomerCartSheet from './components/CustomerCartSheet';
 import CustomerProfileSheet from './components/CustomerProfileSheet';
 import CustomerAddressModal from './components/CustomerAddressModal';
 import CustomerPwaInstallModal from '../../components/CustomerPwaInstallModal';
+import CustomerAppSplash from './components/CustomerAppSplash';
 import {
   PERSIAN_DARBAR_BRANCHES,
   DEFAULT_PERSIAN_DARBAR_OFFERS,
@@ -106,7 +107,7 @@ const CustomerDashboard = () => {
     return fallbackDist;
   }, [userCoords, deliveryAddress]);
 
-  // Handle GPS detection
+  // Handle GPS detection with reliable Reverse Geocoding
   const handleDetectGPS = () => {
     if (!navigator.geolocation) {
       toast({ title: 'GPS Unavailable', description: 'Geolocation is not supported by your browser.' });
@@ -114,10 +115,41 @@ const CustomerDashboard = () => {
     }
     setDetectingLoc(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
         const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setUserCoords(coords);
-        setDetectingLoc(false);
+
+        // Reverse Geocode using OpenStreetMap Nominatim
+        let detectedAddress = '';
+        try {
+          const geoRes = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.lat}&lon=${coords.lng}&zoom=18&addressdetails=1`,
+            { headers: { 'Accept': 'application/json' } }
+          );
+          if (geoRes.ok) {
+            const geoData = await geoRes.json();
+            const addr = geoData.address || {};
+            const road = addr.road || addr.street || addr.pedestrian || addr.suburb || '';
+            const locality = addr.neighbourhood || addr.suburb || addr.residential || addr.city_district || '';
+            const city = addr.city || addr.town || addr.state_district || 'Mumbai';
+            const postcode = addr.postcode ? ` - ${addr.postcode}` : '';
+            detectedAddress = [road, locality, city].filter(Boolean).join(', ') + postcode;
+          }
+        } catch (e) {
+          console.warn('Reverse geocoding notice:', e);
+        }
+
+        // If Nominatim failed, pick based on city proximity
+        if (!detectedAddress) {
+          const distToPune = calculateHaversine(coords.lat, coords.lng, 18.5204, 73.8567);
+          const distToMumbai = calculateHaversine(coords.lat, coords.lng, 19.0760, 72.8777);
+          detectedAddress = distToPune < distToMumbai ? 'Camp, Pune, Maharashtra' : 'Linking Road, Bandra West, Mumbai';
+        }
+
+        setDeliveryAddress(detectedAddress);
+        try {
+          localStorage.setItem('customer_delivery_address', detectedAddress);
+        } catch (e) {}
 
         // Find nearest Persian Darbar branch
         let nearest = PERSIAN_DARBAR_BRANCHES[0];
@@ -132,25 +164,26 @@ const CustomerDashboard = () => {
 
         setSelectedBranch(nearest);
         setDistanceKm(minD);
+        setDetectingLoc(false);
+
         try {
           localStorage.setItem('pd_selected_branch', JSON.stringify(nearest));
         } catch (e) {}
 
         toast({
-          title: '📍 Nearest Outlet Selected',
-          description: `${nearest.name} is ~${minD} km away from your location.`
+          title: 'Location Detected',
+          description: `Auto-selected ${nearest.name} (~${minD} km away). Address updated.`
         });
       },
       (err) => {
         setDetectingLoc(false);
-        // Fallback to locality lookup if available
         updateDistanceForBranch(selectedBranch);
         toast({
-          title: 'Location Notice',
-          description: 'Calculated distance based on your saved Persian Darbar area.'
+          title: 'GPS Access Notice',
+          description: 'Calculated distance based on your Persian Darbar outlet.'
         });
       },
-      { timeout: 8000, enableHighAccuracy: true }
+      { timeout: 10000, enableHighAccuracy: true, maximumAge: 60000 }
     );
   };
 
@@ -372,7 +405,7 @@ const CustomerDashboard = () => {
     });
   };
 
-  // Coupon application
+  // Coupon application with minimum order validation
   const applyCouponCode = async (code) => {
     if (!code) return;
     setValidatingCoupon(true);
@@ -380,27 +413,37 @@ const CustomerDashboard = () => {
       const res = await fetch(`${API_BASE}/api/coupons/validate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, order_amount: cartSubtotal }),
+        body: JSON.stringify({
+          code: code.trim().toUpperCase(),
+          order_value: cartSubtotal,
+          order_amount: cartSubtotal,
+        }),
       });
       const data = await res.json();
-      if (data.valid) {
-        setAppliedCoupon(data.coupon);
-        setCouponDiscount(data.discount_amount);
+      if (res.ok && data.valid) {
+        const discountVal = data.discount ?? data.discount_amount ?? 0;
+        setAppliedCoupon(data.coupon || {
+          code: data.code,
+          discount_type: data.discount_type,
+          discount_value: data.discount_value,
+          min_order_value: data.min_order_value,
+        });
+        setCouponDiscount(discountVal);
         toast({
-          title: '🎉 Coupon Applied!',
-          description: `You saved ₹${data.discount_amount} with code ${code}!`,
+          title: 'Coupon Applied',
+          description: `You saved ₹${discountVal} with code ${data.code}!`,
         });
       } else {
         toast({
           title: 'Invalid Coupon',
-          description: data.message || 'Coupon could not be applied.',
+          description: data.detail || data.message || 'Coupon could not be applied.',
           variant: 'destructive',
         });
       }
     } catch (err) {
       toast({
         title: 'Error',
-        description: 'Failed to validate coupon.',
+        description: 'Failed to validate coupon. Please check connection.',
         variant: 'destructive',
       });
     } finally {
@@ -412,6 +455,19 @@ const CustomerDashboard = () => {
     setAppliedCoupon(null);
     setCouponDiscount(0);
   };
+
+  // Auto-check coupon threshold when cart items change
+  useEffect(() => {
+    if (appliedCoupon && appliedCoupon.min_order_value && cartSubtotal < appliedCoupon.min_order_value) {
+      toast({
+        title: 'Coupon Removed',
+        description: `Order subtotal is less than ₹${appliedCoupon.min_order_value} required for code ${appliedCoupon.code}.`,
+        variant: 'destructive',
+      });
+      setAppliedCoupon(null);
+      setCouponDiscount(0);
+    }
+  }, [cartSubtotal, appliedCoupon]);
 
   // Place Order Handler
   const handlePlaceOrder = async ({ address, phone }) => {
@@ -552,7 +608,7 @@ const CustomerDashboard = () => {
     } else if (offer.coupon_code) {
       navigator.clipboard?.writeText(offer.coupon_code);
       toast({
-        title: '🎟️ Code Copied!',
+        title: 'Code Copied',
         description: `Copied ${offer.coupon_code}. Apply at checkout for discount.`,
       });
       setIsCartOpen(true);
@@ -573,6 +629,9 @@ const CustomerDashboard = () => {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] text-neutral-900 font-sans flex flex-col items-center">
+      {/* ── Apple iOS Luxury Startup Splash Preloader ── */}
+      <CustomerAppSplash isReady={!offersLoading} minDurationMs={600} />
+
       {/* ── Main Mobile Shell Container (Zomato iOS 430px) ── */}
       <div className="w-full max-w-[430px] min-h-screen bg-[#F8F9FA] flex flex-col shadow-2xl relative pb-28">
 

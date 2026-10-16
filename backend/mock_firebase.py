@@ -262,7 +262,7 @@ class MockFirebaseManager(BaseDataManager):
     async def validate_coupon(self, code: str) -> Optional[Dict[str, Any]]:
         coupons = self._read_sync("coupons")
         for c in coupons:
-            if c.get("code") == code.upper() and c.get("active", True):
+            if c.get("code", "").strip().upper() == (code or "").strip().upper() and c.get("active", True):
                 return c
         return None
 

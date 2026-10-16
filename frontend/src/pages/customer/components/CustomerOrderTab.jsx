@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Minus, Star, Search, Tag, Sparkles } from 'lucide-react';
+import { Plus, Minus, Star, Search, Tag, Sparkles, Crown } from 'lucide-react';
 import { PERSIAN_DARBAR_CATEGORIES } from '../customerAssets';
 
 const CustomerOrderTab = ({
@@ -154,7 +154,7 @@ const CustomerOrderTab = ({
       })()}
 
       {/* ── Category Roundels Scroll Bar (Matching Screenshot 4) ── */}
-      <section className="sticky top-[102px] z-20 bg-white/95 backdrop-blur-md border-b border-neutral-100 py-2.5">
+      <section className="bg-white border-b border-neutral-100 py-2.5">
         <div className="flex items-center space-x-3 overflow-x-auto no-scrollbar px-4">
           {/* Best Offers Applied Card */}
           <div
@@ -228,13 +228,14 @@ const CustomerOrderTab = ({
         </button>
         <button
           onClick={() => setFilterType('bestseller')}
-          className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex items-center space-x-1 ${
+          className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex items-center space-x-1.5 ${
             filterType === 'bestseller'
               ? 'bg-amber-500 text-black shadow-xs font-black'
               : 'bg-white text-amber-800 border border-amber-200'
           }`}
         >
-          <span>👑 Bestsellers</span>
+          <Crown className="w-3.5 h-3.5 fill-current" />
+          <span>Bestsellers</span>
         </button>
         <button
           onClick={() => setFilterType(filterType === 'veg' ? 'all' : 'veg')}

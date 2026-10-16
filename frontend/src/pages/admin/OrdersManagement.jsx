@@ -3,7 +3,7 @@ import { Check, X, Clock, Package, Truck, Home, Printer, Eye, Bell, Trash2, Bike
 import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
 import API_BASE from "../../lib/config";
-import { printOrder, getPrintMode, isSerialPrinterConnected, connectSerialPrinter } from "../../lib/PrintService";
+import { printOrder, printKOT, getPrintMode, isSerialPrinterConnected, connectSerialPrinter } from "../../lib/PrintService";
 
 /* Porter status → display config */
 const PORTER_STATUS_DISPLAY = {
@@ -489,6 +489,15 @@ const OrdersManagement = () => {
     }
   };
 
+  const printOnlineOrderKOT = async (order) => {
+    try {
+      await printKOT(order, printMode);
+      toast({ title: "KOT Printed", description: "Kitchen order ticket printed successfully." });
+    } catch (err) {
+      toast({ title: "KOT Print Failed", description: "Could not print KOT.", variant: "destructive" });
+    }
+  };
+
   const printInvoice = async (order) => {
     try {
       const token = localStorage.getItem("admin_token");
@@ -957,6 +966,24 @@ const OrdersManagement = () => {
                     </div>
                   </div>
 
+                  {/* Cooking & Delivery Instructions from Online Customer */}
+                  {(order.cooking_instructions || order.delivery_instructions || order.special_instructions) && (
+                    <div className="mb-3 space-y-1.5 p-2.5 rounded-xl bg-[#0a1e26] border border-[#EAB308]/20">
+                      {(order.cooking_instructions || order.special_instructions) && (
+                        <div className="flex items-start gap-1.5 text-xs text-amber-300">
+                          <span className="font-bold shrink-0">🍳 Chef Note:</span>
+                          <span className="text-amber-100">{order.cooking_instructions || order.special_instructions}</span>
+                        </div>
+                      )}
+                      {order.delivery_instructions && (
+                        <div className="flex items-start gap-1.5 text-xs text-emerald-300">
+                          <span className="font-bold shrink-0">🛵 Delivery Note:</span>
+                          <span className="text-emerald-100">{order.delivery_instructions}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Totals */}
                   <div className="border-t border-[#EAB308]/15 pt-3 mb-4">
                     <div className="flex justify-between text-xs text-gray-400 mb-1">
@@ -988,8 +1015,8 @@ const OrdersManagement = () => {
                       </button>
                     ))}
 
-                    {/* Print Bill (online orders) */}
-                    {["accepted", "preparing", "ready", "out_for_delivery", "delivered"].includes(order.status) && order.order_type !== "DINE_IN" && (
+                    {/* Print Bill & KOT (online orders - including newly placed) */}
+                    {["placed", "accepted", "preparing", "ready", "out_for_delivery", "delivered"].includes(order.status) && order.order_type !== "DINE_IN" && (
                       <div className="flex items-center gap-1.5">
                         {order.bill_number && (
                           <span className="bg-[#EAB308]/15 text-[#EAB308] font-mono text-xs px-2 py-1 rounded font-bold border border-[#EAB308]/30">
@@ -1003,6 +1030,15 @@ const OrdersManagement = () => {
                         >
                           <Printer className="w-4 h-4" />
                           <span>Print Bill</span>
+                        </button>
+
+                        <button
+                          onClick={() => printOnlineOrderKOT(order)}
+                          className="bg-orange-500/10 border border-orange-500/30 text-orange-300 hover:bg-orange-500/20 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors"
+                          title="Print Kitchen Order Ticket (KOT)"
+                        >
+                          <Printer className="w-4 h-4 text-orange-400" />
+                          <span>Print KOT</span>
                         </button>
                       </div>
                     )}
