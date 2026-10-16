@@ -62,6 +62,16 @@ const CustomerDashboard = () => {
   const [profileInitialTab, setProfileInitialTab] = useState('orders');
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
 
+  // ── First-time / Unauthenticated Guard ──
+  // If user is not logged in and has not chosen to explore as guest, direct to login
+  useEffect(() => {
+    const token = localStorage.getItem('customer_jwt');
+    const guestAllowed = sessionStorage.getItem('customer_guest_browse');
+    if (!token && !currentUser && !guestAllowed) {
+      navigate('/customer/login', { replace: true });
+    }
+  }, [currentUser, navigate]);
+
 
   // ── Persian Darbar 4 Official Branches Location & True Haversine Distance Engine ──
   const [selectedBranch, setSelectedBranch] = useState(() => {
@@ -481,13 +491,26 @@ const CustomerDashboard = () => {
     }
   }, [cartSubtotal, appliedCoupon]);
 
-  // Place Order Handler
-  const handlePlaceOrder = async ({ address, phone }) => {
+  // Place Order Handler (LOGIN COMPULSORY)
+  const handlePlaceOrder = async (arg = {}) => {
+    if (!currentUser) {
+      setIsCartOpen(false);
+      toast({
+        title: 'Login Required',
+        description: 'Please log in or sign up to place your royal Persian Darbar order.',
+        variant: 'destructive',
+      });
+      navigate('/customer/login', { state: { from: { pathname: '/customer/dashboard' } } });
+      return;
+    }
+
     if (cart.length === 0) return;
-    if (orderType === 'DELIVERY' && !address?.trim()) {
+    const finalAddress = (typeof arg?.address === 'string' ? arg.address : deliveryAddress) || customerProfile?.address || '';
+    if (orderType === 'DELIVERY' && !finalAddress?.trim()) {
       alert('Please enter a delivery address');
       return;
     }
+    const finalPhone = (typeof arg?.phone === 'string' ? arg.phone : '') || customerProfile?.phone || currentUser?.phoneNumber || localStorage.getItem('customer_phone') || '';
     setPlacingOrder(true);
 
     const combinedCookingNotes = [
@@ -502,8 +525,8 @@ const CustomerDashboard = () => {
       customer_name: currentUser?.displayName || customerProfile?.name || 'Valued Guest',
       email: currentUser?.email || 'guest@persiandarbar.in',
       customer_email: currentUser?.email || 'guest@persiandarbar.in',
-      phone: phone || customerProfile?.phone || localStorage.getItem('customer_phone') || '9876543210',
-      address: address.trim(),
+      phone: finalPhone || '9876543210',
+      address: finalAddress.trim(),
       order_type: orderType,
       distance_km: distanceKm || 3.5,
       payment_method: payMethod,
@@ -573,8 +596,17 @@ const CustomerDashboard = () => {
     }
   };
 
-  // ── Book Table Handler ──
-  const handleBookTable = async ({ date, time, guests, special_requests, dining_mood }) => {
+  // ── Book Table Handler (LOGIN COMPULSORY) ──
+  const handleBookTable = async ({ date, time, guests, special_requests, dining_mood } = {}) => {
+    if (!currentUser) {
+      toast({
+        title: 'Login Required',
+        description: 'Please log in or sign up to reserve your royal table.',
+        variant: 'destructive',
+      });
+      navigate('/customer/login', { state: { from: { pathname: '/customer/dashboard', search: '?tab=reserve' } } });
+      return;
+    }
     setBookingLoading(true);
     try {
       let activeToken = idToken;
@@ -776,9 +808,11 @@ const CustomerDashboard = () => {
                 toast({ title: 'Address Saved', description: 'Default address updated.' });
               }}
               onSignOut={async () => {
+                sessionStorage.removeItem('customer_guest_browse');
                 await signOutCustomer();
                 setActiveTab('home');
                 toast({ title: 'Signed Out', description: 'See you again at Persian Darbar!' });
+                navigate('/customer/login', { replace: true });
               }}
               onGoToOrder={() => setActiveTab('order')}
               onGoToReserve={() => setActiveTab('reserve')}
@@ -822,6 +856,7 @@ const CustomerDashboard = () => {
         <CustomerCartSheet
           isOpen={isCartOpen}
           onClose={() => setIsCartOpen(false)}
+          currentUser={currentUser}
           cart={cart}
           onAddToCart={addToCart}
           onUpdateQty={updateCartQty}
@@ -908,9 +943,11 @@ const CustomerDashboard = () => {
             }
           }}
           onSignOut={async () => {
+            sessionStorage.removeItem('customer_guest_browse');
             await signOutCustomer();
             setIsProfileOpen(false);
             toast({ title: 'Signed Out', description: 'See you again at Persian Darbar!' });
+            navigate('/customer/login', { replace: true });
           }}
           pdCoins={customerProfile?.coins ?? customerProfile?.loyalty_points ?? 450}
           initialTab={profileInitialTab}

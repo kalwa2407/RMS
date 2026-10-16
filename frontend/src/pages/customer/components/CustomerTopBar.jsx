@@ -20,7 +20,7 @@ const CustomerTopBar = ({
     <header
       className="sticky top-0 z-40 bg-gradient-to-b from-[#FFF5D6] via-[#FFF8E7] to-[#FFFBF2] border-b border-amber-200/50 shadow-xs"
       style={{
-        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)'
+        paddingTop: 'calc(max(env(safe-area-inset-top, 0px), 20px) + 10px)'
       }}
     >
       <section className="px-4 pt-1.5 pb-3">

@@ -29,8 +29,13 @@ const CustomerSearchExplore = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-white flex flex-col overflow-y-auto no-scrollbar max-w-[430px] mx-auto animate-in fade-in duration-200">
-      {/* ── Search Header ── */}
-      <div className="sticky top-0 z-20 bg-white border-b border-neutral-100 px-4 pt-3 pb-3">
+      {/* ── Search Header (Safe Area Padded for Dynamic Island & Notch) ── */}
+      <div
+        className="sticky top-0 z-20 bg-white border-b border-neutral-100 px-4 pb-3"
+        style={{
+          paddingTop: 'calc(max(env(safe-area-inset-top, 0px), 24px) + 12px)'
+        }}
+      >
         <div className="flex items-center gap-2.5">
           {/* Back Navigation Button */}
           <button

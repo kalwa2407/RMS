@@ -5,6 +5,7 @@ import { X, Trash2, Plus, Minus, Tag, MapPin, Check, Sparkles, AlertCircle, Navi
 const CustomerCartSheet = ({
   isOpen = false,
   onClose,
+  currentUser = null,
   cart = [],
   onUpdateCartQty,
   onClearCart,
@@ -492,14 +493,23 @@ const CustomerCartSheet = ({
         </div>
 
         {/* ── Fixed Footer CTA ── */}
-        <div className="p-4 border-t border-gray-100 bg-white">
+        <div
+          className="p-4 border-t border-gray-100 bg-white"
+          style={{
+            paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)'
+          }}
+        >
           <button
             onClick={onPlaceOrder}
             disabled={placingOrder}
             className="w-full bg-[#E23744] hover:bg-[#CB202D] text-white font-extrabold text-sm py-3.5 rounded-2xl shadow-lg active:scale-98 transition-all disabled:opacity-50 flex items-center justify-center space-x-2"
           >
             <span>
-              {placingOrder ? 'Confirming Order...' : `Confirm Order · ₹${cartTotal.toLocaleString()}`}
+              {placingOrder
+                ? 'Confirming Order...'
+                : currentUser
+                ? `Confirm Order · ₹${cartTotal.toLocaleString()}`
+                : `Login to Confirm Order · ₹${cartTotal.toLocaleString()}`}
             </span>
           </button>
         </div>

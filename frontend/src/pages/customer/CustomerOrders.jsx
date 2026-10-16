@@ -141,7 +141,15 @@ const CustomerOrders = () => {
     <div className="h-[100dvh] flex flex-col overflow-hidden" style={{ background: "#070d14" }}>
 
       {/* ─── Fixed Header ─── */}
-      <div className="shrink-0" style={{ background: "rgba(7,13,20,0.98)", borderBottom: "1px solid rgba(234,179,8,0.1)", backdropFilter: "blur(16px)" }}>
+      <div
+        className="shrink-0"
+        style={{
+          background: "rgba(7,13,20,0.98)",
+          borderBottom: "1px solid rgba(234,179,8,0.1)",
+          backdropFilter: "blur(16px)",
+          paddingTop: "calc(max(env(safe-area-inset-top, 0px), 20px) + 8px)"
+        }}
+      >
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             <Link to="/customer/dashboard" className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-[#EAB308] transition-colors">

@@ -35,10 +35,13 @@ const CustomerLogin = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || '/customer/dashboard';
+  const fromPath = location.state?.from?.pathname || '/customer/dashboard';
+  const fromSearch = location.state?.from?.search || '';
+  const from = `${fromPath}${fromSearch}`;
 
   useEffect(() => {
     if (!loading && currentUser) {
+      sessionStorage.setItem('customer_guest_browse', 'true');
       navigate(from, { replace: true });
     }
   }, [currentUser, loading, navigate, from]);
@@ -139,7 +142,7 @@ const CustomerLogin = () => {
       <div
         className="w-full max-w-[430px] min-h-screen bg-white flex flex-col shadow-xl relative"
         style={{
-          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)',
+          paddingTop: 'calc(max(env(safe-area-inset-top, 0px), 20px) + 12px)',
           paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 20px)'
         }}
       >
@@ -162,7 +165,10 @@ const CustomerLogin = () => {
             <ChevronLeft className="w-5 h-5" />
           </button>
 
-          <Link to="/customer/dashboard">
+          <Link
+            to="/customer/dashboard"
+            onClick={() => sessionStorage.setItem('customer_guest_browse', 'true')}
+          >
             <span className="text-xs font-bold text-neutral-600 bg-neutral-100 hover:bg-neutral-200 px-3.5 py-1.5 rounded-full transition-colors">
               Skip
             </span>

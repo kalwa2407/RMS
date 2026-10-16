@@ -302,7 +302,12 @@ const CustomerReservations = () => {
       <div className="w-full max-w-[430px] min-h-screen bg-[#F8F9FA] flex flex-col shadow-2xl relative pb-28">
 
         {/* ── BEGIN: iOS Top Navigation Bar ── */}
-        <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-neutral-200/80 px-4 py-3">
+        <header
+          className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-neutral-200/80 px-4 py-3"
+          style={{
+            paddingTop: "calc(max(env(safe-area-inset-top, 0px), 20px) + 8px)"
+          }}
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <button

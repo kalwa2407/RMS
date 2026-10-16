@@ -38,6 +38,10 @@ const CustomerDiningTab = ({
 
   const handleSubmitBooking = (e) => {
     e.preventDefault();
+    if (!currentUser) {
+      onBookTable({});
+      return;
+    }
     onBookTable({
       date: selectedDate,
       time: selectedTime,
@@ -293,7 +297,7 @@ const CustomerDiningTab = ({
                   disabled={bookingLoading}
                   className="w-full bg-[#E23744] hover:bg-[#d02e3b] text-white font-black text-xs sm:text-sm py-3.5 rounded-2xl shadow-lg shadow-red-500/20 active:scale-98 transition-all disabled:opacity-50 cursor-pointer"
                 >
-                  {bookingLoading ? 'Reserving Table...' : 'Confirm Royal Table Reservation ›'}
+                  {bookingLoading ? 'Reserving Table...' : currentUser ? 'Confirm Royal Table Reservation ›' : 'Login to Reserve Table ›'}
                 </button>
               </form>
             )}

@@ -106,7 +106,12 @@ const NativeRootRedirect = () => {
       }
 
       if (isCustomer) {
-        navigate("/customer/dashboard", { replace: true });
+        const token = localStorage.getItem('customer_jwt');
+        if (token) {
+          navigate("/customer/dashboard", { replace: true });
+        } else {
+          navigate("/customer/login", { replace: true });
+        }
       } else if (sessionStorage.getItem("allow_public_website") !== "true") {
         navigate("/staff-entry", { replace: true });
       }
