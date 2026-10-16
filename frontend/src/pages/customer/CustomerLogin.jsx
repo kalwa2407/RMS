@@ -188,7 +188,7 @@ const CustomerLogin = () => {
             <img
               src="/persian_darbar_crown_logo.png"
               alt="Persian Darbar"
-              className="w-14 h-14 rounded-2xl shadow-md border border-amber-400/50 object-contain mx-auto"
+              className="w-20 h-20 rounded-3xl shadow-lg border border-amber-400/50 object-contain mx-auto"
             />
             <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[9px] font-black border border-white shadow-xs">
               ✓

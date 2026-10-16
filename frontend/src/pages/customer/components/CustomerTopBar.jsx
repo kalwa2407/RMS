@@ -108,9 +108,11 @@ const CustomerTopBar = ({
             onClick={onOpenLocationModal}
             className="flex items-center space-x-2 cursor-pointer active:opacity-75 transition-opacity flex-1 min-w-0"
           >
-            <div className="w-8 h-8 rounded-full bg-[#1C1917] text-amber-400 flex items-center justify-center shrink-0 shadow-xs border border-amber-400/40">
-              <MapPin className="w-4 h-4 fill-current" />
-            </div>
+            <img
+              src="/persian_darbar_crown_logo.png"
+              alt="Persian Darbar"
+              className="w-8 h-8 rounded-xl object-contain shrink-0 shadow-xs border border-amber-400/40"
+            />
             <div className="leading-tight min-w-0 flex-1 truncate">
               <div className="flex items-center space-x-1">
                 <span className="text-xs sm:text-sm font-black text-neutral-900 truncate">
