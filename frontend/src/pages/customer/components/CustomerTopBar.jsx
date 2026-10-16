@@ -17,8 +17,13 @@ const CustomerTopBar = ({
   const branchAddress = selectedBranch?.shortAddress || 'Linking Road, Bandra West';
 
   return (
-    <header className="sticky top-0 z-40 bg-gradient-to-b from-[#FFF5D6] via-[#FFF8E7] to-[#FFFBF2] border-b border-amber-200/50 shadow-xs">
-      <section className="px-4 pt-3 pb-3">
+    <header
+      className="sticky top-0 z-40 bg-gradient-to-b from-[#FFF5D6] via-[#FFF8E7] to-[#FFFBF2] border-b border-amber-200/50 shadow-xs"
+      style={{
+        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)'
+      }}
+    >
+      <section className="px-4 pt-1.5 pb-3">
         {/* Top Row: Branch Selector & Royal Membership Pill */}
         <div className="flex items-center justify-between gap-2">
           {/* Branch Selector: User directly selects from the 4 Persian Darbar Outlets */}

@@ -198,10 +198,13 @@ const CustomerUnder250Tab = ({
               >
                 <div className="relative h-36 w-full rounded-xl overflow-hidden bg-neutral-100 mb-2.5">
                   <img
-                    src={dish.image || '/no-image.png'}
+                    src={dish.image && !dish.image.includes('no-image.png') && !dish.image.includes('photo-1701579231305-d7d8af9a3fd') ? dish.image : `/dynamic_images/img${(((dish._id || dish.id || 1) % 9) + 1)}.jpeg`}
                     alt={dish.name}
                     className="w-full h-full object-cover"
-                    onError={(e) => { e.target.src = '/no-image.png'; }}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = `/dynamic_images/img${(((dish._id || dish.id || 1) % 9) + 1)}.jpeg`;
+                    }}
                   />
                   <span className="absolute bottom-2 left-2 bg-[#24963F] text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-xs">
                     ★ {dish.rating || '4.5'}

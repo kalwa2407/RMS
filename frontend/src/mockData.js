@@ -55,7 +55,7 @@ export const menuItems = [
     category: "Biryani",
     description: "Fragrant basmati rice with succulent chicken pieces, aromatic spices",
     price: 380,
-    image: "https://images.unsplash.com/photo-1701579231305-d7d8af9a3fd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzB8MHwxfHNlYXJjaHwxfHxiaXJ5YW5pfGVufDB8fHx8MTc2MzA5NDkyN3ww&ixlib=rb-4.1.0&q=85",
+    image: "/dynamic_images/img1.jpeg",
     popular: true,
     available: true
   },
@@ -85,7 +85,7 @@ export const menuItems = [
     category: "Biryani",
     description: "Juicy prawns cooked with fragrant basmati rice",
     price: 645,
-    image: "https://images.unsplash.com/photo-1701579231305-d7d8af9a3fd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzB8MHwxfHNlYXJjaHwxfHxiaXJ5YW5pfGVufDB8fHx8MTc2MzA5NDkyN3ww&ixlib=rb-4.1.0&q=85",
+    image: "/dynamic_images/img3.jpeg",
     popular: false,
     available: true
   },

@@ -7,6 +7,7 @@ import {
   PATRON_REVIEWS,
   getDishMetrics
 } from '../customerAssets';
+import CustomerDishDetailModal from './CustomerDishDetailModal';
 
 
 const CustomerHomeTab = ({
@@ -26,6 +27,8 @@ const CustomerHomeTab = ({
 }) => {
   // Offer Carousel State
   const [activeOfferIdx, setActiveOfferIdx] = useState(0);
+
+  const [selectedDishDetail, setSelectedDishDetail] = useState(null);
 
   // Active offers (from Admin API or authentic defaults)
   const activeOffersList = offers && offers.length > 0 ? offers : DEFAULT_PERSIAN_DARBAR_OFFERS;
@@ -228,31 +231,34 @@ const CustomerHomeTab = ({
           </div>
 
           <div className="flex space-x-3 overflow-x-auto no-scrollbar pb-2">
-            {displayedChefSpecials.map((dish) => {
-              const inCart = cart.find((c) => c._id === dish._id);
+            {displayedChefSpecials.map((dish, idx) => {
+              const inCart = cart.find((c) => c._id === dish._id || c.id === dish.id);
+              const fallbackImg = `/dynamic_images/img${((idx % 9) + 1)}.jpeg`;
+              const dishImg = dish.image && !dish.image.includes('no-image.png') && !dish.image.includes('photo-1701579231305-d7d8af9a3fd')
+                ? dish.image
+                : fallbackImg;
+              const { rating } = getDishMetrics(dish);
+
               return (
                 <div
-                  key={dish._id}
-                  className="w-44 shrink-0 bg-white rounded-3xl border border-neutral-200/80 overflow-hidden shadow-xs flex flex-col justify-between"
+                  key={dish._id || dish.id || idx}
+                  onClick={() => setSelectedDishDetail(dish)}
+                  className="w-44 shrink-0 bg-white rounded-3xl border border-neutral-200/80 overflow-hidden shadow-xs flex flex-col justify-between cursor-pointer active:scale-[0.98] transition-all hover:border-neutral-300"
                 >
                   <div className="relative h-28 w-full bg-neutral-100">
                     <img
-                      src={dish.image || '/dynamic_images/img1.jpeg'}
+                      src={dishImg}
                       alt={dish.name}
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        e.target.src = '/no-image.png';
+                        e.target.onerror = null;
+                        e.target.src = fallbackImg;
                       }}
                     />
-                    {(() => {
-                      const { rating } = getDishMetrics(dish);
-                      return (
-                        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-xs text-white text-[10px] font-black px-1.5 py-0.5 rounded-md flex items-center space-x-0.5">
-                          <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
-                          <span>{dish.rating ? Number(dish.rating).toFixed(1) : rating}</span>
-                        </div>
-                      );
-                    })()}
+                    <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-xs text-white text-[10px] font-black px-1.5 py-0.5 rounded-md flex items-center space-x-0.5">
+                      <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                      <span>{dish.rating ? Number(dish.rating).toFixed(1) : rating}</span>
+                    </div>
                   </div>
 
                   <div className="p-3 flex-1 flex flex-col justify-between">
@@ -265,24 +271,24 @@ const CustomerHomeTab = ({
                       </p>
                     </div>
 
-                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-neutral-100">
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-neutral-100" onClick={(e) => e.stopPropagation()}>
                       <span className="text-xs font-black text-neutral-900">
                         ₹{dish.price}
                       </span>
 
                       {inCart ? (
                         <div className="flex items-center space-x-1.5 bg-red-50 text-[#E23744] border border-[#E23744] rounded-lg px-2 py-0.5 text-xs font-bold">
-                          <button onClick={() => onUpdateCartQty(dish._id, -1)}>
+                          <button onClick={() => onUpdateCartQty(dish._id || dish.id, -1)}>
                             <Minus className="w-3 h-3" />
                           </button>
                           <span className="font-black">{inCart.quantity}</span>
-                          <button onClick={() => onUpdateCartQty(dish._id, 1)}>
+                          <button onClick={() => onUpdateCartQty(dish._id || dish.id, 1)}>
                             <Plus className="w-3 h-3" />
                           </button>
                         </div>
                       ) : (
                         <button
-                          onClick={() => onAddToCart(dish)}
+                          onClick={() => setSelectedDishDetail(dish)}
                           className="bg-red-50 hover:bg-[#E23744] hover:text-white text-[#E23744] border border-red-200 font-black text-[11px] px-3 py-1 rounded-lg transition-colors active:scale-95 cursor-pointer"
                         >
                           + ADD
@@ -321,21 +327,28 @@ const CustomerHomeTab = ({
             </div>
 
             <div className="grid grid-cols-2 gap-2.5">
-              {trendingDelicacies.slice(0, 4).map((dish) => {
-                const inCart = cart.find((c) => c._id === dish._id);
+              {trendingDelicacies.slice(0, 4).map((dish, idx) => {
+                const inCart = cart.find((c) => c._id === dish._id || c.id === dish.id);
                 const { orderCount } = getDishMetrics(dish);
+                const fallbackImg = `/dynamic_images/img${(((idx + 2) % 9) + 1)}.jpeg`;
+                const dishImg = dish.image && !dish.image.includes('no-image.png') && !dish.image.includes('photo-1701579231305-d7d8af9a3fd')
+                  ? dish.image
+                  : fallbackImg;
+
                 return (
                   <div
-                    key={dish._id}
-                    className="bg-white rounded-2xl p-2.5 border border-amber-900/10 flex flex-col justify-between shadow-xs"
+                    key={dish._id || dish.id || idx}
+                    onClick={() => setSelectedDishDetail(dish)}
+                    className="bg-white rounded-2xl p-2.5 border border-amber-900/10 flex flex-col justify-between shadow-xs cursor-pointer active:scale-[0.98] transition-all hover:border-amber-300"
                   >
                     <div className="h-20 w-full rounded-xl overflow-hidden bg-neutral-100 mb-2 relative">
                       <img
-                        src={dish.image || '/dynamic_images/img2.jpeg'}
+                        src={dishImg}
                         alt={dish.name}
                         className="w-full h-full object-cover"
                         onError={(e) => {
-                          e.target.src = '/no-image.png';
+                          e.target.onerror = null;
+                          e.target.src = fallbackImg;
                         }}
                       />
                       <span className="absolute bottom-1 right-1 bg-black/60 text-white text-[8px] font-black px-1.5 py-0.2 rounded">
@@ -343,24 +356,23 @@ const CustomerHomeTab = ({
                       </span>
                     </div>
 
-
                     <div>
                       <h4 className="text-xs font-black text-neutral-900 leading-tight truncate">
                         {dish.name}
                       </h4>
-                      <div className="flex items-center justify-between mt-1.5">
+                      <div className="flex items-center justify-between mt-1.5" onClick={(e) => e.stopPropagation()}>
                         <span className="text-xs font-black text-neutral-900">
                           ₹{dish.price}
                         </span>
                         {inCart ? (
                           <div className="flex items-center space-x-1 bg-red-50 text-[#E23744] border border-[#E23744] rounded px-1.5 py-0.2 text-[11px] font-bold">
-                            <button onClick={() => onUpdateCartQty(dish._id, -1)}>-</button>
+                            <button onClick={() => onUpdateCartQty(dish._id || dish.id, -1)}>-</button>
                             <span className="font-black px-1">{inCart.quantity}</span>
-                            <button onClick={() => onUpdateCartQty(dish._id, 1)}>+</button>
+                            <button onClick={() => onUpdateCartQty(dish._id || dish.id, 1)}>+</button>
                           </div>
                         ) : (
                           <button
-                            onClick={() => onAddToCart(dish)}
+                            onClick={() => setSelectedDishDetail(dish)}
                             className="bg-red-50 text-[#E23744] hover:bg-[#E23744] hover:text-white border border-red-200 text-[10px] font-black px-2 py-0.5 rounded transition-colors"
                           >
                             + ADD
@@ -494,6 +506,13 @@ const CustomerHomeTab = ({
         </div>
       </section>
 
+      {/* ── Dish Detail & Customization Modal (Screenshot 4) ── */}
+      <CustomerDishDetailModal
+        dish={selectedDishDetail}
+        isOpen={Boolean(selectedDishDetail)}
+        onClose={() => setSelectedDishDetail(null)}
+        onAddToCart={onAddToCart}
+      />
     </div>
   );
 };

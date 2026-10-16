@@ -17,7 +17,13 @@ const CustomerDockNav = ({
   ];
 
   return (
-    <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[430px] px-3 pb-3 pt-1 z-40 pointer-events-none">
+    <nav
+      className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[430px] px-3 z-40 pointer-events-none"
+      style={{
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)',
+        paddingTop: '4px'
+      }}
+    >
       {/* ── Floating Cart Capsule Banner (Shown when cart has items) ── */}
       {cartCount > 0 && (
         <div className="mb-2 pointer-events-auto animate-in slide-in-from-bottom duration-200">

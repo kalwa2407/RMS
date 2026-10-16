@@ -114,11 +114,12 @@ const CustomerSearchExplore = ({
                     {/* Dish Image & Add to Cart button */}
                     <div className="relative w-20 h-20 rounded-2xl overflow-hidden shrink-0 bg-neutral-100 border border-neutral-100">
                       <img
-                        src={dish.image || '/dynamic_images/img1.jpeg'}
+                        src={dish.image && !dish.image.includes('no-image.png') && !dish.image.includes('photo-1701579231305-d7d8af9a3fd') ? dish.image : `/dynamic_images/img${(((dish._id || dish.id || 1) % 9) + 1)}.jpeg`}
                         alt={dish.name}
                         className="w-full h-full object-cover"
                         onError={(e) => {
-                          e.target.src = '/no-image.png';
+                          e.target.onerror = null;
+                          e.target.src = `/dynamic_images/img${(((dish._id || dish.id || 1) % 9) + 1)}.jpeg`;
                         }}
                       />
                       <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-[88%]">
