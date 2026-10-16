@@ -486,7 +486,9 @@ const CustomerDashboard = () => {
     const combinedDeliveryNotes = deliveryTags.join(' | ');
 
     const orderData = {
+      customer_uid: currentUser?.uid || null,
       customer_name: currentUser?.displayName || customerProfile?.name || 'Valued Guest',
+      email: currentUser?.email || 'guest@persiandarbar.in',
       customer_email: currentUser?.email || 'guest@persiandarbar.in',
       phone: phone || customerProfile?.phone || localStorage.getItem('customer_phone') || '9876543210',
       address: address.trim(),
@@ -562,7 +564,17 @@ const CustomerDashboard = () => {
   const handleBookTable = async ({ date, time, guests, special_requests }) => {
     setBookingLoading(true);
     try {
+      let activeToken = idToken;
+      if (currentUser) {
+        try {
+          activeToken = await currentUser.getIdToken();
+        } catch (e) {}
+      }
+      const headers = { 'Content-Type': 'application/json' };
+      if (activeToken) headers['Authorization'] = `Bearer ${activeToken}`;
+
       const body = {
+        customer_uid: currentUser?.uid || null,
         customer_name: currentUser?.displayName || customerProfile?.name || 'Valued Guest',
         phone: customerProfile?.phone || localStorage.getItem('customer_phone') || '9876543210',
         email: currentUser?.email || 'guest@persiandarbar.in',
@@ -575,9 +587,10 @@ const CustomerDashboard = () => {
 
       const res = await fetch(`${API_BASE}/api/reservations`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(body)
       });
+
 
       if (res.ok) {
         const data = await res.json();

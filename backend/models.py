@@ -186,6 +186,7 @@ class OrderCreate(BaseModel):
     customer_name: str
     phone: str
     email: Optional[str] = None
+    customer_email: Optional[str] = None
     address: str = ""  # Optional for dine-in
     distance_km: Optional[float] = None  # Distance from restaurant in km
     items: List[OrderItem]
@@ -204,6 +205,7 @@ class OrderCreate(BaseModel):
     coins_discount: float = 0.0     # Calculated discount value from coins (mirrors coins_to_redeem)
     cooking_instructions: Optional[str] = None
     delivery_instructions: Optional[str] = None
+
 
 # Table Order Create (simplified for QR ordering)
 class TableOrderCreate(BaseModel):
@@ -293,6 +295,8 @@ class ReservationCreate(BaseModel):
     guests: int
     table_number: Optional[int] = None
     special_requests: Optional[str] = None
+    status: Optional[str] = "confirmed"
+
 
 class ReservationStatusUpdate(BaseModel):
     status: str

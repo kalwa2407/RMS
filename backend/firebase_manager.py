@@ -1,4 +1,5 @@
 import os
+import json
 import uuid
 import logging
 import time
@@ -6,6 +7,7 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 from pathlib import Path
 from data_manager import BaseDataManager
+
 
 # ---------------------------------------------------------------------------
 # Simple in-memory TTL cache -- eliminates repeat Firestore round-trips.
@@ -83,7 +85,17 @@ class FirebaseManager(BaseDataManager):
     # Compatibility methods for server.py fast-built endpoints
     async def _read(self, collection: str) -> List[Dict[str, Any]]:
         docs = self.db.collection(collection).stream()
-        return [doc.to_dict() for doc in docs]
+        results = [doc.to_dict() for doc in docs]
+        if not results and collection == "coupons":
+            try:
+                mock_path = os.path.join(os.path.dirname(__file__), "db_mock", "coupons.json")
+                if os.path.exists(mock_path):
+                    with open(mock_path, "r", encoding="utf-8") as f:
+                        results = json.load(f)
+            except Exception as e:
+                logger.warning(f"Error reading mock coupons fallback: {e}")
+        return results
+
 
     async def _write(self, collection: str, data: List[Dict[str, Any]]):
         # Invalidate cache for affected collection
@@ -303,10 +315,22 @@ class FirebaseManager(BaseDataManager):
         return False
 
     async def validate_coupon(self, code: str) -> Optional[Dict[str, Any]]:
-        docs = self.db.collection('coupons').where('code', '==', code.upper()).where('active', '==', True).stream()
+        code_upper = code.upper().strip()
+        docs = self.db.collection('coupons').where('code', '==', code_upper).where('active', '==', True).stream()
         for doc in docs:
             return doc.to_dict()
+        try:
+            mock_path = os.path.join(os.path.dirname(__file__), "db_mock", "coupons.json")
+            if os.path.exists(mock_path):
+                with open(mock_path, "r", encoding="utf-8") as f:
+                    coupons = json.load(f)
+                for c in coupons:
+                    if c.get("code", "").upper().strip() == code_upper and c.get("active", True):
+                        return c
+        except Exception as e:
+            logger.warning(f"Error checking mock coupons fallback: {e}")
         return None
+
 
     async def create_reservation(self, reservation_data: Dict[str, Any]) -> Dict[str, Any]:
         doc_id = str(uuid.uuid4())
