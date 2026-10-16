@@ -424,7 +424,7 @@ def generate_feature_graphic_1024x500():
     canvas = Image.new("RGBA", (target_w, target_h), (12, 11, 10, 255))
     draw = ImageDraw.Draw(canvas)
 
-    # Horizontal gradient
+    # Horizontal smooth dark luxury gradient
     for x in range(target_w):
         ratio = x / target_w
         r = int(14 + (24 - 14) * ratio)
@@ -435,79 +435,128 @@ def generate_feature_graphic_1024x500():
     # Ambient Gold Radial Glow
     glow_img = Image.new("RGBA", (target_w, target_h), (0, 0, 0, 0))
     glow_draw = ImageDraw.Draw(glow_img)
-    glow_draw.ellipse([(140, -50), (640, 450)], fill=(245, 158, 11, 45))
+    glow_draw.ellipse([(100, -60), (620, 440)], fill=(245, 158, 11, 40))
     glow_img = glow_img.filter(ImageFilter.GaussianBlur(55))
     canvas = Image.alpha_composite(canvas, glow_img)
     draw = ImageDraw.Draw(canvas)
 
-    # Persian Darbar Authentic 3D Gold Logo
-    pd_logo_path = os.path.join(PUBLIC_DIR, "persian_darbar_logo_1776079280186.png")
-    brand_x = 60
-    if os.path.exists(pd_logo_path):
-        pd_im = Image.open(pd_logo_path).convert("RGBA")
-        arr = np.array(pd_im, dtype=np.float32)
-        r, g, b = arr[:, :, 0], arr[:, :, 1], arr[:, :, 2]
-        diff = (r - b) + (g - b) * 0.5
-        goldness = np.clip((diff - 20) / 40.0, 0, 1)
-        bright = np.clip((r + g + b - 200) / 100.0, 0, 1)
-        alpha = np.clip(np.maximum(goldness, bright) * 255.0, 0, 255).astype(np.uint8)
-        arr[:, :, 3] = alpha
-        extracted = Image.fromarray(arr.astype(np.uint8), "RGBA")
-        # Crop 3D Crown + Arch + calligraphy emblem
-        emblem_only = extracted.crop((120, 180, 900, 640))
-        ew, eh = emblem_only.size
-        emb_h = 105
-        emb_w = int(ew * (emb_h / float(eh)))
-        emblem_resized = emblem_only.resize((emb_w, emb_h), Image.Resampling.LANCZOS)
-        canvas.paste(emblem_resized, (60, 38), emblem_resized)
-        brand_x = 60 + emb_w + 22
+    # 1. Official Persian Darbar Logo (From App Icon / Codebase)
+    logo_path = os.path.join(PUBLIC_DIR, "logo.png")
+    if os.path.exists(logo_path):
+        ivory_logo = Image.open(logo_path).convert("RGBA")
+        bbox = ivory_logo.getbbox()
+        if bbox:
+            ivory_cropped = ivory_logo.crop(bbox)
+            gw, gh = ivory_cropped.size
+            t_w = 300
+            t_h = int(gh * (t_w / float(gw)))
+            logo_scaled = ivory_cropped.resize((t_w, t_h), Image.Resampling.LANCZOS)
+            canvas.paste(logo_scaled, (60, 32), logo_scaled)
 
     # Typography
-    font_fg_brand = load_font("georgiab.ttf", 40)
     font_fg_headline = load_font("georgiab.ttf", 31)
     font_fg_sub = load_font("segoeui.ttf", 17)
-    font_fg_badge = load_font("segoeuib.ttf", 15)
+    font_fg_badge = load_font("segoeuib.ttf", 14)
 
-    draw.text((brand_x, 50), "PERSIAN DARBAR", font=font_fg_brand, fill=(255, 255, 255, 255))
-    draw.text((brand_x, 102), "ESTD. 1978 · THE ROYAL MUGHLAI FEAST", font=font_fg_badge, fill=(245, 158, 11, 255))
+    draw.text((60, 192), "Authentic Shahi Dum Biryani,\nMughlai Raan & Fine Dining", font=font_fg_headline, fill=(251, 191, 36, 255))
+    draw.text((60, 292), "Order online in sealed clay handis or reserve luxury tables\nacross Bandra, Andheri, Kurla & Camp Pune.", font=font_fg_sub, fill=(203, 213, 225, 230))
 
-    draw.text((60, 180), "Authentic Shahi Dum Biryani,\nMughlai Raan & Fine Dining", font=font_fg_headline, fill=(251, 191, 36, 255))
-    draw.text((60, 290), "Order online in sealed clay handis or reserve luxury tables\nacross Bandra, Andheri, Kurla & Camp Pune.", font=font_fg_sub, fill=(203, 213, 225, 230))
-
-    # Delivery & Quality Trust Chips
-    chip_y = 380
+    # 2. Pixel-Perfect Centered Luxury Trust Chips
+    chip_layer = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    c_draw = ImageDraw.Draw(chip_layer)
     chips = ["4.6+ Star Rated", "Sealed Clay Handis", "Guaranteed Zero Wait"]
     chip_x = 60
-    for chip in chips:
-        c_bbox = font_fg_badge.getbbox(chip)
-        cw = c_bbox[2] - c_bbox[0] + 28
-        ch = c_bbox[3] - c_bbox[1] + 16
-        draw_rounded_rect(draw, [(chip_x, chip_y), (chip_x + cw, chip_y + ch)], radius=12, fill=(255, 255, 255, 15), outline=(245, 158, 11, 120), width=1)
-        draw.text((chip_x + 14, chip_y + 8), chip, font=font_fg_badge, fill=(245, 158, 11, 255))
-        chip_x += cw + 14
+    chip_y = 388
 
-    # Right side phone preview
+    for chip in chips:
+        x0, y0, x1, y1 = font_fg_badge.getbbox(chip)
+        text_w = x1 - x0
+        text_h = y1 - y0
+
+        pad_x = 16
+        pad_y = 9
+        chip_w = text_w + pad_x * 2
+        chip_h = text_h + pad_y * 2
+
+        # Rounded dark glass pill with subtle gold border
+        box_rect = [(chip_x, chip_y), (chip_x + chip_w, chip_y + chip_h)]
+        c_draw.rounded_rectangle(box_rect, radius=chip_h // 2, fill=(28, 24, 20, 225), outline=(212, 175, 55, 170), width=1)
+
+        # Mathematical vertical and horizontal center alignment
+        center_x = chip_x + chip_w / 2.0
+        center_y = chip_y + chip_h / 2.0
+        draw_x = center_x - text_w / 2.0 - x0
+        draw_y = center_y - text_h / 2.0 - y0
+
+        c_draw.text((draw_x, draw_y), chip, font=font_fg_badge, fill=(245, 185, 60, 255))
+        chip_x += chip_w + 14
+
+    canvas = Image.alpha_composite(canvas, chip_layer)
+    draw = ImageDraw.Draw(canvas)
+
+    # 3. Smartphone Hardware Frame / Border on right
     raw_preview = os.path.join(RAW_SCREENS_DIR, "01_home_raw.png")
     if not os.path.exists(raw_preview):
         raw_preview = os.path.join(RAW_SCREENS_DIR, "02_order_raw.png")
 
     if os.path.exists(raw_preview):
-        phone_img = Image.open(raw_preview).convert("RGBA")
-        pw, ph = 260, 530
-        phone_scaled = phone_img.resize((pw, ph), Image.Resampling.LANCZOS)
-        
-        mask = Image.new("L", (pw, ph), 0)
-        mask_draw = ImageDraw.Draw(mask)
-        mask_draw.rounded_rectangle([(0, 0), (pw, ph)], radius=34, fill=255)
+        phone_x = 720
+        phone_y = 20
+        phone_w = 265
+        phone_h = 535
+        bezel = 7
 
-        # Phone shadow
-        shadow_p = Image.new("RGBA", (target_w, target_h), (0, 0, 0, 0))
-        shadow_p_draw = ImageDraw.Draw(shadow_p)
-        shadow_p_draw.rounded_rectangle([(710, 30), (710 + pw + 20, 30 + ph + 20)], radius=40, fill=(0, 0, 0, 210))
-        shadow_p = shadow_p.filter(ImageFilter.GaussianBlur(25))
-        canvas = Image.alpha_composite(canvas, shadow_p)
-        
-        canvas.paste(phone_scaled, (720, 25), mask)
+        # Drop Shadow
+        shadow_img = Image.new("RGBA", (target_w, target_h), (0, 0, 0, 0))
+        s_draw = ImageDraw.Draw(shadow_img)
+        s_draw.rounded_rectangle(
+            [(phone_x - 10, phone_y + 15), (phone_x + phone_w + 10, phone_y + phone_h + 15)],
+            radius=42,
+            fill=(0, 0, 0, 220)
+        )
+        shadow_img = shadow_img.filter(ImageFilter.GaussianBlur(28))
+        canvas = Image.alpha_composite(canvas, shadow_img)
+        draw = ImageDraw.Draw(canvas)
+
+        # Titanium Outer Phone Frame with Border
+        draw.rounded_rectangle(
+            [(phone_x, phone_y), (phone_x + phone_w, phone_y + phone_h)],
+            radius=38,
+            fill=(28, 28, 32, 255),
+            outline=(100, 100, 112, 255),
+            width=2
+        )
+
+        # Inner Screen Dimensions
+        screen_x = phone_x + bezel
+        screen_y = phone_y + bezel
+        screen_w = phone_w - bezel * 2
+        screen_h = phone_h - bezel * 2
+
+        raw_screen = Image.open(raw_preview).convert("RGBA")
+        screen_scaled = raw_screen.resize((screen_w, screen_h), Image.Resampling.LANCZOS)
+
+        # Screen corner radius mask
+        screen_mask = Image.new("L", (screen_w, screen_h), 0)
+        ImageDraw.Draw(screen_mask).rounded_rectangle([(0, 0), (screen_w, screen_h)], radius=32, fill=255)
+        canvas.paste(screen_scaled, (screen_x, screen_y), screen_mask)
+
+        # Inner bezel border highlight
+        draw.rounded_rectangle(
+            [(screen_x, screen_y), (screen_x + screen_w, screen_y + screen_h)],
+            radius=32,
+            outline=(0, 0, 0, 200),
+            width=1
+        )
+
+        # Dynamic Island Pill
+        island_w = 70
+        island_h = 18
+        island_x = screen_x + (screen_w - island_w) // 2
+        island_y = screen_y + 9
+        draw.rounded_rectangle([(island_x, island_y), (island_x + island_w, island_y + island_h)], radius=9, fill=(0, 0, 0, 255))
+        # Camera lens reflection
+        draw.ellipse([(island_x + island_w - 18, island_y + 5), (island_x + island_w - 10, island_y + 13)], fill=(20, 20, 26, 255))
 
     final_rgb = canvas.convert("RGB")
     final_rgb.save(os.path.join(WORKSPACE, "playstore_assets", "feature_graphic_royal_1024x500.png"), quality=95)
@@ -516,7 +565,7 @@ def generate_feature_graphic_1024x500():
     if os.path.exists(dest_desktop):
         final_rgb.save(os.path.join(dest_desktop, "feature_graphic_royal_1024x500.png"), quality=95)
         final_rgb.save(os.path.join(dest_desktop, "feature_graphic_1024x500.png"), quality=95)
-    print("  Saved Google Play Feature Graphic (1024 x 500) with Persian Darbar Logo")
+    print("  Saved Google Play Feature Graphic (1024 x 500) with Persian Darbar Logo and Smartphone Border Frame")
 
 def generate_app_icon_512x512():
     print("Generating Google Play App Icon (512 x 512)...")
