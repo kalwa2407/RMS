@@ -406,7 +406,7 @@ export const DEFAULT_PERSIAN_DARBAR_OFFERS = [
     badge_text: 'TABLE PRIVILEGE',
     image_url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?crop=entropy&cs=srgb&fm=jpg&w=600&q=80',
     bg_gradient: 'linear-gradient(135deg, #FFF1F2 0%, #FFE4E6 50%, #FECDD3 100%)',
-    accent_color: '#E23744',
+    accent_color: '#E40000',
     action: 'reserve'
   }
 ];

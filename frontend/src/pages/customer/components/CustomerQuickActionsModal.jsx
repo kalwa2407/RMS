@@ -48,9 +48,9 @@ const CustomerQuickActionsModal = ({
               className="w-full bg-red-50 hover:bg-red-100 border border-red-200 p-3 rounded-2xl flex items-center justify-between text-left transition-colors"
             >
               <div className="flex items-center space-x-2.5">
-                <ShoppingBag className="w-4 h-4 text-[#E23744]" />
+                <ShoppingBag className="w-4 h-4 text-[#E40000]" />
                 <div>
-                  <h4 className="text-xs font-black text-[#E23744]">
+                  <h4 className="text-xs font-black text-[#E40000]">
                     View Cart ({cartCount} items)
                   </h4>
                   <p className="text-[10px] text-red-600/80">
@@ -58,7 +58,7 @@ const CustomerQuickActionsModal = ({
                   </p>
                 </div>
               </div>
-              <span className="text-xs font-bold text-[#E23744]">›</span>
+              <span className="text-xs font-bold text-[#E40000]">›</span>
             </button>
           )}
 

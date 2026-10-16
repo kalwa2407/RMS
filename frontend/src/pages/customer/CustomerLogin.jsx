@@ -137,17 +137,19 @@ const CustomerLogin = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#F8F9FA] flex flex-col items-center justify-start text-neutral-900 font-sans select-none">
-      {/* ── Mobile Container (Zomato 430px Standard) ── */}
+    <div className="fixed inset-0 w-full h-[100dvh] bg-[#F8F9FA] flex flex-col items-center justify-center text-neutral-900 font-sans select-none overflow-hidden">
+      {/* ── Mobile Container (Locked Viewport, No Over-swiping) ── */}
       <div
-        className="w-full max-w-[430px] min-h-screen bg-white flex flex-col shadow-xl relative"
+        className="w-full max-w-[430px] h-full max-h-[100dvh] bg-white flex flex-col shadow-xl relative overflow-y-auto no-scrollbar"
         style={{
-          paddingTop: 'calc(max(env(safe-area-inset-top, 0px), 20px) + 12px)',
-          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 20px)'
+          paddingTop: 'calc(max(env(safe-area-inset-top, 0px), 20px) + 8px)',
+          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)',
+          overscrollBehavior: 'none',
+          WebkitOverflowScrolling: 'touch'
         }}
       >
         {/* ── Top Bar ── */}
-        <header className="px-5 py-3 flex items-center justify-between">
+        <header className="px-5 py-2 flex items-center justify-between shrink-0">
           <button
             type="button"
             onClick={() => {
@@ -159,7 +161,7 @@ const CustomerLogin = () => {
                 navigate(-1);
               }
             }}
-            className="w-9 h-9 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-700 active:scale-95 transition-all cursor-pointer"
+            className="w-8 h-8 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-700 active:scale-95 transition-all cursor-pointer"
             aria-label="Back"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -175,33 +177,33 @@ const CustomerLogin = () => {
           </Link>
         </header>
 
-        {/* ── Hero Branding Header ── */}
-        <section className="px-6 pt-4 pb-6 text-center">
+        {/* ── Hero Branding Header (Compact & Balanced for Keyboard) ── */}
+        <section className="px-6 pt-1 pb-2 text-center shrink-0">
           {/* Persian Darbar Royal Emblem */}
-          <div className="relative inline-block mb-3">
-            <div className="w-16 h-16 rounded-2xl bg-[#0F1721] text-amber-300 flex items-center justify-center font-black text-2xl shadow-lg border-2 border-amber-400/80 mx-auto">
-              <Crown className="w-8 h-8 text-amber-400 fill-amber-400" />
+          <div className="relative inline-block mb-1.5">
+            <div className="w-13 h-13 rounded-2xl bg-[#0F1721] text-amber-300 flex items-center justify-center font-black text-xl shadow-md border-2 border-amber-400/80 mx-auto">
+              <Crown className="w-6 h-6 text-amber-400 fill-amber-400" />
             </div>
-            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] font-black border-2 border-white shadow-xs">
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[9px] font-black border border-white shadow-xs">
               ✓
             </div>
           </div>
 
           <h1
-            className="text-2xl font-black text-neutral-900 tracking-tight"
+            className="text-xl font-black text-neutral-900 tracking-tight"
             style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
           >
             Persian Darbar
           </h1>
-          <p className="text-xs font-semibold text-neutral-500 mt-0.5">
+          <p className="text-[11px] font-semibold text-neutral-500 mt-0.5">
             India's #1 Royal Mughlai & Dum Biryani App
           </p>
 
-          <div className="mt-4 pt-3 border-t border-neutral-100">
-            <h2 className="text-base font-black text-neutral-900">
+          <div className="mt-2.5 pt-2 border-t border-neutral-100">
+            <h2 className="text-sm font-black text-neutral-900">
               {step === 'phone' ? 'Log in or sign up' : 'Enter Verification Code'}
             </h2>
-            <p className="text-xs text-neutral-500 mt-0.5">
+            <p className="text-[11px] text-neutral-500 mt-0.5">
               {step === 'phone'
                 ? 'Enter your mobile number to get started'
                 : `We have sent a 6-digit code to +91 ${phone}`}
@@ -210,34 +212,34 @@ const CustomerLogin = () => {
         </section>
 
         {/* ── Error & Notice Alerts ── */}
-        <div className="px-6">
+        <div className="px-6 shrink-0">
           {error && (
-            <div className="mb-4 p-3 rounded-2xl bg-red-50 border border-red-200 text-[#E23744] text-xs font-medium flex items-start gap-2 animate-in fade-in">
+            <div className="mb-3 p-2.5 rounded-2xl bg-red-50 border border-red-200 text-[#E40000] text-xs font-medium flex items-start gap-2 animate-in fade-in">
               <span className="text-sm leading-none mt-0.5">⚠️</span>
               <span className="leading-relaxed flex-1">{error}</span>
             </div>
           )}
 
           {successNotice && !error && (
-            <div className="mb-4 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-start gap-2 animate-in fade-in">
+            <div className="mb-3 p-2.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-start gap-2 animate-in fade-in">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
               <span className="leading-relaxed flex-1">{successNotice}</span>
             </div>
           )}
         </div>
 
-        {/* ── STEP 1: ZOMATO PHONE NUMBER FLOW ── */}
+        {/* ── STEP 1: PHONE NUMBER FLOW ── */}
         {step === 'phone' && (
           <div className="px-6 flex-1 flex flex-col justify-between">
-            <form onSubmit={handleSendOtp} className="space-y-4">
+            <form onSubmit={handleSendOtp} className="space-y-3">
               {/* Phone Input Box */}
               <div>
-                <label className="block text-[11px] font-black text-neutral-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-[11px] font-black text-neutral-400 uppercase tracking-wider mb-1">
                   Mobile Number
                 </label>
-                <div className="flex items-center rounded-2xl border-2 border-neutral-200 focus-within:border-[#E23744] focus-within:ring-2 focus-within:ring-red-100 transition-all bg-white overflow-hidden shadow-xs">
+                <div className="flex items-center rounded-2xl border-2 border-neutral-200 focus-within:border-[#E40000] focus-within:ring-2 focus-within:ring-red-100 transition-all bg-white overflow-hidden shadow-xs">
                   {/* Country Flag Pill */}
-                  <div className="px-3.5 py-3.5 bg-neutral-50 border-r border-neutral-200 flex items-center space-x-1.5 shrink-0">
+                  <div className="px-3 py-3 bg-neutral-50 border-r border-neutral-200 flex items-center space-x-1.5 shrink-0">
                     <span className="text-base leading-none">🇮🇳</span>
                     <span className="text-xs font-black text-neutral-800">+91</span>
                   </div>
@@ -247,11 +249,10 @@ const CustomerLogin = () => {
                     type="tel"
                     inputMode="numeric"
                     maxLength={10}
-                    autoFocus
                     placeholder="Enter phone number"
                     value={phone}
                     onChange={handlePhoneChange}
-                    className="w-full bg-transparent px-4 py-3.5 text-neutral-900 font-bold text-base tracking-wider placeholder:tracking-normal placeholder:font-normal placeholder:text-neutral-400 placeholder:text-sm outline-none"
+                    className="w-full bg-transparent px-3 py-3 text-neutral-900 font-bold text-base tracking-wider placeholder:tracking-normal placeholder:font-normal placeholder:text-neutral-400 placeholder:text-xs outline-none"
                   />
 
                   {phone.length > 0 && (
@@ -266,11 +267,11 @@ const CustomerLogin = () => {
                 </div>
               </div>
 
-              {/* Primary Continue Button (Zomato Signature Red) */}
+              {/* Primary Continue Button (Airtel Tomato Red) */}
               <button
                 type="submit"
                 disabled={submitting || phone.length !== 10}
-                className="w-full py-4 px-5 rounded-2xl bg-[#E23744] hover:bg-[#C11F2C] text-white font-black text-sm uppercase tracking-wider shadow-md hover:shadow-lg active:scale-98 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center space-x-2"
+                className="w-full py-3.5 px-5 rounded-2xl bg-[#E40000] hover:bg-[#CC0000] text-white font-black text-sm uppercase tracking-wider shadow-md hover:shadow-lg active:scale-98 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center space-x-2"
               >
                 {submitting ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -358,7 +359,7 @@ const CustomerLogin = () => {
                     setOtp('');
                     setError(null);
                   }}
-                  className="px-3 py-1.5 rounded-xl bg-white border border-neutral-200 text-xs font-bold text-[#E23744] hover:bg-red-50 flex items-center gap-1 cursor-pointer"
+                  className="px-3 py-1.5 rounded-xl bg-white border border-neutral-200 text-xs font-bold text-[#E40000] hover:bg-red-50 flex items-center gap-1 cursor-pointer"
                 >
                   <Edit2 className="w-3 h-3" />
                   <span>Edit</span>
@@ -374,11 +375,10 @@ const CustomerLogin = () => {
                   type="tel"
                   inputMode="numeric"
                   maxLength={6}
-                  autoFocus
                   placeholder="• • • • • •"
                   value={otp}
                   onChange={handleOtpChange}
-                  className="w-full bg-white border-2 border-neutral-300 focus:border-[#E23744] focus:ring-2 focus:ring-red-100 rounded-2xl px-4 py-4 text-center text-3xl font-black tracking-[0.4em] text-neutral-900 placeholder:tracking-[0.3em] placeholder:text-neutral-300 outline-none transition-all shadow-inner"
+                  className="w-full bg-white border-2 border-neutral-300 focus:border-[#E40000] focus:ring-2 focus:ring-red-100 rounded-2xl px-4 py-4 text-center text-3xl font-black tracking-[0.4em] text-neutral-900 placeholder:tracking-[0.3em] placeholder:text-neutral-300 outline-none transition-all shadow-inner"
                 />
               </div>
 
@@ -392,7 +392,7 @@ const CustomerLogin = () => {
                   placeholder="e.g. Rahul Sharma"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full bg-white border border-neutral-300 focus:border-[#E23744] focus:ring-2 focus:ring-red-100 rounded-2xl px-4 py-3 text-sm font-bold text-neutral-900 placeholder:text-neutral-400 outline-none transition-all"
+                  className="w-full bg-white border border-neutral-300 focus:border-[#E40000] focus:ring-2 focus:ring-red-100 rounded-2xl px-4 py-3 text-sm font-bold text-neutral-900 placeholder:text-neutral-400 outline-none transition-all"
                 />
               </div>
 
@@ -408,7 +408,7 @@ const CustomerLogin = () => {
                     type="button"
                     onClick={handleSendOtp}
                     disabled={submitting}
-                    className="text-[#E23744] hover:underline font-black flex items-center gap-1 cursor-pointer"
+                    className="text-[#E40000] hover:underline font-black flex items-center gap-1 cursor-pointer"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                     <span>Resend SMS</span>
@@ -420,7 +420,7 @@ const CustomerLogin = () => {
               <button
                 type="submit"
                 disabled={submitting || otp.length !== 6}
-                className="w-full py-4 px-5 rounded-2xl bg-[#E23744] hover:bg-[#C11F2C] text-white font-black text-sm uppercase tracking-wider shadow-md hover:shadow-lg active:scale-98 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center space-x-2"
+                className="w-full py-3.5 px-5 rounded-2xl bg-[#E40000] hover:bg-[#CC0000] text-white font-black text-sm uppercase tracking-wider shadow-md hover:shadow-lg active:scale-98 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center space-x-2"
               >
                 {submitting ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

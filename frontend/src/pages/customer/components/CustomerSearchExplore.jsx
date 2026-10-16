@@ -64,7 +64,7 @@ const CustomerSearchExplore = ({
                 <X className="w-4 h-4" />
               </button>
             ) : (
-              <Mic className="w-4 h-4 text-[#E23744]" />
+              <Mic className="w-4 h-4 text-[#E40000]" />
             )}
           </div>
         </div>
@@ -79,7 +79,7 @@ const CustomerSearchExplore = ({
 
           {searchResults.length === 0 ? (
             <div className="text-center py-16 px-4">
-              <div className="w-16 h-16 rounded-full bg-red-50 text-[#E23744] mx-auto flex items-center justify-center mb-3">
+              <div className="w-16 h-16 rounded-full bg-red-50 text-[#E40000] mx-auto flex items-center justify-center mb-3">
                 <UtensilsCrossed className="w-7 h-7" />
               </div>
 
@@ -99,7 +99,7 @@ const CustomerSearchExplore = ({
                   >
                     <div className="flex-1 pr-1">
                       <div className="flex items-center space-x-1.5 mb-1">
-                        <span className="text-[10px] font-black text-[#E23744] bg-red-50 px-2 py-0.5 rounded-md uppercase tracking-wide">
+                        <span className="text-[10px] font-black text-[#E40000] bg-red-50 px-2 py-0.5 rounded-md uppercase tracking-wide">
                           {dish.category}
                         </span>
                       </div>
@@ -129,7 +129,7 @@ const CustomerSearchExplore = ({
                       />
                       <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-[88%]">
                         {inCart ? (
-                          <div className="flex items-center justify-between bg-white text-[#E23744] border border-[#E23744] rounded-lg shadow-sm px-2 py-0.5 text-xs font-bold">
+                          <div className="flex items-center justify-between bg-white text-[#E40000] border border-[#E40000] rounded-lg shadow-sm px-2 py-0.5 text-xs font-bold">
                             <button
                               onClick={() => onUpdateCartQty(dish._id, -1)}
                               className="p-0.5 active:scale-75 transition-transform"
@@ -147,7 +147,7 @@ const CustomerSearchExplore = ({
                         ) : (
                           <button
                             onClick={() => onAddToCart(dish)}
-                            className="w-full bg-white text-[#E23744] border border-red-200 hover:border-[#E23744] rounded-lg shadow-xs py-1 text-[11px] font-black uppercase tracking-wider active:scale-95 transition-all text-center"
+                            className="w-full bg-white text-[#E40000] border border-red-200 hover:border-[#E40000] rounded-lg shadow-xs py-1 text-[11px] font-black uppercase tracking-wider active:scale-95 transition-all text-center"
                           >
                             ADD
                           </button>
@@ -180,7 +180,7 @@ const CustomerSearchExplore = ({
                 <button
                   key={idx}
                   onClick={() => setSearchQuery(craving.replace('✦ ', ''))}
-                  className="shrink-0 bg-white border border-neutral-200 hover:border-[#E23744] hover:text-[#E23744] px-3.5 py-1.5 rounded-full text-xs font-bold text-neutral-700 shadow-xs active:scale-95 transition-all whitespace-nowrap"
+                  className="shrink-0 bg-white border border-neutral-200 hover:border-[#E40000] hover:text-[#E40000] px-3.5 py-1.5 rounded-full text-xs font-bold text-neutral-700 shadow-xs active:scale-95 transition-all whitespace-nowrap"
                 >
                   {craving}
                 </button>
@@ -200,7 +200,7 @@ const CustomerSearchExplore = ({
                   onClick={() => setSearchQuery(item.title)}
                   className="flex flex-col items-center cursor-pointer group active:scale-95 transition-transform"
                 >
-                  <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-neutral-100 shadow-xs group-hover:border-[#E23744] transition-colors bg-neutral-100 p-0.5">
+                  <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-neutral-100 shadow-xs group-hover:border-[#E40000] transition-colors bg-neutral-100 p-0.5">
                     <img
                       src={item.image}
                       alt={item.title}

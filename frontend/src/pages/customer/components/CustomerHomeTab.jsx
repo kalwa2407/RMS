@@ -23,7 +23,8 @@ const CustomerHomeTab = ({
   offers = [],
   onOfferClick,
   onGoToOrder,
-  onGoToReserve
+  onGoToReserve,
+  onSelectDishDetail
 }) => {
   // Offer Carousel State
   const [activeOfferIdx, setActiveOfferIdx] = useState(0);
@@ -109,7 +110,7 @@ const CustomerHomeTab = ({
                   <div />
                 )}
 
-                <span className="inline-flex items-center space-x-1 text-xs font-black bg-[#E23744] text-white px-4 py-2 rounded-full shadow-md active:scale-95 transition-transform">
+                <span className="inline-flex items-center space-x-1 text-xs font-black bg-[#E40000] text-white px-4 py-2 rounded-full shadow-md active:scale-95 transition-transform">
                   <span>{currentOffer.action === 'reserve' ? 'Book Table ›' : 'Order Now ›'}</span>
                 </span>
               </div>
@@ -144,7 +145,7 @@ const CustomerHomeTab = ({
           </h2>
           <button
             onClick={onGoToOrder}
-            className="text-xs font-black text-[#E23744] hover:underline"
+            className="text-xs font-black text-[#E40000] hover:underline"
           >
             See All Menu ›
           </button>
@@ -156,7 +157,7 @@ const CustomerHomeTab = ({
             onClick={() => onSelectCat('All')}
             className="flex flex-col items-center shrink-0 cursor-pointer active:scale-95 transition-transform"
           >
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#E23744] to-[#B91C1C] text-white p-2 flex flex-col items-center justify-between shadow-xs">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#E40000] to-[#B91C1C] text-white p-2 flex flex-col items-center justify-between shadow-xs">
               <span className="text-[8px] font-black uppercase leading-tight text-center">
                 BEST OFFERS<br />APPLIED
               </span>
@@ -184,7 +185,7 @@ const CustomerHomeTab = ({
                 <div
                   className={`w-16 h-16 rounded-full overflow-hidden p-[2px] transition-all bg-white ${
                     isActive
-                      ? 'border-2 border-[#E23744] shadow-md scale-105'
+                      ? 'border-2 border-[#E40000] shadow-md scale-105'
                       : 'border border-neutral-200/80 shadow-xs'
                   }`}
                 >
@@ -196,12 +197,12 @@ const CustomerHomeTab = ({
                 </div>
                 <span
                   className={`text-[11px] mt-1.5 text-center whitespace-nowrap transition-colors ${
-                    isActive ? 'font-black text-[#E23744]' : 'font-semibold text-neutral-700'
+                    isActive ? 'font-black text-[#E40000]' : 'font-semibold text-neutral-700'
                   }`}
                 >
                   {item.title}
                 </span>
-                {isActive && <span className="w-4 h-0.5 bg-[#E23744] rounded-full mt-0.5" />}
+                {isActive && <span className="w-4 h-0.5 bg-[#E40000] rounded-full mt-0.5" />}
               </div>
             );
           })}
@@ -224,7 +225,7 @@ const CustomerHomeTab = ({
             </div>
             <button
               onClick={onGoToOrder}
-              className="text-xs font-black text-[#E23744] hover:underline"
+              className="text-xs font-black text-[#E40000] hover:underline"
             >
               Full Menu ›
             </button>
@@ -242,7 +243,7 @@ const CustomerHomeTab = ({
               return (
                 <div
                   key={dish._id || dish.id || idx}
-                  onClick={() => setSelectedDishDetail(dish)}
+                  onClick={() => (onSelectDishDetail || setSelectedDishDetail)(dish)}
                   className="w-44 shrink-0 bg-white rounded-3xl border border-neutral-200/80 overflow-hidden shadow-xs flex flex-col justify-between cursor-pointer active:scale-[0.98] transition-all hover:border-neutral-300"
                 >
                   <div className="relative h-28 w-full bg-neutral-100">
@@ -277,7 +278,7 @@ const CustomerHomeTab = ({
                       </span>
 
                       {inCart ? (
-                        <div className="flex items-center space-x-1.5 bg-red-50 text-[#E23744] border border-[#E23744] rounded-lg px-2 py-0.5 text-xs font-bold">
+                        <div className="flex items-center space-x-1.5 bg-red-50 text-[#E40000] border border-[#E40000] rounded-lg px-2 py-0.5 text-xs font-bold">
                           <button onClick={() => onUpdateCartQty(dish._id || dish.id, -1)}>
                             <Minus className="w-3 h-3" />
                           </button>
@@ -288,8 +289,8 @@ const CustomerHomeTab = ({
                         </div>
                       ) : (
                         <button
-                          onClick={() => setSelectedDishDetail(dish)}
-                          className="bg-red-50 hover:bg-[#E23744] hover:text-white text-[#E23744] border border-red-200 font-black text-[11px] px-3 py-1 rounded-lg transition-colors active:scale-95 cursor-pointer"
+                          onClick={() => (onSelectDishDetail || setSelectedDishDetail)(dish)}
+                          className="bg-red-50 hover:bg-[#E40000] hover:text-white text-[#E40000] border border-red-200 font-black text-[11px] px-3 py-1 rounded-lg transition-colors active:scale-95 cursor-pointer"
                         >
                           + ADD
                         </button>
@@ -365,15 +366,15 @@ const CustomerHomeTab = ({
                           ₹{dish.price}
                         </span>
                         {inCart ? (
-                          <div className="flex items-center space-x-1 bg-red-50 text-[#E23744] border border-[#E23744] rounded px-1.5 py-0.2 text-[11px] font-bold">
+                          <div className="flex items-center space-x-1 bg-red-50 text-[#E40000] border border-[#E40000] rounded px-1.5 py-0.2 text-[11px] font-bold">
                             <button onClick={() => onUpdateCartQty(dish._id || dish.id, -1)}>-</button>
                             <span className="font-black px-1">{inCart.quantity}</span>
                             <button onClick={() => onUpdateCartQty(dish._id || dish.id, 1)}>+</button>
                           </div>
                         ) : (
                           <button
-                            onClick={() => setSelectedDishDetail(dish)}
-                            className="bg-red-50 text-[#E23744] hover:bg-[#E23744] hover:text-white border border-red-200 text-[10px] font-black px-2 py-0.5 rounded transition-colors"
+                            onClick={() => (onSelectDishDetail || setSelectedDishDetail)(dish)}
+                            className="bg-red-50 text-[#E40000] hover:bg-[#E40000] hover:text-white border border-red-200 text-[10px] font-black px-2 py-0.5 rounded transition-colors"
                           >
                             + ADD
                           </button>
@@ -441,7 +442,7 @@ const CustomerHomeTab = ({
               Guaranteed seating across all 4 Persian Darbar outlets with 10% PD Coins on bill.
             </p>
           </div>
-          <button className="bg-[#E23744] hover:bg-[#C11F2C] text-white text-xs font-black px-4 py-2.5 rounded-2xl shadow-md shrink-0">
+          <button className="bg-[#E40000] hover:bg-[#CC0000] text-white text-xs font-black px-4 py-2.5 rounded-2xl shadow-md shrink-0">
             Reserve ›
           </button>
         </div>
@@ -506,13 +507,15 @@ const CustomerHomeTab = ({
         </div>
       </section>
 
-      {/* ── Dish Detail & Customization Modal (Screenshot 4) ── */}
-      <CustomerDishDetailModal
-        dish={selectedDishDetail}
-        isOpen={Boolean(selectedDishDetail)}
-        onClose={() => setSelectedDishDetail(null)}
-        onAddToCart={onAddToCart}
-      />
+      {/* ── Dish Detail & Customization Modal (Fallback if not lifted) ── */}
+      {!onSelectDishDetail && (
+        <CustomerDishDetailModal
+          dish={selectedDishDetail}
+          isOpen={Boolean(selectedDishDetail)}
+          onClose={() => setSelectedDishDetail(null)}
+          onAddToCart={onAddToCart}
+        />
+      )}
     </div>
   );
 };

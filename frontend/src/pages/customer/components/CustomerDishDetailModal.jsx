@@ -114,7 +114,7 @@ const CustomerDishDetailModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end items-center bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[70] flex flex-col justify-end items-center bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
       {/* ── Top Floating Close (X) Button (Matching Screenshot 4) ── */}
       <button
         onClick={onClose}
@@ -250,7 +250,7 @@ const CustomerDishDetailModal = ({
                     onClick={() => toggleAddon(addon)}
                     className={`flex items-center justify-between p-2.5 rounded-2xl border transition-all cursor-pointer ${
                       isSelected
-                        ? 'border-[#E23744] bg-red-50/40 shadow-xs'
+                        ? 'border-[#E40000] bg-red-50/40 shadow-xs'
                         : 'border-neutral-200/80 bg-white hover:border-neutral-300'
                     }`}
                   >
@@ -294,8 +294,8 @@ const CustomerDishDetailModal = ({
                       }}
                       className={`ml-2 px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 shrink-0 border ${
                         isSelected
-                          ? 'bg-[#E23744] text-white border-[#E23744] shadow-xs'
-                          : 'bg-white text-[#E23744] border-red-200 hover:border-[#E23744]'
+                          ? 'bg-[#E40000] text-white border-[#E40000] shadow-xs'
+                          : 'bg-white text-[#E40000] border-red-200 hover:border-[#E40000]'
                       }`}
                     >
                       {isSelected ? 'ADDED ✓' : 'ADD +'}
@@ -315,7 +315,7 @@ const CustomerDishDetailModal = ({
           }}
         >
           {/* Quantity Selector: [- 1 +] in rounded pink outline */}
-          <div className="flex items-center justify-between w-28 px-3 py-2.5 rounded-2xl border border-rose-200 bg-rose-50/50 text-[#E23744]">
+          <div className="flex items-center justify-between w-28 px-3 py-2.5 rounded-2xl border border-rose-200 bg-rose-50/50 text-[#E40000]">
             <button
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
               aria-label="Decrease quantity"
@@ -338,7 +338,7 @@ const CustomerDishDetailModal = ({
           {/* Big Red CTA: Add item - ₹XXX */}
           <button
             onClick={handleAdd}
-            className="flex-1 bg-[#E23744] hover:bg-[#d02e3b] text-white font-black text-sm py-3 px-4 rounded-2xl shadow-md active:scale-98 transition-all flex items-center justify-center space-x-1 cursor-pointer"
+            className="flex-1 bg-[#E40000] hover:bg-[#CC0000] text-white font-black text-sm py-3 px-4 rounded-2xl shadow-md active:scale-98 transition-all flex items-center justify-center space-x-1 cursor-pointer"
           >
             <span>Add item - ₹{totalPrice}</span>
           </button>

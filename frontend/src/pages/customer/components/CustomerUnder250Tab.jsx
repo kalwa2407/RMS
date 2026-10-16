@@ -91,7 +91,7 @@ const CustomerUnder250Tab = ({
 
           {/* Ribbon Folded Ends Banner */}
           <div className="mt-2.5 mx-auto max-w-[280px]">
-            <div className="ribbon-banner bg-[#E23744] text-white py-1 px-3 text-[11px] font-black uppercase tracking-wider shadow-sm">
+            <div className="ribbon-banner bg-[#E40000] text-white py-1 px-3 text-[11px] font-black uppercase tracking-wider shadow-sm">
               FINAL PRICE, BEST OFFER APPLIED
             </div>
           </div>
@@ -113,7 +113,7 @@ const CustomerUnder250Tab = ({
                 <div
                   className={`w-16 h-16 rounded-full overflow-hidden border p-0.5 flex items-center justify-center shrink-0 ${
                     isActive
-                      ? 'border-[#E23744] ring-2 ring-red-100 bg-red-50/50'
+                      ? 'border-[#E40000] ring-2 ring-red-100 bg-red-50/50'
                       : 'border-amber-100 bg-amber-50/50'
                   }`}
                 >
@@ -131,7 +131,7 @@ const CustomerUnder250Tab = ({
                   {item.title}
                 </span>
                 {isActive && (
-                  <div className="absolute bottom-0 w-8 h-[2.5px] bg-[#E23744] rounded-full" />
+                  <div className="absolute bottom-0 w-8 h-[2.5px] bg-[#E40000] rounded-full" />
                 )}
               </div>
             );
@@ -240,7 +240,7 @@ const CustomerUnder250Tab = ({
                     </div>
 
                     {inCart ? (
-                      <div className="flex items-center space-x-1.5 bg-white text-[#E23744] border border-[#E23744] rounded-lg px-2 py-1 text-xs font-bold">
+                      <div className="flex items-center space-x-1.5 bg-white text-[#E40000] border border-[#E40000] rounded-lg px-2 py-1 text-xs font-bold">
                         <button
                           onClick={() => onUpdateCartQty(dish._id, -1)}
                           className="p-0.5 active:scale-75 transition-transform"
@@ -258,7 +258,7 @@ const CustomerUnder250Tab = ({
                     ) : (
                       <button
                         onClick={() => onAddToCart(dish)}
-                        className="bg-red-50 hover:bg-red-100 text-[#E23744] border border-red-200 text-xs font-bold px-3 py-1.5 rounded-lg active:scale-95 transition-transform"
+                        className="bg-red-50 hover:bg-red-100 text-[#E40000] border border-red-200 text-xs font-bold px-3 py-1.5 rounded-lg active:scale-95 transition-transform"
                       >
                         ADD +
                       </button>
@@ -277,7 +277,7 @@ const CustomerUnder250Tab = ({
             className="inline-flex items-center justify-center bg-white border border-neutral-300 text-neutral-800 text-xs font-bold px-6 py-2.5 rounded-full shadow-xs active:scale-95 transition-all"
           >
             <span>View full menu</span>
-            <span className="ml-1 text-[#E23744]">›</span>
+            <span className="ml-1 text-[#E40000]">›</span>
           </button>
         </div>
       </section>

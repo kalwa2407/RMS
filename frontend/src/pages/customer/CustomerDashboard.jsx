@@ -18,6 +18,7 @@ import CustomerCartSheet from './components/CustomerCartSheet';
 import CustomerProfileSheet from './components/CustomerProfileSheet';
 import CustomerProfileTab from './components/CustomerProfileTab';
 import CustomerAddressModal from './components/CustomerAddressModal';
+import CustomerDishDetailModal from './components/CustomerDishDetailModal';
 
 import CustomerPwaInstallModal from '../../components/CustomerPwaInstallModal';
 import CustomerAppSplash from './components/CustomerAppSplash';
@@ -61,6 +62,7 @@ const CustomerDashboard = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [profileInitialTab, setProfileInitialTab] = useState('orders');
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [selectedDishDetail, setSelectedDishDetail] = useState(null);
 
   // ── First-time / Unauthenticated Guard ──
   // If user is not logged in and has not chosen to explore as guest, direct to login
@@ -691,8 +693,9 @@ const CustomerDashboard = () => {
       {/* ── Main Mobile Shell Container (Zomato iOS 430px) ── */}
       <div className="w-full max-w-[430px] min-h-screen bg-[#F8F9FA] flex flex-col shadow-2xl relative pb-28">
 
-        {/* ── Customer Top Navigation Bar (Clean Persian Darbar Outlet Selector) ── */}
+        {/* ── Customer Top Navigation Bar (Dedicated Clean / Reserve Header) ── */}
         <CustomerTopBar
+          activeTab={activeTab}
           selectedBranch={selectedBranch}
           distanceKm={distanceKm}
           onOpenLocationModal={() => setIsLocationModalOpen(true)}
@@ -727,6 +730,7 @@ const CustomerDashboard = () => {
               onOfferClick={handleOfferClick}
               onGoToOrder={() => setActiveTab('order')}
               onGoToReserve={() => setActiveTab('reserve')}
+              onSelectDishDetail={setSelectedDishDetail}
             />
           )}
 
@@ -746,6 +750,7 @@ const CustomerDashboard = () => {
               offers={offers}
               onApplyCoupon={applyCouponCode}
               onRemoveCoupon={removeCoupon}
+              onSelectDishDetail={setSelectedDishDetail}
             />
           )}
 
@@ -953,13 +958,23 @@ const CustomerDashboard = () => {
           initialTab={profileInitialTab}
         />
 
-        {/* ── Fixed Bottom Floating Dock Navigation (5 Authentic Customer Tabs) ── */}
-        <CustomerDockNav
-          activeTab={activeTab}
-          onSelectTab={handleDockSelect}
-          cartCount={cart.reduce((s, i) => s + i.quantity, 0)}
-          cartTotal={cartTotal}
-          onOpenCart={() => setIsCartOpen(true)}
+        {/* ── Fixed Bottom Floating Dock Navigation (Hidden when full-screen sheets/modals are active) ── */}
+        {!isCartOpen && !isProfileOpen && !isSearchOpen && !selectedDishDetail && (
+          <CustomerDockNav
+            activeTab={activeTab}
+            onSelectTab={handleDockSelect}
+            cartCount={cart.reduce((s, i) => s + i.quantity, 0)}
+            cartTotal={cartTotal}
+            onOpenCart={() => setIsCartOpen(true)}
+          />
+        )}
+
+        {/* ── Full Screen Root Dish Detail & Customization Modal (Escapes scroll stacking context) ── */}
+        <CustomerDishDetailModal
+          dish={selectedDishDetail}
+          isOpen={Boolean(selectedDishDetail)}
+          onClose={() => setSelectedDishDetail(null)}
+          onAddToCart={addToCart}
         />
 
         {/* ── PWA Install Banner ── */}

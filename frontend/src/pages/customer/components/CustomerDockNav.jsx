@@ -56,16 +56,16 @@ const CustomerDockNav = ({
               key={item.id}
               onClick={() => onSelectTab(item.id)}
               className={`flex flex-col items-center justify-center flex-1 py-1 transition-all active:scale-95 ${
-                isActive ? 'text-[#E23744]' : 'text-neutral-500 hover:text-neutral-800'
+                isActive ? 'text-[#E40000]' : 'text-neutral-500 hover:text-neutral-800'
               }`}
             >
               <div className={`relative p-1 rounded-xl transition-all ${
-                isActive ? 'bg-red-50 text-[#E23744]' : ''
+                isActive ? 'bg-red-50 text-[#E40000]' : ''
               }`}>
                 <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5]' : 'stroke-[1.8]'}`} />
               </div>
               <span className={`text-[10px] mt-0.5 tracking-tight ${
-                isActive ? 'font-black text-[#E23744]' : 'font-semibold text-neutral-600'
+                isActive ? 'font-black text-[#E40000]' : 'font-semibold text-neutral-600'
               }`}>
                 {item.label}
               </span>

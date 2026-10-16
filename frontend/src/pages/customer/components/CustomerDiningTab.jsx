@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, Clock, Users, CheckCircle2, ChevronRight, Search, MapPin, Sparkles, Building2, Phone } from 'lucide-react';
+import { Calendar, Clock, Users, CheckCircle2, ChevronRight, Search, MapPin, Sparkles, Building2, Phone, Crown, Share2 } from 'lucide-react';
 import { DINING_MOODS } from '../customerAssets';
 
 const CustomerDiningTab = ({
@@ -64,7 +64,7 @@ const CustomerDiningTab = ({
           <button
             type="button"
             onClick={onOpenLocationModal}
-            className="text-xs font-black text-[#E23744] hover:underline flex items-center space-x-0.5"
+            className="text-xs font-black text-[#E40000] hover:underline flex items-center space-x-0.5"
           >
             <span>Change Outlet</span>
             <ChevronRight className="w-3.5 h-3.5" />
@@ -126,7 +126,7 @@ const CustomerDiningTab = ({
                 onClick={() => setSelectedMood(mood.title)}
                 className={`relative rounded-2xl border overflow-hidden p-2.5 cursor-pointer active:scale-98 transition-all flex flex-col justify-between ${
                   isSelected
-                    ? 'border-[#E23744] bg-red-50/20 ring-2 ring-red-100 shadow-sm'
+                    ? 'border-[#E40000] bg-red-50/20 ring-2 ring-red-100 shadow-sm'
                     : 'border-neutral-200/80 bg-white hover:border-neutral-300'
                 }`}
               >
@@ -137,7 +137,7 @@ const CustomerDiningTab = ({
                     className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                   />
                   {isSelected && (
-                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-[#E23744] text-white flex items-center justify-center text-[10px] font-black shadow-md">
+                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-[#E40000] text-white flex items-center justify-center text-[10px] font-black shadow-md">
                       ✓
                     </div>
                   )}
@@ -183,7 +183,7 @@ const CustomerDiningTab = ({
           >
             My Bookings
             {reservations.length > 0 && (
-              <span className="ml-1.5 px-1.5 py-0.2 rounded-full bg-[#E23744] text-white text-[9px] font-black">
+              <span className="ml-1.5 px-1.5 py-0.2 rounded-full bg-[#E40000] text-white text-[9px] font-black">
                 {reservations.length}
               </span>
             )}
@@ -193,22 +193,130 @@ const CustomerDiningTab = ({
         {subView === 'book' ? (
           <div className="bg-white rounded-3xl p-5 border border-neutral-200/80 shadow-xs space-y-4">
             {bookingSuccess ? (
-              <div className="p-5 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-2.5">
-                <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
-                <h4 className="font-black text-base text-emerald-900">
-                  Royal Table Reserved Successfully!
-                </h4>
-                <p className="text-xs text-emerald-700 max-w-xs mx-auto">
-                  Your table reservation for {bookingSuccess.guests || guestCount} guests on{' '}
-                  <strong>{bookingSuccess.date || selectedDate}</strong> at{' '}
-                  <strong>{bookingSuccess.time || selectedTime}</strong> at Persian Darbar {selectedBranch?.name || 'Camp, Pune'} is confirmed.
-                </p>
-                <button
-                  onClick={onResetBookingSuccess}
-                  className="mt-2 inline-block bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold px-5 py-2.5 rounded-xl active:scale-95 transition-transform"
-                >
-                  Book Another Table
-                </button>
+              <div className="relative rounded-3xl overflow-hidden bg-gradient-to-b from-[#1C1917] via-[#141210] to-[#0A0908] border border-amber-400/40 shadow-2xl text-white p-5 space-y-4 animate-in zoom-in-95 duration-300">
+                {/* Gold Glow Aura */}
+                <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+
+                {/* Top Badge: Royal Header & Pass ID */}
+                <div className="flex items-center justify-between border-b border-amber-400/20 pb-3">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 rounded-full bg-amber-400/20 border border-amber-400/50 flex items-center justify-center text-amber-400">
+                      <Crown className="w-4 h-4 fill-amber-400" />
+                    </div>
+                    <div>
+                      <span className="text-[9px] font-extrabold uppercase tracking-widest text-amber-400 block">
+                        VIP DINING PASS
+                      </span>
+                      <span className="text-[11px] font-bold text-neutral-300">
+                        Persian Darbar · Since 1978
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-mono font-bold text-amber-300/90 bg-amber-400/10 border border-amber-400/30 px-2 py-0.5 rounded-full">
+                    #PD-{String(Date.now()).slice(-4)}
+                  </span>
+                </div>
+
+                {/* Center Success Status */}
+                <div className="text-center py-1">
+                  <div className="w-14 h-14 rounded-full bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center mx-auto mb-2.5 shadow-lg shadow-emerald-500/20">
+                    <CheckCircle2 className="w-8 h-8 text-emerald-400 stroke-[2.5]" />
+                  </div>
+                  <h4 className="text-lg font-black tracking-tight text-white">
+                    Royal Table Reserved!
+                  </h4>
+                  <p className="text-[11px] text-amber-200/90 font-medium mt-0.5">
+                    Your luxury Mughlai dining experience is confirmed
+                  </p>
+                </div>
+
+                {/* Perforated Ticket Divider with Notches */}
+                <div className="relative py-1 flex items-center justify-between">
+                  <div className="absolute -left-7 w-5 h-5 rounded-full bg-white shadow-inner" />
+                  <div className="w-full border-b border-dashed border-amber-400/30 mx-2" />
+                  <div className="absolute -right-7 w-5 h-5 rounded-full bg-white shadow-inner" />
+                </div>
+
+                {/* Pass Details 2x2 Grid */}
+                <div className="grid grid-cols-2 gap-2.5 pt-1 text-left">
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-2.5">
+                    <span className="text-[9px] font-bold uppercase text-neutral-400 tracking-wider block">
+                      Date &amp; Time
+                    </span>
+                    <span className="text-xs font-black text-white mt-0.5 block">
+                      {bookingSuccess.date || selectedDate}
+                    </span>
+                    <span className="text-[10px] font-semibold text-amber-300 block">
+                      {bookingSuccess.time || selectedTime}
+                    </span>
+                  </div>
+
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-2.5">
+                    <span className="text-[9px] font-bold uppercase text-neutral-400 tracking-wider block">
+                      Table / Party
+                    </span>
+                    <span className="text-xs font-black text-white mt-0.5 block">
+                      {bookingSuccess.guests || guestCount} Guests
+                    </span>
+                    <span className="text-[10px] font-semibold text-emerald-400 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      Confirmed
+                    </span>
+                  </div>
+
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-2.5 col-span-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-[9px] font-bold uppercase text-neutral-400 tracking-wider block">
+                          Royal Outlet &amp; Ambience
+                        </span>
+                        <span className="text-xs font-black text-white mt-0.5 block truncate">
+                          Persian Darbar · {selectedBranch?.name || 'Camp, Pune'}
+                        </span>
+                        <span className="text-[10px] text-neutral-400 block truncate">
+                          {selectedBranch?.shortAddress || 'Renaissance Centre, Wellesley Rd'}
+                        </span>
+                      </div>
+                      <span className="px-2 py-1 rounded-xl bg-amber-400/15 border border-amber-400/30 text-amber-300 text-[10px] font-bold shrink-0">
+                        {bookingSuccess.dining_mood || selectedMood || 'Royal Dining'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions: Share VIP Pass & Book Another Table */}
+                <div className="space-y-2 pt-2">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const shareData = {
+                          title: 'Persian Darbar VIP Dining Reservation',
+                          text: `Table confirmed for ${bookingSuccess.guests || guestCount} guests on ${bookingSuccess.date || selectedDate} at ${bookingSuccess.time || selectedTime} at Persian Darbar ${selectedBranch?.name || 'Camp, Pune'}.`,
+                          url: window.location.origin
+                        };
+                        if (navigator.share) {
+                          navigator.share(shareData).catch(() => {});
+                        } else {
+                          navigator.clipboard?.writeText(shareData.text);
+                          alert('Reservation pass copied to clipboard!');
+                        }
+                      }}
+                      className="flex-1 py-3 px-3 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-bold text-xs flex items-center justify-center space-x-1.5 active:scale-95 transition-all cursor-pointer"
+                    >
+                      <Share2 className="w-3.5 h-3.5" />
+                      <span>Share Pass</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={onResetBookingSuccess}
+                      className="flex-1 py-3 px-3 rounded-2xl bg-[#E40000] hover:bg-[#CC0000] text-white font-black text-xs shadow-lg active:scale-95 transition-all cursor-pointer"
+                    >
+                      Book Another Table
+                    </button>
+                  </div>
+                </div>
               </div>
             ) : (
               <form onSubmit={handleSubmitBooking} className="space-y-4 text-left">
@@ -222,7 +330,7 @@ const CustomerDiningTab = ({
                     min={new Date().toISOString().split('T')[0]}
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
-                    className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-neutral-800 focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-[#E23744]"
+                    className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-neutral-800 focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-[#E40000]"
                   />
                 </div>
 
@@ -232,7 +340,7 @@ const CustomerDiningTab = ({
                     <label className="text-[10px] font-black text-neutral-400 uppercase tracking-wider">
                       Number of Guests
                     </label>
-                    <span className="text-xs font-black text-[#E23744]">
+                    <span className="text-xs font-black text-[#E40000]">
                       {guestCount} {guestCount === 1 ? 'Guest' : 'Guests'}
                     </span>
                   </div>
@@ -244,7 +352,7 @@ const CustomerDiningTab = ({
                         onClick={() => setGuestCount(num)}
                         className={`w-10 h-10 rounded-2xl font-black text-xs shrink-0 transition-all ${
                           guestCount === num
-                            ? 'bg-[#E23744] text-white shadow-xs scale-105'
+                            ? 'bg-[#E40000] text-white shadow-xs scale-105'
                             : 'bg-neutral-50 text-neutral-700 hover:bg-neutral-100 border border-neutral-200/80'
                         }`}
                       >
@@ -287,7 +395,7 @@ const CustomerDiningTab = ({
                     value={specialNote}
                     onChange={(e) => setSpecialNote(e.target.value)}
                     placeholder="e.g. Birthday decor, quiet window booth, high chair..."
-                    className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl px-3.5 py-2.5 text-xs font-medium text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-[#E23744]"
+                    className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl px-3.5 py-2.5 text-xs font-medium text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-[#E40000]"
                   />
                 </div>
 
@@ -295,7 +403,7 @@ const CustomerDiningTab = ({
                 <button
                   type="submit"
                   disabled={bookingLoading}
-                  className="w-full bg-[#E23744] hover:bg-[#d02e3b] text-white font-black text-xs sm:text-sm py-3.5 rounded-2xl shadow-lg shadow-red-500/20 active:scale-98 transition-all disabled:opacity-50 cursor-pointer"
+                  className="w-full bg-[#E40000] hover:bg-[#CC0000] text-white font-black text-xs sm:text-sm py-3.5 rounded-2xl shadow-lg shadow-red-500/20 active:scale-98 transition-all disabled:opacity-50 cursor-pointer"
                 >
                   {bookingLoading ? 'Reserving Table...' : currentUser ? 'Confirm Royal Table Reservation ›' : 'Login to Reserve Table ›'}
                 </button>
@@ -315,7 +423,7 @@ const CustomerDiningTab = ({
                 </p>
                 <button
                   onClick={() => setSubView('book')}
-                  className="bg-[#E23744] text-white text-xs font-black px-4 py-2 rounded-xl"
+                  className="bg-[#E40000] hover:bg-[#CC0000] text-white text-xs font-black px-4 py-2 rounded-xl"
                 >
                   Reserve a Table Now
                 </button>

@@ -16,7 +16,8 @@ const CustomerOrderTab = ({
   appliedCoupon,
   offers = [],
   onApplyCoupon,
-  onRemoveCoupon
+  onRemoveCoupon,
+  onSelectDishDetail
 }) => {
   const [filterType, setFilterType] = useState('all'); // 'all' | 'veg' | 'nonveg' | 'bestseller'
   const [selectedDishDetail, setSelectedDishDetail] = useState(null);
@@ -152,7 +153,7 @@ const CustomerOrderTab = ({
               className="flex items-center justify-between bg-white/95 hover:bg-white border border-amber-300/80 rounded-2xl px-3.5 py-2 shadow-xs cursor-pointer active:scale-98 transition-all"
             >
               <div className="flex items-center space-x-2">
-                <span className="w-5 h-5 rounded-full bg-[#E23744] text-white flex items-center justify-center text-[10px] font-black shrink-0">
+                <span className="w-5 h-5 rounded-full bg-[#E40000] text-white flex items-center justify-center text-[10px] font-black shrink-0">
                   %
                 </span>
                 <span className="text-xs font-black text-neutral-900 truncate">
@@ -168,7 +169,7 @@ const CustomerOrderTab = ({
                 className={`text-[10px] font-black px-2.5 py-1 rounded-md shrink-0 transition-colors ${
                   isApplied
                     ? 'text-emerald-700 bg-emerald-50 border border-emerald-300'
-                    : 'text-[#E23744] bg-red-50 border border-red-200 hover:bg-[#E23744] hover:text-white'
+                    : 'text-[#E40000] bg-red-50 border border-red-200 hover:bg-[#E40000] hover:text-white'
                 }`}
               >
                 {isApplied ? 'Applied ✓' : 'Save on Bill'}
@@ -186,7 +187,7 @@ const CustomerOrderTab = ({
             onClick={() => onSelectCat('All')}
             className="flex flex-col items-center shrink-0 cursor-pointer active:scale-95 transition-transform"
           >
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#E23744] to-[#B91C1C] text-white p-1.5 flex flex-col items-center justify-between shadow-xs">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#E40000] to-[#B91C1C] text-white p-1.5 flex flex-col items-center justify-between shadow-xs">
               <span className="text-[7.5px] font-black uppercase leading-tight text-center">
                 BEST OFFERS<br />APPLIED
               </span>
@@ -211,7 +212,7 @@ const CustomerOrderTab = ({
                 <div
                   className={`w-14 h-14 rounded-full overflow-hidden p-[2px] transition-all bg-white ${
                     isActive
-                      ? 'border-2 border-[#E23744] shadow-sm scale-105'
+                      ? 'border-2 border-[#E40000] shadow-sm scale-105'
                       : 'border border-neutral-200/80 shadow-xs'
                   }`}
                 >
@@ -224,14 +225,14 @@ const CustomerOrderTab = ({
                 <span
                   className={`text-[10px] mt-1 text-center whitespace-nowrap transition-colors ${
                     isActive
-                      ? 'font-black text-[#E23744]'
+                      ? 'font-black text-[#E40000]'
                       : 'font-semibold text-neutral-700'
                   }`}
                 >
                   {item.title}
                 </span>
                 {isActive && (
-                  <span className="w-4 h-0.5 bg-[#E23744] rounded-full mt-0.5" />
+                  <span className="w-4 h-0.5 bg-[#E40000] rounded-full mt-0.5" />
                 )}
               </div>
             );
@@ -297,7 +298,7 @@ const CustomerOrderTab = ({
       <section className="px-4 py-2 space-y-3">
         {filteredDishes.length === 0 ? (
           <div className="bg-white rounded-3xl p-8 text-center border border-neutral-200/80 shadow-xs space-y-3">
-            <div className="w-12 h-12 rounded-full bg-red-50 text-[#E23744] flex items-center justify-center mx-auto">
+            <div className="w-12 h-12 rounded-full bg-red-50 text-[#E40000] flex items-center justify-center mx-auto">
               <UtensilsCrossed className="w-6 h-6" />
             </div>
             <h4 className="font-extrabold text-sm text-neutral-900">
@@ -308,7 +309,7 @@ const CustomerOrderTab = ({
                 onSelectCat('All');
                 setFilterType('all');
               }}
-              className="bg-[#E23744] text-white text-xs font-black px-4 py-2 rounded-xl shadow-xs"
+              className="bg-[#E40000] hover:bg-[#CC0000] text-white text-xs font-black px-4 py-2 rounded-xl shadow-xs"
             >
               Show All Dishes
             </button>
@@ -426,7 +427,7 @@ const CustomerOrderTab = ({
                   {/* ADD + / Stepper Button (Centered Below Image - Screenshot 2 & 3) */}
                   <div className="mt-[-16px] z-10 w-28" onClick={(e) => e.stopPropagation()}>
                     {inCart ? (
-                      <div className="flex items-center justify-between bg-white text-[#E23744] border-2 border-[#E23744] rounded-xl shadow-md px-2.5 py-1.5 text-xs font-bold">
+                      <div className="flex items-center justify-between bg-white text-[#E40000] border-2 border-[#E40000] rounded-xl shadow-md px-2.5 py-1.5 text-xs font-bold">
                         <button
                           type="button"
                           onClick={() => onUpdateCartQty(dish._id || dish.id, -1)}
@@ -446,8 +447,14 @@ const CustomerOrderTab = ({
                     ) : (
                       <button
                         type="button"
-                        onClick={() => setSelectedDishDetail(dish)}
-                        className="w-full bg-white text-[#E23744] hover:bg-rose-50/50 border border-red-200 hover:border-[#E23744] rounded-xl shadow-sm py-1.5 text-xs font-black uppercase tracking-wider active:scale-95 transition-all text-center cursor-pointer flex flex-col items-center justify-center"
+                        onClick={() => {
+                          if (onSelectDishDetail) {
+                            onSelectDishDetail(dish);
+                          } else {
+                            setSelectedDishDetail(dish);
+                          }
+                        }}
+                        className="w-full bg-white text-[#E40000] hover:bg-rose-50/50 border border-red-200 hover:border-[#E40000] rounded-xl shadow-sm py-1.5 text-xs font-black uppercase tracking-wider active:scale-95 transition-all text-center cursor-pointer flex flex-col items-center justify-center"
                       >
                         <span>ADD +</span>
                       </button>
@@ -463,13 +470,15 @@ const CustomerOrderTab = ({
         )}
       </section>
 
-      {/* ── Dish Detail & Customization Modal (Screenshot 4) ── */}
-      <CustomerDishDetailModal
-        dish={selectedDishDetail}
-        isOpen={Boolean(selectedDishDetail)}
-        onClose={() => setSelectedDishDetail(null)}
-        onAddToCart={onAddToCart}
-      />
+      {/* ── Dish Detail & Customization Modal (Fallback if not lifted) ── */}
+      {!onSelectDishDetail && (
+        <CustomerDishDetailModal
+          dish={selectedDishDetail}
+          isOpen={Boolean(selectedDishDetail)}
+          onClose={() => setSelectedDishDetail(null)}
+          onAddToCart={onAddToCart}
+        />
+      )}
     </div>
   );
 };

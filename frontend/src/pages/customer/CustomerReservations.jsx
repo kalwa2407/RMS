@@ -341,14 +341,14 @@ const CustomerReservations = () => {
                 className="w-9 h-9 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-600 transition-colors active:scale-95"
                 title="Refresh Reservations"
               >
-                <RotateCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-[#E23744]' : ''}`} />
+                <RotateCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-[#E40000]' : ''}`} />
               </button>
               <button
                 onClick={() => setActiveTab(activeTab === 'book' ? 'list' : 'book')}
                 className={`px-3 py-1.5 rounded-full text-xs font-black transition-all flex items-center space-x-1 ${
                   activeTab === 'book'
                     ? 'bg-neutral-900 text-white shadow-xs'
-                    : 'bg-[#E23744] text-white shadow-sm hover:bg-[#d02e3b]'
+                    : 'bg-[#E40000] text-white shadow-sm hover:bg-[#CC0000]'
                 }`}
               >
                 {activeTab === 'book' ? (
@@ -380,7 +380,7 @@ const CustomerReservations = () => {
               <span>My Reservations</span>
               {reservations.length > 0 && (
                 <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                  activeTab === 'list' ? 'bg-[#E23744] text-white' : 'bg-neutral-300 text-neutral-700'
+                  activeTab === 'list' ? 'bg-[#E40000] text-white' : 'bg-neutral-300 text-neutral-700'
                 }`}>
                   {reservations.length}
                 </span>
@@ -461,7 +461,7 @@ const CustomerReservations = () => {
             {/* Loading State */}
             {loading ? (
               <div className="py-20 text-center space-y-3">
-                <div className="w-8 h-8 border-3 border-[#E23744] border-t-transparent rounded-full animate-spin mx-auto" />
+                <div className="w-8 h-8 border-3 border-[#E40000] border-t-transparent rounded-full animate-spin mx-auto" />
                 <p className="text-xs font-bold text-neutral-500">
                   Retrieving your table bookings...
                 </p>
@@ -469,7 +469,7 @@ const CustomerReservations = () => {
             ) : filteredReservations.length === 0 ? (
               /* Empty State */
               <div className="bg-white rounded-3xl border border-neutral-200/80 p-8 text-center space-y-4 shadow-xs mt-2">
-                <div className="w-16 h-16 rounded-full bg-red-50 text-[#E23744] flex items-center justify-center mx-auto">
+                <div className="w-16 h-16 rounded-full bg-red-50 text-[#E40000] flex items-center justify-center mx-auto">
                   <Calendar className="w-8 h-8 stroke-[1.8]" />
                 </div>
                 <div>
@@ -484,7 +484,7 @@ const CustomerReservations = () => {
                 </div>
                 <button
                   onClick={() => setActiveTab('book')}
-                  className="inline-flex items-center space-x-2 bg-[#E23744] hover:bg-[#d02e3b] text-white font-black text-xs px-5 py-2.5 rounded-2xl shadow-sm active:scale-95 transition-all"
+                  className="inline-flex items-center space-x-2 bg-[#E40000] hover:bg-[#CC0000] text-white font-black text-xs px-5 py-2.5 rounded-2xl shadow-sm active:scale-95 transition-all"
                 >
                   <Plus className="w-4 h-4 stroke-[2.5]" />
                   <span>Reserve a Table Now</span>
@@ -562,7 +562,7 @@ const CustomerReservations = () => {
                           <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
                             Reserved Slot
                           </span>
-                          <span className="text-xs font-black text-[#E23744] mt-0.5 block">
+                          <span className="text-xs font-black text-[#E40000] mt-0.5 block">
                             {res.time}
                           </span>
                         </div>
@@ -619,7 +619,7 @@ const CustomerReservations = () => {
 
                         <button
                           onClick={() => setActiveTab('book')}
-                          className="text-xs font-extrabold text-[#E23744] hover:underline px-2 py-1"
+                          className="text-xs font-extrabold text-[#E40000] hover:underline px-2 py-1"
                         >
                           Book Another ›
                         </button>
@@ -662,14 +662,14 @@ const CustomerReservations = () => {
                       onClick={() => setSelectedBranch(branch)}
                       className={`p-3 rounded-2xl border cursor-pointer active:scale-95 transition-all flex flex-col justify-between ${
                         isSelected
-                          ? 'border-[#E23744] bg-red-50/30 ring-2 ring-red-100'
+                          ? 'border-[#E40000] bg-red-50/30 ring-2 ring-red-100'
                           : 'border-neutral-200/80 bg-neutral-50/50 hover:bg-neutral-100'
                       }`}
                     >
                       <div className="flex items-start justify-between">
-                        <MapPin className={`w-4 h-4 shrink-0 ${isSelected ? 'text-[#E23744]' : 'text-neutral-400'}`} />
+                        <MapPin className={`w-4 h-4 shrink-0 ${isSelected ? 'text-[#E40000]' : 'text-neutral-400'}`} />
                         {isSelected && (
-                          <span className="w-4 h-4 rounded-full bg-[#E23744] text-white flex items-center justify-center text-[10px]">
+                          <span className="w-4 h-4 rounded-full bg-[#E40000] text-white flex items-center justify-center text-[10px]">
                             ✓
                           </span>
                         )}
@@ -711,7 +711,7 @@ const CustomerReservations = () => {
                       onClick={() => setBookDate(dateStr)}
                       className={`flex-1 py-2 px-1 rounded-2xl border text-center transition-all ${
                         isSelected
-                          ? 'bg-[#E23744] text-white border-[#E23744] shadow-xs'
+                          ? 'bg-[#E40000] text-white border-[#E40000] shadow-xs'
                           : 'bg-neutral-50 text-neutral-700 border-neutral-200/80 hover:bg-neutral-100'
                       }`}
                     >
@@ -733,7 +733,7 @@ const CustomerReservations = () => {
                   min={new Date().toISOString().split('T')[0]}
                   value={bookDate}
                   onChange={(e) => setBookDate(e.target.value)}
-                  className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl px-4 py-2.5 text-xs font-bold text-neutral-800 outline-none focus:ring-2 focus:ring-red-100 focus:border-[#E23744]"
+                  className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl px-4 py-2.5 text-xs font-bold text-neutral-800 outline-none focus:ring-2 focus:ring-red-100 focus:border-[#E40000]"
                 />
               </div>
             </div>
@@ -744,7 +744,7 @@ const CustomerReservations = () => {
                 <h3 className="text-xs font-black uppercase tracking-wider text-neutral-400">
                   Step 3 · Time Slot
                 </h3>
-                <span className="text-xs font-extrabold text-[#E23744]">
+                <span className="text-xs font-extrabold text-[#E40000]">
                   {bookTime}
                 </span>
               </div>
@@ -762,7 +762,7 @@ const CustomerReservations = () => {
                       onClick={() => setBookTime(slot)}
                       className={`py-2 rounded-xl text-xs font-bold border transition-all ${
                         bookTime === slot
-                          ? 'bg-[#E23744] text-white border-[#E23744] shadow-xs font-black'
+                          ? 'bg-[#E40000] text-white border-[#E40000] shadow-xs font-black'
                           : 'bg-neutral-50 text-neutral-700 border-neutral-200/80 hover:bg-neutral-100'
                       }`}
                     >
@@ -785,7 +785,7 @@ const CustomerReservations = () => {
                       onClick={() => setBookTime(slot)}
                       className={`py-2 rounded-xl text-xs font-bold border transition-all ${
                         bookTime === slot
-                          ? 'bg-[#E23744] text-white border-[#E23744] shadow-xs font-black'
+                          ? 'bg-[#E40000] text-white border-[#E40000] shadow-xs font-black'
                           : 'bg-neutral-50 text-neutral-700 border-neutral-200/80 hover:bg-neutral-100'
                       }`}
                     >
@@ -815,7 +815,7 @@ const CustomerReservations = () => {
                     onClick={() => setBookGuests(num)}
                     className={`w-11 h-11 rounded-2xl border shrink-0 text-xs font-black flex items-center justify-center transition-all ${
                       bookGuests === num
-                        ? 'bg-[#E23744] text-white border-[#E23744] shadow-xs scale-105'
+                        ? 'bg-[#E40000] text-white border-[#E40000] shadow-xs scale-105'
                         : 'bg-neutral-50 text-neutral-800 border-neutral-200/80 hover:bg-neutral-100'
                     }`}
                   >
@@ -844,7 +844,7 @@ const CustomerReservations = () => {
                       onClick={() => setBookMood(mood.name)}
                       className={`p-3 rounded-2xl border cursor-pointer active:scale-95 transition-all ${
                         isSelected
-                          ? 'border-[#E23744] bg-red-50/30 ring-2 ring-red-100'
+                          ? 'border-[#E40000] bg-red-50/30 ring-2 ring-red-100'
                           : 'border-neutral-200/80 bg-neutral-50/50 hover:bg-neutral-100'
                       }`}
                     >
@@ -879,7 +879,7 @@ const CustomerReservations = () => {
                       placeholder="e.g. Rahul Sharma"
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
-                      className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl pl-10 pr-4 py-2.5 text-xs font-bold text-neutral-800 outline-none focus:ring-2 focus:ring-red-100 focus:border-[#E23744]"
+                      className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl pl-10 pr-4 py-2.5 text-xs font-bold text-neutral-800 outline-none focus:ring-2 focus:ring-red-100 focus:border-[#E40000]"
                     />
                   </div>
                 </div>
@@ -896,7 +896,7 @@ const CustomerReservations = () => {
                       placeholder="e.g. 9876543210"
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
-                      className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl pl-10 pr-4 py-2.5 text-xs font-bold text-neutral-800 outline-none focus:ring-2 focus:ring-red-100 focus:border-[#E23744]"
+                      className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl pl-10 pr-4 py-2.5 text-xs font-bold text-neutral-800 outline-none focus:ring-2 focus:ring-red-100 focus:border-[#E40000]"
                     />
                   </div>
                 </div>
@@ -910,7 +910,7 @@ const CustomerReservations = () => {
                     placeholder="e.g. High chair for toddler, window view, anniversary setup..."
                     value={specialRequests}
                     onChange={(e) => setSpecialRequests(e.target.value)}
-                    className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl p-3 text-xs font-medium text-neutral-800 outline-none focus:ring-2 focus:ring-red-100 focus:border-[#E23744] resize-none"
+                    className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl p-3 text-xs font-medium text-neutral-800 outline-none focus:ring-2 focus:ring-red-100 focus:border-[#E40000] resize-none"
                   />
                 </div>
               </div>
@@ -921,7 +921,7 @@ const CustomerReservations = () => {
               <button
                 type="submit"
                 disabled={isBookingSubmitting}
-                className="w-full bg-[#E23744] hover:bg-[#d02e3b] text-white py-3.5 rounded-2xl font-black text-sm flex items-center justify-center space-x-2 shadow-lg shadow-red-500/25 active:scale-98 transition-all disabled:opacity-50"
+                className="w-full bg-[#E40000] hover:bg-[#CC0000] text-white py-3.5 rounded-2xl font-black text-sm flex items-center justify-center space-x-2 shadow-lg shadow-red-500/25 active:scale-98 transition-all disabled:opacity-50"
               >
                 {isBookingSubmitting ? (
                   <>
@@ -978,7 +978,7 @@ const CustomerReservations = () => {
                 </div>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-neutral-400 font-bold">Date & Time:</span>
-                  <span className="font-black text-[#E23744]">
+                  <span className="font-black text-[#E40000]">
                     {formatDateDisplay(bookingSuccessModal.date)} · {bookingSuccessModal.time}
                   </span>
                 </div>
@@ -1039,7 +1039,7 @@ const CustomerReservations = () => {
             <button
               onClick={() => setActiveTab('book')}
               className={`flex items-center space-x-1 text-xs font-black transition-colors ${
-                activeTab === 'book' ? 'text-[#E23744]' : 'text-neutral-600'
+                activeTab === 'book' ? 'text-[#E40000]' : 'text-neutral-600'
               }`}
             >
               <UtensilsCrossed className="w-4 h-4" />
@@ -1049,7 +1049,7 @@ const CustomerReservations = () => {
             <button
               onClick={() => setActiveTab('list')}
               className={`flex items-center space-x-1 text-xs font-black transition-colors ${
-                activeTab === 'list' ? 'text-[#E23744]' : 'text-neutral-600'
+                activeTab === 'list' ? 'text-[#E40000]' : 'text-neutral-600'
               }`}
             >
               <Calendar className="w-4 h-4" />

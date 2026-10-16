@@ -141,7 +141,7 @@ const CustomerProfileTab = ({
           <div className="pt-1 space-y-2">
             <button
               onClick={() => navigate('/customer/login')}
-              className="w-full py-3.5 px-4 rounded-2xl bg-[#E23744] hover:bg-[#C11F2C] text-white font-black text-xs uppercase tracking-wider shadow-md active:scale-98 transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+              className="w-full py-3.5 px-4 rounded-2xl bg-[#E40000] hover:bg-[#CC0000] text-white font-black text-xs uppercase tracking-wider shadow-md active:scale-98 transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
             >
               <span>Log in or Sign up</span>
               <ChevronRight className="w-4 h-4" />
@@ -212,7 +212,7 @@ const CustomerProfileTab = ({
             <div
               onClick={() => setSection('orders')}
               className={`p-2 rounded-2xl cursor-pointer transition-all ${
-                section === 'orders' ? 'bg-red-50 border border-red-200 text-[#E23744]' : 'bg-[#FAF8F5] text-neutral-800 hover:bg-neutral-100'
+                section === 'orders' ? 'bg-red-50 border border-red-200 text-[#E40000]' : 'bg-[#FAF8F5] text-neutral-800 hover:bg-neutral-100'
               }`}
             >
               <span className="block text-base font-black">{orders.length}</span>
@@ -222,7 +222,7 @@ const CustomerProfileTab = ({
             <div
               onClick={() => setSection('reservations')}
               className={`p-2 rounded-2xl cursor-pointer transition-all ${
-                section === 'reservations' ? 'bg-red-50 border border-red-200 text-[#E23744]' : 'bg-[#FAF8F5] text-neutral-800 hover:bg-neutral-100'
+                section === 'reservations' ? 'bg-red-50 border border-red-200 text-[#E40000]' : 'bg-[#FAF8F5] text-neutral-800 hover:bg-neutral-100'
               }`}
             >
               <span className="block text-base font-black">{reservations.length}</span>
@@ -242,7 +242,7 @@ const CustomerProfileTab = ({
             <div
               onClick={() => setSection('addresses')}
               className={`p-2 rounded-2xl cursor-pointer transition-all ${
-                section === 'addresses' ? 'bg-red-50 border border-red-200 text-[#E23744]' : 'bg-[#FAF8F5] text-neutral-800 hover:bg-neutral-100'
+                section === 'addresses' ? 'bg-red-50 border border-red-200 text-[#E40000]' : 'bg-[#FAF8F5] text-neutral-800 hover:bg-neutral-100'
               }`}
             >
               <span className="block text-base font-black">{savedAddresses.length}</span>
@@ -416,9 +416,9 @@ const CustomerProfileTab = ({
               <button
                 type="button"
                 onClick={() => setShowLogoutModal(true)}
-                className="w-full py-3.5 rounded-2xl bg-red-50 hover:bg-red-100 text-[#E23744] font-black text-xs flex items-center justify-center space-x-2 border border-red-200 active:scale-98 transition-all cursor-pointer shadow-xs"
+                className="w-full py-3.5 rounded-2xl bg-red-50 hover:bg-red-100 text-[#E40000] font-black text-xs flex items-center justify-center space-x-2 border border-red-200 active:scale-98 transition-all cursor-pointer shadow-xs"
               >
-                <LogOut className="w-4 h-4 text-[#E23744]" />
+                <LogOut className="w-4 h-4 text-[#E40000]" />
                 <span>Log Out from Persian Darbar</span>
               </button>
             </div>
@@ -437,7 +437,7 @@ const CustomerProfileTab = ({
             </h3>
             <button
               onClick={onGoToOrder}
-              className="text-xs font-black text-[#E23744] hover:underline flex items-center gap-0.5"
+              className="text-xs font-black text-[#E40000] hover:underline flex items-center gap-0.5"
             >
               <span>+ Order Now</span>
             </button>
@@ -454,7 +454,7 @@ const CustomerProfileTab = ({
               </p>
               <button
                 onClick={onGoToOrder}
-                className="px-5 py-2.5 rounded-2xl bg-[#E23744] hover:bg-[#C11F2C] text-white text-xs font-black shadow-md active:scale-95 transition-all"
+                className="px-5 py-2.5 rounded-2xl bg-[#E40000] hover:bg-[#CC0000] text-white text-xs font-black shadow-md active:scale-95 transition-all"
               >
                 Explore Menu ›
               </button>
@@ -528,7 +528,7 @@ const CustomerProfileTab = ({
 
                     <button
                       onClick={() => onReorder && onReorder(ord)}
-                      className="px-3.5 py-1.5 rounded-xl bg-red-50 hover:bg-[#E23744] hover:text-white text-[#E23744] border border-red-200 text-xs font-black transition-colors active:scale-95"
+                      className="px-3.5 py-1.5 rounded-xl bg-red-50 hover:bg-[#E40000] hover:text-white text-[#E40000] border border-red-200 text-xs font-black transition-colors active:scale-95"
                     >
                       Reorder ↻
                     </button>
@@ -551,7 +551,7 @@ const CustomerProfileTab = ({
             </h3>
             <button
               onClick={onGoToReserve}
-              className="text-xs font-black text-[#E23744] hover:underline flex items-center gap-0.5"
+              className="text-xs font-black text-[#E40000] hover:underline flex items-center gap-0.5"
             >
               <span>+ Book Table</span>
             </button>
@@ -568,7 +568,7 @@ const CustomerProfileTab = ({
               </p>
               <button
                 onClick={onGoToReserve}
-                className="px-5 py-2.5 rounded-2xl bg-[#E23744] hover:bg-[#C11F2C] text-white text-xs font-black shadow-md active:scale-95 transition-all"
+                className="px-5 py-2.5 rounded-2xl bg-[#E40000] hover:bg-[#CC0000] text-white text-xs font-black shadow-md active:scale-95 transition-all"
               >
                 Book a Table ›
               </button>
@@ -622,7 +622,7 @@ const CustomerProfileTab = ({
             </h3>
             <button
               onClick={() => setIsAddAddressOpen(true)}
-              className="text-xs font-black text-[#E23744] hover:underline flex items-center gap-1"
+              className="text-xs font-black text-[#E40000] hover:underline flex items-center gap-1"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Add New</span>
@@ -839,8 +839,8 @@ const CustomerProfileTab = ({
       {showLogoutModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl border border-neutral-200 text-center animate-in zoom-in-95 duration-200">
-            <div className="w-14 h-14 rounded-2xl bg-red-50 text-[#E23744] flex items-center justify-center mx-auto border border-red-100">
-              <LogOut className="w-7 h-7 text-[#E23744]" />
+            <div className="w-14 h-14 rounded-2xl bg-red-50 text-[#E40000] flex items-center justify-center mx-auto border border-red-100">
+              <LogOut className="w-7 h-7 text-[#E40000]" />
             </div>
             <div>
               <h3 className="font-black text-base text-neutral-900">Sign Out of Persian Darbar?</h3>
@@ -862,7 +862,7 @@ const CustomerProfileTab = ({
                   setShowLogoutModal(false);
                   if (onSignOut) await onSignOut();
                 }}
-                className="py-3 rounded-2xl bg-[#E23744] hover:bg-[#C11F2C] text-white font-black text-xs shadow-md active:scale-98 transition-all cursor-pointer"
+                className="py-3 rounded-2xl bg-[#E40000] hover:bg-[#CC0000] text-white font-black text-xs shadow-md active:scale-98 transition-all cursor-pointer"
               >
                 Yes, Sign Out
               </button>

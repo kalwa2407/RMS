@@ -119,7 +119,7 @@ const CustomerCartSheet = ({
           {orderType === 'TAKEAWAY' && (
             <div className="bg-neutral-50 p-3 rounded-2xl border border-neutral-200/70 space-y-1">
               <div className="flex items-center space-x-1.5 text-xs font-bold text-neutral-800">
-                <MapPin className="w-3.5 h-3.5 text-[#E23744]" />
+                <MapPin className="w-3.5 h-3.5 text-[#E40000]" />
                 <span>Pickup Outlet: Persian Darbar ({selectedBranch?.name || 'Bandra Flagship'})</span>
               </div>
               <p className="text-[11px] text-neutral-600 font-medium">
@@ -136,13 +136,13 @@ const CustomerCartSheet = ({
             <div className="bg-neutral-50 p-3 rounded-2xl border border-neutral-200/70 space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-1.5 text-xs font-bold text-neutral-800">
-                  <MapPin className="w-3.5 h-3.5 text-[#E23744]" />
+                  <MapPin className="w-3.5 h-3.5 text-[#E40000]" />
                   <span>Delivery Address</span>
                 </div>
                 <button
                   onClick={onDetectLocation}
                   disabled={detectingLocation}
-                  className="text-[11px] font-bold text-[#E23744] hover:underline flex items-center space-x-1"
+                  className="text-[11px] font-bold text-[#E40000] hover:underline flex items-center space-x-1"
                 >
                   <Navigation className={`w-3 h-3 ${detectingLocation ? 'animate-spin' : ''}`} />
                   <span>{detectingLocation ? 'Detecting GPS...' : 'GPS Auto-detect'}</span>
@@ -153,12 +153,12 @@ const CustomerCartSheet = ({
                 value={deliveryAddress}
                 onChange={(e) => onSetDeliveryAddress(e.target.value)}
                 placeholder="Enter complete flat, street, landmark address..."
-                className="w-full bg-white border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-[#E23744]"
+                className="w-full bg-white border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-[#E40000]"
               />
               {distanceKm && (
                 <div className="flex items-center justify-between text-[11px] text-neutral-600 font-medium pt-0.5">
                   <span className="flex items-center space-x-1">
-                    <MapPin className="w-3 h-3 text-[#E23744]" />
+                    <MapPin className="w-3 h-3 text-[#E40000]" />
                     <span>Distance from <strong>{selectedBranch?.name || 'Persian Darbar'}</strong>:</span>
                   </span>
                   <span className="font-black text-neutral-900 bg-neutral-200/60 px-2 py-0.5 rounded-md">
@@ -233,14 +233,14 @@ const CustomerCartSheet = ({
                   <div className="flex items-center space-x-2 bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-1 text-xs font-black">
                     <button
                       onClick={() => onUpdateCartQty(item._id, -1)}
-                      className="text-neutral-600 hover:text-[#E23744] p-0.5"
+                      className="text-neutral-600 hover:text-[#E40000] p-0.5"
                     >
                       <Minus className="w-3.5 h-3.5" />
                     </button>
                     <span className="w-4 text-center">{item.quantity}</span>
                     <button
                       onClick={() => onUpdateCartQty(item._id, 1)}
-                      className="text-neutral-600 hover:text-[#E23744] p-0.5"
+                      className="text-neutral-600 hover:text-[#E40000] p-0.5"
                     >
                       <Plus className="w-3.5 h-3.5" />
                     </button>
@@ -254,14 +254,14 @@ const CustomerCartSheet = ({
           <div className="bg-neutral-50 p-3 rounded-2xl border border-neutral-200/70 space-y-2.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-1.5 text-xs font-bold text-neutral-800">
-                <Tag className="w-3.5 h-3.5 text-[#E23744]" />
+                <Tag className="w-3.5 h-3.5 text-[#E40000]" />
                 <span>Offers &amp; Coupons</span>
               </div>
               {coupons.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setShowCouponsList(!showCouponsList)}
-                  className="text-[11px] font-bold text-[#E23744]"
+                  className="text-[11px] font-bold text-[#E40000]"
                 >
                   {showCouponsList ? 'Hide' : `View ${coupons.length} Offers`}
                 </button>
@@ -315,7 +315,7 @@ const CustomerCartSheet = ({
                     className="flex items-center justify-between p-2 rounded-lg bg-white border border-dashed border-red-300 cursor-pointer hover:bg-red-50 transition-colors"
                   >
                     <div>
-                      <span className="text-xs font-black text-[#E23744]">
+                      <span className="text-xs font-black text-[#E40000]">
                         {c.code}
                       </span>
                       <p className="text-[10px] text-neutral-500">
@@ -354,7 +354,7 @@ const CustomerCartSheet = ({
                   onChange={onToggleCoins}
                   className="sr-only peer"
                 />
-                <div className="w-8 h-4 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-amber-600" />
+                <div className="w-8 h-4 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-amber-600" />
               </label>
             </div>
           )}
@@ -375,7 +375,7 @@ const CustomerCartSheet = ({
                       onClick={() => onToggleCookingTag(tag)}
                       className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${
                         selected
-                          ? 'border-[#E23744] bg-red-50 text-[#E23744]'
+                          ? 'border-[#E40000] bg-red-50 text-[#E40000]'
                           : 'border-neutral-200 bg-white text-neutral-600'
                       }`}
                     >
@@ -465,7 +465,7 @@ const CustomerCartSheet = ({
                 onClick={() => onSetPayMethod('cod')}
                 className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center justify-center space-y-1.5 transition-all ${
                   payMethod === 'cod'
-                    ? 'border-[#E23744] bg-red-50 text-[#E23744] ring-1 ring-[#E23744]'
+                    ? 'border-[#E40000] bg-red-50 text-[#E40000] ring-1 ring-[#E40000]'
                     : 'border-neutral-200 bg-white text-neutral-700'
                 }`}
               >
@@ -479,7 +479,7 @@ const CustomerCartSheet = ({
                 onClick={() => onSetPayMethod('online')}
                 className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center justify-center space-y-1.5 transition-all ${
                   payMethod === 'online'
-                    ? 'border-[#E23744] bg-red-50 text-[#E23744] ring-1 ring-[#E23744]'
+                    ? 'border-[#E40000] bg-red-50 text-[#E40000] ring-1 ring-[#E40000]'
                     : 'border-neutral-200 bg-white text-neutral-700'
                 }`}
               >
@@ -502,7 +502,7 @@ const CustomerCartSheet = ({
           <button
             onClick={onPlaceOrder}
             disabled={placingOrder}
-            className="w-full bg-[#E23744] hover:bg-[#CB202D] text-white font-extrabold text-sm py-3.5 rounded-2xl shadow-lg active:scale-98 transition-all disabled:opacity-50 flex items-center justify-center space-x-2"
+            className="w-full bg-[#E40000] hover:bg-[#CC0000] text-white font-extrabold text-sm py-3.5 rounded-2xl shadow-lg active:scale-98 transition-all disabled:opacity-50 flex items-center justify-center space-x-2"
           >
             <span>
               {placingOrder

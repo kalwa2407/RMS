@@ -272,7 +272,7 @@ const CustomerProfileSheet = ({
                         </span>
                         <button
                           onClick={() => onReorder(order)}
-                          className="bg-red-50 hover:bg-[#E23744] hover:text-white text-[#E23744] border border-red-200 px-3.5 py-1.5 rounded-xl text-xs font-black transition-colors"
+                          className="bg-red-50 hover:bg-[#E40000] hover:text-white text-[#E40000] border border-red-200 px-3.5 py-1.5 rounded-xl text-xs font-black transition-colors"
                         >
                           Re-Order Feast ›
                         </button>
@@ -342,12 +342,12 @@ const CustomerProfileSheet = ({
               <div className="bg-white rounded-3xl p-4 border border-neutral-200/80 shadow-xs space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2 text-xs font-black text-neutral-900">
-                    <Phone className="w-4 h-4 text-[#E23744]" />
+                    <Phone className="w-4 h-4 text-[#E40000]" />
                     <span>Mobile Number</span>
                   </div>
                   <button
                     onClick={() => setEditPhone(!editPhone)}
-                    className="text-xs font-bold text-[#E23744] hover:underline"
+                    className="text-xs font-bold text-[#E40000] hover:underline"
                   >
                     {editPhone ? 'Cancel' : 'Edit'}
                   </button>
@@ -381,12 +381,12 @@ const CustomerProfileSheet = ({
               <div className="bg-white rounded-3xl p-4 border border-neutral-200/80 shadow-xs space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2 text-xs font-black text-neutral-900">
-                    <MapPin className="w-4 h-4 text-[#E23744]" />
+                    <MapPin className="w-4 h-4 text-[#E40000]" />
                     <span>Default Delivery Address</span>
                   </div>
                   <button
                     onClick={() => setEditAddr(!editAddr)}
-                    className="text-xs font-bold text-[#E23744] hover:underline"
+                    className="text-xs font-bold text-[#E40000] hover:underline"
                   >
                     {editAddr ? 'Cancel' : 'Edit'}
                   </button>
@@ -427,7 +427,7 @@ const CustomerProfileSheet = ({
                 </button>
                 <button
                   onClick={onSignOut}
-                  className="bg-red-50 hover:bg-red-100 text-[#E23744] border border-red-200 p-3 rounded-2xl font-bold text-xs flex items-center justify-center space-x-1.5 transition-colors"
+                  className="bg-red-50 hover:bg-red-100 text-[#E40000] border border-red-200 p-3 rounded-2xl font-bold text-xs flex items-center justify-center space-x-1.5 transition-colors"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                   <span>Sign Out</span>
