@@ -125,9 +125,11 @@ const CustomerProfileTab = ({
         <section className="bg-white rounded-3xl p-6 border border-neutral-200/80 shadow-xs relative overflow-hidden text-center space-y-4">
           <div className="absolute top-0 right-0 w-36 h-36 bg-gradient-to-bl from-amber-400/10 via-amber-200/5 to-transparent rounded-bl-full pointer-events-none" />
           
-          <div className="w-16 h-16 rounded-2xl bg-[#1C1917] text-amber-300 flex items-center justify-center shadow-md border-2 border-amber-400/70 mx-auto">
-            <Crown className="w-8 h-8 text-amber-400 fill-amber-400" />
-          </div>
+          <img
+            src="/persian_darbar_crown_logo.png"
+            alt="Persian Darbar"
+            className="w-16 h-16 rounded-2xl shadow-md border border-amber-400/70 object-contain mx-auto"
+          />
 
           <div>
             <h2 className="text-lg font-black text-neutral-900 leading-tight">
@@ -289,7 +291,7 @@ const CustomerProfileTab = ({
           <div className="rounded-3xl p-5 text-white bg-gradient-to-br from-[#1C1917] via-[#2A241E] to-[#12100E] border-2 border-amber-400/50 shadow-lg relative overflow-hidden">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Crown className="w-5 h-5 text-amber-400 fill-amber-400" />
+                <img src="/persian_darbar_crown_logo.png" alt="" className="w-5 h-5 rounded-md object-contain" />
                 <span className="text-xs font-black uppercase tracking-wider text-amber-300">
                   PERSIAN DARBAR ROYAL PASS
                 </span>

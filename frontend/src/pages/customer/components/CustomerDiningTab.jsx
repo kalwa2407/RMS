@@ -200,9 +200,11 @@ const CustomerDiningTab = ({
                 {/* Top Badge: Royal Header & Pass ID */}
                 <div className="flex items-center justify-between border-b border-amber-400/20 pb-3">
                   <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 rounded-full bg-amber-400/20 border border-amber-400/50 flex items-center justify-center text-amber-400">
-                      <Crown className="w-4 h-4 fill-amber-400" />
-                    </div>
+                    <img
+                      src="/persian_darbar_crown_logo.png"
+                      alt="Persian Darbar"
+                      className="w-9 h-9 rounded-xl object-contain shadow-xs border border-amber-400/50"
+                    />
                     <div>
                       <span className="text-[9px] font-extrabold uppercase tracking-widest text-amber-400 block">
                         VIP DINING PASS

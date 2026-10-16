@@ -238,7 +238,7 @@ const CustomerReservations = () => {
         setBookingSuccessModal(confirmedBooking);
         fetchReservations(true);
         toast({
-          title: '🎉 Royal Table Reserved!',
+          title: 'Royal Table Reserved',
           description: `Confirmed for ${payload.guests} guests on ${payload.date} at ${payload.time}.`,
         });
       } else {
@@ -946,8 +946,15 @@ const CustomerReservations = () => {
         {bookingSuccessModal && (
           <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl text-center space-y-4 animate-in fade-in zoom-in-95 duration-200">
-              <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto ring-8 ring-emerald-50/50">
-                <Check className="w-8 h-8 stroke-[3]" />
+              <div className="relative inline-block mx-auto">
+                <img
+                  src="/persian_darbar_crown_logo.png"
+                  alt="Persian Darbar"
+                  className="w-16 h-16 rounded-2xl shadow-lg border border-amber-400/60 object-contain mx-auto"
+                />
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] font-black border-2 border-white shadow-xs">
+                  ✓
+                </div>
               </div>
 
               <div>

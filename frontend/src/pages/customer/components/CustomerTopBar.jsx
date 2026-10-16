@@ -33,9 +33,11 @@ const CustomerTopBar = ({
               onClick={onOpenLocationModal}
               className="flex items-center space-x-2.5 cursor-pointer active:opacity-75 transition-opacity flex-1 min-w-0"
             >
-              <div className="w-8 h-8 rounded-full bg-amber-400/20 text-amber-400 flex items-center justify-center shrink-0 shadow-xs border border-amber-400/50">
-                <Crown className="w-4 h-4 fill-amber-400" />
-              </div>
+              <img
+                src="/persian_darbar_crown_logo.png"
+                alt="Persian Darbar"
+                className="w-8 h-8 rounded-xl object-contain shrink-0 shadow-xs border border-amber-400/50"
+              />
               <div className="leading-tight min-w-0 flex-1 truncate">
                 <div className="flex items-center space-x-1">
                   <span className="text-xs sm:text-sm font-black text-white truncate tracking-tight">
@@ -56,7 +58,7 @@ const CustomerTopBar = ({
                 aria-label="Royalty Membership"
                 className="px-2.5 py-1 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/40 text-xs font-black flex items-center space-x-1 shadow-xs active:scale-95 transition-transform shrink-0"
               >
-                <Crown className="w-3 h-3 fill-amber-400 text-amber-400" />
+                <img src="/persian_darbar_crown_logo.png" alt="" className="w-3.5 h-3.5 rounded-sm object-contain" />
                 <span className="text-[9.5px] font-extrabold tracking-wider uppercase">VIP Table</span>
               </button>
 
@@ -130,7 +132,7 @@ const CustomerTopBar = ({
               aria-label="Royalty Membership"
               className="px-2 py-1 rounded-full bg-[#1C1917] text-amber-300 border border-amber-400/50 text-xs font-black flex items-center space-x-1 shadow-xs active:scale-95 transition-transform shrink-0"
             >
-              <Crown className="w-3 h-3 fill-amber-400 text-amber-400" />
+              <img src="/persian_darbar_crown_logo.png" alt="" className="w-3.5 h-3.5 rounded-sm object-contain" />
               <span className="text-[9.5px] font-extrabold tracking-wider uppercase">Royalty</span>
             </button>
 

@@ -585,7 +585,7 @@ const CustomerDashboard = () => {
       }
 
       toast({
-        title: '🎉 Order Placed Successfully!',
+        title: 'Order Placed Successfully',
         description: `Order #${String(data.order_id || data.id).slice(-8)} is being prepared!`,
       });
       setProfileInitialTab('orders');
@@ -645,8 +645,9 @@ const CustomerDashboard = () => {
         const data = await res.json();
         setBookingSuccess({ ...data, date, time, guests });
         fetchRes();
+        mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
         toast({
-          title: '🎉 Table Reserved!',
+          title: 'Royal Table Reserved',
           description: `Confirmed for ${guests} guests on ${date} at ${time}.`,
         });
       } else {
@@ -654,8 +655,9 @@ const CustomerDashboard = () => {
       }
     } catch (err) {
       setBookingSuccess({ date, time, guests });
+      mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
       toast({
-        title: 'Booking Confirmed!',
+        title: 'Table Reserved',
         description: `Your table for ${guests} guests on ${date} at ${time} is registered.`,
       });
     } finally {

@@ -179,11 +179,13 @@ const CustomerLogin = () => {
 
         {/* ── Hero Branding Header (Compact & Balanced for Keyboard) ── */}
         <section className="px-6 pt-1 pb-2 text-center shrink-0">
-          {/* Persian Darbar Royal Emblem */}
-          <div className="relative inline-block mb-1.5">
-            <div className="w-13 h-13 rounded-2xl bg-[#0F1721] text-amber-300 flex items-center justify-center font-black text-xl shadow-md border-2 border-amber-400/80 mx-auto">
-              <Crown className="w-6 h-6 text-amber-400 fill-amber-400" />
-            </div>
+          {/* Persian Darbar Royal Crown Logo */}
+          <div className="relative inline-block mb-2">
+            <img
+              src="/persian_darbar_crown_logo.png"
+              alt="Persian Darbar"
+              className="w-14 h-14 rounded-2xl shadow-md border border-amber-400/50 object-contain mx-auto"
+            />
             <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[9px] font-black border border-white shadow-xs">
               ✓
             </div>
