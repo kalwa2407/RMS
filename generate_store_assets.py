@@ -5,6 +5,7 @@ import threading
 import json
 import http.server
 import socketserver
+import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from playwright.sync_api import sync_playwright
 
@@ -434,28 +435,44 @@ def generate_feature_graphic_1024x500():
     # Ambient Gold Radial Glow
     glow_img = Image.new("RGBA", (target_w, target_h), (0, 0, 0, 0))
     glow_draw = ImageDraw.Draw(glow_img)
-    glow_draw.ellipse([(150, -50), (650, 450)], fill=(245, 158, 11, 40))
-    glow_img = glow_img.filter(ImageFilter.GaussianBlur(50))
+    glow_draw.ellipse([(140, -50), (640, 450)], fill=(245, 158, 11, 45))
+    glow_img = glow_img.filter(ImageFilter.GaussianBlur(55))
     canvas = Image.alpha_composite(canvas, glow_img)
     draw = ImageDraw.Draw(canvas)
 
-    # Crown logo
-    logo_path = os.path.join(PUBLIC_DIR, "persian_darbar_crown_logo.png")
-    if os.path.exists(logo_path):
-        logo_img = Image.open(logo_path).convert("RGBA").resize((90, 90), Image.Resampling.LANCZOS)
-        canvas.paste(logo_img, (60, 45), logo_img)
+    # Persian Darbar Authentic 3D Gold Logo
+    pd_logo_path = os.path.join(PUBLIC_DIR, "persian_darbar_logo_1776079280186.png")
+    brand_x = 60
+    if os.path.exists(pd_logo_path):
+        pd_im = Image.open(pd_logo_path).convert("RGBA")
+        arr = np.array(pd_im, dtype=np.float32)
+        r, g, b = arr[:, :, 0], arr[:, :, 1], arr[:, :, 2]
+        diff = (r - b) + (g - b) * 0.5
+        goldness = np.clip((diff - 20) / 40.0, 0, 1)
+        bright = np.clip((r + g + b - 200) / 100.0, 0, 1)
+        alpha = np.clip(np.maximum(goldness, bright) * 255.0, 0, 255).astype(np.uint8)
+        arr[:, :, 3] = alpha
+        extracted = Image.fromarray(arr.astype(np.uint8), "RGBA")
+        # Crop 3D Crown + Arch + calligraphy emblem
+        emblem_only = extracted.crop((120, 180, 900, 640))
+        ew, eh = emblem_only.size
+        emb_h = 105
+        emb_w = int(ew * (emb_h / float(eh)))
+        emblem_resized = emblem_only.resize((emb_w, emb_h), Image.Resampling.LANCZOS)
+        canvas.paste(emblem_resized, (60, 38), emblem_resized)
+        brand_x = 60 + emb_w + 22
 
     # Typography
-    font_fg_brand = load_font("georgiab.ttf", 38)
-    font_fg_headline = load_font("georgiab.ttf", 32)
-    font_fg_sub = load_font("segoeui.ttf", 18)
+    font_fg_brand = load_font("georgiab.ttf", 40)
+    font_fg_headline = load_font("georgiab.ttf", 31)
+    font_fg_sub = load_font("segoeui.ttf", 17)
     font_fg_badge = load_font("segoeuib.ttf", 15)
 
-    draw.text((165, 52), "PERSIAN DARBAR", font=font_fg_brand, fill=(255, 255, 255, 255))
-    draw.text((165, 104), "ESTD. 1978 · THE ROYAL MUGHLAI FEAST", font=font_fg_badge, fill=(245, 158, 11, 255))
+    draw.text((brand_x, 50), "PERSIAN DARBAR", font=font_fg_brand, fill=(255, 255, 255, 255))
+    draw.text((brand_x, 102), "ESTD. 1978 · THE ROYAL MUGHLAI FEAST", font=font_fg_badge, fill=(245, 158, 11, 255))
 
-    draw.text((60, 175), "Authentic Shahi Dum Biryani,\nMughlai Raan & Fine Dining", font=font_fg_headline, fill=(251, 191, 36, 255))
-    draw.text((60, 295), "Order online in sealed clay handis or reserve luxury tables\nacross Bandra, Andheri, Kurla & Camp Pune.", font=font_fg_sub, fill=(203, 213, 225, 230))
+    draw.text((60, 180), "Authentic Shahi Dum Biryani,\nMughlai Raan & Fine Dining", font=font_fg_headline, fill=(251, 191, 36, 255))
+    draw.text((60, 290), "Order online in sealed clay handis or reserve luxury tables\nacross Bandra, Andheri, Kurla & Camp Pune.", font=font_fg_sub, fill=(203, 213, 225, 230))
 
     # Delivery & Quality Trust Chips
     chip_y = 380
@@ -494,42 +511,52 @@ def generate_feature_graphic_1024x500():
 
     final_rgb = canvas.convert("RGB")
     final_rgb.save(os.path.join(WORKSPACE, "playstore_assets", "feature_graphic_royal_1024x500.png"), quality=95)
+    final_rgb.save(os.path.join(WORKSPACE, "playstore_assets", "feature_graphic_1024x500.png"), quality=95)
     dest_desktop = r"C:\Users\Aman Talukdar\Desktop\PlayStore_Assets_PersianDarbar"
     if os.path.exists(dest_desktop):
         final_rgb.save(os.path.join(dest_desktop, "feature_graphic_royal_1024x500.png"), quality=95)
+        final_rgb.save(os.path.join(dest_desktop, "feature_graphic_1024x500.png"), quality=95)
+    print("  Saved Google Play Feature Graphic (1024 x 500) with Persian Darbar Logo")
 
 def generate_app_icon_512x512():
     print("Generating Google Play App Icon (512 x 512)...")
     target_size = 512
 
-    # High-end full-bleed luxury slate canvas matching Persian Darbar emblem
-    crest_path = os.path.join(PUBLIC_DIR, "persian_darbar_logo_1776079280186.png")
-    if os.path.exists(crest_path):
-        crest_img = Image.open(crest_path).convert("RGB")
-        final_icon = crest_img.resize((target_size, target_size), Image.Resampling.LANCZOS)
+    # Authentic original app icon from codebase as requested by user
+    src_paths = [
+        os.path.join(WORKSPACE, "frontend", "ios", "App", "App", "Assets.xcassets", "AppIcon.appiconset", "AppIcon-512@2x.png"),
+        os.path.join(PUBLIC_DIR, "pwa-512.png"),
+    ]
+    code_icon_path = next((p for p in src_paths if os.path.exists(p)), None)
+    if code_icon_path:
+        base_icon = Image.open(code_icon_path).convert("RGB")
+        final_icon = base_icon.resize((target_size, target_size), Image.Resampling.LANCZOS)
     else:
-        canvas = Image.new("RGBA", (target_size, target_size), (12, 11, 10, 255))
-        draw = ImageDraw.Draw(canvas)
-        draw_rounded_rect(
-            draw,
-            [(16, 16), (496, 496)],
-            radius=110,
-            fill=(20, 18, 16, 255),
-            outline=(212, 175, 55, 255),
-            width=12
-        )
-        logo_path = os.path.join(PUBLIC_DIR, "persian_darbar_crown_logo.png")
-        if os.path.exists(logo_path):
-            logo_img = Image.open(logo_path).convert("RGBA").resize((320, 320), Image.Resampling.LANCZOS)
-            canvas.paste(logo_img, (96, 96), logo_img)
-        final_icon = canvas.convert("RGB")
+        raise FileNotFoundError("Could not find original code app icon")
 
+    final_icon.save(os.path.join(WORKSPACE, "playstore_assets", "app_icon_512x512.png"), quality=95)
     final_icon.save(os.path.join(WORKSPACE, "playstore_assets", "app_icon_crown_512x512.png"), quality=95)
     dest_desktop = r"C:\Users\Aman Talukdar\Desktop\PlayStore_Assets_PersianDarbar"
     if os.path.exists(dest_desktop):
+        final_icon.save(os.path.join(dest_desktop, "app_icon_512x512.png"), quality=95)
         final_icon.save(os.path.join(dest_desktop, "app_icon_crown_512x512.png"), quality=95)
+        final_icon.save(os.path.join(dest_desktop, "00_OFFICIAL_APP_ICON_512x512.png"), quality=95)
+
+    # Also save 1024x1024 App Store icon
+    icon_1024 = base_icon.resize((1024, 1024), Image.Resampling.LANCZOS)
+    icon_1024.save(os.path.join(WORKSPACE, "playstore_assets", "AppStore_app_icon_1024x1024.png"), quality=95)
+    if os.path.exists(dest_desktop):
+        icon_1024.save(os.path.join(dest_desktop, "AppStore_app_icon_1024x1024.png"), quality=95)
+    print("  Saved Google Play App Icon (512 x 512) & App Store Icon (1024 x 1024) from original code")
 
 def main():
+    if "--assets-only" in sys.argv or "--quick" in sys.argv:
+        print("=== Quick Generation: Feature Graphic & App Icon ===")
+        generate_feature_graphic_1024x500()
+        generate_app_icon_512x512()
+        print("\n[SUCCESS] Feature Graphic and App Icon updated successfully!")
+        return
+
     print("=== Generating High-Quality App Store & Play Store Assets ===")
     capture_fresh_screens()
 
