@@ -173,35 +173,34 @@ const CustomerRewardsTab = ({
         <div className="absolute -top-16 -right-16 w-48 h-48 bg-amber-400/20 rounded-full blur-2xl pointer-events-none" />
         <div className="absolute -bottom-16 -left-16 w-44 h-44 bg-rose-500/10 rounded-full blur-2xl pointer-events-none" />
 
-        <div className="flex items-start justify-between relative z-10">
-          <div className="flex items-center space-x-3.5">
-            <div className="relative">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-400 via-amber-200 to-amber-500 text-neutral-950 flex items-center justify-center font-black text-2xl shadow-lg border-2 border-white/40">
+        <div className="flex items-start justify-between gap-3 relative z-10">
+          <div className="flex items-center space-x-3 min-w-0 flex-1">
+            <div className="relative shrink-0">
+              <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-amber-400 via-amber-200 to-amber-500 text-neutral-950 flex items-center justify-center font-black text-xl sm:text-2xl shadow-lg border-2 border-white/40">
                 {patronInitial}
               </div>
               <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-amber-400 border-2 border-[#1C1917] flex items-center justify-center shadow-xs">
                 <Crown className="w-3 h-3 text-neutral-950 fill-neutral-950" />
               </div>
             </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <h2 className="text-lg font-black tracking-tight text-white">{patronName}</h2>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-400/20 text-amber-300 border border-amber-400/40 flex items-center gap-1">
-                  <Sparkles className="w-2.5 h-2.5" />
-                  GOLD VIP
-                </span>
-              </div>
-              <p className="text-xs text-stone-300 font-medium mt-0.5">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base sm:text-lg font-black tracking-tight text-white capitalize truncate leading-tight">
+                {patronName}
+              </h2>
+              <p className="text-[11px] text-stone-300 font-medium truncate mt-0.5">
                 +91 {patronPhone} {patronEmail ? `· ${patronEmail}` : '· Verified Patron'}
               </p>
             </div>
           </div>
 
-          <div className="text-right">
-            <span className="text-[9px] uppercase font-bold tracking-widest text-amber-400/80 block">
-              PERSIAN DARBAR
+          <div className="text-right shrink-0 flex flex-col items-end">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-400/20 text-amber-300 border border-amber-400/40 flex items-center gap-1 shadow-xs whitespace-nowrap">
+              <Sparkles className="w-2.5 h-2.5" />
+              GOLD VIP
             </span>
-            <span className="text-xs font-mono font-bold text-amber-300">ROYALTY CLUB</span>
+            <span className="text-[9px] uppercase font-black tracking-widest text-amber-400/70 mt-1.5 whitespace-nowrap">
+              ROYALTY CLUB
+            </span>
           </div>
         </div>
 
