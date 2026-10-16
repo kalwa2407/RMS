@@ -1,223 +1,128 @@
-// High-definition assets and imagery tailored for the Zomato-inspired Persian Darbar Customer App
+// High-definition assets and imagery tailored for Persian Darbar Customer App
 
-export const CATEGORY_ROUNDELS = [
-  {
-    id: 'offers',
-    title: 'Offers',
-    isOfferCard: true,
-  },
+// 1. Authentic Persian Darbar Categories
+export const PERSIAN_DARBAR_CATEGORIES = [
   {
     id: 'All',
-    title: 'All',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCrRydXqzXt6L9msdsk5NyAHp1tqtyvm1j-tUmjjvxHSojG2QZ5tfhlZ-APMB8iQ4plgZF9fXRQ8568R0T0uyH9t0RotlLx4Mo5UzSnTFzaSALzJ1YBYXk5s9tpHABypRNjeOr1CR7DAgxOPPxG9N_jlSJYOac2rvWNJooSzRzn71LosPpFV3codEkddk-MX0Gnad_JJYJcaUO7hxvzT0detJ_we0fn3iMiCHbq5xq0XNrlAO_DQj-T8A'
-  },
-  {
-    id: 'Paratha',
-    title: 'Paratha',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB-qeHNDpTHq96DeV45ZEc8TSXnm9NqDr3kf_WDjG8kV2Gh5jOoymgiRxWjBEByNUbP4f1bBkBZ9GmowTOJVjLJKY9sk3aJ_DacGw0IU5-PtWNLKH86UB8umAcMiRYQmWs53ihVYsbbYrkVR_qu7FHGffguGc4jnEH2jq5tGk-G4JmB97k5YQH01Uc-G1L9_Os2rpcsqJj2rt_c2jzyiQnemaqRVJMvEj1w4BmlKqwq5EHurSteYc3GqQ'
-  },
-  {
-    id: 'Chicken Curry',
-    title: 'Chicken C...',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCvQSmciChQGzYuM58eHKKwj9iu5zhyvXApX31r0zi27rW1wAF8RaRfzOWHuzmRBqmHlJAd6hQmeAMzcrlSiM8HMT_YKCYyzeKqBapptt-5enk0uK7TUV20-AHgd8KcZEhLqRSPJRz7ALx4p_MD5bt9C-8W7dSg-ChZH4dTRMGb87mx7IiQbkLlaq8BAjE-cc1VPViv8WaZCW6Hh-bQiniFKyleWwmaV41_eGMDQoKc4LxKkR48EJNuMA'
-  },
-  {
-    id: 'Mutton',
-    title: 'Mutton',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBT6JP8t2T6vNinH5cuHoalLaeMI3Bj2ECQU3KZZD0eMVofg4pLJkVuUw76ajjou4xCWZu4zGLpYn5dBRH4jK-XsJJZLmrCyXOFweDWnq7r1-qtPXI0mq7ivz_HmDaFjLQ0Wypq6IL164ahadDnm-soyyA4fQzNFtaQI536MljdSTMXEHMAA4N6T22pF0ERtGrkSxaaXIrJQoS-VkxIWzQi2d9C1A0m7AUB2yfJhwkxpUUjvh3TY3dThg'
+    title: 'All Dishes',
+    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
   },
   {
     id: 'Biryani',
-    title: 'Biryani',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBT7p9ZXtVziXkvS7aJaLRmFPIX161FPlg-_fgbCUH-cGaPMCYTwgiORU6dTDgZ8EE5nbfgB0nmPRVhbB7nEEPJbpqKmNC7EEILzMXZX_uOvHPRvJYj9jbrQBzRy5EBMjFAb2b4FO8O5IjHZ9V46IXXy9vYS11xFEXtDtGTDeSn8mSa5LRe2Q623JMcx2e3XHhX19UfZh5YB8O3BvXWsG6xRTeiSmgwzcD6_wdsjAgXiVBcn85vwgfiMg'
+    title: 'Royal Biryani',
+    image: 'https://images.unsplash.com/photo-1701579231349-d7459c40919d?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
   },
   {
     id: 'Kebabs',
-    title: 'Kebabs',
-    image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
+    title: 'Tandoor & Kebabs',
+    image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+  },
+  {
+    id: 'Mughlai',
+    title: 'Mughlai Curries',
+    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+  },
+  {
+    id: 'Starters',
+    title: 'Starters',
+    image: 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+  },
+  {
+    id: 'Main Course',
+    title: 'Main Course',
+    image: 'https://images.unsplash.com/photo-1589302168068-964664d93dc0?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+  },
+  {
+    id: 'Breads',
+    title: 'Roti & Naans',
+    image: 'https://images.unsplash.com/photo-1626074353765-517a681e40be?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
   },
   {
     id: 'Desserts',
-    title: 'Desserts',
-    image: 'https://images.unsplash.com/photo-1617622163466-d1d56ec8b127?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
+    title: 'Shahi Desserts',
+    image: 'https://images.unsplash.com/photo-1617622163466-d1d56ec8b127?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
   },
   {
     id: 'Beverages',
     title: 'Chai & Drinks',
-    image: 'https://images.unsplash.com/photo-1592861956120-e524fc739696?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
+    image: 'https://images.unsplash.com/photo-1592861956120-e524fc739696?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
   }
 ];
 
+// Cravings chips for Search
 export const SEARCH_CRAVINGS = [
-  '✦ Comfort food',
-  '✦ Late night cravings',
-  '✦ Biryani specials',
-  '✦ Royal Mughlai',
-  '✦ Kebabs & Tandoor',
-  '✦ Raan Specials',
-  '✦ Irani Chai & Maskas'
+  '✦ Chicken Biryani',
+  '✦ Mutton Barra Chop',
+  '✦ Tandoori Mumtaz',
+  '✦ Butter Chicken',
+  '✦ Mutton Special Biryani',
+  '✦ Garlic Naan',
+  '✦ Shahi Tukda',
+  '✦ Irani Chai'
 ];
 
+// Real Persian Darbar Roundels for Search "WHAT'S ON YOUR MIND?"
 export const SEARCH_ROUNDELS_GRID = [
   {
-    title: 'Paratha',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB-qeHNDpTHq96DeV45ZEc8TSXnm9NqDr3kf_WDjG8kV2Gh5jOoymgiRxWjBEByNUbP4f1bBkBZ9GmowTOJVjLJKY9sk3aJ_DacGw0IU5-PtWNLKH86UB8umAcMiRYQmWs53ihVYsbbYrkVR_qu7FHGffguGc4jnEH2jq5tGk-G4JmB97k5YQH01Uc-G1L9_Os2rpcsqJj2rt_c2jzyiQnemaqRVJMvEj1w4BmlKqwq5EHurSteYc3GqQ'
-  },
-  {
-    title: 'Chicken Curries',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCvQSmciChQGzYuM58eHKKwj9iu5zhyvXApX31r0zi27rW1wAF8RaRfzOWHuzmRBqmHlJAd6hQmeAMzcrlSiM8HMT_YKCYyzeKqBapptt-5enk0uK7TUV20-AHgd8KcZEhLqRSPJRz7ALx4p_MD5bt9C-8W7dSg-ChZH4dTRMGb87mx7IiQbkLlaq8BAjE-cc1VPViv8WaZCW6Hh-bQiniFKyleWwmaV41_eGMDQoKc4LxKkR48EJNuMA'
-  },
-  {
-    title: 'Mutton',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBT6JP8t2T6vNinH5cuHoalLaeMI3Bj2ECQU3KZZD0eMVofg4pLJkVuUw76ajjou4xCWZu4zGLpYn5dBRH4jK-XsJJZLmrCyXOFweDWnq7r1-qtPXI0mq7ivz_HmDaFjLQ0Wypq6IL164ahadDnm-soyyA4fQzNFtaQI536MljdSTMXEHMAA4N6T22pF0ERtGrkSxaaXIrJQoS-VkxIWzQi2d9C1A0m7AUB2yfJhwkxpUUjvh3TY3dThg'
-  },
-  {
-    title: 'Chicken',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCvQSmciChQGzYuM58eHKKwj9iu5zhyvXApX31r0zi27rW1wAF8RaRfzOWHuzmRBqmHlJAd6hQmeAMzcrlSiM8HMT_YKCYyzeKqBapptt-5enk0uK7TUV20-AHgd8KcZEhLqRSPJRz7ALx4p_MD5bt9C-8W7dSg-ChZH4dTRMGb87mx7IiQbkLlaq8BAjE-cc1VPViv8WaZCW6Hh-bQiniFKyleWwmaV41_eGMDQoKc4LxKkR48EJNuMA'
-  },
-  {
-    title: 'Burger & Rolls',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB3vWIlf2qsiMpWmtxSln4Bj_Md6pQnv_hUpqtQkR7GCrHl_DPxB0Q4AKOu4g5PRHrtsBROn6LWmNpWP_4KSvIIG2UHdOIcwXTbwIuWDWrcbDjF0Zscv2S-RxKQ_iQifk0U8_H8L_tJnCOs9vp0JD3iq9SNAMBnhGKH1iv6SzIdsDe-t7GD-oFTAL6kbeOlqigcD1gTFepAx1rtR7gjwOVeVI067eEidz07lanet5-yWBnm3fsXnk4KXw'
-  },
-  {
-    title: 'Fried Rice',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCrRydXqzXt6L9msdsk5NyAHp1tqtyvm1j-tUmjjvxHSojG2QZ5tfhlZ-APMB8iQ4plgZF9fXRQ8568R0T0uyH9t0RotlLx4Mo5UzSnTFzaSALzJ1YBYXk5s9tpHABypRNjeOr1CR7DAgxOPPxG9N_jlSJYOac2rvWNJooSzRzn71LosPpFV3codEkddk-MX0Gnad_JJYJcaUO7hxvzT0detJ_we0fn3iMiCHbq5xq0XNrlAO_DQj-T8A'
-  },
-  {
     title: 'Chicken Biryani',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBT7p9ZXtVziXkvS7aJaLRmFPIX161FPlg-_fgbCUH-cGaPMCYTwgiORU6dTDgZ8EE5nbfgB0nmPRVhbB7nEEPJbpqKmNC7EEILzMXZX_uOvHPRvJYj9jbrQBzRy5EBMjFAb2b4FO8O5IjHZ9V46IXXy9vYS11xFEXtDtGTDeSn8mSa5LRe2Q623JMcx2e3XHhX19UfZh5YB8O3BvXWsG6xRTeiSmgwzcD6_wdsjAgXiVBcn85vwgfiMg'
-  },
-  {
-    title: 'Pizza & Naans',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB-qeHNDpTHq96DeV45ZEc8TSXnm9NqDr3kf_WDjG8kV2Gh5jOoymgiRxWjBEByNUbP4f1bBkBZ9GmowTOJVjLJKY9sk3aJ_DacGw0IU5-PtWNLKH86UB8umAcMiRYQmWs53ihVYsbbYrkVR_qu7FHGffguGc4jnEH2jq5tGk-G4JmB97k5YQH01Uc-G1L9_Os2rpcsqJj2rt_c2jzyiQnemaqRVJMvEj1w4BmlKqwq5EHurSteYc3GqQ'
-  },
-  {
-    title: 'Cake & Shahi Meetha',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCrRydXqzXt6L9msdsk5NyAHp1tqtyvm1j-tUmjjvxHSojG2QZ5tfhlZ-APMB8iQ4plgZF9fXRQ8568R0T0uyH9t0RotlLx4Mo5UzSnTFzaSALzJ1YBYXk5s9tpHABypRNjeOr1CR7DAgxOPPxG9N_jlSJYOac2rvWNJooSzRzn71LosPpFV3codEkddk-MX0Gnad_JJYJcaUO7hxvzT0detJ_we0fn3iMiCHbq5xq0XNrlAO_DQj-T8A'
-  },
-  {
-    title: 'Pav Bhaji & Samosa',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB3vWIlf2qsiMpWmtxSln4Bj_Md6pQnv_hUpqtQkR7GCrHl_DPxB0Q4AKOu4g5PRHrtsBROn6LWmNpWP_4KSvIIG2UHdOIcwXTbwIuWDWrcbDjF0Zscv2S-RxKQ_iQifk0U8_H8L_tJnCOs9vp0JD3iq9SNAMBnhGKH1iv6SzIdsDe-t7GD-oFTAL6kbeOlqigcD1gTFepAx1rtR7gjwOVeVI067eEidz07lanet5-yWBnm3fsXnk4KXw'
-  },
-  {
-    title: 'Chicken Lollipop',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAEICo_R5lnQ0EDLSmv6Bpk_5h5bbWs2_geeYRa3IlHcVs5iBCUUJnq3nmybJsdsM3KQQUiZuRST8jUKeZqN7y2YQlBWRzWsdpEriYVwIqrIxhae19hl8JrfmcdzrSHnvxberZEL_Z2Ctc2ICK1QZNj1ANckwk24P0dXDBT-DnCtWzzbxD5i_sl79852MRp7Zq-mFNShPEf3DqUfjI8-92O4isRQVJzZGENZbd_ekupiYtB4QFxooiuZA'
-  },
-  {
-    title: 'Sandwich & Maska',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB3vWIlf2qsiMpWmtxSln4Bj_Md6pQnv_hUpqtQkR7GCrHl_DPxB0Q4AKOu4g5PRHrtsBROn6LWmNpWP_4KSvIIG2UHdOIcwXTbwIuWDWrcbDjF0Zscv2S-RxKQ_iQifk0U8_H8L_tJnCOs9vp0JD3iq9SNAMBnhGKH1iv6SzIdsDe-t7GD-oFTAL6kbeOlqigcD1gTFepAx1rtR7gjwOVeVI067eEidz07lanet5-yWBnm3fsXnk4KXw'
-  },
-  {
-    title: 'Pulao & Bowls',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC58TbzSTATflzv9rpzx-SkKCCsVgk8Z16-qsRhroXy7W6gySi1ucgeWYZ_L7aWArSR54uNiKMm1R9-i33NzEVHiEcPv_t9c_ccfRR5153CiS8Okbl-RAzk5KGMHz8tHKzgvzZLzvW7ar-ja2nwsAG_C83DgM-lNEv-NA0IdlVuzsj3JiXRmOswBNpUl3XYzO_oTyg0drUyOOWQTQ114eVYUKWMWGJdKXMuQDO0rIBbnmOY-Q8iGfuRkg'
-  },
-  {
-    title: 'Kathi Rolls',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB-qeHNDpTHq96DeV45ZEc8TSXnm9NqDr3kf_WDjG8kV2Gh5jOoymgiRxWjBEByNUbP4f1bBkBZ9GmowTOJVjLJKY9sk3aJ_DacGw0IU5-PtWNLKH86UB8umAcMiRYQmWs53ihVYsbbYrkVR_qu7FHGffguGc4jnEH2jq5tGk-G4JmB97k5YQH01Uc-G1L9_Os2rpcsqJj2rt_c2jzyiQnemaqRVJMvEj1w4BmlKqwq5EHurSteYc3GqQ'
-  },
-  {
-    title: 'Royal Biryani',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBT7p9ZXtVziXkvS7aJaLRmFPIX161FPlg-_fgbCUH-cGaPMCYTwgiORU6dTDgZ8EE5nbfgB0nmPRVhbB7nEEPJbpqKmNC7EEILzMXZX_uOvHPRvJYj9jbrQBzRy5EBMjFAb2b4FO8O5IjHZ9V46IXXy9vYS11xFEXtDtGTDeSn8mSa5LRe2Q623JMcx2e3XHhX19UfZh5YB8O3BvXWsG6xRTeiSmgwzcD6_wdsjAgXiVBcn85vwgfiMg'
-  }
-];
-
-export const UNDER_250_ROUNDELS = [
-  { id: 'All', title: 'All', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCrRydXqzXt6L9msdsk5NyAHp1tqtyvm1j-tUmjjvxHSojG2QZ5tfhlZ-APMB8iQ4plgZF9fXRQ8568R0T0uyH9t0RotlLx4Mo5UzSnTFzaSALzJ1YBYXk5s9tpHABypRNjeOr1CR7DAgxOPPxG9N_jlSJYOac2rvWNJooSzRzn71LosPpFV3codEkddk-MX0Gnad_JJYJcaUO7hxvzT0detJ_we0fn3iMiCHbq5xq0XNrlAO_DQj-T8A' },
-  { id: 'Bowl', title: 'Bowl', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC58TbzSTATflzv9rpzx-SkKCCsVgk8Z16-qsRhroXy7W6gySi1ucgeWYZ_L7aWArSR54uNiKMm1R9-i33NzEVHiEcPv_t9c_ccfRR5153CiS8Okbl-RAzk5KGMHz8tHKzgvzZLzvW7ar-ja2nwsAG_C83DgM-lNEv-NA0IdlVuzsj3JiXRmOswBNpUl3XYzO_oTyg0drUyOOWQTQ114eVYUKWMWGJdKXMuQDO0rIBbnmOY-Q8iGfuRkg' },
-  { id: 'Biryani', title: 'Biryani', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBT7p9ZXtVziXkvS7aJaLRmFPIX161FPlg-_fgbCUH-cGaPMCYTwgiORU6dTDgZ8EE5nbfgB0nmPRVhbB7nEEPJbpqKmNC7EEILzMXZX_uOvHPRvJYj9jbrQBzRy5EBMjFAb2b4FO8O5IjHZ9V46IXXy9vYS11xFEXtDtGTDeSn8mSa5LRe2Q623JMcx2e3XHhX19UfZh5YB8O3BvXWsG6xRTeiSmgwzcD6_wdsjAgXiVBcn85vwgfiMg' },
-  { id: 'Khichdi', title: 'Khichdi', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCrRydXqzXt6L9msdsk5NyAHp1tqtyvm1j-tUmjjvxHSojG2QZ5tfhlZ-APMB8iQ4plgZF9fXRQ8568R0T0uyH9t0RotlLx4Mo5UzSnTFzaSALzJ1YBYXk5s9tpHABypRNjeOr1CR7DAgxOPPxG9N_jlSJYOac2rvWNJooSzRzn71LosPpFV3codEkddk-MX0Gnad_JJYJcaUO7hxvzT0detJ_we0fn3iMiCHbq5xq0XNrlAO_DQj-T8A' },
-  { id: 'Pav Bhaji', title: 'Pav Bhaji', image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB3vWIlf2qsiMpWmtxSln4Bj_Md6pQnv_hUpqtQkR7GCrHl_DPxB0Q4AKOu4g5PRHrtsBROn6LWmNpWP_4KSvIIG2UHdOIcwXTbwIuWDWrcbDjF0Zscv2S-RxKQ_iQifk0U8_H8L_tJnCOs9vp0JD3iq9SNAMBnhGKH1iv6SzIdsDe-t7GD-oFTAL6kbeOlqigcD1gTFepAx1rtR7gjwOVeVI067eEidz07lanet5-yWBnm3fsXnk4KXw' }
-];
-
-export const DINING_MOODS = [
-  {
-    title: 'Family dining',
-    image: '/dynamic_images/img1.jpeg',
-    tag: 'Spacious & Royal'
-  },
-  {
-    title: 'Buffet & Dastarkhwan',
-    image: '/dynamic_images/img2.jpeg',
-    tag: 'Grand Feast'
-  },
-  {
-    title: 'Romantic dining',
-    image: '/dynamic_images/img3.jpeg',
-    tag: 'Candlelight'
-  },
-  {
-    title: 'Drink & Dining',
-    image: '/dynamic_images/img4.jpeg',
-    tag: 'Beverages & Mocktails'
-  },
-  {
-    title: 'Party & Banquets',
-    image: '/dynamic_images/img5.jpeg',
-    tag: 'Celebration'
-  },
-  {
-    title: 'Royal Cafés',
-    image: '/dynamic_images/img6.jpeg',
-    tag: 'Chai & Snacks'
-  }
-];
-export const SPOTLIGHT_BRANDS = [
-  { name: 'Millers - Royal Club', discount: 'Flat 25% OFF', logo: 'MILLERS' },
-  { name: 'Talli Darbar', discount: 'Flat 50% OFF', logo: 'Talli' },
-  { name: 'Rituals Alfresco', discount: 'Flat 55% OFF', logo: 'rituals' },
-  { name: 'Gulp - Garden Lounge', discount: 'Flat 15% OFF', logo: 'GULP' }
-];
-
-export const RECOMMENDED_FALLBACK = [
-  {
-    _id: 'rec_1',
-    name: 'Meher Cafe & Bakery',
-    category: 'Starters',
-    price: 180,
-    time: '⏱ 35–40 mins',
-    rating: 4.5,
-    discount: null,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAEICo_R5lnQ0EDLSmv6Bpk_5h5bbWs2_geeYRa3IlHcVs5iBCUUJnq3nmybJsdsM3KQQUiZuRST8jUKeZqN7y2YQlBWRzWsdpEriYVwIqrIxhae19hl8JrfmcdzrSHnvxberZEL_Z2Ctc2ICK1QZNj1ANckwk24P0dXDBT-DnCtWzzbxD5i_sl79852MRp7Zq-mFNShPEf3DqUfjI8-92O4isRQVJzZGENZbd_ekupiYtB4QFxooiuZA',
-    is_veg: false
-  },
-  {
-    _id: 'rec_2',
-    name: 'Bhiwandi Darbar Camp',
     category: 'Biryani',
-    price: 499,
-    time: '⚡ Near & Fast',
-    rating: 4.0,
-    discount: '₹125 OFF above ₹499',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC7GWAtvTmnJVgWSn4H1PxIs03t5lpP4LqpZ0M634djbtiqyiL2Z6wuQJ43lmuN018zArJ379woG0uWZe_ILzEs0acnw5xIxmMzLUmOS-oXQvHYrDyyiPaIdkmAEmCK3tfmLI1ceCetnIv8TpwGjAsmoYdTJz8T79eAqTyZbq1P9gpw65zoa1iU8js4VCi4Wh3sOWIaZ2h_ZbWKfbsQC7-bFTng1udMdvJHiHdxsu69lBAUUHjMl8ZxxQ',
-    is_veg: false
+    image: 'https://images.unsplash.com/photo-1701579231305-d7d8af9a3fd?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
   },
   {
-    _id: 'rec_3',
-    name: 'Oh Aai Noodle & Kebab Bowl',
+    title: 'Mutton Biryani',
+    category: 'Biryani',
+    image: 'https://images.unsplash.com/photo-1701579231349-d7459c40919d?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+  },
+  {
+    title: 'Tandoori Mumtaz',
+    category: 'Kebabs',
+    image: 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+  },
+  {
+    title: 'Mutton Barra Chop',
+    category: 'Kebabs',
+    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+  },
+  {
+    title: 'Butter Chicken',
     category: 'Mughlai',
-    price: 320,
-    time: '⚡ Near & Fast',
-    rating: 4.2,
-    discount: '₹125 OFF above ₹499',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC58TbzSTATflzv9rpzx-SkKCCsVgk8Z16-qsRhroXy7W6gySi1ucgeWYZ_L7aWArSR54uNiKMm1R9-i33NzEVHiEcPv_t9c_ccfRR5153CiS8Okbl-RAzk5KGMHz8tHKzgvzZLzvW7ar-ja2nwsAG_C83DgM-lNEv-NA0IdlVuzsj3JiXRmOswBNpUl3XYzO_oTyg0drUyOOWQTQ114eVYUKWMWGJdKXMuQDO0rIBbnmOY-Q8iGfuRkg',
-    is_veg: true
+    image: 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+  },
+  {
+    title: 'Roti & Naans',
+    category: 'Breads',
+    image: 'https://images.unsplash.com/photo-1626074353765-517a681e40be?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+  },
+  {
+    title: 'Shahi Tukda',
+    category: 'Desserts',
+    image: 'https://images.unsplash.com/photo-1617622163466-d1d56ec8b127?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+  },
+  {
+    title: 'Prawns Biryani',
+    category: 'Biryani',
+    image: 'https://images.unsplash.com/photo-1589302168068-964664d93dc0?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
+  },
+  {
+    title: 'Irani Chai',
+    category: 'Beverages',
+    image: 'https://images.unsplash.com/photo-1592861956120-e524fc739696?crop=entropy&cs=srgb&fm=jpg&w=300&q=80'
   }
 ];
 
-// All 4 Official Persian Darbar Royal Branches
+// 2. All 4 Official Persian Darbar Royal Branches with Real Photos & True Coordinates
 export const PERSIAN_DARBAR_BRANCHES = [
   {
     id: 'bandra',
     name: 'Bandra (Flagship)',
     city: 'Mumbai',
     shortAddress: 'Linking Road, Bandra West, Mumbai',
-    fullAddress: 'Moray Mahal, Linking Road, Bandra West, Mumbai',
+    fullAddress: 'Moray Mahal, Linking Road, Bandra West, Mumbai 400050',
     badge: 'Flagship Outlet',
     accent: '#EAB308',
+    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?crop=entropy&cs=srgb&fm=jpg&w=600&q=80',
     phones: ['+91 98929 57741', '+91 77388 93395'],
     timing: '11:00 AM - 1:00 AM',
-    defaultDistance: 1.8,
-    distance: '1.8 km',
     coordinates: { lat: 19.0550, lng: 72.8360 }
   },
   {
@@ -225,13 +130,12 @@ export const PERSIAN_DARBAR_BRANCHES = [
     name: 'Andheri East',
     city: 'Mumbai',
     shortAddress: 'Times Square, Marol, Andheri (E), Mumbai',
-    fullAddress: 'Times Square Building, B-3, Andheri-Kurla Road, Marol, Andheri (E), Mumbai',
+    fullAddress: 'Times Square Building, B-3, Andheri-Kurla Road, Marol, Andheri (E), Mumbai 400059',
     badge: 'East Mumbai',
     accent: '#f97316',
+    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?crop=entropy&cs=srgb&fm=jpg&w=600&q=80',
     phones: ['+91 87799 19652', '+91 90829 94556'],
     timing: '11:30 AM - 12:30 AM',
-    defaultDistance: 2.4,
-    distance: '2.4 km',
     coordinates: { lat: 19.1130, lng: 72.8796 }
   },
   {
@@ -239,27 +143,112 @@ export const PERSIAN_DARBAR_BRANCHES = [
     name: 'Kurla West',
     city: 'Mumbai',
     shortAddress: 'Kanakia Zillion, LBS Marg, Kurla West, Mumbai',
-    fullAddress: 'No.17, Kanakia Zillion, L.B.S Marg, CST Road Junction, Kurla West, Mumbai',
+    fullAddress: 'No.17, Kanakia Zillion, L.B.S Marg, CST Road Junction, Kurla West, Mumbai 400070',
     badge: 'Central Hub',
     accent: '#8b5cf6',
+    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?crop=entropy&cs=srgb&fm=jpg&w=600&q=80',
     phones: ['+91 91675 10547', '+91 91674 97707'],
     timing: '11:00 AM - 1:00 AM',
-    defaultDistance: 3.1,
-    distance: '3.1 km',
     coordinates: { lat: 19.0700, lng: 72.8800 }
   },
   {
     id: 'pune',
     name: 'Camp, Pune',
     city: 'Pune',
-    shortAddress: 'Renaissance Centre, Camp, Pune',
+    shortAddress: 'Renaissance Centre, Wellesley Rd, Camp, Pune',
     fullAddress: 'Renaissance Business Centre, Dr Baba Saheb Ambedkar Rd, Camp, Pune 411001',
     badge: 'Royal Pune',
     accent: '#22c55e',
-    phones: ['+91 98929 57741'],
+    image: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?crop=entropy&cs=srgb&fm=jpg&w=600&q=80',
+    phones: ['+91 91756 23047', '+91 98929 57741'],
     timing: '12:00 PM - 11:30 PM',
-    defaultDistance: 2.2,
-    distance: '2.2 km',
-    coordinates: { lat: 18.5204, lng: 73.8567 }
+    coordinates: { lat: 18.5204, lng: 73.8767 }
+  }
+];
+
+// Known Localities Coordinates for Accurate Distance when GPS is not active
+export const KNOWN_LOCALITIES = {
+  // Pune localities
+  'kondhwa': { lat: 18.4720, lng: 73.8910, city: 'Pune' },
+  'camp': { lat: 18.5204, lng: 73.8767, city: 'Pune' },
+  'kalyani nagar': { lat: 18.5463, lng: 73.9034, city: 'Pune' },
+  'viman nagar': { lat: 18.5679, lng: 73.9143, city: 'Pune' },
+  'kothrud': { lat: 18.5074, lng: 73.8077, city: 'Pune' },
+  'hadapsar': { lat: 18.5089, lng: 73.9259, city: 'Pune' },
+  'shivajinagar': { lat: 18.5314, lng: 73.8446, city: 'Pune' },
+  'baner': { lat: 18.5590, lng: 73.7868, city: 'Pune' },
+  'wakad': { lat: 18.5987, lng: 73.7687, city: 'Pune' },
+  'hinjewadi': { lat: 18.5913, lng: 73.7389, city: 'Pune' },
+  // Mumbai localities
+  'bandra': { lat: 19.0550, lng: 72.8360, city: 'Mumbai' },
+  'andheri': { lat: 19.1130, lng: 72.8796, city: 'Mumbai' },
+  'kurla': { lat: 19.0700, lng: 72.8800, city: 'Mumbai' },
+  'juhu': { lat: 19.1075, lng: 72.8263, city: 'Mumbai' },
+  'dadar': { lat: 19.0178, lng: 72.8478, city: 'Mumbai' },
+  'powai': { lat: 19.1176, lng: 72.9060, city: 'Mumbai' },
+  'ghatkopar': { lat: 19.0860, lng: 72.9090, city: 'Mumbai' },
+  'thane': { lat: 19.2183, lng: 72.9781, city: 'Mumbai' },
+  'colaba': { lat: 18.9067, lng: 72.8147, city: 'Mumbai' },
+  'chembur': { lat: 19.0522, lng: 72.8994, city: 'Mumbai' }
+};
+
+// Dining moods for table reservations
+export const DINING_MOODS = [
+  {
+    title: 'Royal Dastarkhwan',
+    tag: 'Authentic Seating',
+    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
+  },
+  {
+    title: 'Family Feasts',
+    tag: 'Spacious Tables',
+    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
+  },
+  {
+    title: 'Candlelight & Intimate',
+    tag: 'Romantic Corners',
+    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
+  },
+  {
+    title: 'Celebrations',
+    tag: 'Birthdays & Parties',
+    image: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?crop=entropy&cs=srgb&fm=jpg&w=400&q=80'
+  }
+];
+
+// Fallback Authentic Offers matching Admin Panel presets
+export const DEFAULT_PERSIAN_DARBAR_OFFERS = [
+  {
+    id: 'offer_weekend_feast',
+    title: 'Royal Feast Weekend',
+    subtitle: 'UP TO 30% OFF + 2X PD Coins',
+    coupon_code: 'DARBAR30',
+    badge_text: 'WEEKEND SPECIAL',
+    image_url: '/dynamic_images/offer_royal_feast.jpg',
+    bg_gradient: 'linear-gradient(135deg, #1C1917 0%, #292524 100%)',
+    accent_color: '#EAB308',
+    action: 'order'
+  },
+  {
+    id: 'offer_double_coins',
+    title: 'Double PD Coins Weekend',
+    subtitle: 'Earn 2X Coins on every Mutton & Biryani feast',
+    coupon_code: '2XCOINS',
+    badge_text: '2X REWARDS',
+    image_url: '/dynamic_images/offer_double_coins.jpg',
+    bg_gradient: 'linear-gradient(135deg, #0A192F 0%, #061120 100%)',
+    accent_color: '#38BDF8',
+    action: 'order'
+  },
+  {
+    id: 'offer_festive_celebration',
+    title: 'Royal Table Reservation',
+    subtitle: 'Reserve Table & Get 15% Off Your Entire Dine-In Bill',
+    coupon_code: 'DINEIN15',
+    badge_text: 'TABLE PRIVILEGE',
+    image_url: '/dynamic_images/offer_festive_feast.jpg',
+    bg_gradient: 'linear-gradient(135deg, #3B0764 0%, #1E0534 100%)',
+    accent_color: '#F43F5E',
+    action: 'reserve'
   }
 ];

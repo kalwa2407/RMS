@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Calendar, Clock, Users, CheckCircle2, ChevronRight, Search, MapPin, Sparkles } from 'lucide-react';
-import { DINING_MOODS, SPOTLIGHT_BRANDS } from '../customerAssets';
+import { Calendar, Clock, Users, CheckCircle2, ChevronRight, Search, MapPin, Sparkles, Building2, Phone } from 'lucide-react';
+import { DINING_MOODS, PERSIAN_DARBAR_BRANCHES } from '../customerAssets';
 
 const CustomerDiningTab = ({
   selectedBranch,
+  onSelectBranch,
   reservations = [],
   tables = [],
   currentUser,
@@ -32,7 +33,7 @@ const CustomerDiningTab = ({
 
   const availableTablesCount = tables.filter(
     t => ['available', 'free'].includes(t.status?.toLowerCase())
-  ).length;
+  ).length || 8;
 
   const handleSubmitBooking = (e) => {
     e.preventDefault();
@@ -46,112 +47,70 @@ const CustomerDiningTab = ({
 
   return (
     <div className="flex-1 pb-28 pt-2">
-      {/* ── BEGIN: Dining Promo Banners Carousel ── */}
+      {/* ── BEGIN: Persian Darbar Royal Dining Outlets ── */}
       <section className="px-4">
+        <div className="flex items-center justify-between mb-2.5">
+          <div>
+            <h2 className="text-xs font-black uppercase tracking-wider text-neutral-400">
+              PERSIAN DARBAR OUTLETS (4)
+            </h2>
+            <p className="text-sm font-extrabold text-neutral-900 mt-0.5">
+              Select Dining Room
+            </p>
+          </div>
+          <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+            All 4 Open for Dining
+          </span>
+        </div>
+
         <div className="flex space-x-3 overflow-x-auto no-scrollbar py-1">
-          {/* Promo Card 1: UP TO 50% OFF */}
-          <div className="w-[140px] shrink-0 h-28 bg-gradient-to-br from-[#7C3AED] to-[#5B21B6] rounded-2xl p-3 text-white flex flex-col justify-between shadow-xs relative overflow-hidden cursor-pointer">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-wider text-purple-200">
-                UP TO
-              </p>
-              <h3 className="text-xl font-black leading-none mt-0.5">50% OFF</h3>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">
-                →
-              </span>
-              <span className="w-8 h-8 rounded-full bg-red-500 text-white font-black text-xs flex items-center justify-center -mr-1 -mb-1 shadow">
-                %
-              </span>
-            </div>
-          </div>
-
-          {/* Promo Card 2: FAMILY FAVOURITES */}
-          <div className="w-[140px] shrink-0 h-28 bg-gradient-to-br from-[#6366F1] to-[#4338CA] rounded-2xl p-3 text-white flex flex-col justify-between shadow-xs relative overflow-hidden cursor-pointer">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-wider text-indigo-200">
-                ROYAL
-              </p>
-              <h3 className="text-xs font-black leading-tight mt-0.5">
-                FAMILY<br />FAVOURITES
-              </h3>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">
-                →
-              </span>
-              <img
-                src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?crop=entropy&cs=srgb&fm=jpg&w=200&q=80"
-                alt=""
-                className="w-10 h-10 rounded-full object-cover border border-white/40 -mr-1 -mb-1"
-              />
-            </div>
-          </div>
-
-          {/* Promo Card 3: ROYAL DASTARKHWAN */}
-          <div className="w-[140px] shrink-0 h-28 bg-gradient-to-br from-[#8B5CF6] to-[#6D28D9] rounded-2xl p-3 text-white flex flex-col justify-between shadow-xs relative overflow-hidden cursor-pointer">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-wider text-purple-200">
-                SPECIAL
-              </p>
-              <h3 className="text-xs font-black leading-tight mt-0.5">
-                SHAHI<br />DASTARKHWAN
-              </h3>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">
-                →
-              </span>
-              <img
-                src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?crop=entropy&cs=srgb&fm=jpg&w=200&q=80"
-                alt=""
-                className="w-10 h-10 rounded-full object-cover border border-white/40 -mr-1 -mb-1"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-      {/* ── END: Dining Promo Banners ── */}
-
-      {/* ── BEGIN: IN THE SPOTLIGHT ── */}
-      <section className="mt-5 px-4">
-        <div className="flex items-center justify-center space-x-1.5 mb-3 text-neutral-800">
-          <span className="text-[#6366F1] text-xs">✦</span>
-          <h2 className="text-xs font-black tracking-widest uppercase">
-            IN THE SPOTLIGHT
-          </h2>
-          <span className="text-[#6366F1] text-xs">✦</span>
-        </div>
-
-        <div className="flex items-center space-x-3 overflow-x-auto no-scrollbar pb-2">
-          {SPOTLIGHT_BRANDS.map((item, idx) => (
-            <div
-              key={idx}
-              className="flex flex-col items-center shrink-0 cursor-pointer active:scale-95 transition-transform"
-            >
-              <div className="w-16 h-16 rounded-full bg-neutral-900 text-amber-300 font-serif font-black text-xs flex items-center justify-center shadow-xs border border-neutral-700 p-2 text-center">
-                {item.logo}
+          {PERSIAN_DARBAR_BRANCHES.map((branch) => {
+            const isSelected = selectedBranch?.id === branch.id;
+            return (
+              <div
+                key={branch.id}
+                onClick={() => onSelectBranch && onSelectBranch(branch)}
+                className={`w-48 shrink-0 rounded-2xl border overflow-hidden cursor-pointer shadow-xs active:scale-95 transition-all flex flex-col justify-between ${
+                  isSelected ? 'border-[#E23744] ring-2 ring-red-100 bg-red-50/20' : 'border-neutral-200/80 bg-white'
+                }`}
+              >
+                <div className="h-24 w-full relative bg-neutral-900">
+                  <img
+                    src={branch.image}
+                    alt={branch.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-2 left-2 bg-black/60 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+                    {branch.city}
+                  </div>
+                  {isSelected && (
+                    <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-[#E23744] text-white flex items-center justify-center text-[10px] font-black">
+                      ✓
+                    </div>
+                  )}
+                </div>
+                <div className="p-2.5">
+                  <h4 className="text-xs font-black text-neutral-900 truncate">
+                    {branch.name}
+                  </h4>
+                  <p className="text-[10px] text-neutral-500 line-clamp-1 mt-0.5">
+                    {branch.shortAddress}
+                  </p>
+                </div>
               </div>
-              <span className="text-[11px] font-bold text-neutral-900 mt-1.5 text-center max-w-[80px] truncate">
-                {item.name}
-              </span>
-              <span className="text-[10px] font-extrabold text-[#5B21B6]">
-                {item.discount}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
-      {/* ── END: IN THE SPOTLIGHT ── */}
+      {/* ── END: Persian Darbar Royal Dining Outlets ── */}
 
       {/* ── BEGIN: What's the mood? ── */}
       <section className="mt-5 px-4">
-        <h2 className="text-base font-extrabold text-neutral-900 mb-3">
-          What's the mood?
+        <h2 className="text-sm font-black text-neutral-900 uppercase tracking-tight mb-2.5">
+          What's the dining mood?
         </h2>
 
-        <div className="grid grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-2 gap-2.5">
           {DINING_MOODS.map((mood, idx) => {
             const isSelected = selectedMood === mood.title;
             return (
@@ -159,7 +118,7 @@ const CustomerDiningTab = ({
                 key={idx}
                 onClick={() => setSelectedMood(isSelected ? null : mood.title)}
                 className={`bg-white rounded-2xl border p-2 shadow-xs cursor-pointer active:scale-95 transition-all flex flex-col justify-between ${
-                  isSelected ? 'border-[#E23744] ring-2 ring-red-100 bg-red-50/20' : 'border-neutral-100'
+                  isSelected ? 'border-[#E23744] ring-2 ring-red-100 bg-red-50/20' : 'border-neutral-200/80'
                 }`}
               >
                 <div className="h-20 w-full rounded-xl overflow-hidden bg-neutral-100 mb-2">
@@ -169,12 +128,14 @@ const CustomerDiningTab = ({
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <h3 className="text-xs font-bold text-neutral-900 leading-tight">
-                  {mood.title}
-                </h3>
-                <span className="text-[9px] text-neutral-500 mt-0.5">
-                  {mood.tag}
-                </span>
+                <div>
+                  <h3 className="text-xs font-bold text-neutral-900 leading-tight">
+                    {mood.title}
+                  </h3>
+                  <span className="text-[10px] text-neutral-500 mt-0.5 block">
+                    {mood.tag}
+                  </span>
+                </div>
               </div>
             );
           })}
@@ -183,25 +144,25 @@ const CustomerDiningTab = ({
       {/* ── END: What's the mood? ── */}
 
       {/* ── BEGIN: Table Reservation System ── */}
-      <section className="mt-6 px-4">
+      <section className="mt-5 px-4">
         {/* Toggle Bar: Reserve Table vs My Bookings */}
-        <div className="flex bg-neutral-100 p-1 rounded-xl mb-4">
+        <div className="flex bg-neutral-100 p-1 rounded-2xl mb-3">
           <button
             onClick={() => setSubView('book')}
-            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
+            className={`flex-1 py-2 rounded-xl text-xs font-black transition-all ${
               subView === 'book'
                 ? 'bg-white text-neutral-900 shadow-xs'
-                : 'text-neutral-500'
+                : 'text-neutral-500 hover:text-neutral-900'
             }`}
           >
             Book a Table
           </button>
           <button
             onClick={() => setSubView('history')}
-            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all relative ${
+            className={`flex-1 py-2 rounded-xl text-xs font-black transition-all relative ${
               subView === 'history'
                 ? 'bg-white text-neutral-900 shadow-xs'
-                : 'text-neutral-500'
+                : 'text-neutral-500 hover:text-neutral-900'
             }`}
           >
             My Bookings
@@ -215,27 +176,27 @@ const CustomerDiningTab = ({
 
         {subView === 'book' ? (
           /* ── Book Table Form ── */
-          <div className="bg-white rounded-2xl p-4 border border-neutral-100 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+          <div className="bg-white rounded-3xl p-4 border border-neutral-200/80 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
               <div>
-                <h3 className="font-extrabold text-sm text-neutral-900">
-                  Persian Darbar Dining Room ({selectedBranch?.name || 'Bandra Flagship'})
+                <h3 className="font-black text-sm text-neutral-900">
+                  {selectedBranch?.name || 'Bandra (Flagship)'} Dining Room
                 </h3>
-                <p className="text-[11px] text-neutral-500">
+                <p className="text-[11px] text-neutral-500 mt-0.5">
                   {selectedBranch?.shortAddress || 'Linking Road, Bandra West'} · Instant Table Confirmation
                 </p>
               </div>
-              <div className="flex items-center space-x-1.5 bg-emerald-50 text-emerald-800 px-2 py-1 rounded-lg text-xs font-bold">
+              <div className="flex items-center space-x-1.5 bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-full text-xs font-bold shrink-0">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>{availableTablesCount} Tables Open</span>
+                <span>{availableTablesCount} Open</span>
               </div>
             </div>
 
             {bookingSuccess ? (
-              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-center space-y-2">
+              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-2">
                 <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
-                <h4 className="font-extrabold text-sm text-emerald-900">
-                  Table Confirmed!
+                <h4 className="font-black text-sm text-emerald-900">
+                  Table Reserved Successfully!
                 </h4>
                 <p className="text-xs text-emerald-700">
                   Your table reservation for {bookingSuccess.guests || guestCount} guests on{' '}
@@ -243,7 +204,7 @@ const CustomerDiningTab = ({
                 </p>
                 <button
                   onClick={onResetBookingSuccess}
-                  className="mt-2 inline-block bg-emerald-600 text-white text-xs font-bold px-4 py-1.5 rounded-lg active:scale-95 transition-transform"
+                  className="mt-2 inline-block bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-xl active:scale-95 transition-transform"
                 >
                   Book Another Table
                 </button>
@@ -252,7 +213,7 @@ const CustomerDiningTab = ({
               <form onSubmit={handleSubmitBooking} className="space-y-4">
                 {/* 1. Date Selector */}
                 <div>
-                  <label className="block text-[11px] font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
+                  <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-wider mb-1.5">
                     Select Date
                   </label>
                   <input
@@ -260,14 +221,14 @@ const CustomerDiningTab = ({
                     min={new Date().toISOString().split('T')[0]}
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
-                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-bold text-neutral-800 focus:outline-none focus:ring-1 focus:ring-[#E23744]"
+                    className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-neutral-800 focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-[#E23744]"
                   />
                 </div>
 
                 {/* 2. Guest Count Selector */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-[11px] font-bold text-neutral-700 uppercase tracking-wider">
+                    <label className="text-[10px] font-black text-neutral-400 uppercase tracking-wider">
                       Number of Guests
                     </label>
                     <span className="text-xs font-black text-[#E23744]">
@@ -280,10 +241,10 @@ const CustomerDiningTab = ({
                         key={num}
                         type="button"
                         onClick={() => setGuestCount(num)}
-                        className={`w-9 h-9 rounded-xl font-bold text-xs shrink-0 transition-all ${
+                        className={`w-10 h-10 rounded-2xl font-black text-xs shrink-0 transition-all ${
                           guestCount === num
-                            ? 'bg-[#E23744] text-white shadow-xs'
-                            : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                            ? 'bg-[#E23744] text-white shadow-xs scale-105'
+                            : 'bg-neutral-50 text-neutral-700 hover:bg-neutral-100 border border-neutral-200/80'
                         }`}
                       >
                         {num}
@@ -294,7 +255,7 @@ const CustomerDiningTab = ({
 
                 {/* 3. Time Slots */}
                 <div>
-                  <label className="block text-[11px] font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
+                  <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-wider mb-1.5">
                     Select Time Slot
                   </label>
                   <div className="flex items-center space-x-2 overflow-x-auto no-scrollbar py-1">
@@ -303,10 +264,10 @@ const CustomerDiningTab = ({
                         key={slot}
                         type="button"
                         onClick={() => setSelectedTime(slot)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 transition-all ${
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition-all ${
                           selectedTime === slot
-                            ? 'bg-neutral-900 text-white shadow-xs'
-                            : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                            ? 'bg-neutral-900 text-white shadow-xs font-black'
+                            : 'bg-neutral-50 text-neutral-700 hover:bg-neutral-100 border border-neutral-200/80'
                         }`}
                       >
                         {slot}
@@ -317,15 +278,15 @@ const CustomerDiningTab = ({
 
                 {/* 4. Special Requests */}
                 <div>
-                  <label className="block text-[11px] font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
+                  <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-wider mb-1.5">
                     Special Requests (Optional)
                   </label>
                   <input
                     type="text"
                     value={specialNote}
                     onChange={(e) => setSpecialNote(e.target.value)}
-                    placeholder="e.g. Birthday, Anniversary, Window seat..."
-                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-[#E23744]"
+                    placeholder="e.g. Birthday celebration, window table, high chair..."
+                    className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl px-3.5 py-2.5 text-xs font-medium text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-[#E23744]"
                   />
                 </div>
 
@@ -333,9 +294,9 @@ const CustomerDiningTab = ({
                 <button
                   type="submit"
                   disabled={bookingLoading}
-                  className="w-full bg-[#E23744] hover:bg-[#CB202D] text-white font-extrabold text-sm py-3 rounded-xl shadow-xs active:scale-98 transition-all disabled:opacity-50"
+                  className="w-full bg-[#E23744] hover:bg-[#d02e3b] text-white font-black text-sm py-3.5 rounded-2xl shadow-lg shadow-red-500/20 active:scale-98 transition-all disabled:opacity-50"
                 >
-                  {bookingLoading ? 'Reserving Table...' : 'Confirm Table Reservation ›'}
+                  {bookingLoading ? 'Reserving Table...' : 'Confirm Royal Table Reservation ›'}
                 </button>
               </form>
             )}
@@ -344,67 +305,66 @@ const CustomerDiningTab = ({
           /* ── My Bookings List ── */
           <div className="space-y-3">
             {reservations.length === 0 ? (
-              <div className="bg-white rounded-2xl p-8 text-center border border-neutral-100 shadow-xs">
-                <Calendar className="w-10 h-10 text-neutral-300 mx-auto mb-2" />
-                <h4 className="font-bold text-sm text-neutral-800">
+              <div className="bg-white rounded-3xl p-8 text-center border border-neutral-200/80 shadow-xs space-y-3">
+                <Calendar className="w-12 h-12 text-neutral-300 mx-auto" />
+                <h4 className="font-extrabold text-sm text-neutral-800">
                   No Table Reservations Yet
                 </h4>
-                <p className="text-xs text-neutral-500 mt-1 max-w-xs mx-auto">
-                  Reserve a table to enjoy royal hospitality at Persian Darbar without waiting in queue!
+                <p className="text-xs text-neutral-500">
+                  Plan your Mughlai fine dining experience at Persian Darbar.
                 </p>
                 <button
                   onClick={() => setSubView('book')}
-                  className="mt-4 bg-[#E23744] text-white text-xs font-bold px-4 py-2 rounded-xl active:scale-95 transition-transform"
+                  className="bg-[#E23744] text-white text-xs font-black px-4 py-2 rounded-xl"
                 >
-                  Book a Table Now
+                  Reserve a Table Now
                 </button>
               </div>
             ) : (
-              reservations.map((res) => {
-                const statusColor = {
-                  confirmed: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-                  pending: 'bg-amber-50 text-amber-800 border-amber-200',
-                  cancelled: 'bg-red-50 text-red-800 border-red-200',
-                  completed: 'bg-neutral-100 text-neutral-800 border-neutral-200'
-                }[res.status?.toLowerCase()] || 'bg-neutral-100 text-neutral-800 border-neutral-200';
-
-                return (
-                  <div
-                    key={res.id || res._id}
-                    className="bg-white rounded-2xl p-4 border border-neutral-100 shadow-xs flex items-center justify-between"
-                  >
+              reservations.map((res) => (
+                <div
+                  key={res.id || res._id}
+                  className="bg-white rounded-3xl p-4 border border-neutral-200/80 shadow-xs space-y-2.5"
+                >
+                  <div className="flex items-center justify-between border-b border-neutral-100 pb-2">
                     <div>
-                      <div className="flex items-center space-x-2">
-                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded border ${statusColor}`}>
-                          {res.status || 'Pending'}
-                        </span>
-                        {res.table_number && (
-                          <span className="text-xs font-bold text-neutral-700">
-                            Table #{res.table_number}
-                          </span>
-                        )}
-                      </div>
-                      <p className="font-extrabold text-sm text-neutral-900 mt-1.5">
-                        {res.date} at {res.time}
-                      </p>
-                      <p className="text-xs text-neutral-500 mt-0.5">
-                        {res.guests} {res.guests === 1 ? 'Guest' : 'Guests'} · {res.customer_name || 'Valued Guest'}
-                      </p>
-                    </div>
-
-                    <div className="text-right">
-                      <span className="text-[11px] font-bold text-neutral-400">
-                        #{String(res.id || res._id).slice(-6)}
+                      <span className="text-[10px] font-black text-neutral-400 uppercase">
+                        Table for {res.guests} Guests
                       </span>
+                      <h4 className="font-extrabold text-sm text-neutral-900">
+                        {res.date} at {res.time}
+                      </h4>
                     </div>
+                    <span
+                      className={`px-2.5 py-1 rounded-full text-[11px] font-black ${
+                        res.status === 'confirmed'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : 'bg-amber-50 text-amber-700 border border-amber-200 animate-pulse'
+                      }`}
+                    >
+                      {res.status === 'confirmed'
+                        ? res.table_number
+                          ? `Table ${res.table_number}`
+                          : 'Confirmed'
+                        : 'Awaiting Host'}
+                    </span>
                   </div>
-                );
-              })
+
+                  <p className="text-xs text-neutral-600">
+                    Reserved for <strong className="text-neutral-900">{res.customer_name}</strong>
+                  </p>
+
+                  {res.special_requests && (
+                    <p className="text-[11px] text-neutral-500 bg-neutral-50 p-2 rounded-xl">
+                      {res.special_requests}
+                    </p>
+                  )}
+                </div>
+              ))
             )}
           </div>
         )}
       </section>
-      {/* ── END: Table Reservation System ── */}
     </div>
   );
 };

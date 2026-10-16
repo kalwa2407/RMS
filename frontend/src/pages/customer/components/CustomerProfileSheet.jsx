@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, User, Phone, MapPin, Crown, Star, Clock, ShoppingBag, Calendar, Share2, LogOut, Check, ChevronRight } from 'lucide-react';
 
 const CustomerProfileSheet = ({
@@ -13,9 +13,14 @@ const CustomerProfileSheet = ({
   onSaveAddress,
   onShareApp,
   onSignOut,
-  pdCoins = 0
+  pdCoins = 0,
+  initialTab = 'orders'
 }) => {
-  const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'profile' | 'rewards'
+  const [activeTab, setActiveTab] = useState(initialTab); // 'orders' | 'profile' | 'rewards'
+
+  useEffect(() => {
+    if (initialTab) setActiveTab(initialTab);
+  }, [initialTab]);
   const [editPhone, setEditPhone] = useState(false);
   const [phoneVal, setPhoneVal] = useState(customerProfile?.phone || '');
   const [editAddr, setEditAddr] = useState(false);

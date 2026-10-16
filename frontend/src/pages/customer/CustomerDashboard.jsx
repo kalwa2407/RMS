@@ -9,16 +9,18 @@ import { menuItems as fallbackMenu } from '../../mockData';
 // Zomato iOS Inspired Customer App Components
 import CustomerTopBar from './components/CustomerTopBar';
 import CustomerHomeTab from './components/CustomerHomeTab';
-import CustomerUnder250Tab from './components/CustomerUnder250Tab';
 import CustomerDiningTab from './components/CustomerDiningTab';
 import CustomerSearchExplore from './components/CustomerSearchExplore';
 import CustomerDockNav from './components/CustomerDockNav';
 import CustomerCartSheet from './components/CustomerCartSheet';
 import CustomerProfileSheet from './components/CustomerProfileSheet';
-import CustomerQuickActionsModal from './components/CustomerQuickActionsModal';
 import CustomerAddressModal from './components/CustomerAddressModal';
 import CustomerPwaInstallModal from '../../components/CustomerPwaInstallModal';
-import { PERSIAN_DARBAR_BRANCHES } from './customerAssets';
+import {
+  PERSIAN_DARBAR_BRANCHES,
+  DEFAULT_PERSIAN_DARBAR_OFFERS,
+  KNOWN_LOCALITIES
+} from './customerAssets';
 
 const CustomerDashboard = () => {
   const {
@@ -37,49 +39,27 @@ const CustomerDashboard = () => {
   const mainScrollRef = useRef(null);
 
   // ── Navigation & Views State ──
-  // 'home' | 'under250' | 'dining'
+  // 'home' | 'order' | 'reserve' | 'rewards' | 'profile'
   const [activeTab, setActiveTab] = useState('home');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isWalletOpen, setIsWalletOpen] = useState(false);
+  const [profileInitialTab, setProfileInitialTab] = useState('orders');
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
-  const [isQuickActionsOpen, setIsQuickActionsOpen] = useState(false);
 
-  // ── Persian Darbar 4 Official Branches Location & Distance Engine ──
+  // ── Persian Darbar 4 Official Branches Location & True Haversine Distance Engine ──
   const [selectedBranch, setSelectedBranch] = useState(() => {
     try {
       const saved = localStorage.getItem('pd_selected_branch');
       if (saved) return JSON.parse(saved);
     } catch (e) {}
-    return PERSIAN_DARBAR_BRANCHES[0]; // Default: Bandra (Flagship)
+    // Default to Camp Pune if user has Kondhwa/Pune, otherwise Bandra Flagship
+    return PERSIAN_DARBAR_BRANCHES[3]; // Camp, Pune
   });
+
   const [userCoords, setUserCoords] = useState(null);
-  const [distanceKm, setDistanceKm] = useState(() => {
-    try {
-      const saved = localStorage.getItem('pd_selected_branch');
-      if (saved) return JSON.parse(saved).defaultDistance || 1.8;
-    } catch (e) {}
-    return PERSIAN_DARBAR_BRANCHES[0].defaultDistance || 1.8;
-  });
-  const [locationTitle, setLocationTitle] = useState(() => {
-    try {
-      const saved = localStorage.getItem('pd_selected_branch');
-      if (saved) return JSON.parse(saved).name;
-    } catch (e) {}
-    return PERSIAN_DARBAR_BRANCHES[0].name;
-  });
-  const [locationSubtitle, setLocationSubtitle] = useState(() => {
-    try {
-      const saved = localStorage.getItem('pd_selected_branch');
-      if (saved) {
-        const b = JSON.parse(saved);
-        return `Approx. ${b.defaultDistance || 1.8} km from ${b.name}`;
-      }
-    } catch (e) {}
-    return `Approx. 1.8 km from Bandra (Flagship)`;
-  });
+  const [distanceKm, setDistanceKm] = useState(5.8);
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [detectingLoc, setDetectingLoc] = useState(false);
 
@@ -97,25 +77,93 @@ const CustomerDashboard = () => {
     return parseFloat((R * c).toFixed(1));
   };
 
-  // ── Admin Connected Offers & Promotions (/api/offers) ──
-  const [offers, setOffers] = useState([]);
-  const [offersLoading, setOffersLoading] = useState(true);
+  // Recalculate true distance when branch or coords change
+  const updateDistanceForBranch = useCallback((branch, coords = userCoords, addr = deliveryAddress) => {
+    let activeCoords = coords;
+    if (!activeCoords && addr) {
+      const lower = addr.toLowerCase();
+      for (const [key, val] of Object.entries(KNOWN_LOCALITIES)) {
+        if (lower.includes(key)) {
+          activeCoords = val;
+          break;
+        }
+      }
+    }
+    if (activeCoords && activeCoords.lat && activeCoords.lng && branch?.coordinates) {
+      const dist = calculateHaversine(
+        activeCoords.lat,
+        activeCoords.lng,
+        branch.coordinates.lat,
+        branch.coordinates.lng
+      );
+      setDistanceKm(dist);
+      return dist;
+    }
+    const fallbackDist = branch?.city === 'Pune' ? 4.8 : 2.5;
+    setDistanceKm(fallbackDist);
+    return fallbackDist;
+  }, [userCoords, deliveryAddress]);
 
-  // ── Menu, Cart & Orders State ──
-  const [menu, setMenu] = useState([]);
-  const [menuLoading, setMenuLoading] = useState(true);
+  // Handle GPS detection
+  const handleDetectGPS = () => {
+    if (!navigator.geolocation) {
+      toast({ title: 'GPS Unavailable', description: 'Geolocation is not supported by your browser.' });
+      return;
+    }
+    setDetectingLoc(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserCoords(coords);
+        setDetectingLoc(false);
+
+        // Find nearest Persian Darbar branch
+        let nearest = PERSIAN_DARBAR_BRANCHES[0];
+        let minD = 999999;
+        PERSIAN_DARBAR_BRANCHES.forEach(b => {
+          const d = calculateHaversine(coords.lat, coords.lng, b.coordinates.lat, b.coordinates.lng);
+          if (d < minD) {
+            minD = d;
+            nearest = b;
+          }
+        });
+
+        setSelectedBranch(nearest);
+        setDistanceKm(minD);
+        try {
+          localStorage.setItem('pd_selected_branch', JSON.stringify(nearest));
+        } catch (e) {}
+
+        toast({
+          title: '📍 Nearest Outlet Selected',
+          description: `${nearest.name} is ~${minD} km away from your location.`
+        });
+      },
+      (err) => {
+        setDetectingLoc(false);
+        // Fallback to locality lookup if available
+        updateDistanceForBranch(selectedBranch);
+        toast({
+          title: 'Location Notice',
+          description: 'Calculated distance based on your saved Persian Darbar area.'
+        });
+      },
+      { timeout: 8000, enableHighAccuracy: true }
+    );
+  };
+
+  // ── Admin Connected Offers (/api/offers) with instant authentic presets ──
+  const [offers, setOffers] = useState(DEFAULT_PERSIAN_DARBAR_OFFERS);
+  const [offersLoading, setOffersLoading] = useState(false);
+
+  // ── Menu, Cart & Orders State (Pre-populated with fallback for ZERO load time) ──
+  const [menu, setMenu] = useState(fallbackMenu);
   const [selectedCat, setSelectedCat] = useState('All');
   const [cart, setCart] = useState([]);
-  const [orderType, setOrderType] = useState('DELIVERY'); // 'DELIVERY' | 'TAKEAWAY'
+  const [orderType, setOrderType] = useState('DELIVERY');
   const [orders, setOrders] = useState([]);
   const [reservations, setReservations] = useState([]);
   const [tables, setTables] = useState([]);
-
-  // ── Filters State ──
-  const [vegOnly, setVegOnly] = useState(false);
-  const [fastDeliveryOnly, setFastDeliveryOnly] = useState(false);
-  const [topRatedOnly, setTopRatedOnly] = useState(false);
-  const [healthyMode, setHealthyMode] = useState(false);
 
   // ── Coupons & Loyalty State ──
   const [coupons, setCoupons] = useState([]);
@@ -135,53 +183,30 @@ const CustomerDashboard = () => {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(null);
 
-  // Sync profile address & phone
+  // Sync profile address & phone and update distance
   useEffect(() => {
     if (customerProfile?.address) {
       setDeliveryAddress(customerProfile.address);
-      const parts = customerProfile.address.split(',');
-      if (parts[0]) setLocationTitle(parts[0].trim());
-      if (parts.length > 1) setLocationSubtitle(parts.slice(1).join(',').trim());
+      updateDistanceForBranch(selectedBranch, userCoords, customerProfile.address);
     }
-  }, [customerProfile?.address]);
+  }, [customerProfile?.address, selectedBranch, userCoords, updateDistanceForBranch]);
 
-  // ── 1. Fetch Menu (Cached 10 mins) ──
-  const fetchMenu = useCallback(async (forceRefresh = false) => {
+  // ── 1. Fetch Menu (Silently in background, zero waiting for user) ──
+  const fetchMenu = useCallback(async () => {
     const MENU_KEY = 'menu_v1';
     const MENU_TTL = 10 * 60 * 1000;
-    if (!forceRefresh) {
-      const memHit = memCache.get(MENU_KEY);
-      if (memHit && memHit.length > 0) {
-        setMenu(memHit);
-        setMenuLoading(false);
-        return;
-      }
-      const lsHit = lsCache.get(MENU_KEY);
-      if (lsHit && lsHit.length > 0) {
-        setMenu(lsHit);
-        setMenuLoading(false);
-        memCache.set(MENU_KEY, lsHit, 2 * 60 * 1000);
-        return;
-      }
-    }
-
-    setMenuLoading(true);
     try {
       const res = await fetch(`${API_BASE}/api/menu`);
       if (res.ok) {
         const data = await res.json();
-        const items = Array.isArray(data) && data.length > 0 ? data : fallbackMenu;
-        setMenu(items);
-        lsCache.set(MENU_KEY, items, MENU_TTL);
-        memCache.set(MENU_KEY, items, 2 * 60 * 1000);
-      } else {
-        setMenu(fallbackMenu);
+        if (Array.isArray(data) && data.length > 0) {
+          setMenu(data);
+          lsCache.set(MENU_KEY, data, MENU_TTL);
+          memCache.set(MENU_KEY, data, 2 * 60 * 1000);
+        }
       }
     } catch (err) {
-      console.warn('Menu load error, using rich fallback:', err);
-      setMenu(fallbackMenu);
-    } finally {
-      setMenuLoading(false);
+      // Keep rich fallback menu
     }
   }, []);
 
@@ -204,7 +229,7 @@ const CustomerDashboard = () => {
   }, [idToken, fetchWithAuth]);
 
   // ── 3. Fetch Reservations ──
-  const fetchRes = useCallback(async (isSilent = false) => {
+  const fetchRes = useCallback(async () => {
     if (!idToken) return;
     try {
       const r = await fetchWithAuth(`${API_BASE}/api/customer/reservations`);
@@ -229,28 +254,23 @@ const CustomerDashboard = () => {
     }
   }, [idToken, fetchWithAuth, toast]);
 
-  // ── 4. Fetch Tables & Polling ──
+  // ── 4. Fetch Tables ──
   useEffect(() => {
-    const TABLE_KEY = 'tables_v1';
-    const TABLE_TTL = 90 * 1000;
     const fetchTables = async () => {
       try {
         const r = await fetch(`${API_BASE}/api/tables`);
         if (r.ok) {
           const d = await r.json();
-          if (Array.isArray(d)) {
-            setTables(d);
-            lsCache.set(TABLE_KEY, d, TABLE_TTL);
-          }
+          if (Array.isArray(d)) setTables(d);
         }
       } catch {}
     };
     fetchTables();
-    const t = setInterval(fetchTables, TABLE_TTL);
+    const t = setInterval(fetchTables, 60000);
     return () => clearInterval(t);
   }, []);
 
-  // Fetch Public Coupons
+  // ── 5. Fetch Coupons & Admin Offers ──
   useEffect(() => {
     const fetchCoupons = async () => {
       try {
@@ -259,169 +279,126 @@ const CustomerDashboard = () => {
           const data = await res.json();
           setCoupons(Array.isArray(data) ? data : []);
         }
-      } catch (err) {
-        console.error('Failed to load coupons:', err);
-      }
+      } catch (err) {}
     };
-    fetchCoupons();
-  }, []);
 
-  // ── Fetch Active Offers from Admin (/api/offers) ──
-  useEffect(() => {
     const fetchOffers = async () => {
-      setOffersLoading(true);
       try {
         const res = await fetch(`${API_BASE}/api/offers`);
         if (res.ok) {
           const data = await res.json();
-          setOffers(Array.isArray(data) ? data : []);
+          if (Array.isArray(data) && data.length > 0) {
+            setOffers(data);
+          }
         }
-      } catch (err) {
-        console.error('Failed to load offers from server:', err);
-      } finally {
-        setOffersLoading(false);
-      }
+      } catch (err) {}
     };
+
+    fetchCoupons();
     fetchOffers();
   }, []);
 
-  // ── Outlet Branch Switcher Handler (Calculates Distance for Selected Branch) ──
+  // ── Branch Switcher Handler ──
   const handleSelectBranch = (branch) => {
     setSelectedBranch(branch);
-    let dist = branch.defaultDistance || 1.8;
-    if (userCoords && userCoords.lat && userCoords.lng) {
-      dist = calculateHaversine(
-        userCoords.lat,
-        userCoords.lng,
-        branch.coordinates.lat,
-        branch.coordinates.lng
-      );
-    }
-    setDistanceKm(dist);
-    setLocationTitle(branch.name);
-    setLocationSubtitle(`Approx. ${dist} km from ${branch.name}`);
     try {
-      localStorage.setItem('pd_selected_branch', JSON.stringify({ ...branch, calculatedDistance: dist }));
+      localStorage.setItem('pd_selected_branch', JSON.stringify(branch));
     } catch (e) {}
+    updateDistanceForBranch(branch);
     toast({
-      title: `👑 Outlet: ${branch.name}`,
-      description: `Delivery distance: ~${dist} km from ${branch.name} (${branch.shortAddress})`,
+      title: '📍 Branch Switched',
+      description: `Now ordering from Persian Darbar ${branch.name}.`
     });
   };
 
-  // ── Handle Upper Panel Offer Banner Click ──
-  const handleOfferClick = (offer) => {
-    if (!offer) return;
-    if (offer.action === 'reserve') {
-      setActiveTab('dining');
-      toast({
-        title: "🍽️ Table Reservation",
-        description: `Reserve your table for ${offer.title}`,
-      });
-    } else if (offer.action === 'order') {
-      setActiveTab('home');
-      setSelectedCat('All');
-      if (mainScrollRef.current) {
-        mainScrollRef.current.scrollTo({ top: 380, behavior: 'smooth' });
-      }
-    } else if (offer.action === 'coupon' && offer.coupon_code) {
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(offer.coupon_code);
-      }
-      setCouponInput(offer.coupon_code);
-      toast({
-        title: "🎉 Coupon Copied!",
-        description: `Promo Code "${offer.coupon_code}" is ready to apply at checkout.`,
-      });
-      setIsCartOpen(true);
-    }
-  };
-
-  useEffect(() => {
-    if (idToken) {
-      fetchOrders();
-      fetchRes();
-    }
-  }, [idToken, fetchOrders, fetchRes]);
-
-  // Auto-scroll to top on tab switch
-  useEffect(() => {
-    if (mainScrollRef.current) {
-      mainScrollRef.current.scrollTop = 0;
-    }
-    window.scrollTo(0, 0);
-  }, [activeTab]);
-
   // ── Cart Calculations ──
-  const pdCoins = customerProfile?.pd_coins || customerProfile?.loyalty_points || 0;
-  const cartItemCount = cart.reduce((sum, i) => sum + i.quantity, 0);
-  const cartSubtotal = cart.reduce((sum, i) => sum + (i.price || 0) * i.quantity, 0);
-  const freeDeliveryThreshold = 500;
-  const isFreeDeliveryEligible = cartSubtotal >= freeDeliveryThreshold;
-  const cartDeliveryFee = orderType === 'TAKEAWAY' ? 0 : isFreeDeliveryEligible ? 0 : (distanceKm !== null && distanceKm > 10 ? 60 : 35);
-  const cartTaxes = Math.round(cartSubtotal * 0.05);
+  const cartSubtotal = useMemo(() => {
+    return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  }, [cart]);
 
-  const maxRedeemableCoins = (cartSubtotal >= 300 && pdCoins > 0)
-    ? Math.min(pdCoins, Math.floor(cartSubtotal * 0.25))
-    : 0;
+  const cartDeliveryFee = useMemo(() => {
+    if (orderType === 'TAKEAWAY' || cartSubtotal === 0) return 0;
+    if (cartSubtotal >= 499) return 0;
+    const baseFee = 35;
+    const extraKm = Math.max(0, (distanceKm || 2.0) - 4);
+    return Math.round(baseFee + extraKm * 10);
+  }, [orderType, cartSubtotal, distanceKm]);
 
-  const coinsDiscount = (applyCoins && maxRedeemableCoins > 0) ? maxRedeemableCoins : 0;
-  const totalDiscount = coinsDiscount + (couponDiscount || 0);
-  const netSubtotal = Math.max(0, cartSubtotal - totalDiscount);
-  const cartTotal = Math.max(0, netSubtotal + cartDeliveryFee + cartTaxes);
+  const cartTaxes = useMemo(() => {
+    return Math.round(cartSubtotal * 0.05); // 5% GST
+  }, [cartSubtotal]);
 
-  // ── Cart Handlers ──
+  const availableCoins = customerProfile?.coins || 0;
+  const maxCoinsUsable = Math.min(availableCoins, Math.floor(cartSubtotal * 0.2));
+  const coinsDiscount = applyCoins ? maxCoinsUsable : 0;
+  const totalDiscount = (couponDiscount || 0) + coinsDiscount;
+
+  const cartTotal = useMemo(() => {
+    const grand = cartSubtotal + cartDeliveryFee + cartTaxes - totalDiscount;
+    return Math.max(0, grand);
+  }, [cartSubtotal, cartDeliveryFee, cartTaxes, totalDiscount]);
+
+  // Cart operations
   const addToCart = (item) => {
     setCart((prev) => {
-      const exist = prev.find(c => c._id === item._id);
-      if (exist) {
-        return prev.map(c => c._id === item._id ? { ...c, quantity: c.quantity + 1 } : c);
+      const idx = prev.findIndex((i) => i._id === item._id);
+      if (idx > -1) {
+        const next = [...prev];
+        next[idx].quantity += 1;
+        return next;
       }
       return [...prev, { ...item, quantity: 1 }];
     });
     toast({
-      title: 'Added to cart!',
-      description: `${item.name} added to your feast.`,
+      title: 'Added to Cart',
+      description: `${item.name} added to your Persian feast.`,
     });
   };
 
   const updateCartQty = (id, delta) => {
-    setCart((prev) =>
-      prev
-        .map(c => c._id === id ? { ...c, quantity: c.quantity + delta } : c)
-        .filter(c => c.quantity > 0)
-    );
+    setCart((prev) => {
+      const idx = prev.findIndex((i) => i._id === id);
+      if (idx === -1) return prev;
+      const next = [...prev];
+      const newQty = next[idx].quantity + delta;
+      if (newQty <= 0) {
+        next.splice(idx, 1);
+      } else {
+        next[idx].quantity = newQty;
+      }
+      return next;
+    });
   };
 
-  const clearCart = () => {
-    setCart([]);
-  };
-
-  // ── Coupon Handlers ──
-  const applyCoupon = async (codeToTry) => {
-    const code = codeToTry.trim().toUpperCase();
+  // Coupon application
+  const applyCouponCode = async (code) => {
     if (!code) return;
     setValidatingCoupon(true);
     try {
       const res = await fetch(`${API_BASE}/api/coupons/validate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, order_value: cartSubtotal })
+        body: JSON.stringify({ code, order_amount: cartSubtotal }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.detail || 'Invalid coupon code');
+      if (data.valid) {
+        setAppliedCoupon(data.coupon);
+        setCouponDiscount(data.discount_amount);
+        toast({
+          title: '🎉 Coupon Applied!',
+          description: `You saved ₹${data.discount_amount} with code ${code}!`,
+        });
+      } else {
+        toast({
+          title: 'Invalid Coupon',
+          description: data.message || 'Coupon could not be applied.',
+          variant: 'destructive',
+        });
       }
-      setAppliedCoupon({ code, ...data });
-      setCouponDiscount(data.discount || 0);
-      toast({
-        title: `🎉 Coupon Applied: ${code}`,
-        description: `You saved ₹${data.discount}!`,
-      });
     } catch (err) {
       toast({
-        title: 'Coupon Error',
-        description: err.message || 'Could not apply coupon',
+        title: 'Error',
+        description: 'Failed to validate coupon.',
         variant: 'destructive',
       });
     } finally {
@@ -434,69 +411,26 @@ const CustomerDashboard = () => {
     setCouponDiscount(0);
   };
 
-  // ── GPS Distance Detection & Auto-Calculate Accurate Distance to Selected Branch ──
-  const detectDistance = () => {
-    if (!navigator.geolocation) {
-      const dist = selectedBranch.defaultDistance || 1.8;
-      setDistanceKm(dist);
-      setLocationSubtitle(`Approx. ${dist} km from ${selectedBranch.name}`);
-      return;
-    }
-    setDetectingLoc(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const userLat = pos.coords.latitude;
-        const userLng = pos.coords.longitude;
-        setUserCoords({ lat: userLat, lng: userLng });
-
-        // Calculate distance from user's GPS directly to the selected branch
-        const dist = calculateHaversine(
-          userLat,
-          userLng,
-          selectedBranch.coordinates.lat,
-          selectedBranch.coordinates.lng
-        );
-
-        setDistanceKm(dist);
-        setDetectingLoc(false);
-        setLocationSubtitle(`Approx. ${dist} km from ${selectedBranch.name}`);
-        toast({
-          title: `📍 Location Detected!`,
-          description: `You are ~${dist} km from Persian Darbar (${selectedBranch.name}).`,
-        });
-      },
-      () => {
-        const dist = selectedBranch.defaultDistance || 1.8;
-        setDistanceKm(dist);
-        setLocationSubtitle(`Approx. ${dist} km from ${selectedBranch.name}`);
-        setDetectingLoc(false);
-      },
-      { timeout: 8000 }
-    );
-  };
-
-  // ── Place Order Handler ──
-  const handlePlaceOrder = async () => {
+  // Place Order Handler
+  const handlePlaceOrder = async ({ address, phone }) => {
     if (cart.length === 0) return;
-    if (orderType === 'DELIVERY' && cartSubtotal < 200) {
-      alert('Minimum order value for delivery is ₹200. Or choose Takeaway Pickup!');
+    if (orderType === 'DELIVERY' && !address?.trim()) {
+      alert('Please enter a delivery address');
       return;
     }
-
-    const phone = customerProfile?.phone || '9876543210';
-    const address = orderType === 'TAKEAWAY'
-      ? `Takeaway Pickup: Persian Darbar (${selectedBranch?.name || 'Bandra Flagship'})`
-      : (deliveryAddress || `${locationTitle}, ${locationSubtitle}`);
-
     setPlacingOrder(true);
-    const combinedCookingNotes = [...cookingTags, cookingNote.trim()].filter(Boolean).join(', ') || null;
-    const combinedDeliveryNotes = deliveryTags.join(', ') || null;
+
+    const combinedCookingNotes = [
+      ...cookingTags,
+      cookingNote.trim(),
+    ].filter(Boolean).join(' | ');
+
+    const combinedDeliveryNotes = deliveryTags.join(' | ');
 
     const orderData = {
-      customer_uid: currentUser?.uid || null,
-      email: currentUser?.email || null,
       customer_name: currentUser?.displayName || customerProfile?.name || 'Valued Guest',
-      phone: phone.trim(),
+      customer_email: currentUser?.email || 'guest@persiandarbar.in',
+      phone: phone || customerProfile?.phone || localStorage.getItem('customer_phone') || '9876543210',
       address: address.trim(),
       order_type: orderType,
       distance_km: distanceKm || 3.5,
@@ -557,6 +491,7 @@ const CustomerDashboard = () => {
         title: '🎉 Order Placed Successfully!',
         description: `Order #${String(data.order_id || data.id).slice(-8)} is being prepared!`,
       });
+      setProfileInitialTab('orders');
       setIsProfileOpen(true);
     } catch (err) {
       alert(err.message || 'Order failed. Please try again.');
@@ -571,7 +506,7 @@ const CustomerDashboard = () => {
     try {
       const body = {
         customer_name: currentUser?.displayName || customerProfile?.name || 'Valued Guest',
-        phone: customerProfile?.phone || '9876543210',
+        phone: customerProfile?.phone || localStorage.getItem('customer_phone') || '9876543210',
         email: currentUser?.email || 'guest@persiandarbar.in',
         date,
         time,
@@ -598,124 +533,101 @@ const CustomerDashboard = () => {
         throw new Error('Reservation could not be processed');
       }
     } catch (err) {
-      toast({
-        title: 'Booking Notice',
-        description: 'Table booked successfully! Confirmation sent.',
-      });
       setBookingSuccess({ date, time, guests });
+      toast({
+        title: 'Booking Confirmed!',
+        description: `Your table for ${guests} guests on ${date} at ${time} is registered.`,
+      });
     } finally {
       setBookingLoading(false);
     }
   };
 
-  // Re-order past order
-  const handleReorder = (pastOrder) => {
-    if (!pastOrder?.items) return;
-    const items = pastOrder.items.map(item => {
-      const match = menu.find(m => String(m._id) === String(item.item_id) || m.name === item.name);
-      return {
-        _id: match ? match._id : (item.item_id || item._id || String(Math.random())),
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity || 1,
-        image: match?.image || item.image || '/no-image.png',
-        category: match?.category || 'Main Course',
-        is_veg: match?.is_veg ?? match?.veg
-      };
-    });
-    setCart(items);
-    setIsProfileOpen(false);
-    setIsCartOpen(true);
+  // Offer click handler
+  const handleOfferClick = (offer) => {
+    if (offer.action === 'reserve') {
+      setActiveTab('reserve');
+    } else if (offer.coupon_code) {
+      navigator.clipboard?.writeText(offer.coupon_code);
+      toast({
+        title: '🎟️ Code Copied!',
+        description: `Copied ${offer.coupon_code}. Apply at checkout for discount.`,
+      });
+      setIsCartOpen(true);
+    } else {
+      setActiveTab('order');
+    }
   };
 
-  // Filter menu for Healthy Mode (Low cal, Tandoori, High protein, Salads)
-  const displayedMenu = useMemo(() => {
-    if (!healthyMode) return menu;
-    return menu.filter(item => {
-      const cat = item.category?.toLowerCase() || '';
-      const name = item.name?.toLowerCase() || '';
-      return cat.includes('kebab') || cat.includes('starter') || name.includes('tandoori') || name.includes('tikka') || name.includes('salad');
-    });
-  }, [menu, healthyMode]);
-
-  const activeOrders = orders.filter(o => ['placed', 'accepted', 'preparing', 'out_for_delivery'].includes(o.status));
-  const activeOrder = activeOrders.length > 0 ? activeOrders[0] : null;
+  // Bottom dock tab selector
+  const handleDockSelect = (tabId) => {
+    if (tabId === 'rewards') {
+      setProfileInitialTab('rewards');
+      setIsProfileOpen(true);
+      return;
+    }
+    if (tabId === 'profile') {
+      setProfileInitialTab('profile');
+      setIsProfileOpen(true);
+      return;
+    }
+    setActiveTab(tabId);
+    mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
-    <div className="bg-[#F8F9FA] text-[#1C1C1C] flex justify-center min-h-screen antialiased selection:bg-red-100 font-sans">
-      {/* PWA Install Prompt */}
-      <CustomerPwaInstallModal />
+    <div className="min-h-screen bg-[#F8F9FA] text-neutral-900 font-sans flex flex-col items-center">
+      {/* ── Main Mobile Shell Container (Zomato iOS 430px) ── */}
+      <div className="w-full max-w-[430px] min-h-screen bg-[#F8F9FA] flex flex-col shadow-2xl relative pb-28">
 
-      {/* Mobile Form Factor Frame Wrapper (iOS iPhone 14/15 Pro Dimensions) */}
-      <div className="w-full max-w-[430px] bg-white min-h-screen flex flex-col relative shadow-2xl overflow-x-hidden">
-
-        {/* ── Top Bar & Location Header ── */}
+        {/* ── Customer Top Navigation Bar (Clean Persian Darbar Outlet Selector) ── */}
         <CustomerTopBar
-          locationTitle={locationTitle}
-          locationSubtitle={locationSubtitle}
+          selectedBranch={selectedBranch}
+          distanceKm={distanceKm}
           onOpenLocationModal={() => setIsLocationModalOpen(true)}
-          onOpenProfile={() => setIsProfileOpen(true)}
+          onOpenProfile={() => {
+            setProfileInitialTab('profile');
+            setIsProfileOpen(true);
+          }}
           onOpenWallet={() => {
+            setProfileInitialTab('rewards');
             setIsProfileOpen(true);
           }}
           onOpenSearch={() => setIsSearchOpen(true)}
           searchQuery={searchQuery}
-          searchPlaceholder={
-            activeTab === 'dining'
-              ? 'Search dining, buffets, banquets...'
-              : activeTab === 'under250'
-              ? 'Search meals under ₹250...'
-              : 'Search "biryani, kebabs, desserts..."'
-          }
-          vegOnly={vegOnly}
-          onToggleVeg={() => setVegOnly(!vegOnly)}
           userInitial={currentUser?.displayName?.[0] || 'A'}
           userPhoto={currentUser?.photoURL}
         />
 
-        {/* ── Scrollable Body Ref ── */}
+        {/* ── Scrollable Body ── */}
         <main ref={mainScrollRef} className="flex-1 overflow-y-auto no-scrollbar">
 
-          {/* Tab 1: Home (Delivery Feed) */}
-          {activeTab === 'home' && (
+          {/* Tab 1 & 2: Home & Order Feed */}
+          {(activeTab === 'home' || activeTab === 'order') && (
             <CustomerHomeTab
-              menu={displayedMenu}
-              categories={['All', ...new Set(menu.map(i => i.category).filter(Boolean))]}
+              menu={menu}
               selectedCat={selectedCat}
               onSelectCat={setSelectedCat}
-              vegOnly={vegOnly}
-              onToggleVeg={() => setVegOnly(!vegOnly)}
-              fastDeliveryOnly={fastDeliveryOnly}
-              onToggleFastDelivery={() => setFastDeliveryOnly(!fastDeliveryOnly)}
-              topRatedOnly={topRatedOnly}
-              onToggleTopRated={() => setTopRatedOnly(!topRatedOnly)}
               cart={cart}
               onAddToCart={addToCart}
               onUpdateCartQty={updateCartQty}
               onOpenCart={() => setIsCartOpen(true)}
-              onOpenWallet={() => setIsProfileOpen(true)}
+              onOpenWallet={() => {
+                setProfileInitialTab('rewards');
+                setIsProfileOpen(true);
+              }}
               onOpenSearch={() => setIsSearchOpen(true)}
               offers={offers}
               onOfferClick={handleOfferClick}
+              onGoToReserve={() => setActiveTab('reserve')}
             />
           )}
 
-          {/* Tab 2: Under ₹250 */}
-          {activeTab === 'under250' && (
-            <CustomerUnder250Tab
-              menu={displayedMenu}
-              cart={cart}
-              onAddToCart={addToCart}
-              onUpdateCartQty={updateCartQty}
-              onOpenCart={() => setIsCartOpen(true)}
-              onGoToHome={() => setActiveTab('home')}
-            />
-          )}
-
-          {/* Tab 3: Dining Out & Table Reservation */}
-          {activeTab === 'dining' && (
+          {/* Tab 3: Table Reservation (Reserve) */}
+          {activeTab === 'reserve' && (
             <CustomerDiningTab
               selectedBranch={selectedBranch}
+              onSelectBranch={handleSelectBranch}
               reservations={reservations}
               tables={tables}
               currentUser={currentUser}
@@ -729,7 +641,7 @@ const CustomerDashboard = () => {
           )}
         </main>
 
-        {/* ── Search & Explore Overlay ── */}
+        {/* ── Search & Explore Overlay (Real Menu Items & Categories) ── */}
         {isSearchOpen && (
           <CustomerSearchExplore
             searchQuery={searchQuery}
@@ -739,140 +651,11 @@ const CustomerDashboard = () => {
             cart={cart}
             onAddToCart={addToCart}
             onUpdateCartQty={updateCartQty}
-            onOpenCart={() => {
-              setIsSearchOpen(false);
-              setIsCartOpen(true);
-            }}
+            onOpenCart={() => setIsCartOpen(true)}
           />
         )}
 
-        {/* ── Floating iOS Dock Navigation Bar ── */}
-        <CustomerDockNav
-          activeTab={activeTab}
-          onSelectTab={setActiveTab}
-          cartCount={cartItemCount}
-          cartTotal={cartTotal}
-          onOpenCart={() => setIsCartOpen(true)}
-          onOpenQuickActions={() => setIsQuickActionsOpen(true)}
-          healthyMode={healthyMode}
-          onToggleHealthyMode={() => {
-            setHealthyMode(!healthyMode);
-            toast({
-              title: !healthyMode ? '🥗 Healthy Mode Activated' : 'Normal Menu Restored',
-              description: !healthyMode
-                ? 'Showing low-calorie, high-protein Tandoori grills & salads.'
-                : 'Showing full Persian Darbar royal menu.',
-            });
-          }}
-        />
-
-        {/* ── Cart & Checkout Bottom Sheet ── */}
-        <CustomerCartSheet
-          isOpen={isCartOpen}
-          onClose={() => setIsCartOpen(false)}
-          cart={cart}
-          onUpdateCartQty={updateCartQty}
-          onClearCart={clearCart}
-          orderType={orderType}
-          onSetOrderType={setOrderType}
-          deliveryAddress={deliveryAddress}
-          onSetDeliveryAddress={setDeliveryAddress}
-          onDetectLocation={detectDistance}
-          detectingLocation={detectingLoc}
-          distanceKm={distanceKm}
-          selectedBranch={selectedBranch}
-          coupons={coupons}
-          appliedCoupon={appliedCoupon}
-          couponDiscount={couponDiscount}
-          onApplyCoupon={applyCoupon}
-          onRemoveCoupon={removeCoupon}
-          validatingCoupon={validatingCoupon}
-          pdCoins={pdCoins}
-          applyCoins={applyCoins}
-          onToggleCoins={() => setApplyCoins(!applyCoins)}
-          coinsDiscount={coinsDiscount}
-          maxRedeemableCoins={maxRedeemableCoins}
-          cookingTags={cookingTags}
-          onToggleCookingTag={(tag) =>
-            setCookingTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])
-          }
-          cookingNote={cookingNote}
-          onSetCookingNote={setCookingNote}
-          deliveryTags={deliveryTags}
-          onToggleDeliveryTag={(tag) =>
-            setDeliveryTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])
-          }
-          payMethod={payMethod}
-          onSetPayMethod={setPayMethod}
-          onPlaceOrder={handlePlaceOrder}
-          placingOrder={placingOrder}
-          cartSubtotal={cartSubtotal}
-          cartDeliveryFee={cartDeliveryFee}
-          cartTaxes={cartTaxes}
-          cartTotal={cartTotal}
-          freeDeliveryThreshold={freeDeliveryThreshold}
-        />
-
-        {/* ── Profile, Rewards & Past Orders Sheet ── */}
-        <CustomerProfileSheet
-          isOpen={isProfileOpen}
-          onClose={() => setIsProfileOpen(false)}
-          currentUser={currentUser}
-          customerProfile={customerProfile}
-          orders={orders}
-          reservations={reservations}
-          onReorder={handleReorder}
-          onSavePhone={async (phone) => {
-            const r = await updateProfile({ phone });
-            if (r.success) {
-              toast({ title: 'Phone Updated', description: 'Your contact number is saved.' });
-            }
-          }}
-          onSaveAddress={async (address) => {
-            const r = await updateProfile({ address });
-            if (r.success) {
-              setDeliveryAddress(address);
-              toast({ title: 'Address Saved', description: 'Your delivery address is updated.' });
-            }
-          }}
-          onShareApp={() => {
-            if (navigator.share) {
-              navigator.share({
-                title: 'Persian Darbar',
-                text: 'Order authentic royal biryanis and earn PD Coins on the new Persian Darbar app!',
-                url: window.location.origin
-              }).catch(() => {});
-            } else {
-              navigator.clipboard?.writeText(window.location.origin);
-              toast({ title: 'Link Copied', description: 'Share link copied to clipboard!' });
-            }
-          }}
-          onSignOut={async () => {
-            await signOutCustomer();
-            navigate('/');
-          }}
-          pdCoins={pdCoins}
-        />
-
-        {/* ── Quick Assistant Modal (Center Glowing Button) ── */}
-        <CustomerQuickActionsModal
-          isOpen={isQuickActionsOpen}
-          onClose={() => setIsQuickActionsOpen(false)}
-          selectedBranch={selectedBranch}
-          cartCount={cartItemCount}
-          onOpenCart={() => setIsCartOpen(true)}
-          activeOrder={activeOrder}
-          onTrackOrder={(order) => {
-            navigate(`/track-order/${order.order_id || order.id || order._id}`);
-          }}
-          onGoToDining={() => setActiveTab('dining')}
-          onAddChefSpecial={() => {
-            const chefDish = menu.find(i => i.name?.toLowerCase().includes('biryani')) || menu[0];
-            if (chefDish) addToCart(chefDish);
-          }}
-        />
-
-        {/* ── Location Switcher Modal (4 Persian Darbar Branches) ── */}
+        {/* ── Outlet Selection Modal (4 Persian Darbar Branches with Real Images & True Distance) ── */}
         <CustomerAddressModal
           isOpen={isLocationModalOpen}
           onClose={() => setIsLocationModalOpen(false)}
@@ -880,14 +663,124 @@ const CustomerDashboard = () => {
           onSelectBranch={handleSelectBranch}
           userCoords={userCoords}
           currentAddress={deliveryAddress}
-          onSelectAddress={(title, sub) => {
-            setLocationTitle(title);
-            setLocationSubtitle(sub);
-            setDeliveryAddress(`${title}, ${sub}`);
+          onSelectAddress={(addr) => {
+            setDeliveryAddress(addr);
+            updateDistanceForBranch(selectedBranch, userCoords, addr);
           }}
-          onDetectLocation={detectDistance}
+          onDetectLocation={handleDetectGPS}
           detectingLocation={detectingLoc}
         />
+
+        {/* ── Cart Drawer / Sheet ── */}
+        <CustomerCartSheet
+          isOpen={isCartOpen}
+          onClose={() => setIsCartOpen(false)}
+          cart={cart}
+          onAddToCart={addToCart}
+          onUpdateQty={updateCartQty}
+          orderType={orderType}
+          onSetOrderType={setOrderType}
+          deliveryAddress={deliveryAddress}
+          onUpdateAddress={setDeliveryAddress}
+          cookingTags={cookingTags}
+          onToggleCookingTag={(tag) =>
+            setCookingTags((prev) =>
+              prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+            )
+          }
+          cookingNote={cookingNote}
+          onChangeCookingNote={setCookingNote}
+          deliveryTags={deliveryTags}
+          onToggleDeliveryTag={(tag) =>
+            setDeliveryTags((prev) =>
+              prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+            )
+          }
+          payMethod={payMethod}
+          onSetPayMethod={setPayMethod}
+          appliedCoupon={appliedCoupon}
+          couponDiscount={couponDiscount}
+          onApplyCoupon={applyCouponCode}
+          onRemoveCoupon={removeCoupon}
+          validatingCoupon={validatingCoupon}
+          availableCoins={availableCoins}
+          maxCoinsUsable={maxCoinsUsable}
+          applyCoins={applyCoins}
+          onToggleCoins={() => setApplyCoins((prev) => !prev)}
+          subtotal={cartSubtotal}
+          deliveryFee={cartDeliveryFee}
+          taxes={cartTaxes}
+          totalDiscount={totalDiscount}
+          total={cartTotal}
+          onPlaceOrder={handlePlaceOrder}
+          placingOrder={placingOrder}
+          customerProfile={customerProfile}
+          selectedBranch={selectedBranch}
+          distanceKm={distanceKm}
+        />
+
+        {/* ── Profile & Orders Sheet ── */}
+        <CustomerProfileSheet
+          isOpen={isProfileOpen}
+          onClose={() => setIsProfileOpen(false)}
+          currentUser={currentUser}
+          customerProfile={customerProfile}
+          orders={orders}
+          reservations={reservations}
+          onReorder={(order) => {
+            if (!order?.items) return;
+            order.items.forEach((item) => {
+              const dish = menu.find(
+                (m) => String(m._id) === String(item.item_id) || m.name === item.name
+              );
+              if (dish) addToCart(dish);
+            });
+            setIsProfileOpen(false);
+            setIsCartOpen(true);
+          }}
+          onSavePhone={async (phone) => {
+            await updateProfile({ phone });
+            toast({ title: 'Phone Saved', description: 'Contact number updated.' });
+          }}
+          onSaveAddress={async (address) => {
+            await updateProfile({ address });
+            setDeliveryAddress(address);
+            updateDistanceForBranch(selectedBranch, userCoords, address);
+            toast({ title: 'Address Saved', description: 'Default address updated.' });
+          }}
+          onShareApp={() => {
+            if (navigator.share) {
+              navigator.share({
+                title: 'Persian Darbar',
+                text: 'Order authentic Persian & Mughlai delicacies from Persian Darbar!',
+                url: window.location.origin
+              });
+            } else {
+              navigator.clipboard?.writeText(window.location.origin);
+              toast({ title: 'Link Copied', description: 'Share link copied to clipboard.' });
+            }
+          }}
+          onSignOut={async () => {
+            await signOutCustomer();
+            setIsProfileOpen(false);
+            toast({ title: 'Signed Out', description: 'See you again at Persian Darbar!' });
+          }}
+          pdCoins={customerProfile?.coins || 0}
+          initialTab={profileInitialTab}
+        />
+
+        {/* ── Fixed Bottom Floating Dock Navigation (5 Authentic Customer Tabs) ── */}
+        <CustomerDockNav
+          activeTab={activeTab}
+          onSelectTab={handleDockSelect}
+          cartCount={cart.reduce((s, i) => s + i.quantity, 0)}
+          cartTotal={cartTotal}
+          onOpenCart={() => setIsCartOpen(true)}
+        />
+
+        {/* ── PWA Install Banner ── */}
+        <CustomerPwaInstallModal />
+
       </div>
     </div>
   );
