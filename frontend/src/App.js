@@ -197,10 +197,7 @@ function App() {
             <Route path="/staff-entry" element={<StaffAppEntry />} />
 
             {/* ---------------- CUSTOMER PORTAL ---------------- */}
-            <Route
-              path="/customer"
-              element={localStorage.getItem('customer_jwt') ? <CustomerDashboard /> : <CustomerLogin />}
-            />
+            <Route path="/customer" element={<CustomerDashboard />} />
             <Route path="/customer/login" element={<CustomerLogin />} />
             <Route path="/customer/dashboard" element={<CustomerDashboard />} />
             <Route path="/customer/orders" element={<CustomerOrders />} />
