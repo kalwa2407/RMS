@@ -129,7 +129,10 @@ const CustomerLogin = () => {
     setError(null);
     const res = await signInWithGoogle();
     if (res.redirecting) {
-      // Page will navigate away during redirect — keep spinner showing
+      // Page will navigate away during redirect, or timeout if blocked by webview
+      setTimeout(() => {
+        setSigningInGoogle(false);
+      }, 3500);
       return;
     }
     if (res.success) {
@@ -186,9 +189,9 @@ const CustomerLogin = () => {
           {/* Persian Darbar Royal Crown Logo */}
           <div className="relative inline-block mb-2">
             <img
-              src="/persian_darbar_crown_logo.png"
+              src="/app-icon.png"
               alt="Persian Darbar"
-              className="w-20 h-20 rounded-3xl shadow-lg border border-amber-400/50 object-contain mx-auto"
+              className="w-20 h-20 rounded-3xl shadow-lg border border-amber-400/50 object-cover mx-auto"
             />
             <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[9px] font-black border border-white shadow-xs">
               ✓

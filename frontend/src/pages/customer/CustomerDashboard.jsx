@@ -721,8 +721,8 @@ const CustomerDashboard = () => {
         />
 
 
-        {/* ── Scrollable Body ── */}
-        <main ref={mainScrollRef} className="flex-1 overflow-y-auto no-scrollbar">
+        {/* ── Scrollable Body with smooth tab fade transition ── */}
+        <main ref={mainScrollRef} key={activeTab} className="flex-1 overflow-y-auto no-scrollbar animate-in fade-in duration-200">
 
           {/* Tab 1: Home (Royal Discovery & Showcase) */}
           {activeTab === 'home' && (

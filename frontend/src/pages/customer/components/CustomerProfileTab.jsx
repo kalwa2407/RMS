@@ -126,7 +126,7 @@ const CustomerProfileTab = ({
           <div className="absolute top-0 right-0 w-36 h-36 bg-gradient-to-bl from-amber-400/10 via-amber-200/5 to-transparent rounded-bl-full pointer-events-none" />
           
           <img
-            src="/persian_darbar_crown_logo.png"
+            src="/app-icon.png"
             alt="Persian Darbar"
             className="w-16 h-16 rounded-2xl shadow-md border border-amber-400/70 object-contain mx-auto"
           />
@@ -200,13 +200,22 @@ const CustomerProfileTab = ({
               </div>
             </div>
 
-            <button
-              onClick={() => setIsEditModalOpen(true)}
-              className="p-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 active:scale-95 transition-all shrink-0 cursor-pointer"
-              title="Edit Profile Details"
-            >
-              <Edit2 className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                onClick={() => setIsEditModalOpen(true)}
+                className="p-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 active:scale-95 transition-all shrink-0 cursor-pointer"
+                title="Edit Profile Details"
+              >
+                <Edit2 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setShowLogoutModal(true)}
+                className="p-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-[#E40000] border border-red-200 active:scale-95 transition-all shrink-0 cursor-pointer flex items-center justify-center"
+                title="Sign Out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {/* ── 2. ZOMATO 4-CARD QUICK STATS ── */}
@@ -770,6 +779,23 @@ const CustomerProfileTab = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── 6. PROMINENT SIGN OUT BUTTON (Always accessible to logged in patron) ── */}
+      {currentUser && (
+        <section className="pt-2">
+          <button
+            type="button"
+            onClick={() => setShowLogoutModal(true)}
+            className="w-full py-3.5 px-4 rounded-2xl bg-white border border-red-200/90 hover:bg-red-50 text-[#E40000] font-black text-xs uppercase tracking-wider shadow-xs active:scale-98 transition-all flex items-center justify-center space-x-2 cursor-pointer"
+          >
+            <LogOut className="w-4 h-4 text-[#E40000]" />
+            <span>Sign Out of Persian Darbar</span>
+          </button>
+          <p className="text-[10px] text-neutral-400 text-center mt-2">
+            Logged in as {patronName} {patronPhone ? `(+91 ${patronPhone})` : ''}
+          </p>
+        </section>
       )}
 
       {/* ── EDIT PROFILE MODAL ── */}

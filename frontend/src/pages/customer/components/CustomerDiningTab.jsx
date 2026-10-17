@@ -200,7 +200,7 @@ const CustomerDiningTab = ({
                 <div className="bg-gradient-to-r from-[#E40000] to-[#B30000] text-white -mx-5 -mt-5 p-4 flex items-center justify-between">
                   <div className="flex items-center space-x-2.5">
                     <img
-                      src="/persian_darbar_crown_logo.png"
+                      src="/app-icon.png"
                       alt="Persian Darbar"
                       className="w-8 h-8 rounded-xl object-contain bg-white/10 p-0.5 border border-white/30"
                     />
@@ -321,18 +321,21 @@ const CustomerDiningTab = ({
               </div>
             ) : (
               <form onSubmit={handleSubmitBooking} className="space-y-4 text-left">
-                {/* 1. Date Selector */}
+                {/* 1. Date Selector (Constrained container preventing iOS WebKit overflow) */}
                 <div>
                   <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-wider mb-1.5">
                     Select Dining Date
                   </label>
-                  <input
-                    type="date"
-                    min={new Date().toISOString().split('T')[0]}
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-neutral-800 focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-[#E40000]"
-                  />
+                  <div className="relative w-full rounded-2xl overflow-hidden border border-neutral-200/90 bg-neutral-50 shadow-inner focus-within:ring-2 focus-within:ring-red-100 focus-within:border-[#E40000]">
+                    <input
+                      type="date"
+                      min={new Date().toISOString().split('T')[0]}
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      className="w-full box-border bg-transparent px-4 py-3 text-xs font-black text-neutral-900 text-center outline-none cursor-pointer"
+                      style={{ WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none', width: '100%', maxWidth: '100%' }}
+                    />
+                  </div>
                 </div>
 
                 {/* 2. Guest Count Selector */}

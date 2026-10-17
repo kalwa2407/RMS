@@ -948,7 +948,7 @@ const CustomerReservations = () => {
             <div className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl text-center space-y-4 animate-in fade-in zoom-in-95 duration-200">
               <div className="relative inline-block mx-auto">
                 <img
-                  src="/persian_darbar_crown_logo.png"
+                  src="/app-icon.png"
                   alt="Persian Darbar"
                   className="w-16 h-16 rounded-2xl shadow-lg border border-amber-400/60 object-contain mx-auto"
                 />

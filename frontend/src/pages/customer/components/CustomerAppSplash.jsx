@@ -33,9 +33,9 @@ const CustomerAppSplash = ({ isReady = true, minDurationMs = 500 }) => {
         {/* Royal Persian Darbar Crown Logo */}
         <div className="relative mb-6">
           <img
-            src="/persian_darbar_crown_logo.png"
+            src="/app-icon.png"
             alt="Persian Darbar"
-            className="w-20 h-20 rounded-3xl object-contain shadow-2xl shadow-amber-900/40 animate-pulse"
+            className="w-20 h-20 rounded-3xl object-cover shadow-2xl shadow-amber-900/40 animate-pulse border border-amber-400/40"
           />
           {/* Subtle Ambient Gold Ring */}
           <div className="absolute -inset-1 rounded-3xl bg-gradient-to-tr from-amber-500/20 via-transparent to-amber-300/30 blur-xs pointer-events-none" />

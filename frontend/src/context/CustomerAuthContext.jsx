@@ -170,12 +170,44 @@ export const CustomerAuthProvider = ({ children }) => {
 
   // Google Sign-In — use redirect on mobile/iOS (where COOP blocks popups), popup on desktop
   const signInWithGoogle = async () => {
-    // Detect iOS or any mobile browser — popups are unreliable due to COOP
+    const isNative = typeof window !== 'undefined' && window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform();
     const isMobile = /iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent);
     const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
+    // On native iOS/Android shell, attempt popup first (redirect navigates the native app webview out to Google)
+    if (isNative) {
+      try {
+        const result = await signInWithPopup(auth, googleProvider);
+        const user = result.user;
+        const token = await user.getIdToken();
+
+        localStorage.setItem('customer_jwt', token);
+        localStorage.setItem('customer_login_provider', 'google');
+        if (user.uid) localStorage.setItem('customer_uid', user.uid);
+        if (user.displayName) localStorage.setItem('customer_name', user.displayName);
+        if (user.email) localStorage.setItem('customer_email', user.email);
+        if (user.photoURL) localStorage.setItem('customer_photo', user.photoURL);
+
+        setCurrentUser(user);
+        setIdToken(token);
+        await fetchCustomerProfile(token, user);
+        return { success: true, user };
+      } catch (nativeErr) {
+        console.warn('Native Google popup error, attempting redirect fallback:', nativeErr);
+        try {
+          await signInWithRedirect(auth, googleProvider);
+          return { success: true, redirecting: true };
+        } catch (redirectErr) {
+          return {
+            success: false,
+            error: 'Google Sign-in is restricted on iOS WebView. Please log in using Instant WhatsApp OTP (+91).'
+          };
+        }
+      }
+    }
+
     if (isMobile || isIOS) {
-      // On mobile/iOS: go straight to redirect — no popup attempt
+      // On mobile web browser: go straight to redirect
       try {
         await signInWithRedirect(auth, googleProvider);
         return { success: true, redirecting: true };

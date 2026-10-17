@@ -49,7 +49,7 @@ const CustomerTopBar = ({
               className="flex items-center space-x-2.5 cursor-pointer active:opacity-75 transition-opacity flex-1 min-w-0"
             >
               <img
-                src="/persian_darbar_crown_logo.png"
+                src="/app-icon.png"
                 alt="Persian Darbar"
                 className="w-8 h-8 rounded-xl object-contain shrink-0 shadow-xs border border-amber-400/40"
               />
@@ -73,7 +73,7 @@ const CustomerTopBar = ({
                 aria-label="Royalty Membership"
                 className="px-2.5 py-1 rounded-full bg-[#E40000] text-white text-xs font-black flex items-center space-x-1 shadow-sm active:scale-95 transition-transform shrink-0"
               >
-                <img src="/persian_darbar_crown_logo.png" alt="" className="w-3.5 h-3.5 rounded-sm object-contain" />
+                <img src="/app-icon.png" alt="" className="w-3.5 h-3.5 rounded-sm object-contain" />
                 <span className="text-[9.5px] font-extrabold tracking-wider uppercase">VIP Table</span>
               </button>
               <ProfileAvatar />
@@ -110,7 +110,7 @@ const CustomerTopBar = ({
             className="flex items-center space-x-2 cursor-pointer active:opacity-75 transition-opacity flex-1 min-w-0"
           >
             <img
-              src="/persian_darbar_crown_logo.png"
+              src="/app-icon.png"
               alt="Persian Darbar"
               className="w-8 h-8 rounded-xl object-contain shrink-0 shadow-xs border border-amber-400/40"
             />
@@ -134,7 +134,7 @@ const CustomerTopBar = ({
               aria-label="Royalty Membership"
               className="px-2 py-1 rounded-full bg-[#E40000] text-white text-xs font-black flex items-center space-x-1 shadow-sm active:scale-95 transition-transform shrink-0"
             >
-              <img src="/persian_darbar_crown_logo.png" alt="" className="w-3.5 h-3.5 rounded-sm object-contain" />
+              <img src="/app-icon.png" alt="" className="w-3.5 h-3.5 rounded-sm object-contain" />
               <span className="text-[9.5px] font-extrabold tracking-wider uppercase">Royalty</span>
             </button>
             <ProfileAvatar />

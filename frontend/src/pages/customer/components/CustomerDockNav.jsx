@@ -55,20 +55,23 @@ const CustomerDockNav = ({
             <button
               key={item.id}
               onClick={() => onSelectTab(item.id)}
-              className={`flex flex-col items-center justify-center flex-1 py-1 transition-all active:scale-95 ${
+              className={`flex flex-col items-center justify-center flex-1 py-1 transition-all duration-200 active:scale-90 ${
                 isActive ? 'text-[#E40000]' : 'text-neutral-500 hover:text-neutral-800'
               }`}
             >
-              <div className={`relative p-1 rounded-xl transition-all ${
-                isActive ? 'bg-red-50 text-[#E40000]' : ''
+              <div className={`relative p-1 rounded-xl transition-all duration-200 ${
+                isActive ? 'bg-red-50 text-[#E40000] scale-110' : 'hover:scale-105'
               }`}>
-                <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5]' : 'stroke-[1.8]'}`} />
+                <Icon className={`w-5 h-5 transition-transform duration-200 ${isActive ? 'stroke-[2.5]' : 'stroke-[1.8]'}`} />
               </div>
-              <span className={`text-[10px] mt-0.5 tracking-tight ${
+              <span className={`text-[10px] mt-0.5 tracking-tight transition-all duration-200 ${
                 isActive ? 'font-black text-[#E40000]' : 'font-semibold text-neutral-600'
               }`}>
                 {item.label}
               </span>
+              {isActive && (
+                <span className="w-1 h-1 rounded-full bg-[#E40000] mt-0.5 animate-in zoom-in-50 duration-200" />
+              )}
             </button>
           );
         })}
