@@ -56,7 +56,7 @@ const CustomerDiningTab = ({
   return (
     <div className="flex-1 pb-32 pt-2 px-4 space-y-4">
       {/* ── 1. SELECTED OUTLET HEADER (Synchronized with top bar, extra select dining room removed) ── */}
-      <section className="bg-white rounded-3xl p-4 border border-amber-900/10 shadow-xs">
+      <section className="bg-white rounded-3xl p-4 border border-neutral-200/80 shadow-xs">
         <div className="flex items-center justify-between mb-2.5">
           <span className="text-[10px] font-black uppercase tracking-wider text-neutral-400">
             SELECTED ROYAL OUTLET
@@ -85,7 +85,7 @@ const CustomerDiningTab = ({
               <h3 className="text-sm font-black text-neutral-900 truncate">
                 Persian Darbar · {selectedBranch?.name || 'Camp, Pune'}
               </h3>
-              <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-100 text-amber-800 shrink-0">
+              <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-red-50 text-[#E40000] border border-red-200 shrink-0">
                 {selectedBranch?.badge || 'Open'}
               </span>
             </div>
@@ -112,7 +112,7 @@ const CustomerDiningTab = ({
           <h2 className="text-xs font-black text-neutral-500 uppercase tracking-wider">
             WHAT'S THE DINING MOOD?
           </h2>
-          <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+          <span className="text-[10px] font-bold text-[#E40000] bg-red-50 px-2.5 py-0.5 rounded-full border border-red-200">
             Selected: {selectedMood}
           </span>
         </div>
@@ -167,8 +167,8 @@ const CustomerDiningTab = ({
             onClick={() => setSubView('book')}
             className={`flex-1 py-2 rounded-xl text-xs font-black transition-all ${
               subView === 'book'
-                ? 'bg-white text-neutral-900 shadow-xs'
-                : 'text-neutral-500 hover:text-neutral-900'
+                ? 'bg-[#E40000] text-white shadow-xs'
+                : 'text-neutral-600 hover:text-neutral-900'
             }`}
           >
             Book a Table
@@ -177,13 +177,15 @@ const CustomerDiningTab = ({
             onClick={() => setSubView('history')}
             className={`flex-1 py-2 rounded-xl text-xs font-black transition-all relative ${
               subView === 'history'
-                ? 'bg-white text-neutral-900 shadow-xs'
-                : 'text-neutral-500 hover:text-neutral-900'
+                ? 'bg-[#E40000] text-white shadow-xs'
+                : 'text-neutral-600 hover:text-neutral-900'
             }`}
           >
             My Bookings
             {reservations.length > 0 && (
-              <span className="ml-1.5 px-1.5 py-0.2 rounded-full bg-[#E40000] text-white text-[9px] font-black">
+              <span className={`ml-1.5 px-1.5 py-0.2 rounded-full text-[9px] font-black ${
+                subView === 'history' ? 'bg-white text-[#E40000]' : 'bg-[#E40000] text-white'
+              }`}>
                 {reservations.length}
               </span>
             )}
@@ -193,93 +195,90 @@ const CustomerDiningTab = ({
         {subView === 'book' ? (
           <div className="bg-white rounded-3xl p-5 border border-neutral-200/80 shadow-xs space-y-4">
             {bookingSuccess ? (
-              <div className="relative rounded-3xl overflow-hidden bg-gradient-to-b from-[#1C1917] via-[#141210] to-[#0A0908] border border-amber-400/40 shadow-2xl text-white p-5 space-y-4 animate-in zoom-in-95 duration-300">
-                {/* Gold Glow Aura */}
-                <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-
-                {/* Top Badge: Royal Header & Pass ID */}
-                <div className="flex items-center justify-between border-b border-amber-400/20 pb-3">
-                  <div className="flex items-center space-x-2">
+              <div className="relative rounded-3xl overflow-hidden bg-white border border-neutral-200/90 shadow-xl p-5 space-y-4 animate-in zoom-in-95 duration-300">
+                {/* Red Brand Header Banner */}
+                <div className="bg-gradient-to-r from-[#E40000] to-[#B30000] text-white -mx-5 -mt-5 p-4 flex items-center justify-between">
+                  <div className="flex items-center space-x-2.5">
                     <img
                       src="/persian_darbar_crown_logo.png"
                       alt="Persian Darbar"
-                      className="w-9 h-9 rounded-xl object-contain shadow-xs border border-amber-400/50"
+                      className="w-8 h-8 rounded-xl object-contain bg-white/10 p-0.5 border border-white/30"
                     />
                     <div>
-                      <span className="text-[9px] font-extrabold uppercase tracking-widest text-amber-400 block">
+                      <span className="text-[9px] font-extrabold uppercase tracking-widest text-amber-200 block">
                         VIP DINING PASS
                       </span>
-                      <span className="text-[11px] font-bold text-neutral-300">
+                      <span className="text-xs font-black text-white">
                         Persian Darbar · Since 1978
                       </span>
                     </div>
                   </div>
-                  <span className="text-[10px] font-mono font-bold text-amber-300/90 bg-amber-400/10 border border-amber-400/30 px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-mono font-bold text-white bg-white/20 border border-white/30 px-2 py-0.5 rounded-full">
                     #PD-{String(Date.now()).slice(-4)}
                   </span>
                 </div>
 
                 {/* Center Success Status */}
-                <div className="text-center py-1">
-                  <div className="w-14 h-14 rounded-full bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center mx-auto mb-2.5 shadow-lg shadow-emerald-500/20">
-                    <CheckCircle2 className="w-8 h-8 text-emerald-400 stroke-[2.5]" />
+                <div className="text-center py-2">
+                  <div className="w-14 h-14 rounded-full bg-emerald-50 border-2 border-emerald-500 flex items-center justify-center mx-auto mb-2 shadow-xs">
+                    <CheckCircle2 className="w-8 h-8 text-emerald-600 stroke-[2.5]" />
                   </div>
-                  <h4 className="text-lg font-black tracking-tight text-white">
+                  <h4 className="text-base font-black tracking-tight text-neutral-900">
                     Royal Table Reserved!
                   </h4>
-                  <p className="text-[11px] text-amber-200/90 font-medium mt-0.5">
+                  <p className="text-[11px] text-neutral-500 font-medium mt-0.5">
                     Your luxury Mughlai dining experience is confirmed
                   </p>
                 </div>
 
                 {/* Perforated Ticket Divider with Notches */}
                 <div className="relative py-1 flex items-center justify-between">
-                  <div className="absolute -left-7 w-5 h-5 rounded-full bg-white shadow-inner" />
-                  <div className="w-full border-b border-dashed border-amber-400/30 mx-2" />
-                  <div className="absolute -right-7 w-5 h-5 rounded-full bg-white shadow-inner" />
+                  <div className="absolute -left-7 w-5 h-5 rounded-full bg-neutral-100 border border-neutral-200" />
+                  <div className="w-full border-b border-dashed border-neutral-200 mx-2" />
+                  <div className="absolute -right-7 w-5 h-5 rounded-full bg-neutral-100 border border-neutral-200" />
                 </div>
 
                 {/* Pass Details 2x2 Grid */}
                 <div className="grid grid-cols-2 gap-2.5 pt-1 text-left">
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-2.5">
+                  <div className="bg-neutral-50 border border-neutral-200/80 rounded-2xl p-2.5">
                     <span className="text-[9px] font-bold uppercase text-neutral-400 tracking-wider block">
                       Date &amp; Time
                     </span>
-                    <span className="text-xs font-black text-white mt-0.5 block">
+                    <span className="text-xs font-black text-neutral-900 mt-0.5 block">
                       {bookingSuccess.date || selectedDate}
                     </span>
-                    <span className="text-[10px] font-semibold text-amber-300 block">
+                    <span className="text-[10px] font-bold text-[#E40000] block">
                       {bookingSuccess.time || selectedTime}
                     </span>
                   </div>
 
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-2.5">
+                  <div className="bg-neutral-50 border border-neutral-200/80 rounded-2xl p-2.5">
                     <span className="text-[9px] font-bold uppercase text-neutral-400 tracking-wider block">
                       Table / Party
                     </span>
-                    <span className="text-xs font-black text-white mt-0.5 block">
+                    <span className="text-xs font-black text-neutral-900 mt-0.5 block">
                       {bookingSuccess.guests || guestCount} Guests
                     </span>
-                    <span className="text-[10px] font-semibold text-emerald-400 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                       Confirmed
                     </span>
                   </div>
 
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-2.5 col-span-2">
+                  <div className="bg-neutral-50 border border-neutral-200/80 rounded-2xl p-2.5 col-span-2">
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="text-[9px] font-bold uppercase text-neutral-400 tracking-wider block">
                           Royal Outlet &amp; Ambience
                         </span>
-                        <span className="text-xs font-black text-white mt-0.5 block truncate">
+                        <span className="text-xs font-black text-neutral-900 mt-0.5 block truncate">
                           Persian Darbar · {selectedBranch?.name || 'Camp, Pune'}
                         </span>
-                        <span className="text-[10px] text-neutral-400 block truncate">
+                        <span className="text-[10px] text-neutral-500 block truncate">
                           {selectedBranch?.shortAddress || 'Renaissance Centre, Wellesley Rd'}
                         </span>
                       </div>
-                      <span className="px-2 py-1 rounded-xl bg-amber-400/15 border border-amber-400/30 text-amber-300 text-[10px] font-bold shrink-0">
+                      <span className="px-2 py-1 rounded-xl bg-red-50 border border-red-200 text-[#E40000] text-[10px] font-bold shrink-0">
                         {bookingSuccess.dining_mood || selectedMood || 'Royal Dining'}
                       </span>
                     </div>
@@ -304,7 +303,7 @@ const CustomerDiningTab = ({
                           alert('Reservation pass copied to clipboard!');
                         }
                       }}
-                      className="flex-1 py-3 px-3 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-bold text-xs flex items-center justify-center space-x-1.5 active:scale-95 transition-all cursor-pointer"
+                      className="flex-1 py-3 px-3 rounded-2xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-bold text-xs flex items-center justify-center space-x-1.5 active:scale-95 transition-all cursor-pointer border border-neutral-200"
                     >
                       <Share2 className="w-3.5 h-3.5" />
                       <span>Share Pass</span>
@@ -313,7 +312,7 @@ const CustomerDiningTab = ({
                     <button
                       type="button"
                       onClick={onResetBookingSuccess}
-                      className="flex-1 py-3 px-3 rounded-2xl bg-[#E40000] hover:bg-[#CC0000] text-white font-black text-xs shadow-lg active:scale-95 transition-all cursor-pointer"
+                      className="flex-1 py-3 px-3 rounded-2xl bg-[#E40000] hover:bg-[#CC0000] text-white font-black text-xs shadow-md active:scale-95 transition-all cursor-pointer"
                     >
                       Book Another Table
                     </button>
@@ -377,7 +376,7 @@ const CustomerDiningTab = ({
                         onClick={() => setSelectedTime(slot)}
                         className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition-all ${
                           selectedTime === slot
-                            ? 'bg-neutral-900 text-white shadow-xs font-black'
+                            ? 'bg-[#E40000] text-white shadow-xs font-black scale-105'
                             : 'bg-neutral-50 text-neutral-700 hover:bg-neutral-100 border border-neutral-200/80'
                         }`}
                       >

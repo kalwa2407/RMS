@@ -168,77 +168,78 @@ const CustomerRewardsTab = ({
 
   return (
     <div className="flex-1 pb-32 pt-2 px-4 space-y-4">
-      {/* ── 1. ZOMATO GOLD STYLE OBSIDIAN & GOLD METALLIC VIP PASS ── */}
-      <section className="relative overflow-hidden rounded-[30px] bg-gradient-to-br from-[#1C1917] via-[#26221F] to-[#0A0908] text-white p-6 shadow-2xl border border-amber-400/40">
-        <div className="absolute -top-16 -right-16 w-48 h-48 bg-amber-400/20 rounded-full blur-2xl pointer-events-none" />
-        <div className="absolute -bottom-16 -left-16 w-44 h-44 bg-rose-500/10 rounded-full blur-2xl pointer-events-none" />
+      {/* ── 1. PD COINS ROYALTY CARD — clean red & white ── */}
+      <section className="relative overflow-hidden rounded-3xl bg-white border border-neutral-200/80 shadow-sm p-5">
+        {/* Subtle red accent strip at top */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-[#E40000] rounded-t-3xl" />
 
-        <div className="flex items-start justify-between gap-3 relative z-10">
+        {/* Profile row */}
+        <div className="flex items-start justify-between gap-3 mt-1">
           <div className="flex items-center space-x-3 min-w-0 flex-1">
             <div className="relative shrink-0">
-              <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-amber-400 via-amber-200 to-amber-500 text-neutral-950 flex items-center justify-center font-black text-xl sm:text-2xl shadow-lg border-2 border-white/40">
+              <div className="w-12 h-12 rounded-2xl bg-[#E40000] text-white flex items-center justify-center font-black text-xl shadow-sm">
                 {patronInitial}
               </div>
-              <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-amber-400 border-2 border-[#1C1917] flex items-center justify-center shadow-xs">
-                <Crown className="w-3 h-3 text-neutral-950 fill-neutral-950" />
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-amber-400 border-2 border-white flex items-center justify-center shadow-xs">
+                <Crown className="w-2.5 h-2.5 text-neutral-950 fill-neutral-950" />
               </div>
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="text-base sm:text-lg font-black tracking-tight text-white capitalize truncate leading-tight">
+              <h2 className="text-sm font-black tracking-tight text-neutral-900 capitalize truncate leading-tight">
                 {patronName}
               </h2>
-              <p className="text-[11px] text-stone-300 font-medium truncate mt-0.5">
-                +91 {patronPhone} {patronEmail ? `· ${patronEmail}` : '· Verified Patron'}
+              <p className="text-[11px] text-neutral-500 font-medium truncate mt-0.5">
+                +91 {patronPhone}{patronEmail ? ` · ${patronEmail}` : ' · Verified Patron'}
               </p>
             </div>
           </div>
 
-          <div className="text-right shrink-0 flex flex-col items-end">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-400/20 text-amber-300 border border-amber-400/40 flex items-center gap-1 shadow-xs whitespace-nowrap">
+          <div className="text-right shrink-0 flex flex-col items-end gap-1">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#E40000] text-white flex items-center gap-1 whitespace-nowrap">
               <Sparkles className="w-2.5 h-2.5" />
               GOLD VIP
             </span>
-            <span className="text-[9px] uppercase font-black tracking-widest text-amber-400/70 mt-1.5 whitespace-nowrap">
+            <span className="text-[9px] uppercase font-black tracking-widest text-neutral-400 whitespace-nowrap">
               ROYALTY CLUB
             </span>
           </div>
         </div>
 
-        {/* Coins Counter Banner */}
-        <div className="mt-6 pt-5 border-t border-white/10 flex items-end justify-between relative z-10">
+        {/* Coins Balance */}
+        <div className="mt-4 pt-4 border-t border-neutral-100 flex items-end justify-between">
           <div>
-            <span className="text-[10px] font-black uppercase tracking-wider text-amber-200/90 block">
+            <span className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block">
               Available Royalty Balance
             </span>
             <div className="flex items-baseline space-x-2 mt-0.5">
-              <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-300 to-amber-400">
+              <span className="text-3xl font-black text-[#E40000]">
                 {coinsBalance.toLocaleString()}
               </span>
-              <span className="text-xs font-bold text-amber-100">PD Coins</span>
+              <span className="text-xs font-bold text-neutral-600">PD Coins</span>
             </div>
-            <p className="text-[11px] text-stone-300 font-medium mt-1">
-              Worth <strong className="text-amber-300 font-black">₹{coinsBalance}</strong> direct discount on your next order
+            <p className="text-[11px] text-neutral-500 font-medium mt-1">
+              Worth <strong className="text-[#E40000] font-black">₹{coinsBalance}</strong> direct discount on your next order
             </p>
           </div>
 
           <button
             onClick={onGoToOrder}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-neutral-950 text-xs font-black shadow-lg flex items-center space-x-1 active:scale-95 transition-transform"
+            className="px-4 py-2 rounded-xl bg-[#E40000] hover:bg-[#CC0000] text-white text-xs font-black shadow-sm flex items-center space-x-1 active:scale-95 transition-all"
           >
             <span>Redeem</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        {/* Tier Progress */}
-        <div className="mt-4 pt-3 border-t border-white/10 relative z-10">
-          <div className="flex justify-between text-[11px] text-stone-300 mb-1.5 font-semibold">
-            <span>Current: <strong>Gold Patron</strong></span>
-            <span className="text-amber-300 font-bold">{Math.max(0, 750 - coinsBalance)} Coins to Emperor Tier</span>
+        {/* Tier progress */}
+        <div className="mt-4 pt-3 border-t border-neutral-100">
+          <div className="flex justify-between text-[11px] text-neutral-500 mb-1.5 font-semibold">
+            <span>Current: <strong className="text-neutral-800">Gold Patron</strong></span>
+            <span className="text-[#E40000] font-bold">{Math.max(0, 750 - coinsBalance)} Coins to Emperor Tier</span>
           </div>
-          <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+          <div className="w-full h-2 rounded-full bg-neutral-100 overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-amber-400 via-amber-300 to-rose-400 rounded-full transition-all duration-700"
+              className="h-full bg-[#E40000] rounded-full transition-all duration-700"
               style={{ width: `${Math.min(100, (coinsBalance / 750) * 100)}%` }}
             />
           </div>
@@ -246,19 +247,19 @@ const CustomerRewardsTab = ({
       </section>
 
       {/* ── 2. DAILY ROYAL REWARD / CLAIM COINS (No Emojis) ── */}
-      <section className="bg-gradient-to-r from-amber-50 via-[#FFF9ED] to-rose-50 border border-amber-300/80 rounded-2xl p-4 shadow-xs flex items-center justify-between">
+      <section className="bg-white border border-neutral-200/80 rounded-2xl p-4 shadow-xs flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 rounded-2xl bg-amber-400/20 border border-amber-500/30 text-amber-800 flex items-center justify-center shrink-0 shadow-xs">
-            <Gift className="w-6 h-6 text-amber-700" />
+          <div className="w-11 h-11 rounded-2xl bg-red-50 border border-red-200 text-[#E40000] flex items-center justify-center shrink-0 shadow-xs">
+            <Gift className="w-5 h-5 text-[#E40000]" />
           </div>
           <div>
-            <span className="text-[10px] font-black uppercase text-amber-900 bg-amber-200/70 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-black uppercase text-[#E40000] bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
               Daily Shahi Surprise
             </span>
             <h4 className="text-xs font-black text-neutral-900 mt-1">
               {dailyClaimed ? '25 Coins Added Today!' : 'Claim 25 Free PD Coins'}
             </h4>
-            <p className="text-[10px] text-neutral-600">
+            <p className="text-[10px] text-neutral-500">
               {dailyClaimed ? 'Come back tomorrow for your next royal bonus' : 'Free daily loyalty reward for active patrons'}
             </p>
           </div>
@@ -269,16 +270,16 @@ const CustomerRewardsTab = ({
           disabled={dailyClaimed}
           className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all ${
             dailyClaimed
-              ? 'bg-neutral-200 text-neutral-500 cursor-not-allowed'
-              : 'bg-neutral-900 text-amber-300 hover:bg-neutral-800 shadow-md active:scale-95'
+              ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
+              : 'bg-[#E40000] hover:bg-[#CC0000] text-white shadow-sm active:scale-95'
           }`}
         >
           {dailyClaimed ? 'Claimed ✓' : 'Claim +25'}
         </button>
       </section>
 
-      {/* ── 3. SEGMENTED VIEWS: Perks | Vouchers | Passbook (Clean Lucide Icons) ── */}
-      <div className="bg-white p-1 rounded-2xl border border-neutral-200/80 shadow-xs flex space-x-1">
+      {/* ── 3. SEGMENTED VIEWS: Perks | Vouchers | Passbook (Clean Red & White) ── */}
+      <div className="bg-neutral-100 p-1 rounded-2xl flex space-x-1">
         {[
           { id: 'perks', label: 'VIP Privileges', icon: Crown },
           { id: 'vouchers', label: 'Redeem Vouchers', icon: Tag },
@@ -290,10 +291,10 @@ const CustomerRewardsTab = ({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer ${
+              className={`flex-1 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer ${
                 isActive
-                  ? 'bg-neutral-900 text-white shadow-xs'
-                  : 'text-neutral-600 hover:text-neutral-950 hover:bg-neutral-50'
+                  ? 'bg-[#E40000] text-white shadow-xs'
+                  : 'text-neutral-600 hover:text-neutral-950'
               }`}
             >
               <TabIcon className="w-3.5 h-3.5 shrink-0" />
@@ -341,7 +342,7 @@ const CustomerRewardsTab = ({
                     key={tier.id}
                     className={`p-3 rounded-xl border flex items-center justify-between ${
                       isCurrent
-                        ? 'border-amber-400/80 bg-amber-50/40 shadow-xs'
+                        ? 'border-red-200 bg-red-50/40 shadow-xs'
                         : 'border-neutral-100 bg-neutral-50/50'
                     }`}
                   >
@@ -349,7 +350,7 @@ const CustomerRewardsTab = ({
                       <div className="flex items-center space-x-2">
                         <span className="text-xs font-black text-neutral-900">{tier.name}</span>
                         {isCurrent && (
-                          <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-400 text-neutral-950">
+                          <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-[#E40000] text-white">
                             Current Tier
                           </span>
                         )}
@@ -391,7 +392,7 @@ const CustomerRewardsTab = ({
                   className="bg-white rounded-2xl p-4 border border-neutral-200/80 shadow-xs flex items-center justify-between space-x-3"
                 >
                   <div>
-                    <span className="text-[9px] font-black uppercase text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                    <span className="text-[9px] font-black uppercase text-[#E40000] bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
                       {vouch.category}
                     </span>
                     <h4 className="text-xs font-black text-neutral-900 mt-1">
@@ -407,7 +408,7 @@ const CustomerRewardsTab = ({
                     disabled={!canRedeem}
                     className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all shrink-0 ${
                       canRedeem
-                        ? 'bg-amber-400 hover:bg-amber-500 text-neutral-950 active:scale-95 shadow-sm cursor-pointer'
+                        ? 'bg-[#E40000] hover:bg-[#CC0000] text-white active:scale-95 shadow-sm cursor-pointer'
                         : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
                     }`}
                   >
@@ -451,7 +452,7 @@ const CustomerRewardsTab = ({
       {/* ── 4. ALL 4 FUNCTIONAL WAYS TO EARN MORE COINS (Interactive - No emojis) ── */}
       <section className="bg-white rounded-2xl p-4 border border-neutral-200/80 shadow-xs space-y-3">
         <h3 className="text-xs font-black uppercase tracking-wider text-neutral-500 flex items-center space-x-1.5">
-          <Coins className="w-4 h-4 text-amber-500" />
+          <Coins className="w-4 h-4 text-[#E40000]" />
           <span>Ways to Earn Royalty Coins</span>
         </h3>
 
@@ -459,16 +460,16 @@ const CustomerRewardsTab = ({
           {/* Card 1: 10% on Delivery */}
           <div
             onClick={onGoToOrder}
-            className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-amber-900/10 hover:border-amber-400 hover:shadow-xs cursor-pointer active:scale-98 transition-all flex flex-col justify-between"
+            className="p-3.5 rounded-2xl bg-white border border-neutral-200/80 hover:border-red-300 hover:shadow-xs cursor-pointer active:scale-98 transition-all flex flex-col justify-between"
           >
             <div>
-              <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-700 flex items-center justify-center mb-2">
+              <div className="w-8 h-8 rounded-xl bg-red-50 text-[#E40000] flex items-center justify-center mb-2 border border-red-100">
                 <Bike className="w-4 h-4" />
               </div>
               <h5 className="font-bold text-neutral-900">10% On Delivery</h5>
               <p className="text-[10px] text-neutral-500 mt-0.5">Instant cashback on orders</p>
             </div>
-            <span className="text-[10px] font-black text-amber-700 mt-2 flex items-center gap-0.5">
+            <span className="text-[10px] font-black text-[#E40000] mt-2 flex items-center gap-0.5">
               <span>Order Now</span>
               <ChevronRight className="w-3 h-3" />
             </span>
@@ -477,16 +478,16 @@ const CustomerRewardsTab = ({
           {/* Card 2: 10% on Dine-In */}
           <div
             onClick={onGoToReserve}
-            className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-amber-900/10 hover:border-amber-400 hover:shadow-xs cursor-pointer active:scale-98 transition-all flex flex-col justify-between"
+            className="p-3.5 rounded-2xl bg-white border border-neutral-200/80 hover:border-red-300 hover:shadow-xs cursor-pointer active:scale-98 transition-all flex flex-col justify-between"
           >
             <div>
-              <div className="w-8 h-8 rounded-xl bg-orange-500/10 text-orange-700 flex items-center justify-center mb-2">
+              <div className="w-8 h-8 rounded-xl bg-red-50 text-[#E40000] flex items-center justify-center mb-2 border border-red-100">
                 <UtensilsCrossed className="w-4 h-4" />
               </div>
               <h5 className="font-bold text-neutral-900">10% On Dine-In</h5>
               <p className="text-[10px] text-neutral-500 mt-0.5">Pay bill at all 4 branches</p>
             </div>
-            <span className="text-[10px] font-black text-orange-700 mt-2 flex items-center gap-0.5">
+            <span className="text-[10px] font-black text-[#E40000] mt-2 flex items-center gap-0.5">
               <span>Book Table</span>
               <ChevronRight className="w-3 h-3" />
             </span>
@@ -495,16 +496,16 @@ const CustomerRewardsTab = ({
           {/* Card 3: 100 Coins / Invite */}
           <div
             onClick={() => setIsInviteOpen(true)}
-            className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-amber-900/10 hover:border-amber-400 hover:shadow-xs cursor-pointer active:scale-98 transition-all flex flex-col justify-between"
+            className="p-3.5 rounded-2xl bg-white border border-neutral-200/80 hover:border-red-300 hover:shadow-xs cursor-pointer active:scale-98 transition-all flex flex-col justify-between"
           >
             <div>
-              <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-700 flex items-center justify-center mb-2">
+              <div className="w-8 h-8 rounded-xl bg-red-50 text-[#E40000] flex items-center justify-center mb-2 border border-red-100">
                 <Users className="w-4 h-4" />
               </div>
               <h5 className="font-bold text-neutral-900">100 Coins / Invite</h5>
               <p className="text-[10px] text-neutral-500 mt-0.5">When friend signs up</p>
             </div>
-            <span className="text-[10px] font-black text-purple-700 mt-2 flex items-center gap-0.5">
+            <span className="text-[10px] font-black text-[#E40000] mt-2 flex items-center gap-0.5">
               <span>Invite Friends</span>
               <ChevronRight className="w-3 h-3" />
             </span>
@@ -513,16 +514,16 @@ const CustomerRewardsTab = ({
           {/* Card 4: 50 Coins / Review */}
           <div
             onClick={() => setIsReviewOpen(true)}
-            className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-amber-900/10 hover:border-amber-400 hover:shadow-xs cursor-pointer active:scale-98 transition-all flex flex-col justify-between"
+            className="p-3.5 rounded-2xl bg-white border border-neutral-200/80 hover:border-red-300 hover:shadow-xs cursor-pointer active:scale-98 transition-all flex flex-col justify-between"
           >
             <div>
-              <div className="w-8 h-8 rounded-xl bg-yellow-500/10 text-yellow-800 flex items-center justify-center mb-2">
-                <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
+              <div className="w-8 h-8 rounded-xl bg-red-50 text-[#E40000] flex items-center justify-center mb-2 border border-red-100">
+                <Star className="w-4 h-4 fill-[#E40000] text-[#E40000]" />
               </div>
               <h5 className="font-bold text-neutral-900">50 Coins / Review</h5>
               <p className="text-[10px] text-neutral-500 mt-0.5">Share dining experience</p>
             </div>
-            <span className="text-[10px] font-black text-yellow-800 mt-2 flex items-center gap-0.5">
+            <span className="text-[10px] font-black text-[#E40000] mt-2 flex items-center gap-0.5">
               <span>Rate Now</span>
               <ChevronRight className="w-3 h-3" />
             </span>
@@ -547,7 +548,7 @@ const CustomerRewardsTab = ({
           <div className="bg-white rounded-3xl p-5 max-w-sm w-full space-y-4 shadow-2xl border border-neutral-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-red-50 text-[#E40000] flex items-center justify-center border border-red-100">
                   <Users className="w-4 h-4" />
                 </div>
                 <h3 className="font-black text-sm text-neutral-900">Invite & Earn 100 Coins</h3>
@@ -568,11 +569,11 @@ const CustomerRewardsTab = ({
               <span className="font-mono font-black text-neutral-800 text-sm">DARBAR-ROYAL-100</span>
               <button
                 onClick={handleShareInvite}
-                className="px-3 py-1.5 rounded-xl bg-neutral-900 text-white text-xs font-bold flex items-center gap-1 active:scale-95"
+                className="px-3 py-1.5 rounded-xl bg-[#E40000] text-white text-xs font-bold flex items-center gap-1 active:scale-95"
               >
                 {copiedInvite ? (
                   <>
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <Check className="w-3.5 h-3.5 text-white" />
                     <span>Copied!</span>
                   </>
                 ) : (
@@ -601,8 +602,8 @@ const CustomerRewardsTab = ({
           <div className="bg-white rounded-3xl p-5 max-w-sm w-full space-y-4 shadow-2xl border border-neutral-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-yellow-100 text-yellow-800 flex items-center justify-center">
-                  <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
+                <div className="w-8 h-8 rounded-xl bg-red-50 text-[#E40000] flex items-center justify-center border border-red-100">
+                  <Star className="w-4 h-4 fill-[#E40000] text-[#E40000]" />
                 </div>
                 <h3 className="font-black text-sm text-neutral-900">Review & Earn 50 Coins</h3>
               </div>
@@ -639,7 +640,7 @@ const CustomerRewardsTab = ({
                       <Star
                         className={`w-7 h-7 ${
                           star <= reviewRating
-                            ? 'fill-amber-400 text-amber-400'
+                            ? 'fill-[#E40000] text-[#E40000]'
                             : 'text-neutral-300'
                         }`}
                       />
@@ -652,12 +653,12 @@ const CustomerRewardsTab = ({
                   onChange={(e) => setReviewText(e.target.value)}
                   placeholder="Share what you loved about our Biryani, Barra Chop, or hospitality..."
                   rows={3}
-                  className="w-full text-xs p-3 rounded-2xl border border-neutral-200 focus:outline-none focus:border-amber-500 resize-none"
+                  className="w-full text-xs p-3 rounded-2xl border border-neutral-200 focus:outline-none focus:border-[#E40000] resize-none"
                 />
 
                 <button
                   type="submit"
-                  className="w-full py-3 rounded-2xl bg-neutral-900 hover:bg-neutral-800 text-amber-300 text-xs font-black shadow-md active:scale-98"
+                  className="w-full py-3 rounded-2xl bg-[#E40000] hover:bg-[#CC0000] text-white text-xs font-black shadow-md active:scale-98"
                 >
                   Submit & Claim +50 Coins
                 </button>

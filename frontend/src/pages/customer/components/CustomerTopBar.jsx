@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, ChevronDown, Mic, Search, Crown, User } from 'lucide-react';
+import { ChevronDown, Mic, Search, User } from 'lucide-react';
 
 const CustomerTopBar = ({
   activeTab = 'home',
@@ -17,18 +17,33 @@ const CustomerTopBar = ({
   const branchName = selectedBranch?.name || 'Camp, Pune';
   const branchAddress = selectedBranch?.shortAddress || 'Renaissance Centre, Wellesley Rd';
 
-  // Dedicated Luxury Header for Table Reservation (Reserve Tab)
+  // ── Profile avatar helper — clean red & white brand aesthetic ──
+  const ProfileAvatar = () => (
+    <button
+      onClick={onOpenProfile}
+      aria-label="Customer Profile"
+      className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs active:scale-95 transition-transform overflow-hidden shrink-0 bg-white text-[#E40000] border border-amber-300/70"
+    >
+      {userPhoto ? (
+        <img src={userPhoto} alt="" className="w-full h-full object-cover" />
+      ) : userInitial ? (
+        <span className="font-black text-[#E40000]">{userInitial}</span>
+      ) : (
+        <User className="w-4 h-4 text-[#E40000]" />
+      )}
+    </button>
+  );
+
+  // ── Reserve Tab Header — clean red & white, matches app aesthetic ──
   if (activeTab === 'reserve') {
     return (
       <header
-        className="sticky top-0 z-40 bg-gradient-to-b from-[#1C1917] via-[#141210] to-[#0C0A09] border-b border-amber-400/30 shadow-md text-white"
-        style={{
-          paddingTop: 'calc(max(env(safe-area-inset-top, 0px), 20px) + 10px)'
-        }}
+        className="sticky top-0 z-40 bg-gradient-to-b from-[#FFF5D6] via-[#FFF8E7] to-[#FFFBF2] border-b border-amber-200/60 shadow-xs"
+        style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), 20px) + 10px)' }}
       >
-        <section className="px-4 pt-1 pb-3">
+        <section className="px-4 pt-1.5 pb-3">
           <div className="flex items-center justify-between gap-2">
-            {/* Royal Outlet Selector for Dining */}
+            {/* Branch selector */}
             <div
               onClick={onOpenLocationModal}
               className="flex items-center space-x-2.5 cursor-pointer active:opacity-75 transition-opacity flex-1 min-w-0"
@@ -36,55 +51,42 @@ const CustomerTopBar = ({
               <img
                 src="/persian_darbar_crown_logo.png"
                 alt="Persian Darbar"
-                className="w-8 h-8 rounded-xl object-contain shrink-0 shadow-xs border border-amber-400/50"
+                className="w-8 h-8 rounded-xl object-contain shrink-0 shadow-xs border border-amber-400/40"
               />
               <div className="leading-tight min-w-0 flex-1 truncate">
                 <div className="flex items-center space-x-1">
-                  <span className="text-xs sm:text-sm font-black text-white truncate tracking-tight">
+                  <span className="text-xs sm:text-sm font-black text-neutral-900 truncate tracking-tight">
                     Persian Darbar · {branchName}
                   </span>
-                  <ChevronDown className="w-3.5 h-3.5 text-amber-400 stroke-[3] shrink-0" />
+                  <ChevronDown className="w-3.5 h-3.5 text-neutral-700 stroke-[3] shrink-0" />
                 </div>
-                <p className="text-[10px] font-semibold text-amber-300/80 truncate mt-0.5">
-                  ● Fine Dining &amp; Royal Table Reservations
+                <p className="text-[10px] font-semibold text-amber-900/70 truncate mt-0.5">
+                  Fine Dining &amp; Royal Table Reservations
                 </p>
               </div>
             </div>
 
-            {/* Right Action Icons: Royal Pass Pill & Profile Avatar */}
+            {/* Right: red VIP pill + profile */}
             <div className="flex items-center space-x-1.5 shrink-0">
               <button
                 onClick={onOpenWallet}
                 aria-label="Royalty Membership"
-                className="px-2.5 py-1 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/40 text-xs font-black flex items-center space-x-1 shadow-xs active:scale-95 transition-transform shrink-0"
+                className="px-2.5 py-1 rounded-full bg-[#E40000] text-white text-xs font-black flex items-center space-x-1 shadow-sm active:scale-95 transition-transform shrink-0"
               >
                 <img src="/persian_darbar_crown_logo.png" alt="" className="w-3.5 h-3.5 rounded-sm object-contain" />
                 <span className="text-[9.5px] font-extrabold tracking-wider uppercase">VIP Table</span>
               </button>
-
-              <button
-                onClick={onOpenProfile}
-                aria-label="Customer Profile"
-                className="w-8 h-8 rounded-full bg-neutral-800 text-amber-300 flex items-center justify-center font-bold text-xs shadow-xs active:scale-95 transition-transform overflow-hidden border border-amber-300/60 shrink-0"
-              >
-                {userPhoto ? (
-                  <img src={userPhoto} alt="" className="w-full h-full object-cover" />
-                ) : userInitial ? (
-                  userInitial
-                ) : (
-                  <User className="w-4 h-4 text-amber-400" />
-                )}
-              </button>
+              <ProfileAvatar />
             </div>
           </div>
 
-          {/* Sub-pill: Luxury Dining Notice */}
-          <div className="mt-2 flex items-center justify-between bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-[10px] font-semibold text-neutral-300">
+          {/* Status strip */}
+          <div className="mt-2 flex items-center justify-between bg-white border border-neutral-200/80 rounded-xl px-3 py-1.5 text-[10px] font-semibold text-neutral-600 shadow-xs">
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span>Instant Confirmation · Live Table Booking</span>
             </span>
-            <span className="text-amber-400 font-bold uppercase tracking-wider text-[9px]">
+            <span className="text-[#E40000] font-black uppercase tracking-wider text-[9px]">
               Since 1978
             </span>
           </div>
@@ -93,17 +95,16 @@ const CustomerTopBar = ({
     );
   }
 
+  // ── Default Header (Home / Order / Rewards / Profile tabs) ──
   return (
     <header
       className="sticky top-0 z-40 bg-gradient-to-b from-[#FFF5D6] via-[#FFF8E7] to-[#FFFBF2] border-b border-amber-200/50 shadow-xs"
-      style={{
-        paddingTop: 'calc(max(env(safe-area-inset-top, 0px), 20px) + 10px)'
-      }}
+      style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), 20px) + 10px)' }}
     >
       <section className="px-4 pt-1.5 pb-3">
-        {/* Top Row: Branch Selector & Royal Membership Pill */}
+        {/* Top row */}
         <div className="flex items-center justify-between gap-2">
-          {/* Branch Selector: User directly selects from the 4 Persian Darbar Outlets */}
+          {/* Branch selector with crown logo */}
           <div
             onClick={onOpenLocationModal}
             className="flex items-center space-x-2 cursor-pointer active:opacity-75 transition-opacity flex-1 min-w-0"
@@ -126,50 +127,33 @@ const CustomerTopBar = ({
             </div>
           </div>
 
-          {/* Right Action Icons: Zomato Gold Style Royalty Pill & Profile Avatar */}
+          {/* Right: Royalty pill + Profile */}
           <div className="flex items-center space-x-1.5 shrink-0">
-            {/* Royal Club Pill */}
             <button
               onClick={onOpenWallet}
               aria-label="Royalty Membership"
-              className="px-2 py-1 rounded-full bg-[#1C1917] text-amber-300 border border-amber-400/50 text-xs font-black flex items-center space-x-1 shadow-xs active:scale-95 transition-transform shrink-0"
+              className="px-2 py-1 rounded-full bg-[#E40000] text-white text-xs font-black flex items-center space-x-1 shadow-sm active:scale-95 transition-transform shrink-0"
             >
               <img src="/persian_darbar_crown_logo.png" alt="" className="w-3.5 h-3.5 rounded-sm object-contain" />
               <span className="text-[9.5px] font-extrabold tracking-wider uppercase">Royalty</span>
             </button>
-
-            {/* Profile Avatar */}
-            <button
-              onClick={onOpenProfile}
-              aria-label="Customer Profile"
-              className="w-8 h-8 rounded-full bg-[#1C1C1C] text-amber-300 flex items-center justify-center font-bold text-xs shadow-xs active:scale-95 transition-transform overflow-hidden border border-amber-300/60 shrink-0"
-            >
-              {userPhoto ? (
-                <img src={userPhoto} alt="" className="w-full h-full object-cover" />
-              ) : userInitial ? (
-                userInitial
-              ) : (
-                <User className="w-4 h-4 text-amber-400" />
-              )}
-            </button>
+            <ProfileAvatar />
           </div>
         </div>
 
-        {/* ── Search Bar for Food Ordering ── */}
+        {/* ── Search Bar ── */}
         <div className="mt-2.5">
           <div
             id="top-search-bar"
             onClick={onOpenSearch}
             className="relative cursor-pointer"
           >
-            <div className="w-full bg-white/95 hover:bg-white rounded-2xl py-2.5 pl-9 pr-9 text-xs font-medium text-neutral-800 placeholder-neutral-400 border border-amber-200/80 shadow-xs flex items-center transition-colors">
+            <div className="w-full bg-white/95 hover:bg-white rounded-2xl py-2.5 pl-9 pr-9 text-xs font-medium text-neutral-800 border border-amber-200/80 shadow-xs flex items-center transition-colors">
               <span className={searchQuery ? 'text-neutral-900 font-semibold' : 'text-neutral-400'}>
                 {searchQuery || searchPlaceholder}
               </span>
             </div>
-            {/* Search Icon */}
             <Search className="w-4 h-4 text-neutral-600 absolute left-3 top-3" />
-            {/* Mic Icon (Airtel Tomato Red) */}
             <Mic className="w-4 h-4 text-[#E40000] absolute right-3 top-3" />
           </div>
         </div>
