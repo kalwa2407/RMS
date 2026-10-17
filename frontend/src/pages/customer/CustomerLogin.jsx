@@ -146,7 +146,7 @@ const CustomerLogin = () => {
       <div
         className="w-full max-w-[430px] h-full max-h-[100dvh] bg-white flex flex-col shadow-xl relative overflow-y-auto no-scrollbar"
         style={{
-          paddingTop: 'calc(max(env(safe-area-inset-top, 0px), 20px) + 8px)',
+          paddingTop: 'calc(max(env(safe-area-inset-top, 54px), 54px) + 8px)',
           paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)',
           overscrollBehavior: 'none',
           WebkitOverflowScrolling: 'touch'

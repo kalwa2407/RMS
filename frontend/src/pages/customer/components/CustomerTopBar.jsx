@@ -39,7 +39,7 @@ const CustomerTopBar = ({
     return (
       <header
         className="sticky top-0 z-40 bg-gradient-to-b from-[#FFF5D6] via-[#FFF8E7] to-[#FFFBF2] border-b border-amber-200/60 shadow-xs"
-        style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), 20px) + 10px)' }}
+        style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 54px), 54px) + 8px)' }}
       >
         <section className="px-4 pt-1.5 pb-3">
           <div className="flex items-center justify-between gap-2">
@@ -99,7 +99,7 @@ const CustomerTopBar = ({
   return (
     <header
       className="sticky top-0 z-40 bg-gradient-to-b from-[#FFF5D6] via-[#FFF8E7] to-[#FFFBF2] border-b border-amber-200/50 shadow-xs"
-      style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 0px), 20px) + 10px)' }}
+      style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 54px), 54px) + 8px)' }}
     >
       <section className="px-4 pt-1.5 pb-3">
         {/* Top row */}

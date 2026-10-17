@@ -195,8 +195,8 @@ const CustomerRewardsTab = ({
           </div>
 
           <div className="text-right shrink-0 flex flex-col items-end gap-1">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#E40000] text-white flex items-center gap-1 whitespace-nowrap">
-              <Sparkles className="w-2.5 h-2.5" />
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-neutral-950 text-amber-300 border border-neutral-800 flex items-center gap-1 whitespace-nowrap shadow-xs">
+              <Sparkles className="w-2.5 h-2.5 text-amber-300" />
               GOLD VIP
             </span>
             <span className="text-[9px] uppercase font-black tracking-widest text-neutral-400 whitespace-nowrap">
@@ -278,8 +278,8 @@ const CustomerRewardsTab = ({
         </button>
       </section>
 
-      {/* ── 3. SEGMENTED VIEWS: Perks | Vouchers | Passbook (Clean Red & White) ── */}
-      <div className="bg-neutral-100 p-1 rounded-2xl flex space-x-1">
+      {/* ── 3. SEGMENTED VIEWS: Perks | Vouchers | Passbook (Solid Black Active Highlight) ── */}
+      <div className="bg-neutral-100 p-1.5 rounded-2xl flex items-center justify-between gap-1 border border-neutral-200/60">
         {[
           { id: 'perks', label: 'VIP Privileges', icon: Crown },
           { id: 'vouchers', label: 'Redeem Vouchers', icon: Tag },
@@ -291,10 +291,10 @@ const CustomerRewardsTab = ({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer ${
+              className={`flex-1 py-2 px-1.5 rounded-xl text-[11px] sm:text-xs font-black transition-all flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer select-none ${
                 isActive
-                  ? 'bg-[#E40000] text-white shadow-xs'
-                  : 'text-neutral-600 hover:text-neutral-950'
+                  ? 'bg-neutral-950 text-white shadow-sm'
+                  : 'text-neutral-600 hover:text-neutral-950 font-bold'
               }`}
             >
               <TabIcon className="w-3.5 h-3.5 shrink-0" />

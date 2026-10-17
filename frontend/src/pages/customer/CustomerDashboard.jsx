@@ -65,11 +65,10 @@ const CustomerDashboard = () => {
   const [selectedDishDetail, setSelectedDishDetail] = useState(null);
 
   // ── First-time / Unauthenticated Guard ──
-  // If user is not logged in and has not chosen to explore as guest, direct to login
+  // If user is not logged in, direct to login page immediately
   useEffect(() => {
     const token = localStorage.getItem('customer_jwt');
-    const guestAllowed = sessionStorage.getItem('customer_guest_browse');
-    if (!token && !currentUser && !guestAllowed) {
+    if (!token && !currentUser) {
       navigate('/customer/login', { replace: true });
     }
   }, [currentUser, navigate]);
@@ -686,6 +685,15 @@ const CustomerDashboard = () => {
     setActiveTab(tabId);
     mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // If unauthenticated, render minimal clean container while navigating to /customer/login
+  if (!localStorage.getItem('customer_jwt') && !currentUser) {
+    return (
+      <div className="fixed inset-0 bg-[#F8F9FA] flex items-center justify-center">
+        <div className="w-8 h-8 border-3 border-[#E40000] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] text-neutral-900 font-sans flex flex-col items-center">

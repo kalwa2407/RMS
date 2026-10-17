@@ -80,14 +80,17 @@ const NativeRootRedirect = () => {
         return;
       }
 
-      // Check Customer App detection:
-      // 1. Static injected flag: window.__RMS_APP_MODE__ === "customer"
-      // 2. Build env var: process.env.REACT_APP_APP_MODE === "customer"
-      let isCustomer =
-        window.__RMS_APP_MODE__ === "customer" ||
-        process.env.REACT_APP_APP_MODE === "customer";
+      // Customer App detection:
+      // Default to customer app unless staff app mode or staff bundle id
+      let isCustomer = true;
+      if (
+        window.__RMS_APP_MODE__ === "staff" ||
+        process.env.REACT_APP_APP_MODE === "staff"
+      ) {
+        isCustomer = false;
+      }
 
-      // 3. Native Capacitor App ID runtime check (100% foolproof)
+      // Native Capacitor App ID runtime check
       if (
         window.Capacitor &&
         typeof window.Capacitor.isNativePlatform === "function" &&
@@ -95,10 +98,10 @@ const NativeRootRedirect = () => {
       ) {
         try {
           const info = await CapApp.getInfo();
-          if (info && info.id === "in.persiandarbar.customer") {
-            isCustomer = true;
-          } else if (info && info.id === "in.persiandarbar.staff") {
+          if (info && info.id === "in.persiandarbar.staff") {
             isCustomer = false;
+          } else if (info && info.id === "in.persiandarbar.customer") {
+            isCustomer = true;
           }
         } catch (e) {
           console.warn("CapApp.getInfo error:", e);
@@ -122,8 +125,8 @@ const NativeRootRedirect = () => {
 
   if (isStandaloneApp()) {
     return (
-      <div className="min-h-screen bg-[#0a1f28] flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-[#EAB308] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-[#E40000] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -194,7 +197,10 @@ function App() {
             <Route path="/staff-entry" element={<StaffAppEntry />} />
 
             {/* ---------------- CUSTOMER PORTAL ---------------- */}
-            <Route path="/customer" element={<CustomerDashboard />} />
+            <Route
+              path="/customer"
+              element={localStorage.getItem('customer_jwt') ? <CustomerDashboard /> : <CustomerLogin />}
+            />
             <Route path="/customer/login" element={<CustomerLogin />} />
             <Route path="/customer/dashboard" element={<CustomerDashboard />} />
             <Route path="/customer/orders" element={<CustomerOrders />} />

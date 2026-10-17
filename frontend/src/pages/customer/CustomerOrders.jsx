@@ -147,7 +147,7 @@ const CustomerOrders = () => {
           background: "rgba(7,13,20,0.98)",
           borderBottom: "1px solid rgba(234,179,8,0.1)",
           backdropFilter: "blur(16px)",
-          paddingTop: "calc(max(env(safe-area-inset-top, 0px), 20px) + 8px)"
+          paddingTop: "calc(max(env(safe-area-inset-top, 54px), 54px) + 8px)"
         }}
       >
         <div className="flex items-center justify-between px-4 py-3">

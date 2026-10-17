@@ -305,7 +305,7 @@ const CustomerReservations = () => {
         <header
           className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-neutral-200/80 px-4 py-3"
           style={{
-            paddingTop: "calc(max(env(safe-area-inset-top, 0px), 20px) + 8px)"
+            paddingTop: "calc(max(env(safe-area-inset-top, 54px), 54px) + 8px)"
           }}
         >
           <div className="flex items-center justify-between">

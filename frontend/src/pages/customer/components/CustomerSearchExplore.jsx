@@ -33,7 +33,7 @@ const CustomerSearchExplore = ({
       <div
         className="sticky top-0 z-20 bg-white border-b border-neutral-100 px-4 pb-3"
         style={{
-          paddingTop: 'calc(max(env(safe-area-inset-top, 0px), 24px) + 12px)'
+          paddingTop: 'calc(max(env(safe-area-inset-top, 54px), 54px) + 8px)'
         }}
       >
         <div className="flex items-center gap-2.5">
