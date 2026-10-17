@@ -55,6 +55,10 @@ test.mp4
 # Local Firebase credentials
 firebase_credentials.json
 backend/firebase_credentials.json
+google-services.json
+**/google-services.json
+GoogleService-Info.plist
+**/GoogleService-Info.plist
 
 # UI inspiration reference folder (not part of project)
 TAKE_UI_INSPR/
