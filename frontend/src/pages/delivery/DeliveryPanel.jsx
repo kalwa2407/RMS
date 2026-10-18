@@ -54,6 +54,8 @@ const DeliveryPanel = () => {
   const [shiftStart]           = useState(() => new Date());
   const [clockNow, setClockNow]= useState(new Date());
 
+  const [isGpsBroadcasting, setIsGpsBroadcasting] = useState(false);
+
   const statsKey = `rider_stats_${riderId}`;
   const [cumulativeStats, setCumulativeStats] = useState(() => {
     try { return JSON.parse(localStorage.getItem(statsKey)) || { count:0, earnings:0 }; } catch { return { count:0, earnings:0 }; }
@@ -65,6 +67,63 @@ const DeliveryPanel = () => {
     const c = setInterval(() => setClockNow(new Date()), 30000);
     return () => clearInterval(c);
   }, []);
+
+  // ── Real-Time Rider GPS Broadcaster (100% Free HTML5/Capacitor GPS) ──
+  // Broadcasts phone GPS coordinates to backend when delivering orders
+  useEffect(() => {
+    const deliveringOrder = orders.find(o => o.status === "out_for_delivery");
+    if (!deliveringOrder || !navigator.geolocation || !token) {
+      setIsGpsBroadcasting(false);
+      return;
+    }
+
+    const orderId = deliveringOrder.id || deliveringOrder._id || deliveringOrder.order_id;
+    if (!orderId) return;
+
+    let watchId = null;
+    let lastSent = 0;
+
+    const broadcastLocation = async (lat, lng) => {
+      const now = Date.now();
+      // Throttle: Send once every 8 seconds to preserve battery
+      if (now - lastSent < 8000) return;
+      lastSent = now;
+      try {
+        await axios.put(
+          `${API_BASE}/api/delivery/orders/${orderId}/location`,
+          { lat, lng },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setIsGpsBroadcasting(true);
+      } catch (err) {
+        // Non-blocking background sync
+      }
+    };
+
+    try {
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          if (pos?.coords) {
+            broadcastLocation(pos.coords.latitude, pos.coords.longitude);
+          }
+        },
+        (err) => {
+          console.warn("Delivery GPS watch notice:", err);
+          setIsGpsBroadcasting(false);
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+      );
+    } catch (e) {
+      console.warn("Geolocation not supported:", e);
+    }
+
+    return () => {
+      if (watchId !== null && navigator.geolocation?.clearWatch) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+      setIsGpsBroadcasting(false);
+    };
+  }, [orders, token]);
 
   const fetchProfile = useCallback(async () => {
     try {
@@ -129,13 +188,20 @@ const DeliveryPanel = () => {
         <div className="flex items-center justify-between px-4 pt-4 pb-3">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color:"#4ade80" }}>
-              {clockNow.getHours()<12?"☀️ Good Morning":clockNow.getHours()<17?"🌤️ Good Afternoon":clockNow.getHours()<21?"🌆 Good Evening":"🌙 Good Night"}
+              {clockNow.getHours()<12?"Good Morning":clockNow.getHours()<17?"Good Afternoon":clockNow.getHours()<21?"Good Evening":"Good Night"}
             </p>
             <p className="text-white font-bold text-base leading-tight" style={{ fontFamily:"'Playfair Display',serif" }}>{profile?.name || "Delivery Partner"}</p>
-            <p className="text-green-400 text-[10px] font-medium mt-0.5 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-green-400 rounded-full inline-block animate-pulse"/>
-              Online · Shift since {shiftStart.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true})}
-            </p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <p className="text-green-400 text-[10px] font-medium flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-green-400 rounded-full inline-block animate-pulse"/>
+                Online · Shift since {shiftStart.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true})}
+              </p>
+              {isGpsBroadcasting && (
+                <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[8px] font-black tracking-wider uppercase border border-emerald-500/40 flex items-center gap-1">
+                  <span className="w-1 h-1 rounded-full bg-emerald-400 animate-ping"/> GPS Active
+                </span>
+              )}
+            </div>
           </div>
           <div className="flex items-end gap-3">
             <div className="text-right">

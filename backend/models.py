@@ -174,12 +174,20 @@ class Order(BaseModel):
     porter_estimated_cost: Optional[float] = None  # Quoted cost from Porter (₹)
     porter_actual_cost: Optional[float] = None     # Final charged amount (₹)
     porter_booked_at: Optional[datetime] = None    # Timestamp when Porter was booked
+    # ── Real-Time Rider Phone GPS (100% Free Device Location) ────────────────
+    rider_lat: Optional[float] = None
+    rider_lng: Optional[float] = None
+    rider_location_updated_at: Optional[datetime] = None
     # ─────────────────────────────────────────────────────────────────────────
 
     class Config:
         allow_population_by_field_name = True
         arbitrary_types_allowed = True
         json_encoders = {ObjectId: str}
+
+class RiderLocationUpdate(BaseModel):
+    lat: float
+    lng: float
 
 class OrderCreate(BaseModel):
     customer_uid: Optional[str] = None  # Firebase UID if logged in

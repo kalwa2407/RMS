@@ -4002,6 +4002,26 @@ async def delivery_update_order_status(
     await manager.update_order(order_id, update_data)
     return await manager.get_order_by_id(order_id)
 
+@delivery_router.put("/orders/{order_id}/location")
+async def delivery_update_order_location(
+    order_id: str,
+    payload: RiderLocationUpdate,
+    phone: str = Depends(verify_delivery_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Receive live GPS coordinates from delivery partner smartphone (100% Free native HTML5/Capacitor GPS)"""
+    order = await manager.get_order_by_id(order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    update_data = {
+        "rider_lat": payload.lat,
+        "rider_lng": payload.lng,
+        "rider_location_updated_at": datetime.utcnow().isoformat()
+    }
+    await manager.update_order(order_id, update_data)
+    return {"status": "ok", "rider_lat": payload.lat, "rider_lng": payload.lng}
+
 # =============================================================================
 # KITCHEN STAFF ADMIN CRUD
 # =============================================================================

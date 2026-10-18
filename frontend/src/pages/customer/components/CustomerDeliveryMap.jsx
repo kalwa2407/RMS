@@ -46,9 +46,16 @@ export const CustomerDeliveryMap = ({
     progress = 0.65;
   }
 
-  // Rider current position
-  const riderLat = branchCoords[0] + (customerCoords[0] - branchCoords[0]) * progress;
-  const riderLng = branchCoords[1] + (customerCoords[1] - branchCoords[1]) * progress;
+  // Live GPS from rider's phone (100% Free Hardware GPS) or route progress fallback
+  const liveLat = order?.rider_lat != null ? parseFloat(order.rider_lat) : null;
+  const liveLng = order?.rider_lng != null ? parseFloat(order.rider_lng) : null;
+  const hasLiveGps = liveLat !== null && liveLng !== null && !isNaN(liveLat) && !isNaN(liveLng);
+
+  const fallbackLat = branchCoords[0] + (customerCoords[0] - branchCoords[0]) * progress;
+  const fallbackLng = branchCoords[1] + (customerCoords[1] - branchCoords[1]) * progress;
+
+  const riderLat = hasLiveGps ? liveLat : fallbackLat;
+  const riderLng = hasLiveGps ? liveLng : fallbackLng;
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -68,7 +75,7 @@ export const CustomerDeliveryMap = ({
         attributionControl: false,
       });
 
-      // CartoDB Voyager high-res modern tiles (clean, beautiful, like Zomato)
+      // CartoDB Voyager high-res modern tiles (clean, beautiful, like Zomato - 100% Free)
       L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         maxZoom: 19,
         subdomains: 'abcd',
@@ -80,7 +87,7 @@ export const CustomerDeliveryMap = ({
         html: `
           <div style="position:relative; display:flex; flex-direction:column; align-items:center;">
             <div style="background:#E40000; color:white; width:36px; height:36px; border-radius:12px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(228,0,0,0.45); border:2.5px solid white;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="18" height="18" viewBox="24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"/>
                 <line x1="6" y1="17" x2="18" y2="17"/>
               </svg>
@@ -181,7 +188,14 @@ export const CustomerDeliveryMap = ({
         mapInstanceRef.current = null;
       }
     };
-  }, [branchCoords[0], branchCoords[1], customerCoords[0], customerCoords[1], isOutForDelivery, isReady, progress]);
+  }, [branchCoords[0], branchCoords[1], customerCoords[0], customerCoords[1]]);
+
+  // Smooth live marker repositioning without destroying map instance
+  useEffect(() => {
+    if (riderMarkerRef.current && (isOutForDelivery || isReady)) {
+      riderMarkerRef.current.setLatLng([riderLat, riderLng]);
+    }
+  }, [riderLat, riderLng, isOutForDelivery, isReady]);
 
   // Handle expand/collapse resize
   useEffect(() => {
@@ -200,6 +214,19 @@ export const CustomerDeliveryMap = ({
     >
       {/* Map DOM Container */}
       <div ref={mapContainerRef} className="w-full h-full z-0 bg-[#F4F5F7]" />
+
+      {/* GPS Status Indicator */}
+      {hasLiveGps ? (
+        <div className="absolute top-3 left-3 z-10 bg-emerald-600/95 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-sm text-white flex items-center gap-1.5 text-[10px] font-black tracking-wide border border-emerald-500/40">
+          <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+          <span>Live Rider GPS</span>
+        </div>
+      ) : isOutForDelivery ? (
+        <div className="absolute top-3 left-3 z-10 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-sm border border-neutral-200 flex items-center gap-1.5 text-[10px] font-black text-neutral-700">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+          <span>On the Way</span>
+        </div>
+      ) : null}
 
       {/* Map Expand/Collapse Button */}
       <button
