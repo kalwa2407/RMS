@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronDown, Mic, Search, User } from 'lucide-react';
+import { ChevronDown, Mic, Search, User, Bell } from 'lucide-react';
 
 const CustomerTopBar = ({
   activeTab = 'home',
@@ -9,6 +9,8 @@ const CustomerTopBar = ({
   onOpenProfile,
   onOpenWallet,
   onOpenSearch,
+  onOpenNotifications,
+  notificationCount = 0,
   searchQuery = '',
   searchPlaceholder = 'Search "biryani, tandoori, curries..."',
   userInitial = null,
@@ -66,8 +68,23 @@ const CustomerTopBar = ({
               </div>
             </div>
 
-            {/* Right: red VIP pill + profile */}
+            {/* Right: notification bell + red VIP pill + profile */}
             <div className="flex items-center space-x-1.5 shrink-0">
+              {/* Notification Bell */}
+              {onOpenNotifications && (
+                <button
+                  onClick={onOpenNotifications}
+                  className="relative w-8 h-8 rounded-full bg-white/80 border border-amber-200/60 flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-xs shrink-0"
+                  aria-label="Notifications"
+                >
+                  <Bell className="w-4 h-4 text-neutral-700" />
+                  {notificationCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[15px] h-[15px] bg-[#E40000] text-white text-[8px] font-black rounded-full flex items-center justify-center px-0.5 border border-white">
+                      {notificationCount > 9 ? '9+' : notificationCount}
+                    </span>
+                  )}
+                </button>
+              )}
               <button
                 onClick={onOpenWallet}
                 aria-label="Royalty Membership"
@@ -127,8 +144,23 @@ const CustomerTopBar = ({
             </div>
           </div>
 
-          {/* Right: Royalty pill + Profile */}
+          {/* Right: notification bell + Royalty pill + Profile */}
           <div className="flex items-center space-x-1.5 shrink-0">
+            {/* Notification Bell */}
+            {onOpenNotifications && (
+              <button
+                onClick={onOpenNotifications}
+                className="relative w-8 h-8 rounded-full bg-white/80 border border-amber-200/60 flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-xs shrink-0"
+                aria-label="Notifications"
+              >
+                <Bell className="w-4 h-4 text-neutral-700" />
+                {notificationCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[15px] h-[15px] bg-[#E40000] text-white text-[8px] font-black rounded-full flex items-center justify-center px-0.5 border border-white">
+                    {notificationCount > 9 ? '9+' : notificationCount}
+                  </span>
+                )}
+              </button>
+            )}
             <button
               onClick={onOpenWallet}
               aria-label="Royalty Membership"

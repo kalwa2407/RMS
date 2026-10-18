@@ -39,6 +39,7 @@ const CustomerProfileTab = ({
   orders = [],
   reservations = [],
   onReorder,
+  onTrackOrder,
   onSavePhone,
   onSaveAddress,
   onSignOut,
@@ -530,19 +531,32 @@ const CustomerProfileTab = ({
                     </div>
                   )}
 
-                  {/* Footer & Reorder Button */}
+                  {/* Footer: Track Order + Reorder Buttons */}
                   <div className="flex items-center justify-between pt-1">
                     <div>
                       <span className="text-[10px] text-neutral-400 uppercase font-bold block">Bill Total</span>
                       <span className="text-sm font-black text-neutral-900">₹{(ord.total || 0).toFixed(0)}</span>
                     </div>
 
-                    <button
-                      onClick={() => onReorder && onReorder(ord)}
-                      className="px-3.5 py-1.5 rounded-xl bg-red-50 hover:bg-[#E40000] hover:text-white text-[#E40000] border border-red-200 text-xs font-black transition-colors active:scale-95"
-                    >
-                      Reorder ↻
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {/* Show Track button for active orders */}
+                      {!['delivered', 'cancelled', 'rejected'].includes(ord.status) && onTrackOrder && (
+                        <button
+                          onClick={() => onTrackOrder(ord)}
+                          className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 border border-blue-200 text-xs font-black transition-colors active:scale-95 flex items-center gap-1"
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                          Track
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => onReorder && onReorder(ord)}
+                        className="px-3.5 py-1.5 rounded-xl bg-red-50 hover:bg-[#E40000] hover:text-white text-[#E40000] border border-red-200 text-xs font-black transition-colors active:scale-95"
+                      >
+                        Reorder
+                      </button>
+                    </div>
                   </div>
                 </div>
               );

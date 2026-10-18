@@ -1,12 +1,14 @@
 import React from 'react';
-import { Home, UtensilsCrossed, Calendar, Award, User, ShoppingBag } from 'lucide-react';
+import { Home, UtensilsCrossed, Calendar, Award, User, ShoppingBag, Clock, Navigation, Bike, ChefHat } from 'lucide-react';
 
 const CustomerDockNav = ({
   activeTab = 'home',
   onSelectTab,
   cartCount = 0,
   cartTotal = 0,
-  onOpenCart
+  onOpenCart,
+  activeOrder = null,   // { order_id, status, eta } - for live tracker
+  onTrackOrder = null,  // callback to open tracking
 }) => {
   const NAV_ITEMS = [
     { id: 'home', label: 'Home', icon: Home },
@@ -16,6 +18,15 @@ const CustomerDockNav = ({
     { id: 'profile', label: 'Profile', icon: User }
   ];
 
+  // Status label map for the tracker pill
+  const statusLabel = {
+    placed: 'Order Placed',
+    accepted: 'Order Accepted',
+    preparing: 'Preparing Feast',
+    ready: 'Ready for Pickup',
+    out_for_delivery: 'Out for Delivery',
+  };
+
   return (
     <nav
       className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[430px] px-3 z-40 pointer-events-none"
@@ -24,6 +35,44 @@ const CustomerDockNav = ({
         paddingTop: '4px'
       }}
     >
+      {/* ── Zomato-style Active Order Tracker Pill ── */}
+      {activeOrder && onTrackOrder && !cartCount && (
+        <div className="mb-2 pointer-events-auto animate-in slide-in-from-bottom duration-300">
+          <div
+            onClick={onTrackOrder}
+            className="bg-gradient-to-r from-[#1a1a2e] to-[#16213e] text-white px-4 py-2.5 rounded-2xl shadow-xl flex items-center justify-between cursor-pointer active:scale-98 transition-all border border-white/10"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="relative">
+                <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-sm">
+                  {activeOrder.status === 'out_for_delivery' ? (
+                    <Bike className="w-4 h-4 text-emerald-400" />
+                  ) : (
+                    <ChefHat className="w-4 h-4 text-amber-400" />
+                  )}
+                </div>
+                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border border-[#1a1a2e] animate-pulse" />
+              </div>
+              <div>
+                <p className="text-xs font-black leading-tight">
+                  {statusLabel[activeOrder.status] || 'Your Order is Active'}
+                </p>
+                {activeOrder.eta && (
+                  <p className="text-[10px] text-white/60 flex items-center gap-1">
+                    <Clock className="w-2.5 h-2.5" />
+                    {activeOrder.eta}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-black text-emerald-400">Track</span>
+              <Navigation className="w-3.5 h-3.5 text-emerald-400" />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Floating Cart Capsule Banner (Shown when cart has items) ── */}
       {cartCount > 0 && (
         <div className="mb-2 pointer-events-auto animate-in slide-in-from-bottom duration-200">

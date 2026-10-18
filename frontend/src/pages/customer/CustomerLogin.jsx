@@ -132,13 +132,16 @@ const CustomerLogin = () => {
       // Page will navigate away during redirect, or timeout if blocked by webview
       setTimeout(() => {
         setSigningInGoogle(false);
-      }, 3500);
+      }, 4000);
       return;
     }
     if (res.success) {
       navigate(from, { replace: true });
     } else {
-      setError(res.error || 'Google Sign-in failed. Please try again.');
+      // null error = user closed popup intentionally — no error message needed
+      if (res.error) {
+        setError(res.error);
+      }
       setSigningInGoogle(false);
     }
   };

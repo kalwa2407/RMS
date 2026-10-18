@@ -168,56 +168,14 @@ export const CustomerAuthProvider = ({ children }) => {
     return { success: true, warning: 'Saved locally' };
   };
 
-  // Google Sign-In — use redirect on mobile/iOS (where COOP blocks popups), popup on desktop
+  // Google Sign-In — robust across web, mobile browser, and native Capacitor
   const signInWithGoogle = async () => {
-    const isNative = typeof window !== 'undefined' && window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform();
-    const isMobile = /iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent);
-    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isNative = typeof window !== 'undefined' &&
+      window.Capacitor &&
+      typeof window.Capacitor.isNativePlatform === 'function' &&
+      window.Capacitor.isNativePlatform();
 
-    // On native iOS/Android shell, attempt popup first (redirect navigates the native app webview out to Google)
-    if (isNative) {
-      try {
-        const result = await signInWithPopup(auth, googleProvider);
-        const user = result.user;
-        const token = await user.getIdToken();
-
-        localStorage.setItem('customer_jwt', token);
-        localStorage.setItem('customer_login_provider', 'google');
-        if (user.uid) localStorage.setItem('customer_uid', user.uid);
-        if (user.displayName) localStorage.setItem('customer_name', user.displayName);
-        if (user.email) localStorage.setItem('customer_email', user.email);
-        if (user.photoURL) localStorage.setItem('customer_photo', user.photoURL);
-
-        setCurrentUser(user);
-        setIdToken(token);
-        await fetchCustomerProfile(token, user);
-        return { success: true, user };
-      } catch (nativeErr) {
-        console.warn('Native Google popup error, attempting redirect fallback:', nativeErr);
-        try {
-          await signInWithRedirect(auth, googleProvider);
-          return { success: true, redirecting: true };
-        } catch (redirectErr) {
-          return {
-            success: false,
-            error: 'Google Sign-in is restricted on iOS WebView. Please log in using Instant WhatsApp OTP (+91).'
-          };
-        }
-      }
-    }
-
-    if (isMobile || isIOS) {
-      // On mobile web browser: go straight to redirect
-      try {
-        await signInWithRedirect(auth, googleProvider);
-        return { success: true, redirecting: true };
-      } catch (redirectError) {
-        console.error('Redirect Sign-In Error:', redirectError);
-        return { success: false, error: redirectError.message };
-      }
-    }
-
-    // Desktop: try popup first
+    // 1. Try signInWithPopup first (standard for modern browsers & mobile browsers on user click)
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
@@ -235,23 +193,51 @@ export const CustomerAuthProvider = ({ children }) => {
       await fetchCustomerProfile(token, user);
       return { success: true, user };
     } catch (error) {
-      // Fallback to redirect if popup fails on desktop too
+      const errCode = error?.code || '';
+      const errMsg = error?.message || '';
+
+      // User closed popup intentionally — clean return with no disruptive error banner
+      if (errCode === 'auth/popup-closed-by-user' || errCode === 'auth/cancelled-popup-request') {
+        return { success: false, error: null };
+      }
+
+      // If domain not authorized in Firebase Console
+      if (errCode === 'auth/unauthorized-domain') {
+        return {
+          success: false,
+          error: `Domain "${window.location.hostname}" is not authorized in Firebase Console. Please add it to Authorized Domains in Firebase Auth settings or use WhatsApp OTP login.`
+        };
+      }
+
+      // If popup was blocked by browser or COOP error occurs, try redirect fallback
       if (
-        error.code === 'auth/popup-blocked' ||
-        error.code === 'auth/popup-closed-by-user' ||
-        error.code === 'auth/cancelled-popup-request' ||
-        error.message?.includes('Cross-Origin-Opener-Policy')
+        errCode === 'auth/popup-blocked' ||
+        errMsg.includes('Cross-Origin-Opener-Policy') ||
+        errMsg.includes('cross-origin')
       ) {
+        if (isNative && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+          return {
+            success: false,
+            error: 'Google Sign-in popup was blocked in iOS WebView. Please sign in instantly using WhatsApp OTP!'
+          };
+        }
         try {
           await signInWithRedirect(auth, googleProvider);
           return { success: true, redirecting: true };
         } catch (redirectError) {
           console.error('Redirect Sign-In Error:', redirectError);
-          return { success: false, error: redirectError.message };
+          return {
+            success: false,
+            error: redirectError.message || 'Google Sign-In redirect failed. Please try WhatsApp OTP.'
+          };
         }
       }
+
       console.error('Google Sign-In Error:', error);
-      return { success: false, error: error.message };
+      return {
+        success: false,
+        error: error.message || 'Google Sign-In was interrupted. Please try again or use WhatsApp OTP.'
+      };
     }
   };
 

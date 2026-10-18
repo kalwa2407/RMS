@@ -18,7 +18,8 @@ import {
   MessageSquare,
   Gift,
   ShieldCheck,
-  Edit2
+  Edit2,
+  Bike
 } from 'lucide-react';
 import { ROYAL_MEMBERSHIP_PRIVILEGES } from '../customerAssets';
 
@@ -30,6 +31,7 @@ const CustomerProfileSheet = ({
   orders = [],
   reservations = [],
   onReorder,
+  onTrackOrder,
   onSavePhone,
   onSaveAddress,
   onShareApp,
@@ -270,12 +272,23 @@ const CustomerProfileSheet = ({
                         <span className="text-[10px] text-neutral-400 font-medium">
                           {order.created_at ? new Date(order.created_at).toLocaleDateString() : 'Recent Order'}
                         </span>
-                        <button
-                          onClick={() => onReorder(order)}
-                          className="bg-red-50 hover:bg-[#E40000] hover:text-white text-[#E40000] border border-red-200 px-3.5 py-1.5 rounded-xl text-xs font-black transition-colors"
-                        >
-                          Re-Order Feast ›
-                        </button>
+                        <div className="flex items-center gap-2">
+                          {!isDone && order.status !== 'cancelled' && onTrackOrder && (
+                            <button
+                              onClick={() => onTrackOrder(order)}
+                              className="bg-[#E40000] hover:bg-[#c00000] text-white px-3 py-1.5 rounded-xl text-xs font-black transition-transform active:scale-95 flex items-center gap-1.5 shadow-xs cursor-pointer"
+                            >
+                              <Bike className="w-3.5 h-3.5" />
+                              <span>Track Live</span>
+                            </button>
+                          )}
+                          <button
+                            onClick={() => onReorder(order)}
+                            className="bg-neutral-50 hover:bg-neutral-100 text-neutral-700 border border-neutral-200 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                          >
+                            Re-Order ›
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );

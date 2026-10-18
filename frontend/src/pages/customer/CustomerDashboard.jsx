@@ -19,6 +19,9 @@ import CustomerProfileSheet from './components/CustomerProfileSheet';
 import CustomerProfileTab from './components/CustomerProfileTab';
 import CustomerAddressModal from './components/CustomerAddressModal';
 import CustomerDishDetailModal from './components/CustomerDishDetailModal';
+import CustomerTrackOrder from './components/CustomerTrackOrder';
+import CustomerNotificationDrawer, { NotificationBell, useNotifications } from './components/CustomerNotifications';
+import CustomerDynamicIsland from './components/CustomerDynamicIsland';
 
 import CustomerPwaInstallModal from '../../components/CustomerPwaInstallModal';
 import CustomerAppSplash from './components/CustomerAppSplash';
@@ -63,6 +66,8 @@ const CustomerDashboard = () => {
   const [profileInitialTab, setProfileInitialTab] = useState('orders');
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [selectedDishDetail, setSelectedDishDetail] = useState(null);
+  // ── Order Tracking State ──
+  const [trackingOrderId, setTrackingOrderId] = useState(null);
 
   // ── First-time / Unauthenticated Guard ──
   // If user is not logged in, direct to login page immediately
@@ -222,6 +227,12 @@ const CustomerDashboard = () => {
   const [orders, setOrders] = useState([]);
   const [reservations, setReservations] = useState([]);
   const [tables, setTables] = useState([]);
+
+  // Active delivery order for Zomato-style floating pill tracker
+  const activeOrder = useMemo(() => {
+    if (!orders || !orders.length) return null;
+    return orders.find(o => ['placed', 'accepted', 'preparing', 'ready', 'out_for_delivery'].includes(o.status)) || null;
+  }, [orders]);
 
   // ── Coupons & Loyalty State ──
   const [coupons, setCoupons] = useState([]);
@@ -583,10 +594,20 @@ const CustomerDashboard = () => {
         await refreshProfile();
       }
 
+      const placedOrderId = data.order_id || data.id;
+
       toast({
-        title: 'Order Placed Successfully',
-        description: `Order #${String(data.order_id || data.id).slice(-8)} is being prepared!`,
+        title: 'Order Placed!',
+        description: `Order #${String(placedOrderId).slice(-8)} is being prepared. Track it live!`,
       });
+
+      // Auto-open tracking for the new order
+      if (placedOrderId) {
+        setTimeout(() => {
+          setTrackingOrderId(String(placedOrderId));
+        }, 800);
+      }
+
       setProfileInitialTab('orders');
       setActiveTab('profile');
     } catch (err) {
@@ -686,6 +707,28 @@ const CustomerDashboard = () => {
     mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // ── Notification System ──
+  const {
+    notifications,
+    unreadCount,
+    openDrawer: openNotifications,
+    closeDrawer: closeNotifications,
+    isOpen: isNotifOpen,
+    markRead,
+    markAllRead,
+    addNotification,
+  } = useNotifications({
+    currentUser,
+    fetchWithAuth,
+    orders,
+    reservations,
+    onOrderStatusChange: (order) => {
+      // Auto-open tracking when tapping order status notification
+      const oid = order.order_id || order.id || order._id;
+      if (oid) setTrackingOrderId(String(oid));
+    },
+  });
+
   // If unauthenticated, render minimal clean container while navigating to /customer/login
   if (!localStorage.getItem('customer_jwt') && !currentUser) {
     return (
@@ -715,10 +758,25 @@ const CustomerDashboard = () => {
           }}
           onOpenWallet={() => setActiveTab('rewards')}
           onOpenSearch={() => setIsSearchOpen(true)}
+          onOpenNotifications={openNotifications}
+          notificationCount={unreadCount}
           searchQuery={searchQuery}
           userInitial={currentUser?.displayName ? currentUser.displayName[0].toUpperCase() : null}
           userPhoto={currentUser?.photoURL}
         />
+
+        {/* ── iOS Dynamic Island Live Activity Pill (Screenshot 2 Match) ── */}
+        {activeOrder && !trackingOrderId && !isCartOpen && !isProfileOpen && (
+          <CustomerDynamicIsland
+            activeOrder={activeOrder}
+            distanceKm={distanceKm}
+            platform="ios"
+            onOpenTrackOrder={() => {
+              const oid = activeOrder.order_id || activeOrder.id || activeOrder._id;
+              if (oid) setTrackingOrderId(String(oid));
+            }}
+          />
+        )}
 
 
         {/* ── Scrollable Body with smooth tab fade transition ── */}
@@ -811,6 +869,10 @@ const CustomerDashboard = () => {
                   if (dish) addToCart(dish);
                 });
                 setIsCartOpen(true);
+              }}
+              onTrackOrder={(order) => {
+                const oid = order.order_id || order.id || order._id;
+                if (oid) setTrackingOrderId(String(oid));
               }}
               onSavePhone={async (phone) => {
                 await updateProfile({ phone });
@@ -924,6 +986,13 @@ const CustomerDashboard = () => {
           customerProfile={customerProfile}
           orders={orders}
           reservations={reservations}
+          onTrackOrder={(order) => {
+            const oid = order.order_id || order.id || order._id;
+            if (oid) {
+              setTrackingOrderId(String(oid));
+              setIsProfileOpen(false);
+            }
+          }}
           onReorder={(order) => {
             if (!order?.items) return;
             order.items.forEach((item) => {
@@ -969,13 +1038,22 @@ const CustomerDashboard = () => {
         />
 
         {/* ── Fixed Bottom Floating Dock Navigation (Hidden when full-screen sheets/modals are active) ── */}
-        {!isCartOpen && !isProfileOpen && !isSearchOpen && !selectedDishDetail && (
+        {!isCartOpen && !isProfileOpen && !isSearchOpen && !selectedDishDetail && !trackingOrderId && (
           <CustomerDockNav
             activeTab={activeTab}
             onSelectTab={handleDockSelect}
             cartCount={cart.reduce((s, i) => s + i.quantity, 0)}
             cartTotal={cartTotal}
             onOpenCart={() => setIsCartOpen(true)}
+            activeOrder={activeOrder ? {
+              order_id: activeOrder.order_id || activeOrder.id || activeOrder._id,
+              status: activeOrder.status,
+              eta: `~${15 + Math.round((activeOrder.distance_km || distanceKm || 3.5) * 3)} mins`
+            } : null}
+            onTrackOrder={() => {
+              const oid = activeOrder?.order_id || activeOrder?.id || activeOrder?._id;
+              if (oid) setTrackingOrderId(String(oid));
+            }}
           />
         )}
 
@@ -985,6 +1063,35 @@ const CustomerDashboard = () => {
           isOpen={Boolean(selectedDishDetail)}
           onClose={() => setSelectedDishDetail(null)}
           onAddToCart={addToCart}
+        />
+
+        {/* ── In-App Order Tracking Overlay ── */}
+        {trackingOrderId && (
+          <CustomerTrackOrder
+            orderId={trackingOrderId}
+            onClose={() => setTrackingOrderId(null)}
+            onGoHome={() => {
+              setTrackingOrderId(null);
+              setActiveTab('home');
+            }}
+          />
+        )}
+
+        {/* ── Notification Drawer ── */}
+        <CustomerNotificationDrawer
+          isOpen={isNotifOpen}
+          onClose={closeNotifications}
+          notifications={notifications}
+          onMarkRead={markRead}
+          onMarkAllRead={markAllRead}
+          onTapNotification={(notif) => {
+            closeNotifications();
+            if (notif.orderId && notif.type?.startsWith('order_')) {
+              setTrackingOrderId(notif.orderId);
+            } else if (notif.type === 'reservation') {
+              setActiveTab('reserve');
+            }
+          }}
         />
 
         {/* ── PWA Install Banner ── */}
