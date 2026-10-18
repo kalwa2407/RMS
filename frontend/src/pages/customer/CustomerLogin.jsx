@@ -252,7 +252,13 @@ const CustomerLogin = () => {
                 <div className="flex items-center rounded-2xl border-2 border-neutral-200 focus-within:border-[#E40000] focus-within:ring-2 focus-within:ring-red-100 transition-all bg-white overflow-hidden shadow-xs">
                   {/* Country Flag Pill */}
                   <div className="px-3 py-3 bg-neutral-50 border-r border-neutral-200 flex items-center space-x-1.5 shrink-0">
-                    <span className="text-base leading-none">🇮🇳</span>
+                    <svg className="w-5 h-3.5 rounded-xs shadow-xs" viewBox="0 0 900 600" aria-label="India">
+                      <path fill="#FF9933" d="M0 0h900v200H0z"/>
+                      <path fill="#FFFFFF" d="M0 200h900v200H0z"/>
+                      <path fill="#138808" d="M0 400h900v200H0z"/>
+                      <circle cx="450" cy="300" r="80" fill="none" stroke="#000080" strokeWidth="10"/>
+                      <circle cx="450" cy="300" r="16" fill="#000080"/>
+                    </svg>
                     <span className="text-xs font-black text-neutral-800">+91</span>
                   </div>
 

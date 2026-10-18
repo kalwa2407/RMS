@@ -1,18 +1,18 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   ChevronDown, Share2, RefreshCw, Phone, MapPin, Bike, ChefHat,
   CheckCircle2, Clock, Package, Home, Zap, ExternalLink,
   MessageCircle, Star, Shield, Maximize2, Minimize2, Copy, AlertCircle,
-  Smartphone, Apple
+  AlertTriangle
 } from 'lucide-react';
 import API_BASE from '../../../lib/config';
 
-// ── Calculation Constants (As Requested: 15 mins prep + 1 km = 3 mins) ──────
-const PREP_TIME_MINS = 15; // Guaranteed kitchen preparation time
-const MINS_PER_KM = 3;    // Delivery speed formula: 1km = 3 minutes
+// ── Calculation Constants (Internal only - never shown to user) ──────────
+const PREP_TIME_MINS = 15;
+const MINS_PER_KM = 3;
 const RESTAURANT_PHONE = '02026131976';
 
-// Status → milestone mapping
+// Status to milestone mapping
 const STATUS_MILESTONE = {
   placed: 0,
   accepted: 1,
@@ -28,7 +28,7 @@ const MILESTONES = [
   {
     key: 'placed',
     label: 'Order Placed',
-    sublabel: 'Confirmed & sent to royal kitchen',
+    sublabel: 'Confirmed & sent to kitchen',
     icon: Package,
   },
   {
@@ -51,8 +51,8 @@ const MILESTONES = [
   },
 ];
 
-// ── ETA Calculation Engine: 15 mins prep + distance * 3 min ────────────────
-function calcETA(order) {
+// ── ETA Calculation Engine (Internal - results shown, formula hidden) ────
+function calcETA(order, orderPlacedAt) {
   if (!order) return null;
   const status = order.status;
   if (['delivered', 'cancelled', 'rejected'].includes(status)) return null;
@@ -72,25 +72,42 @@ function calcETA(order) {
     minsRemaining = Math.max(4, Math.round(deliveryMins * 0.6));
   }
 
-  const prepMins = PREP_TIME_MINS;
-  const etaPillText = `Arriving in ${minsRemaining} mins`;
+  // Check if ETA has expired based on when order was placed
+  let isDelayed = false;
+  if (orderPlacedAt) {
+    const placedTime = new Date(orderPlacedAt).getTime();
+    const now = Date.now();
+    const elapsedMins = (now - placedTime) / 60000;
+    if (elapsedMins > totalFormulaMins) {
+      isDelayed = true;
+      minsRemaining = 0;
+    }
+  }
 
-  return { minsRemaining, etaPillText, distKm, prepMins, deliveryMins, totalFormulaMins };
+  const etaPillText = isDelayed
+    ? 'Running a bit late'
+    : `Arriving in ${minsRemaining} mins`;
+
+  return { minsRemaining, etaPillText, distKm, totalFormulaMins, isDelayed };
 }
 
-// ── Map View (Pixel-Matched to Screenshot 1: media_1792316474139.png) ────────
-const GoogleStyleMapView = ({ order, eta, isExpanded, onToggleExpand }) => {
+// ── Auto-detect platform ─────────────────────────────────────────────────
+function detectPlatform() {
+  const ua = navigator.userAgent || '';
+  if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+    return 'ios';
+  }
+  return 'android';
+}
+
+// ── Delivery Route Map View ──────────────────────────────────────────────
+const DeliveryMapView = ({ order, eta, isExpanded, onToggleExpand }) => {
   const isOutForDelivery = ['out_for_delivery', 'ready'].includes(order?.status);
   const isDelivered = order?.status === 'delivered';
   const progress = isDelivered ? 1 : isOutForDelivery ? 0.65 : 0.08;
 
-  // Approximate coordinate positions on 360x280 viewBox
-  // Restaurant pin (Right side near Kondhwa Main Rd / Bhairoba Nala): x=305, y=148
-  // Home pin (Left side near Abhinav Society / Uni Billboard): x=122, y=170
-  // Bezier curve: M 305 148 Q 230 140 122 170
-
   // Rider position along curve based on progress
-  const t = 1 - progress; // moves from restaurant (t=1, x=305) to home (t=0, x=122)
+  const t = 1 - progress;
   const riderX = Math.round((1 - t) * 122 + t * 305);
   const riderY = Math.round((1 - t) * 170 + t * 148 - Math.sin(t * Math.PI) * 18);
 
@@ -101,7 +118,6 @@ const GoogleStyleMapView = ({ order, eta, isExpanded, onToggleExpand }) => {
       }`}
       style={{ backgroundColor: '#F0F2F5' }}
     >
-      {/* ── Street Map Vector Canvas ── */}
       <svg
         className="w-full h-full select-none"
         viewBox="0 0 360 280"
@@ -110,7 +126,7 @@ const GoogleStyleMapView = ({ order, eta, isExpanded, onToggleExpand }) => {
         {/* Land Background */}
         <rect width="360" height="280" fill="#F4F5F7" />
 
-        {/* City Blocks (Soft light-gray rectangles) */}
+        {/* City Blocks */}
         <rect x="10" y="20" width="75" height="45" rx="3" fill="#E8EAED" />
         <rect x="95" y="15" width="80" height="35" rx="3" fill="#E8EAED" />
         <rect x="185" y="25" width="45" height="50" rx="3" fill="#E8EAED" />
@@ -125,7 +141,7 @@ const GoogleStyleMapView = ({ order, eta, isExpanded, onToggleExpand }) => {
         <rect x="295" y="105" width="55" height="50" rx="3" fill="#E8EAED" />
         <rect x="290" y="180" width="60" height="70" rx="3" fill="#E8EAED" />
 
-        {/* Bhairoba Nala River / Water Body (Cyan-blue curving river) */}
+        {/* Water Body */}
         <path
           d="M 330 0 C 300 45 250 85 242 145 C 235 195 285 240 280 280"
           fill="none"
@@ -133,80 +149,20 @@ const GoogleStyleMapView = ({ order, eta, isExpanded, onToggleExpand }) => {
           strokeWidth="11"
           strokeLinecap="round"
         />
-        {/* River Label */}
-        <text
-          x="285"
-          y="235"
-          transform="rotate(82 285 235)"
-          fontSize="6.5"
-          fill="#4A90E2"
-          fontFamily="system-ui, sans-serif"
-          fontWeight="500"
-          letterSpacing="0.5"
-        >
-          Bhairoba Nala
-        </text>
 
-        {/* Kondhwa Main Road (Main vertical street line) */}
+        {/* Main Road */}
         <line x1="240" y1="0" x2="215" y2="280" stroke="#FFFFFF" strokeWidth="10" />
         <line x1="240" y1="0" x2="215" y2="280" stroke="#D1D5DB" strokeWidth="1.5" />
-        <text
-          x="234"
-          y="70"
-          transform="rotate(95 234 70)"
-          fontSize="6.5"
-          fill="#6B7280"
-          fontFamily="system-ui, sans-serif"
-          fontWeight="600"
-        >
-          Kondhwa Main Rd
-        </text>
 
-        {/* Cross Streets & Avenues */}
+        {/* Cross Streets */}
         <path d="M 0 170 Q 150 170 360 148" fill="none" stroke="#FFFFFF" strokeWidth="8" />
         <path d="M 0 170 Q 150 170 360 148" fill="none" stroke="#E5E7EB" strokeWidth="1.5" />
-
         <line x1="0" y1="120" x2="240" y2="120" stroke="#FFFFFF" strokeWidth="6" />
         <line x1="0" y1="70" x2="240" y2="70" stroke="#FFFFFF" strokeWidth="6" />
         <line x1="110" y1="0" x2="110" y2="280" stroke="#FFFFFF" strokeWidth="6" />
         <line x1="180" y1="0" x2="180" y2="280" stroke="#FFFFFF" strokeWidth="5" />
 
-        {/* Abhinav Society Locality Hindi Text (Screenshot 1 match) */}
-        <text
-          x="120"
-          y="48"
-          fontSize="7"
-          fill="#9CA3AF"
-          fontFamily="system-ui, sans-serif"
-          fontWeight="500"
-        >
-          अभिनव
-        </text>
-        <text
-          x="118"
-          y="57"
-          fontSize="7"
-          fill="#9CA3AF"
-          fontFamily="system-ui, sans-serif"
-          fontWeight="500"
-        >
-          सोसायटी
-        </text>
-
-        {/* Uni Billboard (Screenshot 1 Match: Black billboard with UNI text) */}
-        <g transform="translate(35, 175)">
-          <rect x="0" y="0" width="52" height="26" rx="4" fill="#0A0A0A" />
-          <rect x="1" y="1" width="50" height="24" rx="3" fill="#141414" stroke="#333" strokeWidth="0.5" />
-          <text x="7" y="18" fill="#FFFFFF" fontSize="13" fontWeight="900" fontFamily="sans-serif" letterSpacing="0.5">
-            uni
-          </text>
-          <circle cx="43" cy="14" r="2.5" fill="#00D2A0" />
-          {/* Billboard legs */}
-          <line x1="12" y1="26" x2="12" y2="34" stroke="#555" strokeWidth="2.5" />
-          <line x1="40" y1="26" x2="40" y2="34" stroke="#555" strokeWidth="2.5" />
-        </g>
-
-        {/* ── Curved Dashed Delivery Route Line (Screenshot 1 Match) ── */}
+        {/* Delivery Route Line */}
         <path
           d="M 305 148 Q 215 140 122 170"
           fill="none"
@@ -216,7 +172,7 @@ const GoogleStyleMapView = ({ order, eta, isExpanded, onToggleExpand }) => {
           strokeLinecap="round"
         />
 
-        {/* Route Progress Colored Accent */}
+        {/* Route Progress */}
         <path
           d="M 305 148 Q 215 140 122 170"
           fill="none"
@@ -227,31 +183,27 @@ const GoogleStyleMapView = ({ order, eta, isExpanded, onToggleExpand }) => {
           opacity="0.9"
         />
 
-        {/* ── Restaurant Pin (Black circular teardrop with cutlery) ── */}
+        {/* Restaurant Pin */}
         <g transform="translate(305, 148)">
-          {/* Teardrop background */}
           <path
             d="M 0 0 C -7 -14 -12 -18 -12 -25 A 12 12 0 1 1 12 -25 C 12 -18 7 -14 0 0 Z"
             fill="#111827"
           />
           <circle cx="0" cy="-25" r="9.5" fill="#111827" />
-          {/* Fork & Spoon cutlery icon */}
           <path
             d="M -3 -29 v 5 c 0 0.8 0.6 1.4 1.4 1.4 v 6 h 1.2 v -6 c 0.8 0 1.4 -0.6 1.4 -1.4 v -5 h -0.8 v 3.5 h -0.6 v -3.5 h -0.8 v 3.5 h -0.6 v -3.5 z M 3 -29 c -1.2 0 -2 1 -2 2.5 v 3.5 h 1.2 v 6 h 1.2 v -12 z"
             fill="#FFFFFF"
           />
-          {/* Shadow pin dot */}
           <ellipse cx="0" cy="1" rx="4" ry="1.5" fill="#000000" opacity="0.3" />
         </g>
 
-        {/* ── Home Destination Pin (Black circular teardrop with house) ── */}
+        {/* Home Destination Pin */}
         <g transform="translate(122, 170)">
           <path
             d="M 0 0 C -7 -14 -12 -18 -12 -25 A 12 12 0 1 1 12 -25 C 12 -18 7 -14 0 0 Z"
             fill="#111827"
           />
           <circle cx="0" cy="-25" r="9.5" fill="#111827" />
-          {/* House icon */}
           <path
             d="M 0 -29 L -5.5 -24 h 1.8 v 6.5 h 7.4 v -6.5 h 1.8 z"
             fill="#FFFFFF"
@@ -259,7 +211,7 @@ const GoogleStyleMapView = ({ order, eta, isExpanded, onToggleExpand }) => {
           <ellipse cx="0" cy="1" rx="4" ry="1.5" fill="#000000" opacity="0.3" />
         </g>
 
-        {/* ── Rider Bike Pin (Animated along route) ── */}
+        {/* Rider Bike Pin (Animated along route) */}
         {isOutForDelivery && (
           <g transform={`translate(${riderX}, ${riderY - 14})`}>
             <circle cx="0" cy="0" r="14" fill="#FFFFFF" stroke="#E40000" strokeWidth="2.5" />
@@ -270,24 +222,9 @@ const GoogleStyleMapView = ({ order, eta, isExpanded, onToggleExpand }) => {
             <circle cx="9" cy="-9" r="3.5" fill="#10B981" />
           </g>
         )}
-
-        {/* ── Google Watermark Logo (Bottom Left of Map) ── */}
-        <g transform="translate(10, 260)">
-          <text
-            x="0"
-            y="0"
-            fontFamily="Product Sans, Roboto, sans-serif"
-            fontWeight="bold"
-            fontSize="13"
-            letterSpacing="-0.5"
-            fill="#757575"
-          >
-            Google
-          </text>
-        </g>
       </svg>
 
-      {/* ── Map Expand / Recenter Button (Top Right of Map) ── */}
+      {/* Map Expand Button */}
       <button
         onClick={onToggleExpand}
         className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/95 text-neutral-700 shadow-md flex items-center justify-center active:scale-90 transition-all cursor-pointer border border-neutral-200"
@@ -296,14 +233,79 @@ const GoogleStyleMapView = ({ order, eta, isExpanded, onToggleExpand }) => {
         {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
       </button>
 
-      {/* Live Distance Pill on Map */}
-      <div className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-sm border border-neutral-200 flex items-center gap-1.5 text-[10px] font-black text-neutral-800">
-        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-        <span>{eta?.distKm || 3.5} km from you</span>
-      </div>
+      {/* Live Distance Pill */}
+      {eta && !eta.isDelayed && (
+        <div className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-sm border border-neutral-200 flex items-center gap-1.5 text-[10px] font-black text-neutral-800">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+          <span>{eta?.distKm || 3.5} km from you</span>
+        </div>
+      )}
     </div>
   );
 };
+
+// ── Delivered Celebration Screen ──────────────────────────────────────────
+const DeliveredScreen = ({ order, onGoHome }) => (
+  <div className="mx-4 bg-white rounded-3xl p-6 border border-emerald-200/80 shadow-md flex flex-col items-center justify-center text-center space-y-5 animate-in zoom-in-95 duration-300">
+    <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center shadow-lg">
+      <CheckCircle2 className="w-10 h-10 text-emerald-600" />
+    </div>
+    <div>
+      <h2 className="text-xl font-black text-neutral-900">Order Delivered!</h2>
+      <p className="text-xs text-neutral-500 mt-1 max-w-xs">
+        Your royal Persian feast has arrived at your doorstep. We hope you enjoy every bite!
+      </p>
+    </div>
+    {order?.items && (
+      <div className="w-full bg-neutral-50 rounded-2xl p-3.5 border border-neutral-200/60 shadow-xs text-left">
+        <p className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-2">Order Items</p>
+        <div className="space-y-1.5 text-xs text-neutral-700">
+          {order.items.map((it, idx) => (
+            <div key={idx} className="flex justify-between">
+              <span className="font-medium">{it.quantity}x {it.name}</span>
+              <span className="font-bold">&#8377;{it.price * it.quantity}</span>
+            </div>
+          ))}
+        </div>
+        <div className="pt-2 mt-2 border-t border-neutral-200/60 flex justify-between">
+          <span className="text-xs font-black text-neutral-900">Total Paid</span>
+          <span className="text-sm font-black text-[#E40000]">&#8377;{order.total || order.subtotal || 0}</span>
+        </div>
+      </div>
+    )}
+    <button
+      onClick={onGoHome}
+      className="w-full py-3.5 bg-neutral-900 hover:bg-black text-white font-black text-xs rounded-2xl shadow-md active:scale-98 transition-transform cursor-pointer"
+    >
+      Done & Return to Home
+    </button>
+  </div>
+);
+
+// ── Delay / ETA Expired Apology Card ──────────────────────────────────────
+const DelayApologyCard = () => (
+  <div className="mx-4 bg-amber-50 rounded-3xl p-4 border border-amber-200 shadow-xs animate-in slide-in-from-top duration-300">
+    <div className="flex items-start gap-3">
+      <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center shrink-0">
+        <AlertTriangle className="w-5 h-5 text-amber-600" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <h3 className="text-sm font-black text-amber-900">Running a bit late</h3>
+        <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">
+          We sincerely apologize for the delay. Your order is taking longer than expected.
+          Our team is working to get it to you as soon as possible.
+        </p>
+        <a
+          href={`tel:${RESTAURANT_PHONE}`}
+          className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 bg-amber-200/60 rounded-xl text-xs font-bold text-amber-800 active:scale-95 transition-transform cursor-pointer"
+        >
+          <Phone className="w-3 h-3" />
+          <span>Call Restaurant</span>
+        </a>
+      </div>
+    </div>
+  </div>
+);
 
 // ── Main CustomerTrackOrder Component ───────────────────────────────────────
 const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
@@ -312,9 +314,12 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
-  // OS Simulator toggle: 'ios' (Dynamic Island Screenshot 2) vs 'android' (Material Notification)
-  const [osMode, setOsMode] = useState('ios');
+  const [showDelivered, setShowDelivered] = useState(false);
   const pollingRef = useRef(null);
+  const autoCloseTimerRef = useRef(null);
+
+  // Auto-detect platform (no manual toggle)
+  const platform = useMemo(() => detectPlatform(), []);
 
   // Fetch order data
   const fetchOrder = useCallback(async (id, silent = false) => {
@@ -326,16 +331,29 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
       if (!res.ok) throw new Error('Order not found');
       const data = await res.json();
       setOrder(data);
+
+      // Auto-transition to delivered celebration
+      if (data.status === 'delivered') {
+        setShowDelivered(true);
+        // Auto-close tracking after 8 seconds
+        autoCloseTimerRef.current = setTimeout(() => {
+          if (onGoHome) onGoHome();
+          else if (onClose) onClose();
+        }, 8000);
+      }
     } catch (err) {
       // Keep existing data
     } finally {
       if (!silent) setLoading(false);
       else setRefreshing(false);
     }
-  }, []);
+  }, [onClose, onGoHome]);
 
   useEffect(() => {
     if (propOrderId) fetchOrder(propOrderId);
+    return () => {
+      if (autoCloseTimerRef.current) clearTimeout(autoCloseTimerRef.current);
+    };
   }, [propOrderId, fetchOrder]);
 
   // Live polling every 10 seconds for active orders
@@ -349,7 +367,8 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
     return () => clearInterval(pollingRef.current);
   }, [order, fetchOrder]);
 
-  const eta = calcETA(order);
+  const orderPlacedAt = order?.created_at || order?.createdAt || order?.placed_at;
+  const eta = calcETA(order, orderPlacedAt);
   const milestoneIdx = order ? (STATUS_MILESTONE[order.status] ?? 0) : 0;
   const isCancelled = ['cancelled', 'rejected'].includes(order?.status);
   const isDelivery = order?.order_type === 'DELIVERY' || !order?.order_type;
@@ -361,7 +380,7 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
     if (navigator.share) {
       navigator.share({
         title: 'Track Persian Darbar Order',
-        text: `Track my royal Persian Darbar feast #${String(order?.order_id || propOrderId).slice(-6)} live!`,
+        text: `Track my Persian Darbar order #${String(order?.order_id || propOrderId).slice(-6)} live!`,
         url,
       }).catch(() => {});
     } else {
@@ -378,7 +397,7 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Status title matching Screenshot 1
+  // Status headline
   const getStatusHeadline = () => {
     if (!order) return 'Tracking Order';
     if (order.status === 'delivered') return 'Order Delivered';
@@ -389,14 +408,63 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
     return 'Order placed';
   };
 
+  // If delivered, show celebration and auto-close
+  if (showDelivered && isDelivered) {
+    return (
+      <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex flex-col items-center select-none overflow-hidden animate-in fade-in duration-200">
+        <div className="w-full max-w-[430px] h-full flex flex-col bg-[#F8F9FA] shadow-2xl relative overflow-hidden">
+          <header
+            className="shrink-0 px-4 pb-4 text-white relative shadow-md"
+            style={{
+              backgroundColor: '#151E33',
+              paddingTop: 'calc(max(env(safe-area-inset-top, 50px), 50px) + 8px)'
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <button
+                onClick={onClose}
+                className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center active:scale-90 transition-all cursor-pointer border border-white/10"
+                aria-label="Dismiss tracking"
+              >
+                <ChevronDown className="w-5 h-5 text-white" />
+              </button>
+              <div className="text-center">
+                <h2 className="text-sm font-bold text-white tracking-wide">
+                  Persian Darbar
+                </h2>
+                <p className="text-[10px] text-white/60">Camp, Pune Flagship</p>
+              </div>
+              <div className="w-9" />
+            </div>
+            <div className="mt-4 text-center">
+              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight">
+                Order Delivered
+              </h1>
+            </div>
+            <div className="mt-3 flex items-center justify-center">
+              <div className="bg-emerald-600/40 border border-emerald-400/30 text-emerald-200 px-4 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-300" />
+                <span>Delivered to your doorstep!</span>
+              </div>
+            </div>
+          </header>
+          <div className="flex-1 overflow-y-auto no-scrollbar">
+            <DeliveredScreen order={order} onGoHome={() => {
+              if (autoCloseTimerRef.current) clearTimeout(autoCloseTimerRef.current);
+              if (onGoHome) onGoHome();
+              else if (onClose) onClose();
+            }} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex flex-col items-center select-none overflow-hidden animate-in fade-in duration-200">
       <div className="w-full max-w-[430px] h-full flex flex-col bg-[#F8F9FA] shadow-2xl relative overflow-hidden">
 
-        {/* ══════════════════════════════════════════════════════════════════
-            HEADER (EXACT PIXEL REPLICA OF SCREENSHOT 1: media_1792316474139.png)
-            Dark Navy Blue #151E33 with ChevronDown, Title, Arriving Pill & Share
-           ══════════════════════════════════════════════════════════════════ */}
+        {/* ═══ HEADER ═══ */}
         <header
           className="shrink-0 px-4 pb-4 text-white relative shadow-md"
           style={{
@@ -404,9 +472,8 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
             paddingTop: 'calc(max(env(safe-area-inset-top, 50px), 50px) + 8px)'
           }}
         >
-          {/* Row 1: Back Chevron · Restaurant Name · Share Button */}
+          {/* Row 1: Back - Restaurant Name - Share */}
           <div className="flex items-center justify-between">
-            {/* Dismiss button (ChevronDown inside circle) */}
             <button
               onClick={onClose}
               className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center active:scale-90 transition-all cursor-pointer border border-white/10"
@@ -414,16 +481,12 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
             >
               <ChevronDown className="w-5 h-5 text-white" />
             </button>
-
-            {/* Restaurant Name */}
             <div className="text-center">
               <h2 className="text-sm font-bold text-white tracking-wide">
                 Persian Darbar
               </h2>
               <p className="text-[10px] text-white/60">Camp, Pune Flagship</p>
             </div>
-
-            {/* Share button (Share2 inside circle) */}
             <button
               onClick={handleShare}
               className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center active:scale-90 transition-all cursor-pointer border border-white/10"
@@ -433,18 +496,22 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
             </button>
           </div>
 
-          {/* Row 2: Big Bold Status Title (Screenshot 1: "Preparing your order") */}
+          {/* Row 2: Status Title */}
           <div className="mt-4 text-center">
             <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight">
               {getStatusHeadline()}
             </h1>
           </div>
 
-          {/* Row 3: Dark Arriving Pill + Refresh Button (Screenshot 1 Match) */}
+          {/* Row 3: Arriving Pill + Refresh */}
           {eta && !isCancelled && !isDelivered && (
             <div className="mt-3 flex items-center justify-center gap-2">
-              <div className="bg-[#242F48] border border-white/10 text-white px-4 py-1.5 rounded-xl text-xs font-bold shadow-inner flex items-center gap-2">
-                <Clock className="w-3.5 h-3.5 text-amber-300" />
+              <div className={`${eta.isDelayed ? 'bg-amber-600/30 border-amber-400/30' : 'bg-[#242F48] border-white/10'} border text-white px-4 py-1.5 rounded-xl text-xs font-bold shadow-inner flex items-center gap-2`}>
+                {eta.isDelayed ? (
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-300" />
+                ) : (
+                  <Clock className="w-3.5 h-3.5 text-amber-300" />
+                )}
                 <span>{eta.etaPillText}</span>
               </div>
               <button
@@ -468,14 +535,17 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
           )}
         </header>
 
-        {/* ══════════════════════════════════════════════════════════════════
-            SCROLLABLE CONTENT AREA
-           ══════════════════════════════════════════════════════════════════ */}
+        {/* ═══ SCROLLABLE CONTENT ═══ */}
         <div className="flex-1 overflow-y-auto no-scrollbar pb-8 space-y-3">
 
-          {/* 1. Map View (Screenshot 1 Style) */}
-          {isDelivery && !isCancelled && (
-            <GoogleStyleMapView
+          {/* Delivered Celebration View (Hides active map/rider transit when delivered) */}
+          {(isDelivered || showDelivered) ? (
+            <DeliveredScreen order={order} onGoHome={onGoHome || onClose} />
+          ) : (
+            <>
+              {/* 1. Map View */}
+              {isDelivery && !isCancelled && (
+            <DeliveryMapView
               order={order}
               eta={eta}
               isExpanded={isMapExpanded}
@@ -483,41 +553,8 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
             />
           )}
 
-          {/* 2. OS Experience Mode Switcher (iOS Dynamic Island vs Android Live Status) */}
-          <div className="px-4 pt-1">
-            <div className="bg-white rounded-2xl p-1.5 border border-neutral-200 flex items-center justify-between shadow-xs">
-              <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider pl-2">
-                Live Island View:
-              </span>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setOsMode('ios')}
-                  className={`px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
-                    osMode === 'ios'
-                      ? 'bg-neutral-900 text-white shadow-xs'
-                      : 'text-neutral-500 hover:text-neutral-900'
-                  }`}
-                >
-                  <Apple className="w-3.5 h-3.5" />
-                  <span>iOS Dynamic Island</span>
-                </button>
-                <button
-                  onClick={() => setOsMode('android')}
-                  className={`px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
-                    osMode === 'android'
-                      ? 'bg-emerald-600 text-white shadow-xs'
-                      : 'text-neutral-500 hover:text-neutral-900'
-                  }`}
-                >
-                  <Smartphone className="w-3.5 h-3.5" />
-                  <span>Android Material</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* 3. iOS Dynamic Island Live Activity Preview (Screenshot 2 Replica) */}
-          {osMode === 'ios' && !isCancelled && (
+          {/* 2. Platform-native Live Status (auto-detected, no toggle) */}
+          {platform === 'ios' && !isCancelled && !isDelivered && (
             <div className="mx-4 p-3.5 rounded-3xl bg-black text-white shadow-xl border border-white/10 animate-in slide-in-from-top-2 duration-300">
               <div className="flex items-center justify-between pb-2 border-b border-white/10">
                 <div className="flex items-center gap-1.5">
@@ -525,24 +562,23 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
                   <span className="text-xs font-black lowercase tracking-tight font-sans text-amber-300">
                     persian darbar
                   </span>
-                  <span className="text-[10px] text-white/50">· Dynamic Island</span>
+                  <span className="text-[10px] text-white/50">. Live Activity</span>
                 </div>
-                {/* Timer ring (Screenshot 2 match) */}
+                {/* Timer */}
                 <div className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold text-white">
-                  <span>{eta?.minsRemaining || 18}m</span>
+                  <span>{eta?.isDelayed ? 'Delayed' : `${eta?.minsRemaining || '--'}m`}</span>
                 </div>
               </div>
               <div className="pt-2 flex items-center justify-between text-xs text-white/80">
                 <span>{getStatusHeadline()}</span>
                 <span className="text-[11px] text-amber-300 font-bold">
-                  {eta?.distKm || 3.5} km away
+                  {eta?.distKm || '--'} km away
                 </span>
               </div>
             </div>
           )}
 
-          {/* Android Material You Live Status Card */}
-          {osMode === 'android' && !isCancelled && (
+          {platform === 'android' && !isCancelled && !isDelivered && (
             <div className="mx-4 p-3.5 rounded-3xl bg-[#1F2937] text-white shadow-lg border border-neutral-700 animate-in slide-in-from-top-2 duration-300">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -550,14 +586,15 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
                     <ChefHat className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xs font-bold text-white">Persian Darbar Express</h3>
+                    <h3 className="text-xs font-bold text-white">Persian Darbar</h3>
                     <p className="text-[11px] text-emerald-400 font-medium">
-                      {getStatusHeadline()} · {eta?.minsRemaining || 18} mins
+                      {getStatusHeadline()}
+                      {eta && !eta.isDelayed ? ` . ${eta.minsRemaining} mins` : ''}
                     </p>
                   </div>
                 </div>
                 <span className="text-xs font-bold text-amber-300 bg-white/10 px-2.5 py-1 rounded-xl">
-                  ~{eta?.minsRemaining || 18}m
+                  {eta?.isDelayed ? 'Late' : `~${eta?.minsRemaining || '--'}m`}
                 </span>
               </div>
               <div className="w-full bg-neutral-700 h-1.5 rounded-full mt-2.5 overflow-hidden">
@@ -569,39 +606,12 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
             </div>
           )}
 
-          {/* 4. Exact ETA Formula Breakdown Card (15 mins prep + 1 km = 3 mins) */}
-          {eta && !isCancelled && (
-            <div className="mx-4 bg-white rounded-3xl p-4 border border-neutral-200/80 shadow-xs space-y-2.5">
-              <div className="flex items-center justify-between">
-                <p className="text-[10px] font-black uppercase tracking-wider text-neutral-400">
-                  Estimated Delivery Calculation
-                </p>
-                <span className="text-[10px] font-bold text-neutral-500">
-                  Formula: 15m + (1km × 3m)
-                </span>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2 text-center pt-1">
-                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-2">
-                  <ChefHat className="w-4 h-4 text-amber-700 mx-auto mb-1" />
-                  <p className="text-xs font-black text-amber-900">{PREP_TIME_MINS} mins</p>
-                  <p className="text-[9px] text-amber-700">Kitchen Prep</p>
-                </div>
-                <div className="bg-blue-50 border border-blue-200 rounded-2xl p-2">
-                  <Bike className="w-4 h-4 text-blue-700 mx-auto mb-1" />
-                  <p className="text-xs font-black text-blue-900">~{eta.deliveryMins} mins</p>
-                  <p className="text-[9px] text-blue-700">{eta.distKm} km × 3 min</p>
-                </div>
-                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-2">
-                  <Clock className="w-4 h-4 text-emerald-700 mx-auto mb-1" />
-                  <p className="text-xs font-black text-emerald-900">~{eta.totalFormulaMins} mins</p>
-                  <p className="text-[9px] text-emerald-700">Total ETA</p>
-                </div>
-              </div>
-            </div>
+          {/* 3. Delay Apology Card (when ETA expired) */}
+          {eta?.isDelayed && !isCancelled && !isDelivered && (
+            <DelayApologyCard />
           )}
 
-          {/* 5. Delivery Partner / Rider Card (Personal Rider vs Porter Rider) */}
+          {/* 4. Delivery Partner / Rider Card */}
           {isDelivery && !isCancelled && (
             <div className="mx-4 bg-white rounded-3xl border border-neutral-200/80 shadow-xs overflow-hidden">
               <div className="px-4 py-3 border-b border-neutral-100 flex items-center justify-between">
@@ -613,7 +623,7 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
                 </span>
               </div>
 
-              {/* Porter Third-Party Partner Rider */}
+              {/* Porter Third-Party */}
               {order?.porter_order_id ? (
                 <div className="p-4 space-y-3">
                   <div className="flex items-center gap-3">
@@ -670,7 +680,7 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
                   </div>
                 </div>
               ) : order?.delivery_partner_name ? (
-                /* Persian Darbar In-House Personal Rider (Created & Assigned from Admin Panel) */
+                /* In-House Personal Rider (from Admin Panel) */
                 <div className="p-4 space-y-3">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md text-white font-black text-lg shrink-0">
@@ -724,7 +734,7 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
                   </div>
                 </div>
               ) : (
-                /* Kitchen Preparing: Allocating Nearest Rider */
+                /* Allocating Nearest Rider */
                 <div className="p-4 space-y-3">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-md text-white font-black text-lg shrink-0">
@@ -749,7 +759,7 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
             </div>
           )}
 
-          {/* 6. Milestone Timeline */}
+          {/* 5. Milestone Timeline */}
           {!isCancelled && (
             <div className="mx-4 bg-white rounded-3xl p-4 border border-neutral-200/80 shadow-xs">
               <p className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">
@@ -812,7 +822,7 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
             </div>
           )}
 
-          {/* 7. Order Items & Total Summary */}
+          {/* 6. Order Items & Total Summary */}
           {order && (
             <div className="mx-4 bg-white rounded-3xl p-4 border border-neutral-200/80 shadow-xs space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-neutral-100">
@@ -840,7 +850,7 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
                     <span className="font-medium">
                       {it.quantity}x {it.name}
                     </span>
-                    <span className="font-bold">₹{it.price * it.quantity}</span>
+                    <span className="font-bold">&#8377;{it.price * it.quantity}</span>
                   </div>
                 ))}
               </div>
@@ -848,13 +858,15 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
               <div className="pt-2 border-t border-neutral-100 flex items-center justify-between">
                 <span className="text-xs font-black text-neutral-900">Total Bill</span>
                 <span className="text-sm font-black text-[#E40000]">
-                  ₹{order.total || order.subtotal || 0}
+                  &#8377;{order.total || order.subtotal || 0}
                 </span>
               </div>
             </div>
           )}
+        </>
+      )}
 
-          {/* 8. Help / Call Restaurant */}
+          {/* 7. Help / Call Restaurant */}
           <div className="px-4 pt-1">
             <a
               href={`tel:${RESTAURANT_PHONE}`}

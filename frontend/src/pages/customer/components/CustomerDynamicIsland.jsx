@@ -1,31 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Clock, Bike, ChefHat, Phone, ChevronRight, X, ExternalLink } from 'lucide-react';
 
 /**
  * CustomerDynamicIsland
- * Inspired by iOS 17/18 Dynamic Island Live Activities (Screenshot 2)
- * & Android 14/15 Material You Live Notifications.
- *
- * Shows real-time ETA calculated as:
- * 15 mins (Kitchen Prep) + Distance × 3 mins (1km = 3 mins delivery).
+ * Auto-detects iOS vs Android platform.
+ * Shows real-time ETA (calculation is internal, never exposed to user).
  */
+
+// Auto-detect platform based on user agent
+function detectPlatform() {
+  const ua = navigator.userAgent || '';
+  if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+    return 'ios';
+  }
+  return 'android';
+}
+
 export const CustomerDynamicIsland = ({
   activeOrder,
   onOpenTrackOrder,
   distanceKm = 3.5,
-  platform = 'ios', // 'ios' | 'android'
-  onTogglePlatform
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Auto-detect platform (no manual toggle)
+  const platform = useMemo(() => detectPlatform(), []);
 
   if (!activeOrder) return null;
 
   const status = activeOrder.status || 'placed';
   const isDelivered = status === 'delivered';
   const isCancelled = ['cancelled', 'rejected'].includes(status);
-  if (isCancelled) return null;
+  if (isCancelled || isDelivered) return null;
 
-  // Calculate ETA: 15 min prep + distance * 3 min
+  // Calculate ETA internally
   const dist = parseFloat(activeOrder.distance_km || distanceKm || 3.5);
   const totalMins = 15 + Math.round(dist * 3);
 
@@ -36,26 +44,30 @@ export const CustomerDynamicIsland = ({
     minsLeft = Math.round(dist * 3);
   } else if (status === 'out_for_delivery') {
     minsLeft = Math.max(4, Math.round(dist * 1.5));
-  } else if (isDelivered) {
-    minsLeft = 0;
   }
 
   // Progress percentage (0 to 1)
   const progressPercent = Math.min(1, Math.max(0.15, (totalMins - minsLeft) / totalMins));
   const strokeDashoffset = 44 - 44 * progressPercent;
 
-  // ── iOS DYNAMIC ISLAND (Screenshot 2 Match) ───────────────────────────
+  const statusText = status === 'out_for_delivery'
+    ? 'Out for Delivery'
+    : status === 'ready'
+    ? 'Ready for Pickup'
+    : 'Preparing your order';
+
+  // ── iOS DYNAMIC ISLAND ─────────────────────────────────────────────────
   if (platform === 'ios') {
     return (
       <div className="w-full flex flex-col items-center px-4 pt-1 pb-1 z-50 pointer-events-auto select-none">
-        {/* Collapsed Pill (Screenshot 2 Exact Look) */}
+        {/* Collapsed Pill */}
         {!isExpanded ? (
           <div
             onClick={() => onOpenTrackOrder ? onOpenTrackOrder() : setIsExpanded(true)}
             className="w-[200px] sm:w-[220px] h-[35px] bg-black text-white rounded-full px-3.5 flex items-center justify-between shadow-2xl border border-white/10 active:scale-95 transition-all cursor-pointer group hover:border-white/20"
             title="Tap to track order live"
           >
-            {/* Left: Brand / Restaurant name */}
+            {/* Left: Brand name */}
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-[12px] font-black lowercase tracking-tight font-sans text-white group-hover:text-amber-300 transition-colors">
@@ -63,7 +75,7 @@ export const CustomerDynamicIsland = ({
               </span>
             </div>
 
-            {/* Right: Circular Ring Timer with Minutes (Exact Screenshot 2 styling) */}
+            {/* Right: Circular Ring Timer */}
             <div className="flex items-center gap-1.5">
               <div className="relative w-6 h-6 flex items-center justify-center">
                 <svg className="w-6 h-6 -rotate-90" viewBox="0 0 20 20">
@@ -95,13 +107,13 @@ export const CustomerDynamicIsland = ({
             </div>
           </div>
         ) : (
-          /* Expanded Dynamic Island (iOS Live Activity Card) */
+          /* Expanded Dynamic Island */
           <div className="w-full max-w-[390px] bg-black text-white rounded-3xl p-4 shadow-2xl border border-white/15 animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between pb-2 border-b border-white/10">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 <span className="text-xs font-black lowercase text-amber-300">persian darbar</span>
-                <span className="text-[10px] text-white/50">· Live Activity</span>
+                <span className="text-[10px] text-white/50">. Live Activity</span>
               </div>
               <button
                 onClick={(e) => {
@@ -117,14 +129,14 @@ export const CustomerDynamicIsland = ({
             <div className="py-2.5 flex items-center justify-between">
               <div>
                 <p className="text-sm font-black text-white capitalize">
-                  {status === 'out_for_delivery' ? 'Out for Delivery' : status === 'ready' ? 'Ready for Pickup' : 'Preparing Feast'}
+                  {statusText}
                 </p>
                 <p className="text-[11px] text-white/60">
-                  15m kitchen prep + {Math.round(dist * 3)}m ride ({dist} km × 3 min)
+                  Estimated arrival in {minsLeft} mins
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-[10px] text-white/50 font-medium">Estimated Arrival</p>
+                <p className="text-[10px] text-white/50 font-medium">ETA</p>
                 <p className="text-lg font-black text-white">{minsLeft} mins</p>
               </div>
             </div>
@@ -142,7 +154,7 @@ export const CustomerDynamicIsland = ({
     );
   }
 
-  // ── ANDROID MATERIAL YOU LIVE NOTIFICATION ───────────────────────────
+  // ── ANDROID MATERIAL YOU LIVE NOTIFICATION ─────────────────────────────
   return (
     <div className="w-full px-4 pt-1 pb-1 z-50 pointer-events-auto select-none">
       <div
@@ -160,7 +172,7 @@ export const CustomerDynamicIsland = ({
                 <span className="text-[9px] bg-neutral-700 text-neutral-300 px-1 rounded">Live Order</span>
               </div>
               <p className="text-[11px] text-emerald-400 font-bold">
-                {status === 'out_for_delivery' ? 'Rider heading to you' : 'Preparing your Mughlai feast'} · {minsLeft} min
+                {statusText} . {minsLeft} min
               </p>
             </div>
           </div>

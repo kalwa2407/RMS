@@ -290,12 +290,33 @@ const CustomerDashboard = () => {
       const r = await fetchWithAuth(`${API_BASE}/api/customer/orders`);
       if (r.ok) {
         const data = await r.json();
-        setOrders(Array.isArray(data) ? data : []);
+        const ordersList = Array.isArray(data) ? data : [];
+        setOrders(ordersList);
+
+        // Auto-close tracking overlay if tracked order is now delivered
+        if (trackingOrderId) {
+          const trackedOrder = ordersList.find(
+            o => String(o.order_id || o.id || o._id) === trackingOrderId
+          );
+          if (trackedOrder && trackedOrder.status === 'delivered') {
+            // Let the TrackOrder component handle the delivered celebration
+            // then auto-dismiss after a delay
+            setTimeout(() => setTrackingOrderId(null), 10000);
+          }
+        }
       }
     } catch (e) {
       console.error('Error fetching orders:', e);
     }
-  }, [idToken, fetchWithAuth]);
+  }, [idToken, fetchWithAuth, trackingOrderId]);
+
+  // ── 2b. Poll orders every 15 seconds (drives notifications + live status) ──
+  useEffect(() => {
+    if (!idToken) return;
+    fetchOrders();
+    const interval = setInterval(fetchOrders, 15000);
+    return () => clearInterval(interval);
+  }, [idToken, fetchOrders]);
 
   // ── 3. Fetch Reservations ──
   const fetchRes = useCallback(async () => {
@@ -309,7 +330,7 @@ const CustomerDashboard = () => {
             const prev = prevResRef.current.find(p => (p.id || p._id) === (curr.id || curr._id));
             if (prev && prev.status === 'pending' && curr.status === 'confirmed') {
               toast({
-                title: '🎉 Table Confirmed!',
+                title: 'Table Confirmed!',
                 description: `Table ${curr.table_number || 'Assigned'} is confirmed for ${curr.date} at ${curr.time}!`,
               });
             }
@@ -375,7 +396,7 @@ const CustomerDashboard = () => {
     } catch (e) {}
     updateDistanceForBranch(branch);
     toast({
-      title: '📍 Branch Switched',
+      title: 'Branch Switched',
       description: `Now ordering from Persian Darbar ${branch.name}.`
     });
   };
@@ -765,12 +786,11 @@ const CustomerDashboard = () => {
           userPhoto={currentUser?.photoURL}
         />
 
-        {/* ── iOS Dynamic Island Live Activity Pill (Screenshot 2 Match) ── */}
+        {/* ── Live Activity Pill (auto-detects iOS Dynamic Island vs Android Material) ── */}
         {activeOrder && !trackingOrderId && !isCartOpen && !isProfileOpen && (
           <CustomerDynamicIsland
             activeOrder={activeOrder}
             distanceKm={distanceKm}
-            platform="ios"
             onOpenTrackOrder={() => {
               const oid = activeOrder.order_id || activeOrder.id || activeOrder._id;
               if (oid) setTrackingOrderId(String(oid));

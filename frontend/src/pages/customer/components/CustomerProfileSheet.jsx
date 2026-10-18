@@ -100,7 +100,7 @@ const CustomerProfileSheet = ({
         {/* ── Segmented Navigation Tabs ── */}
         <div className="bg-white px-4 pt-1 pb-2 border-b border-neutral-100 flex space-x-1 overflow-x-auto no-scrollbar">
           {[
-            { id: 'membership', label: '👑 Royalty Club' },
+            { id: 'membership', label: 'Royalty Club' },
             { id: 'orders', label: `Orders (${orders.length})` },
             { id: 'reservations', label: `Bookings (${reservations.length})` },
             { id: 'details', label: 'Saved Details' }
@@ -160,7 +160,7 @@ const CustomerProfileSheet = ({
                       </p>
                     </div>
                     <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-300 text-black flex items-center justify-center text-xl font-black shadow-lg">
-                      🪙
+                      <Crown className="w-6 h-6 text-black fill-black" />
                     </div>
                   </div>
 

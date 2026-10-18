@@ -356,10 +356,10 @@ const CustomerProfile = () => {
         {/* ── Segmented Navigation Tabs ── */}
         <div className="bg-white p-1 rounded-2xl border border-neutral-200/80 shadow-xs flex space-x-1">
           {[
-            { id: 'membership', label: '👑 Royalty Club' },
-            { id: 'orders', label: `🛍️ Orders (${displayOrders.length})` },
-            { id: 'reservations', label: `📅 Bookings (${reservations.length})` },
-            { id: 'details', label: '📍 Saved Details' }
+            { id: 'membership', label: 'Royalty Club' },
+            { id: 'orders', label: `Orders (${displayOrders.length})` },
+            { id: 'reservations', label: `Bookings (${reservations.length})` },
+            { id: 'details', label: 'Saved Details' }
           ].map((tab) => {
             const isActive = activeTab === tab.id;
             return (

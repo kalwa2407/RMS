@@ -170,7 +170,7 @@ const CustomerOrders = () => {
         <div className="flex items-center gap-2 px-4 pb-3 overflow-x-auto no-scrollbar">
           {[
             { id: 'all', label: 'All' },
-            { id: 'active', label: 'Active 🔴' },
+            { id: 'active', label: 'Active' },
             { id: 'delivered', label: 'Delivered' },
             { id: 'cancelled', label: 'Cancelled' }
           ].map(tab => (

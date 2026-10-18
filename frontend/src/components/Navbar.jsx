@@ -129,7 +129,6 @@ const Navbar = () => {
                 onClick={() => sessionStorage.removeItem("allow_public_website")}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#EAB308]/20 border border-[#EAB308] text-[#EAB308] hover:bg-[#EAB308] hover:text-black text-xs font-bold transition-all duration-200"
               >
-                <span>👑</span>
                 <span>Staff Portal</span>
               </Link>
             )}
@@ -218,7 +217,7 @@ const Navbar = () => {
                 onClick={() => setIsOpen(false)}
                 className="block px-3.5 py-2.5 rounded-xl text-sm font-semibold text-[#EAB308] bg-[#184956]/60 border border-[#EAB308]/30"
               >
-                👤 My Dashboard & Orders
+                My Dashboard & Orders
               </Link>
             ) : (
               <Link
@@ -230,7 +229,7 @@ const Navbar = () => {
                   border: '1px solid rgba(254, 240, 138, 0.4)'
                 }}
               >
-                👑 Become a PersianDarbar Member
+                Become a PersianDarbar Member
               </Link>
             )}
 
@@ -243,7 +242,7 @@ const Navbar = () => {
                 }}
                 className="block mt-3 px-3 py-2.5 rounded-xl text-base font-bold text-center text-black bg-[#EAB308] shadow-lg"
               >
-                👑 Switch to Staff Portal (4 Panels)
+                Switch to Staff Portal (4 Panels)
               </Link>
             )}
           </div>
