@@ -20,7 +20,7 @@ import CustomerProfileTab from './components/CustomerProfileTab';
 import CustomerAddressModal from './components/CustomerAddressModal';
 import CustomerDishDetailModal from './components/CustomerDishDetailModal';
 import CustomerTrackOrder from './components/CustomerTrackOrder';
-import CustomerNotificationDrawer, { NotificationBell, useNotifications } from './components/CustomerNotifications';
+import CustomerNotificationDrawer, { NotificationBell, useNotifications, HeadsUpNotificationBanner } from './components/CustomerNotifications';
 import CustomerDynamicIsland from './components/CustomerDynamicIsland';
 
 import CustomerPwaInstallModal from '../../components/CustomerPwaInstallModal';
@@ -228,11 +228,52 @@ const CustomerDashboard = () => {
   const [reservations, setReservations] = useState([]);
   const [tables, setTables] = useState([]);
 
-  // Active delivery order for Zomato-style floating pill tracker
+  // Active delivery order for Zomato-style floating pill tracker (Auto-clears on delivered)
   const activeOrder = useMemo(() => {
     if (!orders || !orders.length) return null;
-    return orders.find(o => ['placed', 'accepted', 'preparing', 'ready', 'out_for_delivery'].includes(o.status)) || null;
+    const latest = orders[0];
+    if (!latest) return null;
+
+    // If the latest order is already delivered, cancelled, or rejected, THERE IS NO ACTIVE ORDER!
+    if (['delivered', 'cancelled', 'rejected'].includes(latest.status)) {
+      return null;
+    }
+
+    // Only in-progress orders
+    if (!['placed', 'accepted', 'preparing', 'ready', 'out_for_delivery'].includes(latest.status)) {
+      return null;
+    }
+
+    // Never show stale orders older than 12 hours as live active pills
+    const createdTime = latest.created_at ? new Date(latest.created_at).getTime() : 0;
+    if (createdTime && (Date.now() - createdTime) > 12 * 60 * 60 * 1000) {
+      return null;
+    }
+
+    return latest;
   }, [orders]);
+
+  // ── Notification System (Persistent store, chime & heads-up banner) ──
+  const {
+    notifications,
+    unreadCount,
+    isOpen: isNotifOpen,
+    activeAlert,
+    dismissAlert,
+    openDrawer: openNotifications,
+    closeDrawer: closeNotifications,
+    markRead,
+    markAllRead,
+    addNotification,
+  } = useNotifications({
+    currentUser,
+    orders,
+    reservations,
+    onOrderStatusChange: (order) => {
+      const oid = order.order_id || order.id || order._id;
+      if (oid) setTrackingOrderId(String(oid));
+    },
+  });
 
   // ── Coupons & Loyalty State ──
   const [coupons, setCoupons] = useState([]);
@@ -622,6 +663,18 @@ const CustomerDashboard = () => {
         description: `Order #${String(placedOrderId).slice(-8)} is being prepared. Track it live!`,
       });
 
+      // Dispatch Zomato-style live notification with chime
+      if (typeof addNotification === 'function') {
+        addNotification({
+          type: 'order_placed',
+          title: 'Order Placed Successfully',
+          body: `Order #${String(placedOrderId).slice(-8)} has been sent to the royal kitchen.`,
+          orderId: String(placedOrderId),
+          actionLabel: 'Track Live',
+          onTap: () => setTrackingOrderId(String(placedOrderId)),
+        });
+      }
+
       // Auto-open tracking for the new order
       if (placedOrderId) {
         setTimeout(() => {
@@ -728,28 +781,6 @@ const CustomerDashboard = () => {
     mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // ── Notification System ──
-  const {
-    notifications,
-    unreadCount,
-    openDrawer: openNotifications,
-    closeDrawer: closeNotifications,
-    isOpen: isNotifOpen,
-    markRead,
-    markAllRead,
-    addNotification,
-  } = useNotifications({
-    currentUser,
-    fetchWithAuth,
-    orders,
-    reservations,
-    onOrderStatusChange: (order) => {
-      // Auto-open tracking when tapping order status notification
-      const oid = order.order_id || order.id || order._id;
-      if (oid) setTrackingOrderId(String(oid));
-    },
-  });
-
   // If unauthenticated, render minimal clean container while navigating to /customer/login
   if (!localStorage.getItem('customer_jwt') && !currentUser) {
     return (
@@ -766,6 +797,18 @@ const CustomerDashboard = () => {
 
       {/* ── Main Mobile Shell Container (Zomato iOS 430px) ── */}
       <div className="w-full max-w-[430px] min-h-screen bg-[#F8F9FA] flex flex-col shadow-2xl relative pb-28">
+
+        {/* ── Heads-Up Floating Alert (Zomato-style dropdown with chime) ── */}
+        <HeadsUpNotificationBanner
+          alert={activeAlert}
+          onClose={dismissAlert}
+          onTap={() => {
+            if (activeAlert?.orderId) {
+              setTrackingOrderId(activeAlert.orderId);
+            }
+            dismissAlert();
+          }}
+        />
 
         {/* ── Customer Top Navigation Bar (Dedicated Clean / Reserve Header) ── */}
         <CustomerTopBar

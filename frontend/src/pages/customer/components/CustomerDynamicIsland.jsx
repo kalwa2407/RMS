@@ -1,14 +1,20 @@
 import React, { useState, useMemo } from 'react';
 import { Clock, Bike, ChefHat, Phone, ChevronRight, X, ExternalLink } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
 
 /**
  * CustomerDynamicIsland
- * Auto-detects iOS vs Android platform.
+ * Auto-detects iOS vs Android platform (Zero toggles).
  * Shows real-time ETA (calculation is internal, never exposed to user).
  */
 
-// Auto-detect platform based on user agent
+// Auto-detect platform using Capacitor runtime & user agent
 function detectPlatform() {
+  try {
+    const cap = Capacitor.getPlatform();
+    if (cap === 'ios') return 'ios';
+    if (cap === 'android') return 'android';
+  } catch (e) {}
   const ua = navigator.userAgent || '';
   if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
     return 'ios';

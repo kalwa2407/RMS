@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Bell, X, CheckCircle2, Bike, ChefHat, Package, Clock,
-  AlertCircle, Gift, Star, Sparkles, ChevronRight, Check
+  AlertCircle, Gift, Star, Sparkles, ChevronRight, Check, Volume2
 } from 'lucide-react';
-import API_BASE from '../../../lib/config';
 
 // ── Notification types and their styling ──────────────────────────────────
 const NOTIF_STYLES = {
@@ -34,34 +33,123 @@ const statusToNotifType = {
 
 // Human-readable status messages
 const statusMessages = {
-  placed:          { title: 'Order Placed', body: 'Your royal feast has been sent to the kitchen.' },
-  accepted:        { title: 'Kitchen Accepted', body: 'Your order has been accepted by our master chefs.' },
-  preparing:       { title: 'Preparing Your Feast', body: 'Your Mughlai delicacies are being crafted with love.' },
-  ready:           { title: 'Order Ready', body: 'Your feast is ready. Rider being assigned.' },
-  out_for_delivery:{ title: 'Out for Delivery', body: 'Your rider is on the way to your doorstep.' },
-  delivered:       { title: 'Order Delivered', body: 'Enjoy your royal Persian feast. Rate your experience.' },
-  cancelled:       { title: 'Order Cancelled', body: 'Your order has been cancelled. Contact us for help.' },
-  rejected:        { title: 'Order Rejected', body: 'Your order was rejected. Contact restaurant for details.' },
+  placed:          { title: 'Order Placed', body: 'Your royal feast has been received by Persian Darbar.' },
+  accepted:        { title: 'Kitchen Accepted', body: 'Master chefs have accepted and begun preparing your order.' },
+  preparing:       { title: 'Preparing Your Feast', body: 'Fresh Mughlai delicacies are being crafted with royal care.' },
+  ready:           { title: 'Order Packed & Ready', body: 'Your order is packed hot and ready for rider dispatch.' },
+  out_for_delivery:{ title: 'Out for Delivery', body: 'Rider is on the way to your doorstep. Track live on map.' },
+  delivered:       { title: 'Order Delivered', body: 'Delivered to your doorstep! Enjoy your royal Persian meal.' },
+  cancelled:       { title: 'Order Cancelled', body: 'Your order has been cancelled. Contact support for help.' },
+  rejected:        { title: 'Order Rejected', body: 'Your order was declined. Contact restaurant for details.' },
 };
+
+// Play a pleasant double-tone notification chime (Web Audio API - no external file needed)
+function playChime() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const now = ctx.currentTime;
+
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(587.33, now); // D5
+    osc1.frequency.setValueAtTime(880, now + 0.12); // A5
+
+    osc2.type = 'triangle';
+    osc2.frequency.setValueAtTime(587.33, now);
+    osc2.frequency.setValueAtTime(880, now + 0.12);
+
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc1.start(now);
+    osc2.start(now);
+    osc1.stop(now + 0.45);
+    osc2.stop(now + 0.45);
+
+    // Subtle haptic vibration on mobile devices
+    if (navigator.vibrate) {
+      navigator.vibrate([80, 40, 80]);
+    }
+  } catch (e) {
+    // Ignore audio autoplay restrictions
+  }
+}
 
 // ── Notification Bell Button ──────────────────────────────────────────────
 export const NotificationBell = ({ count = 0, onClick }) => (
   <button
     onClick={onClick}
-    className="relative w-9 h-9 rounded-full bg-white/80 border border-neutral-200/80 flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-xs"
+    className="relative w-9 h-9 rounded-full bg-white/90 border border-neutral-200/90 flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-xs"
     aria-label="Notifications"
   >
-    <Bell className="w-4 h-4 text-neutral-700" />
+    <Bell className="w-4 h-4 text-neutral-800" />
     {count > 0 && (
-      <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-[#E40000] text-white text-[9px] font-black rounded-full flex items-center justify-center px-0.5 border-2 border-white animate-in zoom-in duration-200">
+      <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-[#E40000] text-white text-[9px] font-black rounded-full flex items-center justify-center px-1 border-2 border-white animate-in zoom-in duration-200 shadow-xs">
         {count > 9 ? '9+' : count}
       </span>
     )}
   </button>
 );
 
+// ── Heads-Up Floating Banner (Zomato-style dropdown alert) ─────────────────
+export const HeadsUpNotificationBanner = ({ alert, onClose, onTap }) => {
+  if (!alert) return null;
+  const style = NOTIF_STYLES[alert.type] || NOTIF_STYLES.default;
+  const IconComp = style.icon;
+
+  return (
+    <div
+      onClick={onTap}
+      className="fixed top-4 left-1/2 -translate-x-1/2 w-[92%] max-w-[400px] z-[999] pointer-events-auto cursor-pointer animate-in slide-in-from-top-4 duration-300 select-none"
+    >
+      <div className="bg-neutral-900/95 backdrop-blur-md text-white p-3.5 rounded-3xl shadow-2xl border border-white/20 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 border border-white/10">
+            <IconComp className="w-5 h-5 text-amber-300" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <h4 className="text-xs font-black text-white truncate">
+                {alert.title}
+              </h4>
+            </div>
+            <p className="text-[11px] text-neutral-300 truncate mt-0.5">
+              {alert.body}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1 shrink-0">
+          <span className="text-[10px] font-black text-amber-300 bg-white/10 px-2 py-1 rounded-lg">
+            Track
+          </span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+            className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white/60 hover:text-white"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ── Notification Drawer ───────────────────────────────────────────────────
-const CustomerNotificationDrawer = ({
+export const CustomerNotificationDrawer = ({
   isOpen,
   onClose,
   notifications = [],
@@ -94,7 +182,7 @@ const CustomerNotificationDrawer = ({
               <div>
                 <h2 className="text-base font-black text-neutral-900">Notifications</h2>
                 {unreadCount > 0 && (
-                  <p className="text-[11px] text-neutral-500">{unreadCount} unread</p>
+                  <p className="text-[11px] text-neutral-500">{unreadCount} unread updates</p>
                 )}
               </div>
               <div className="flex items-center gap-2">
@@ -125,7 +213,7 @@ const CustomerNotificationDrawer = ({
                   </div>
                   <h3 className="font-bold text-neutral-600 text-sm">All Caught Up!</h3>
                   <p className="text-xs text-neutral-400 max-w-xs">
-                    No notifications yet. Place an order to get live updates!
+                    Your live order and reservation updates will appear here.
                   </p>
                 </div>
               ) : (
@@ -141,10 +229,10 @@ const CustomerNotificationDrawer = ({
                           if (notif.onTap) notif.onTap();
                           else if (onTapNotification) onTapNotification(notif);
                         }}
-                        className={`flex items-start gap-3 p-3 rounded-2xl border cursor-pointer active:scale-[0.98] transition-all ${style.bg} ${style.border} ${!notif.read ? 'shadow-sm' : 'opacity-75'}`}
+                        className={`flex items-start gap-3 p-3.5 rounded-2xl border cursor-pointer active:scale-[0.98] transition-all ${style.bg} ${style.border} ${!notif.read ? 'shadow-xs' : 'opacity-80'}`}
                       >
                         {/* Icon */}
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-white/80 shadow-xs ${style.iconColor}`}>
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-white shadow-xs ${style.iconColor}`}>
                           <IconComp className="w-4.5 h-4.5" />
                         </div>
 
@@ -161,9 +249,9 @@ const CustomerNotificationDrawer = ({
                               <span className="text-[9px] text-neutral-400 whitespace-nowrap">{notif.time}</span>
                             </div>
                           </div>
-                          <p className="text-[11px] text-neutral-600 mt-0.5 leading-relaxed">{notif.body}</p>
+                          <p className="text-[11px] text-neutral-600 mt-1 leading-relaxed">{notif.body}</p>
                           {notif.actionLabel && (
-                            <div className="flex items-center gap-1 mt-1.5">
+                            <div className="flex items-center gap-1 mt-2">
                               <span className={`text-[10px] font-black ${style.iconColor}`}>{notif.actionLabel}</span>
                               <ChevronRight className={`w-3 h-3 ${style.iconColor}`} />
                             </div>
@@ -183,104 +271,154 @@ const CustomerNotificationDrawer = ({
   );
 };
 
+const STORAGE_KEY = 'pd_customer_notifications_v3';
+
 // ── Custom Hook: useNotifications ─────────────────────────────────────────
 export const useNotifications = ({
   currentUser,
-  fetchWithAuth,
   orders = [],
   reservations = [],
   onOrderStatusChange,
 }) => {
-  const [notifications, setNotifications] = useState([]);
+  // Load initial notifications from localStorage
+  const [notifications, setNotifications] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return [];
+  });
+
   const [isOpen, setIsOpen] = useState(false);
+  const [activeAlert, setActiveAlert] = useState(null);
   const prevOrdersRef = useRef({});
-  const prevReservationsRef = useRef({});
+  const alertTimerRef = useRef(null);
+
+  // Sync to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(notifications.slice(0, 50)));
+    } catch (e) {}
+  }, [notifications]);
+
+  // Request browser Notification permission once
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'default') {
+        Notification.requestPermission().catch(() => {});
+      }
+    }
+  }, []);
 
   // Format relative time
-  const formatTime = (date) => {
-    const now = new Date();
-    const diff = Math.floor((now - new Date(date)) / 1000);
+  const formatTime = (timestamp) => {
+    const diff = Math.floor((Date.now() - timestamp) / 1000);
     if (diff < 60) return 'Just now';
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
     return `${Math.floor(diff / 86400)}d ago`;
   };
 
+  // Add notification with Heads-Up Banner and Chime
   const addNotification = useCallback((notif) => {
-    const id = `${notif.type}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const id = `${notif.type}_${notif.orderId || ''}_${Date.now()}`;
+    const timestamp = Date.now();
     const newNotif = {
       id,
       ...notif,
-      time: formatTime(new Date()),
+      timestamp,
+      time: 'Just now',
       read: false,
-      timestamp: Date.now(),
     };
+
     setNotifications(prev => {
-      // Deduplicate: don't add same type+orderId within 30 seconds
+      // Don't add duplicate notification for same type and order within 60s
       const isDuplicate = prev.some(n =>
         n.type === newNotif.type &&
         n.orderId === newNotif.orderId &&
-        (Date.now() - n.timestamp) < 30000
+        (timestamp - (n.timestamp || 0)) < 60000
       );
       if (isDuplicate) return prev;
-      return [newNotif, ...prev].slice(0, 50); // Keep last 50
+      return [newNotif, ...prev].slice(0, 50);
     });
+
+    // Play pleasant chime
+    playChime();
+
+    // Show heads-up alert banner
+    setActiveAlert(newNotif);
+    if (alertTimerRef.current) clearTimeout(alertTimerRef.current);
+    alertTimerRef.current = setTimeout(() => {
+      setActiveAlert(null);
+    }, 6000);
+
+    // Native OS Web Notification
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification(`Persian Darbar: ${notif.title}`, {
+          body: notif.body,
+          icon: '/favicon.ico',
+        });
+      } catch (e) {}
+    }
   }, []);
 
-  // Monitor order status changes
+  // Monitor order status changes and seed initial updates
   useEffect(() => {
-    if (!orders.length) return;
+    if (!orders || !orders.length) return;
     const prev = prevOrdersRef.current;
 
     orders.forEach(order => {
       const oid = order.order_id || order.id || order._id;
+      if (!oid) return;
       const prevStatus = prev[oid];
       const currStatus = order.status;
 
+      // Check if order was placed in the last 24h
+      const createdTime = order.created_at ? new Date(order.created_at).getTime() : Date.now();
+      const isRecent = (Date.now() - createdTime) < 24 * 60 * 60 * 1000;
+
+      // Status changed!
       if (prevStatus && prevStatus !== currStatus) {
-        // Status changed!
         const msg = statusMessages[currStatus];
         if (msg) {
           addNotification({
             type: statusToNotifType[currStatus] || 'default',
             title: msg.title,
             body: msg.body,
-            orderId: oid,
-            actionLabel: currStatus === 'out_for_delivery' || currStatus === 'preparing' ? 'Track Order' : undefined,
+            orderId: String(oid),
+            actionLabel: currStatus !== 'delivered' && currStatus !== 'cancelled' ? 'Track Live' : undefined,
             onTap: onOrderStatusChange ? () => onOrderStatusChange(order) : undefined,
           });
         }
+      } else if (!prevStatus && isRecent) {
+        // Initial load: ensure notification exists in list if not already present
+        const msg = statusMessages[currStatus] || statusMessages.placed;
+        setNotifications(existing => {
+          const alreadyHas = existing.some(n => n.orderId === String(oid) && n.title === msg.title);
+          if (alreadyHas) return existing;
+          return [
+            {
+              id: `init_${oid}_${currStatus}`,
+              type: statusToNotifType[currStatus] || 'default',
+              title: msg.title,
+              body: msg.body,
+              orderId: String(oid),
+              timestamp: createdTime,
+              time: formatTime(createdTime),
+              read: false,
+              actionLabel: currStatus !== 'delivered' && currStatus !== 'cancelled' ? 'Track Live' : undefined,
+            },
+            ...existing,
+          ].slice(0, 50);
+        });
       }
+
       prev[oid] = currStatus;
     });
 
     prevOrdersRef.current = { ...prev };
   }, [orders, addNotification, onOrderStatusChange]);
-
-  // Monitor reservation status changes
-  useEffect(() => {
-    if (!reservations.length) return;
-    const prev = prevReservationsRef.current;
-
-    reservations.forEach(res => {
-      const rid = res.id || res._id;
-      const prevStatus = prev[rid];
-      const currStatus = res.status;
-
-      if (prevStatus && prevStatus !== currStatus && currStatus === 'confirmed') {
-        addNotification({
-          type: 'reservation',
-          title: 'Table Confirmed',
-          body: `Table for ${res.guests} guests on ${res.date} at ${res.time} is confirmed!`,
-          orderId: rid,
-          actionLabel: 'View Reservation',
-        });
-      }
-      prev[rid] = currStatus;
-    });
-
-    prevReservationsRef.current = { ...prev };
-  }, [reservations, addNotification]);
 
   const markRead = useCallback((id) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
@@ -292,6 +430,9 @@ export const useNotifications = ({
 
   const clearAll = useCallback(() => {
     setNotifications([]);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {}
   }, []);
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -300,6 +441,8 @@ export const useNotifications = ({
     notifications,
     unreadCount,
     isOpen,
+    activeAlert,
+    dismissAlert: () => setActiveAlert(null),
     openDrawer: () => setIsOpen(true),
     closeDrawer: () => setIsOpen(false),
     addNotification,
@@ -309,5 +452,4 @@ export const useNotifications = ({
   };
 };
 
-// ── Main Export ───────────────────────────────────────────────────────────
 export default CustomerNotificationDrawer;

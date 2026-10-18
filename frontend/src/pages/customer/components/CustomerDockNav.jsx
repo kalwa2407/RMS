@@ -36,7 +36,7 @@ const CustomerDockNav = ({
       }}
     >
       {/* ── Zomato-style Active Order Tracker Pill ── */}
-      {activeOrder && onTrackOrder && !cartCount && (
+      {activeOrder && onTrackOrder && !cartCount && activeOrder.status !== 'delivered' && (
         <div className="mb-2 pointer-events-auto animate-in slide-in-from-bottom duration-300">
           <div
             onClick={onTrackOrder}

@@ -5,7 +5,9 @@ import {
   MessageCircle, Star, Shield, Maximize2, Minimize2, Copy, AlertCircle,
   AlertTriangle
 } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
 import API_BASE from '../../../lib/config';
+import CustomerDeliveryMap from './CustomerDeliveryMap';
 
 // ── Calculation Constants (Internal only - never shown to user) ──────────
 const PREP_TIME_MINS = 15;
@@ -91,158 +93,19 @@ function calcETA(order, orderPlacedAt) {
   return { minsRemaining, etaPillText, distKm, totalFormulaMins, isDelayed };
 }
 
-// ── Auto-detect platform ─────────────────────────────────────────────────
+// ── Auto-detect platform using Capacitor & user agent (Zero toggles) ──────
 function detectPlatform() {
+  try {
+    const cap = Capacitor.getPlatform();
+    if (cap === 'ios') return 'ios';
+    if (cap === 'android') return 'android';
+  } catch (e) {}
   const ua = navigator.userAgent || '';
   if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
     return 'ios';
   }
   return 'android';
 }
-
-// ── Delivery Route Map View ──────────────────────────────────────────────
-const DeliveryMapView = ({ order, eta, isExpanded, onToggleExpand }) => {
-  const isOutForDelivery = ['out_for_delivery', 'ready'].includes(order?.status);
-  const isDelivered = order?.status === 'delivered';
-  const progress = isDelivered ? 1 : isOutForDelivery ? 0.65 : 0.08;
-
-  // Rider position along curve based on progress
-  const t = 1 - progress;
-  const riderX = Math.round((1 - t) * 122 + t * 305);
-  const riderY = Math.round((1 - t) * 170 + t * 148 - Math.sin(t * Math.PI) * 18);
-
-  return (
-    <div
-      className={`relative w-full overflow-hidden transition-all duration-300 ${
-        isExpanded ? 'h-[360px]' : 'h-[230px]'
-      }`}
-      style={{ backgroundColor: '#F0F2F5' }}
-    >
-      <svg
-        className="w-full h-full select-none"
-        viewBox="0 0 360 280"
-        preserveAspectRatio="xMidYMid slice"
-      >
-        {/* Land Background */}
-        <rect width="360" height="280" fill="#F4F5F7" />
-
-        {/* City Blocks */}
-        <rect x="10" y="20" width="75" height="45" rx="3" fill="#E8EAED" />
-        <rect x="95" y="15" width="80" height="35" rx="3" fill="#E8EAED" />
-        <rect x="185" y="25" width="45" height="50" rx="3" fill="#E8EAED" />
-        <rect x="15" y="75" width="90" height="40" rx="3" fill="#E8EAED" />
-        <rect x="115" y="60" width="60" height="55" rx="3" fill="#E8EAED" />
-        <rect x="15" y="125" width="70" height="35" rx="3" fill="#E8EAED" />
-        <rect x="95" y="125" width="55" height="30" rx="3" fill="#E8EAED" />
-        <rect x="15" y="170" width="65" height="50" rx="3" fill="#E8EAED" />
-        <rect x="90" y="190" width="55" height="40" rx="3" fill="#E8EAED" />
-        <rect x="155" y="175" width="50" height="60" rx="3" fill="#E8EAED" />
-        <rect x="290" y="30" width="60" height="60" rx="3" fill="#E8EAED" />
-        <rect x="295" y="105" width="55" height="50" rx="3" fill="#E8EAED" />
-        <rect x="290" y="180" width="60" height="70" rx="3" fill="#E8EAED" />
-
-        {/* Water Body */}
-        <path
-          d="M 330 0 C 300 45 250 85 242 145 C 235 195 285 240 280 280"
-          fill="none"
-          stroke="#A8D5F2"
-          strokeWidth="11"
-          strokeLinecap="round"
-        />
-
-        {/* Main Road */}
-        <line x1="240" y1="0" x2="215" y2="280" stroke="#FFFFFF" strokeWidth="10" />
-        <line x1="240" y1="0" x2="215" y2="280" stroke="#D1D5DB" strokeWidth="1.5" />
-
-        {/* Cross Streets */}
-        <path d="M 0 170 Q 150 170 360 148" fill="none" stroke="#FFFFFF" strokeWidth="8" />
-        <path d="M 0 170 Q 150 170 360 148" fill="none" stroke="#E5E7EB" strokeWidth="1.5" />
-        <line x1="0" y1="120" x2="240" y2="120" stroke="#FFFFFF" strokeWidth="6" />
-        <line x1="0" y1="70" x2="240" y2="70" stroke="#FFFFFF" strokeWidth="6" />
-        <line x1="110" y1="0" x2="110" y2="280" stroke="#FFFFFF" strokeWidth="6" />
-        <line x1="180" y1="0" x2="180" y2="280" stroke="#FFFFFF" strokeWidth="5" />
-
-        {/* Delivery Route Line */}
-        <path
-          d="M 305 148 Q 215 140 122 170"
-          fill="none"
-          stroke="#1F2937"
-          strokeWidth="2.8"
-          strokeDasharray="6 4"
-          strokeLinecap="round"
-        />
-
-        {/* Route Progress */}
-        <path
-          d="M 305 148 Q 215 140 122 170"
-          fill="none"
-          stroke="#E40000"
-          strokeWidth="2.8"
-          strokeDasharray={`${progress * 200} 300`}
-          strokeLinecap="round"
-          opacity="0.9"
-        />
-
-        {/* Restaurant Pin */}
-        <g transform="translate(305, 148)">
-          <path
-            d="M 0 0 C -7 -14 -12 -18 -12 -25 A 12 12 0 1 1 12 -25 C 12 -18 7 -14 0 0 Z"
-            fill="#111827"
-          />
-          <circle cx="0" cy="-25" r="9.5" fill="#111827" />
-          <path
-            d="M -3 -29 v 5 c 0 0.8 0.6 1.4 1.4 1.4 v 6 h 1.2 v -6 c 0.8 0 1.4 -0.6 1.4 -1.4 v -5 h -0.8 v 3.5 h -0.6 v -3.5 h -0.8 v 3.5 h -0.6 v -3.5 z M 3 -29 c -1.2 0 -2 1 -2 2.5 v 3.5 h 1.2 v 6 h 1.2 v -12 z"
-            fill="#FFFFFF"
-          />
-          <ellipse cx="0" cy="1" rx="4" ry="1.5" fill="#000000" opacity="0.3" />
-        </g>
-
-        {/* Home Destination Pin */}
-        <g transform="translate(122, 170)">
-          <path
-            d="M 0 0 C -7 -14 -12 -18 -12 -25 A 12 12 0 1 1 12 -25 C 12 -18 7 -14 0 0 Z"
-            fill="#111827"
-          />
-          <circle cx="0" cy="-25" r="9.5" fill="#111827" />
-          <path
-            d="M 0 -29 L -5.5 -24 h 1.8 v 6.5 h 7.4 v -6.5 h 1.8 z"
-            fill="#FFFFFF"
-          />
-          <ellipse cx="0" cy="1" rx="4" ry="1.5" fill="#000000" opacity="0.3" />
-        </g>
-
-        {/* Rider Bike Pin (Animated along route) */}
-        {isOutForDelivery && (
-          <g transform={`translate(${riderX}, ${riderY - 14})`}>
-            <circle cx="0" cy="0" r="14" fill="#FFFFFF" stroke="#E40000" strokeWidth="2.5" />
-            <path
-              d="M -6 4 a 3 3 0 1 0 0 -6 a 3 3 0 0 0 0 6 z m 12 0 a 3 3 0 1 0 0 -6 a 3 3 0 0 0 0 6 z M 0 -5 h 3 l 3 5 h -4 z M -3 2 h 6 v -1.5 H -3 z"
-              fill="#E40000"
-            />
-            <circle cx="9" cy="-9" r="3.5" fill="#10B981" />
-          </g>
-        )}
-      </svg>
-
-      {/* Map Expand Button */}
-      <button
-        onClick={onToggleExpand}
-        className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/95 text-neutral-700 shadow-md flex items-center justify-center active:scale-90 transition-all cursor-pointer border border-neutral-200"
-        title={isExpanded ? 'Collapse Map' : 'Expand Map'}
-      >
-        {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-      </button>
-
-      {/* Live Distance Pill */}
-      {eta && !eta.isDelayed && (
-        <div className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-sm border border-neutral-200 flex items-center gap-1.5 text-[10px] font-black text-neutral-800">
-          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-          <span>{eta?.distKm || 3.5} km from you</span>
-        </div>
-      )}
-    </div>
-  );
-};
 
 // ── Delivered Celebration Screen ──────────────────────────────────────────
 const DeliveredScreen = ({ order, onGoHome }) => (
@@ -283,26 +146,41 @@ const DeliveredScreen = ({ order, onGoHome }) => (
 );
 
 // ── Delay / ETA Expired Apology Card ──────────────────────────────────────
-const DelayApologyCard = () => (
-  <div className="mx-4 bg-amber-50 rounded-3xl p-4 border border-amber-200 shadow-xs animate-in slide-in-from-top duration-300">
+const DelayApologyCard = ({ order }) => (
+  <div className="mx-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl p-4.5 border-2 border-amber-300 shadow-md animate-in slide-in-from-top duration-300 space-y-3">
     <div className="flex items-start gap-3">
-      <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center shrink-0">
-        <AlertTriangle className="w-5 h-5 text-amber-600" />
+      <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+        <Clock className="w-5 h-5 animate-pulse" />
       </div>
       <div className="flex-1 min-w-0">
-        <h3 className="text-sm font-black text-amber-900">Running a bit late</h3>
-        <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">
-          We sincerely apologize for the delay. Your order is taking longer than expected.
-          Our team is working to get it to you as soon as possible.
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-black text-amber-950">Running a bit behind schedule</h3>
+          <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-900">
+            Priority
+          </span>
+        </div>
+        <p className="text-xs text-amber-900 mt-1 leading-relaxed">
+          We sincerely apologize for the delay! Our master chefs craft every royal dish fresh, and your rider is navigating traffic right now. Your feast is almost at your doorstep!
         </p>
-        <a
-          href={`tel:${RESTAURANT_PHONE}`}
-          className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 bg-amber-200/60 rounded-xl text-xs font-bold text-amber-800 active:scale-95 transition-transform cursor-pointer"
-        >
-          <Phone className="w-3 h-3" />
-          <span>Call Restaurant</span>
-        </a>
       </div>
+    </div>
+    <div className="pt-2 border-t border-amber-200/60 flex items-center gap-2">
+      <a
+        href={`tel:${RESTAURANT_PHONE}`}
+        className="flex-1 py-2.5 rounded-xl bg-amber-950 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-98 transition-transform cursor-pointer"
+      >
+        <Phone className="w-3.5 h-3.5 text-amber-300" />
+        <span>Call Restaurant Support</span>
+      </a>
+      {(order?.delivery_partner_phone || order?.porter_rider_phone) && (
+        <a
+          href={`tel:${order.delivery_partner_phone || order.porter_rider_phone}`}
+          className="flex-1 py-2.5 rounded-xl bg-white border border-amber-300 text-amber-900 font-bold text-xs flex items-center justify-center gap-1.5 active:scale-98 transition-transform cursor-pointer"
+        >
+          <Bike className="w-3.5 h-3.5 text-amber-700" />
+          <span>Call Rider</span>
+        </a>
+      )}
     </div>
   </div>
 );
@@ -543,73 +421,73 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
             <DeliveredScreen order={order} onGoHome={onGoHome || onClose} />
           ) : (
             <>
-              {/* 1. Map View */}
+              {/* 1. Real Leaflet Delivery Map */}
               {isDelivery && !isCancelled && (
-            <DeliveryMapView
-              order={order}
-              eta={eta}
-              isExpanded={isMapExpanded}
-              onToggleExpand={() => setIsMapExpanded(prev => !prev)}
-            />
-          )}
-
-          {/* 2. Platform-native Live Status (auto-detected, no toggle) */}
-          {platform === 'ios' && !isCancelled && !isDelivered && (
-            <div className="mx-4 p-3.5 rounded-3xl bg-black text-white shadow-xl border border-white/10 animate-in slide-in-from-top-2 duration-300">
-              <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-xs font-black lowercase tracking-tight font-sans text-amber-300">
-                    persian darbar
-                  </span>
-                  <span className="text-[10px] text-white/50">. Live Activity</span>
-                </div>
-                {/* Timer */}
-                <div className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold text-white">
-                  <span>{eta?.isDelayed ? 'Delayed' : `${eta?.minsRemaining || '--'}m`}</span>
-                </div>
-              </div>
-              <div className="pt-2 flex items-center justify-between text-xs text-white/80">
-                <span>{getStatusHeadline()}</span>
-                <span className="text-[11px] text-amber-300 font-bold">
-                  {eta?.distKm || '--'} km away
-                </span>
-              </div>
-            </div>
-          )}
-
-          {platform === 'android' && !isCancelled && !isDelivered && (
-            <div className="mx-4 p-3.5 rounded-3xl bg-[#1F2937] text-white shadow-lg border border-neutral-700 animate-in slide-in-from-top-2 duration-300">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-xl bg-[#E40000] flex items-center justify-center text-white text-xs">
-                    <ChefHat className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-bold text-white">Persian Darbar</h3>
-                    <p className="text-[11px] text-emerald-400 font-medium">
-                      {getStatusHeadline()}
-                      {eta && !eta.isDelayed ? ` . ${eta.minsRemaining} mins` : ''}
-                    </p>
-                  </div>
-                </div>
-                <span className="text-xs font-bold text-amber-300 bg-white/10 px-2.5 py-1 rounded-xl">
-                  {eta?.isDelayed ? 'Late' : `~${eta?.minsRemaining || '--'}m`}
-                </span>
-              </div>
-              <div className="w-full bg-neutral-700 h-1.5 rounded-full mt-2.5 overflow-hidden">
-                <div
-                  className="bg-emerald-500 h-full rounded-full transition-all duration-500"
-                  style={{ width: `${Math.round(((milestoneIdx + 1) / 4) * 100)}%` }}
+                <CustomerDeliveryMap
+                  order={order}
+                  eta={eta}
+                  isExpanded={isMapExpanded}
+                  onToggleExpand={() => setIsMapExpanded(prev => !prev)}
                 />
-              </div>
-            </div>
-          )}
+              )}
 
-          {/* 3. Delay Apology Card (when ETA expired) */}
-          {eta?.isDelayed && !isCancelled && !isDelivered && (
-            <DelayApologyCard />
-          )}
+              {/* 2. Platform-native Live Status (auto-detected, no toggle) */}
+              {platform === 'ios' && !isCancelled && !isDelivered && (
+                <div className="mx-4 p-3.5 rounded-3xl bg-black text-white shadow-xl border border-white/10 animate-in slide-in-from-top-2 duration-300">
+                  <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-xs font-black lowercase tracking-tight font-sans text-amber-300">
+                        persian darbar
+                      </span>
+                      <span className="text-[10px] text-white/50">. Live Activity</span>
+                    </div>
+                    {/* Timer */}
+                    <div className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold text-white">
+                      <span>{eta?.isDelayed ? 'Delayed' : `${eta?.minsRemaining || '--'}m`}</span>
+                    </div>
+                  </div>
+                  <div className="pt-2 flex items-center justify-between text-xs text-white/80">
+                    <span>{getStatusHeadline()}</span>
+                    <span className="text-[11px] text-amber-300 font-bold">
+                      {eta?.distKm || '--'} km away
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {platform === 'android' && !isCancelled && !isDelivered && (
+                <div className="mx-4 p-3.5 rounded-3xl bg-[#1F2937] text-white shadow-lg border border-neutral-700 animate-in slide-in-from-top-2 duration-300">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-xl bg-[#E40000] flex items-center justify-center text-white text-xs">
+                        <ChefHat className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-xs font-bold text-white">Persian Darbar</h3>
+                        <p className="text-[11px] text-emerald-400 font-medium">
+                          {getStatusHeadline()}
+                          {eta && !eta.isDelayed ? ` . ${eta.minsRemaining} mins` : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold text-amber-300 bg-white/10 px-2.5 py-1 rounded-xl">
+                      {eta?.isDelayed ? 'Late' : `~${eta?.minsRemaining || '--'}m`}
+                    </span>
+                  </div>
+                  <div className="w-full bg-neutral-700 h-1.5 rounded-full mt-2.5 overflow-hidden">
+                    <div
+                      className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+                      style={{ width: `${Math.round(((milestoneIdx + 1) / 4) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* 3. Delay Apology Card (when ETA expired) */}
+              {eta?.isDelayed && !isCancelled && !isDelivered && (
+                <DelayApologyCard order={order} />
+              )}
 
           {/* 4. Delivery Partner / Rider Card */}
           {isDelivery && !isCancelled && (
