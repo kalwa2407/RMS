@@ -431,26 +431,48 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
                 />
               )}
 
-              {/* 2. Platform-native Live Status (auto-detected, no toggle) */}
+              {/* 2. Platform-native Live Status (Auto-detected iOS Dynamic Island / Android Material) */}
               {platform === 'ios' && !isCancelled && !isDelivered && (
-                <div className="mx-4 p-3.5 rounded-3xl bg-black text-white shadow-xl border border-white/10 animate-in slide-in-from-top-2 duration-300">
-                  <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                    <div className="flex items-center gap-1.5">
+                <div className="mx-4 p-3.5 rounded-3xl bg-neutral-950 text-white shadow-2xl border border-neutral-800/90 animate-in slide-in-from-top-2 duration-300 space-y-2.5">
+                  {/* Apple Dynamic Island Capsule Pill (Identical to iOS Live Activities) */}
+                  <div className="w-full h-10 px-4 rounded-full bg-black border border-white/10 flex items-center justify-between shadow-inner">
+                    {/* Brand Name on Left (matches screenshot with royal styling) */}
+                    <div className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="text-xs font-black lowercase tracking-tight font-sans text-amber-300">
+                      <span className="font-black italic text-white text-[13px] tracking-tight lowercase">
                         persian darbar
                       </span>
-                      <span className="text-[10px] text-white/50">. Live Activity</span>
                     </div>
-                    {/* Timer */}
-                    <div className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold text-white">
-                      <span>{eta?.isDelayed ? 'Delayed' : `${eta?.minsRemaining || '--'}m`}</span>
+
+                    {/* Compact Trailing: Countdown ring & minutes remaining */}
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#18181B] border border-white/10">
+                      <svg className="w-4 h-4 -rotate-90 shrink-0" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.2)" strokeWidth="3" fill="none" />
+                        <circle
+                          cx="12"
+                          cy="12"
+                          r="9"
+                          stroke="white"
+                          strokeWidth="3"
+                          fill="none"
+                          strokeDasharray={56.5}
+                          strokeDashoffset={
+                            56.5 * (1 - Math.min(1, Math.max(0.15, (eta?.minsRemaining || 12) / (eta?.totalFormulaMins || 25))))
+                          }
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                      <span className="text-[11px] font-black text-white font-mono tracking-tight">
+                        {eta?.isDelayed ? 'Late' : `${eta?.minsRemaining || 12}m`}
+                      </span>
                     </div>
                   </div>
-                  <div className="pt-2 flex items-center justify-between text-xs text-white/80">
-                    <span>{getStatusHeadline()}</span>
-                    <span className="text-[11px] text-amber-300 font-bold">
-                      {eta?.distKm || '--'} km away
+
+                  {/* Dynamic Island Expanded Status Details */}
+                  <div className="px-1 flex items-center justify-between text-xs text-neutral-300">
+                    <span className="font-medium truncate">{getStatusHeadline()}</span>
+                    <span className="text-[11px] text-amber-400 font-bold shrink-0 ml-2">
+                      {eta?.distKm ? `${eta.distKm} km away` : 'On Route'}
                     </span>
                   </div>
                 </div>
