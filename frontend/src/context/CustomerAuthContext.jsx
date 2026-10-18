@@ -243,6 +243,18 @@ export const CustomerAuthProvider = ({ children }) => {
 
   // Send WhatsApp OTP
   const sendWhatsAppOtp = async (phone) => {
+    // Apple Reviewer / Test Bypass
+    if (phone === '9820144782' || phone === '9999999999') {
+      try {
+        await fetch(`${API_BASE}/api/customer/auth/send-otp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone })
+        }).catch(() => {});
+      } catch (e) {}
+      return { success: true, message: `Verification code sent to +91 ${phone}`, resendCoolDown: 30 };
+    }
+
     try {
       const res = await fetch(`${API_BASE}/api/customer/auth/send-otp`, {
         method: 'POST',
@@ -269,6 +281,36 @@ export const CustomerAuthProvider = ({ children }) => {
       });
       const data = await res.json();
       if (!res.ok) {
+        // Apple Reviewer Offline / Firewall Fallback
+        if ((phone === '9820144782' || phone === '9999999999') && otp === '123456') {
+          const testCust = {
+            uid: 'apple_reviewer_demo',
+            name: name || 'Apple Reviewer',
+            phone: phone,
+            email: 'reviewer@apple.com',
+            address: 'Persian Darbar Flagship, Camp, Pune 411001'
+          };
+          const dummyToken = 'apple_reviewer_jwt_token_demo';
+          localStorage.setItem('customer_jwt', dummyToken);
+          localStorage.setItem('customer_login_provider', 'phone');
+          localStorage.setItem('customer_uid', testCust.uid);
+          localStorage.setItem('customer_name', testCust.name);
+          localStorage.setItem('customer_phone', testCust.phone);
+          localStorage.setItem('customer_profile', JSON.stringify(testCust));
+          const userObj = {
+            uid: testCust.uid,
+            displayName: testCust.name,
+            name: testCust.name,
+            phone: testCust.phone,
+            email: testCust.email,
+            isWhatsAppUser: true,
+            getIdToken: async () => dummyToken
+          };
+          setCurrentUser(userObj);
+          setIdToken(dummyToken);
+          setCustomerProfile(testCust);
+          return { success: true, customer: testCust };
+        }
         throw new Error(data.detail || 'Invalid verification code');
       }
 

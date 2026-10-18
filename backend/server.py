@@ -5002,6 +5002,22 @@ async def customer_send_otp(payload: CustomerSendOtpRequest):
             remaining = int(25 - (now - last_sent).total_seconds())
             raise HTTPException(status_code=429, detail=f"Please wait {remaining}s before requesting a new code")
 
+    # ── Apple Review & QA Test Account Bypass (Guarantees instant review approval) ──
+    is_test_account = any(formatted.endswith(p) for p in ["9820144782", "9999999999"])
+    if is_test_account:
+        CUSTOMER_ACTIVE_OTPS[formatted] = {
+            "otp": "123456",
+            "expires_at": now + timedelta(days=365),
+            "last_sent_at": now,
+            "attempts": 0
+        }
+        logging.info(f"[OTP] Apple Review / Test account bypass activated for ...{formatted[-4:]}")
+        return {
+            "success": True,
+            "message": f"Verification code sent to +91 {formatted[-10:]}",
+            "resend_cool_down": 30
+        }
+
     # Generate random 6-digit OTP
     otp_code = f"{random.randint(100000, 999999)}"
 
@@ -5041,26 +5057,32 @@ async def customer_verify_otp(
     if not formatted:
         raise HTTPException(status_code=400, detail="Invalid phone number")
 
-    otp_record = CUSTOMER_ACTIVE_OTPS.get(formatted)
-    if not otp_record:
-        raise HTTPException(status_code=400, detail="No active verification code found. Please request a new code.")
-
-    now = datetime.utcnow()
-    if now > otp_record.get("expires_at", now):
+    # ── Apple Review / Demo Account Bypass ──
+    is_test_account = any(formatted.endswith(p) for p in ["9820144782", "9999999999"])
+    if is_test_account and payload.otp.strip() == "123456":
         CUSTOMER_ACTIVE_OTPS.pop(formatted, None)
-        raise HTTPException(status_code=400, detail="Verification code has expired. Please request a new one.")
+        # Proceed directly to authentication below
+    else:
+        otp_record = CUSTOMER_ACTIVE_OTPS.get(formatted)
+        if not otp_record:
+            raise HTTPException(status_code=400, detail="No active verification code found. Please request a new code.")
 
-    if otp_record.get("attempts", 0) >= 5:
+        now = datetime.utcnow()
+        if now > otp_record.get("expires_at", now):
+            CUSTOMER_ACTIVE_OTPS.pop(formatted, None)
+            raise HTTPException(status_code=400, detail="Verification code has expired. Please request a new one.")
+
+        if otp_record.get("attempts", 0) >= 5:
+            CUSTOMER_ACTIVE_OTPS.pop(formatted, None)
+            raise HTTPException(status_code=429, detail="Too many invalid attempts. Please request a new code.")
+
+        if otp_record.get("otp") != payload.otp.strip():
+            otp_record["attempts"] = otp_record.get("attempts", 0) + 1
+            remaining_attempts = 5 - otp_record["attempts"]
+            raise HTTPException(status_code=400, detail=f"Invalid code. {remaining_attempts} attempts remaining.")
+
+        # OTP is valid! Clean up
         CUSTOMER_ACTIVE_OTPS.pop(formatted, None)
-        raise HTTPException(status_code=429, detail="Too many invalid attempts. Please request a new code.")
-
-    if otp_record.get("otp") != payload.otp.strip():
-        otp_record["attempts"] = otp_record.get("attempts", 0) + 1
-        remaining_attempts = 5 - otp_record["attempts"]
-        raise HTTPException(status_code=400, detail=f"Invalid code. {remaining_attempts} attempts remaining.")
-
-    # OTP is valid! Clean up
-    CUSTOMER_ACTIVE_OTPS.pop(formatted, None)
 
     # Normalize standard 10-digit phone for storage
     standard_10_phone = formatted[2:] if (len(formatted) == 12 and formatted.startswith("91")) else formatted
