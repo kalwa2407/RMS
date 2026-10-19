@@ -127,21 +127,27 @@ const CustomerLogin = () => {
   const handleGoogleSignIn = async () => {
     setSigningInGoogle(true);
     setError(null);
-    const res = await signInWithGoogle();
-    if (res.redirecting) {
-      // Page will navigate away during redirect, or timeout if blocked by webview
-      setTimeout(() => {
-        setSigningInGoogle(false);
-      }, 4000);
-      return;
-    }
-    if (res.success) {
-      navigate(from, { replace: true });
-    } else {
-      // null error = user closed popup intentionally — no error message needed
-      if (res.error) {
-        setError(res.error);
+    try {
+      const res = await signInWithGoogle();
+      if (res.redirecting) {
+        // Page will navigate away during redirect, or timeout if blocked by webview
+        setTimeout(() => {
+          setSigningInGoogle(false);
+        }, 4000);
+        return;
       }
+      if (res.success) {
+        sessionStorage.setItem('customer_guest_browse', 'true');
+        navigate(from, { replace: true });
+      } else {
+        // null error = user closed popup intentionally — no error message needed
+        if (res.error) {
+          setError(res.error);
+        }
+        setSigningInGoogle(false);
+      }
+    } catch (err) {
+      setError(err?.message || 'Google sign-in could not be completed.');
       setSigningInGoogle(false);
     }
   };
@@ -177,14 +183,8 @@ const CustomerLogin = () => {
             <ChevronLeft className="w-5 h-5" />
           </button>
 
-          <Link
-            to="/customer/dashboard"
-            onClick={() => sessionStorage.setItem('customer_guest_browse', 'true')}
-          >
-            <span className="text-xs font-bold text-neutral-600 bg-neutral-100 hover:bg-neutral-200 px-3.5 py-1.5 rounded-full transition-colors">
-              Skip
-            </span>
-          </Link>
+          {/* Layout spacer (Skip removed) */}
+          <div className="w-8" />
         </header>
 
         {/* ── Hero Branding Header (Compact & Balanced for Keyboard) ── */}
@@ -340,15 +340,17 @@ const CustomerLogin = () => {
               </button>
 
               {/* Guest Explore Pill */}
-              <Link to="/customer/dashboard" className="block text-center">
-                <button
-                  type="button"
-                  className="w-full flex items-center justify-center space-x-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 font-bold py-3 px-4 rounded-2xl text-xs transition-colors cursor-pointer"
-                >
-                  <UtensilsCrossed className="w-4 h-4 text-amber-700" />
-                  <span>Explore Menu as Guest ›</span>
-                </button>
-              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  sessionStorage.setItem('customer_guest_browse', 'true');
+                  navigate('/customer/dashboard');
+                }}
+                className="w-full flex items-center justify-center space-x-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 font-bold py-3 px-4 rounded-2xl text-xs transition-colors cursor-pointer"
+              >
+                <UtensilsCrossed className="w-4 h-4 text-amber-700" />
+                <span>Explore Menu as Guest ›</span>
+              </button>
 
               {/* Legal Disclaimer */}
               <p className="text-[11px] text-neutral-400 text-center leading-relaxed pt-2">

@@ -51,6 +51,7 @@ const CustomerDishDetailModal = ({
   onAddToCart
 }) => {
   const [quantity, setQuantity] = useState(1);
+  // Each addon entry: { ...addon, qty: number }
   const [selectedAddons, setSelectedAddons] = useState([]);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -77,15 +78,29 @@ const CustomerDishDetailModal = ({
     ? dish.image
     : fallbackImg;
 
-  const toggleAddon = (addon) => {
-    if (selectedAddons.some((a) => a.id === addon.id)) {
-      setSelectedAddons(selectedAddons.filter((a) => a.id !== addon.id));
-    } else {
-      setSelectedAddons([...selectedAddons, addon]);
-    }
+  // Add an addon with qty 1 (or increment if already present)
+  const addAddon = (addon) => {
+    setSelectedAddons(prev => {
+      const existing = prev.find(a => a.id === addon.id);
+      if (existing) {
+        return prev.map(a => a.id === addon.id ? { ...a, qty: a.qty + 1 } : a);
+      }
+      return [...prev, { ...addon, qty: 1 }];
+    });
   };
 
-  const addonsTotal = selectedAddons.reduce((sum, a) => sum + a.price, 0);
+  // Update addon quantity; remove if qty goes to 0
+  const updateAddonQty = (addonId, delta) => {
+    setSelectedAddons(prev => {
+      return prev.map(a => {
+        if (a.id !== addonId) return a;
+        const newQty = a.qty + delta;
+        return newQty <= 0 ? null : { ...a, qty: newQty };
+      }).filter(Boolean);
+    });
+  };
+
+  const addonsTotal = selectedAddons.reduce((sum, a) => sum + (a.price * a.qty), 0);
   const unitPrice = (dish.price || 0) + addonsTotal;
   const totalPrice = unitPrice * quantity;
 
@@ -93,7 +108,7 @@ const CustomerDishDetailModal = ({
     onAddToCart({
       ...dish,
       price: unitPrice,
-      addons: selectedAddons,
+      addons: selectedAddons.map(a => ({ ...a, quantity: a.qty })),
       quantity
     });
     onClose();
@@ -243,13 +258,12 @@ const CustomerDishDetailModal = ({
 
             <div className="space-y-3 pt-1">
               {ACCOMPANIMENTS.map((addon) => {
-                const isSelected = selectedAddons.some((a) => a.id === addon.id);
+                const selected = selectedAddons.find((a) => a.id === addon.id);
                 return (
                   <div
                     key={addon.id}
-                    onClick={() => toggleAddon(addon)}
-                    className={`flex items-center justify-between p-2.5 rounded-2xl border transition-all cursor-pointer ${
-                      isSelected
+                    className={`flex items-center justify-between p-2.5 rounded-2xl border transition-all ${
+                      selected
                         ? 'border-[#E40000] bg-red-50/40 shadow-xs'
                         : 'border-neutral-200/80 bg-white hover:border-neutral-300'
                     }`}
@@ -285,21 +299,45 @@ const CustomerDishDetailModal = ({
                       </div>
                     </div>
 
-                    {/* ADD Button (Screenshot 4 style) */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleAddon(addon);
-                      }}
-                      className={`ml-2 px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 shrink-0 border ${
-                        isSelected
-                          ? 'bg-[#E40000] text-white border-[#E40000] shadow-xs'
-                          : 'bg-white text-[#E40000] border-red-200 hover:border-[#E40000]'
-                      }`}
-                    >
-                      {isSelected ? 'ADDED ✓' : 'ADD +'}
-                    </button>
+                    {/* ADD Button / Quantity Stepper (Zomato style) */}
+                    {selected ? (
+                      <div className="ml-2 flex items-center space-x-2 bg-[#E40000] rounded-xl px-2.5 py-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateAddonQty(addon.id, -1);
+                          }}
+                          className="text-white p-0.5 active:scale-75 transition-transform"
+                        >
+                          <Minus className="w-3.5 h-3.5 stroke-[3]" />
+                        </button>
+                        <span className="text-white text-xs font-black w-4 text-center">
+                          {selected.qty}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateAddonQty(addon.id, 1);
+                          }}
+                          className="text-white p-0.5 active:scale-75 transition-transform"
+                        >
+                          <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          addAddon(addon);
+                        }}
+                        className="ml-2 px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 shrink-0 border bg-white text-[#E40000] border-red-200 hover:border-[#E40000]"
+                      >
+                        ADD +
+                      </button>
+                    )}
                   </div>
                 );
               })}

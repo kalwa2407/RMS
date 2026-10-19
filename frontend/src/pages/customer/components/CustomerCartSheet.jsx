@@ -42,7 +42,8 @@ const CustomerCartSheet = ({
   cartDeliveryFee = 0,
   cartTaxes = 0,
   cartTotal = 0,
-  freeDeliveryThreshold = 500
+  freeDeliveryThreshold = 500,
+  onOrderMore
 }) => {
   const [couponInput, setCouponInput] = useState('');
   const [showCouponsList, setShowCouponsList] = useState(false);
@@ -249,6 +250,18 @@ const CustomerCartSheet = ({
               );
             })}
           </div>
+
+          {/* Order More Button */}
+          {onOrderMore && (
+            <button
+              type="button"
+              onClick={onOrderMore}
+              className="w-full flex items-center justify-center space-x-2 py-2.5 rounded-xl border-2 border-dashed border-[#E40000]/40 text-[#E40000] bg-red-50/40 hover:bg-red-50 text-xs font-black transition-all active:scale-98"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Order More Items</span>
+            </button>
+          )}
 
           {/* ── Coupons & Promos ── */}
           <div className="bg-neutral-50 p-3 rounded-2xl border border-neutral-200/70 space-y-2.5">

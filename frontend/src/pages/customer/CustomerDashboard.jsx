@@ -70,10 +70,11 @@ const CustomerDashboard = () => {
   const [trackingOrderId, setTrackingOrderId] = useState(null);
 
   // ── First-time / Unauthenticated Guard ──
-  // If user is not logged in, direct to login page immediately
+  // If user is not logged in and not a guest, direct to login page
   useEffect(() => {
     const token = localStorage.getItem('customer_jwt');
-    if (!token && !currentUser) {
+    const isGuest = sessionStorage.getItem('customer_guest_browse') === 'true';
+    if (!token && !currentUser && !isGuest) {
       navigate('/customer/login', { replace: true });
     }
   }, [currentUser, navigate]);
@@ -782,7 +783,8 @@ const CustomerDashboard = () => {
   };
 
   // If unauthenticated, render minimal clean container while navigating to /customer/login
-  if (!localStorage.getItem('customer_jwt') && !currentUser) {
+  const isGuestBrowse = sessionStorage.getItem('customer_guest_browse') === 'true';
+  if (!localStorage.getItem('customer_jwt') && !currentUser && !isGuestBrowse) {
     return (
       <div className="fixed inset-0 bg-[#F8F9FA] flex items-center justify-center">
         <div className="w-8 h-8 border-3 border-[#E40000] border-t-transparent rounded-full animate-spin" />
@@ -999,11 +1001,15 @@ const CustomerDashboard = () => {
           currentUser={currentUser}
           cart={cart}
           onAddToCart={addToCart}
-          onUpdateQty={updateCartQty}
+          onUpdateCartQty={updateCartQty}
           orderType={orderType}
           onSetOrderType={setOrderType}
           deliveryAddress={deliveryAddress}
-          onUpdateAddress={setDeliveryAddress}
+          onSetDeliveryAddress={setDeliveryAddress}
+          onDetectLocation={handleDetectGPS}
+          detectingLocation={detectingLoc}
+          distanceKm={distanceKm}
+          selectedBranch={selectedBranch}
           cookingTags={cookingTags}
           onToggleCookingTag={(tag) =>
             setCookingTags((prev) =>
@@ -1011,7 +1017,7 @@ const CustomerDashboard = () => {
             )
           }
           cookingNote={cookingNote}
-          onChangeCookingNote={setCookingNote}
+          onSetCookingNote={setCookingNote}
           deliveryTags={deliveryTags}
           onToggleDeliveryTag={(tag) =>
             setDeliveryTags((prev) =>
@@ -1020,25 +1026,29 @@ const CustomerDashboard = () => {
           }
           payMethod={payMethod}
           onSetPayMethod={setPayMethod}
+          coupons={coupons}
           appliedCoupon={appliedCoupon}
           couponDiscount={couponDiscount}
           onApplyCoupon={applyCouponCode}
           onRemoveCoupon={removeCoupon}
           validatingCoupon={validatingCoupon}
-          availableCoins={availableCoins}
-          maxCoinsUsable={maxCoinsUsable}
+          pdCoins={availableCoins}
+          maxRedeemableCoins={maxCoinsUsable}
           applyCoins={applyCoins}
           onToggleCoins={() => setApplyCoins((prev) => !prev)}
-          subtotal={cartSubtotal}
-          deliveryFee={cartDeliveryFee}
-          taxes={cartTaxes}
-          totalDiscount={totalDiscount}
-          total={cartTotal}
+          coinsDiscount={coinsDiscount}
+          cartSubtotal={cartSubtotal}
+          cartDeliveryFee={cartDeliveryFee}
+          cartTaxes={cartTaxes}
+          cartTotal={cartTotal}
+          freeDeliveryThreshold={500}
           onPlaceOrder={handlePlaceOrder}
           placingOrder={placingOrder}
-          customerProfile={customerProfile}
-          selectedBranch={selectedBranch}
-          distanceKm={distanceKm}
+          onClearCart={() => setCart([])}
+          onOrderMore={() => {
+            setIsCartOpen(false);
+            setActiveTab('order');
+          }}
         />
 
         {/* ── Profile & Orders Sheet ── */}
