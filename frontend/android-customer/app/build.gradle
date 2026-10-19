@@ -7,8 +7,8 @@ android {
         applicationId "in.persiandarbar.customer"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 6
-        versionName "1.4"
+        versionCode 7
+        versionName "1.5"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -19,9 +19,9 @@ android {
     signingConfigs {
         release {
             storeFile file('persian-darbar-release.keystore')
-            storePassword System.getenv("KEYSTORE_PASSWORD") ?: ""
+            storePassword System.getenv("KEYSTORE_PASSWORD") ?: "PD@Release2026!"
             keyAlias System.getenv("KEY_ALIAS") ?: "persian-darbar"
-            keyPassword System.getenv("KEY_PASSWORD") ?: ""
+            keyPassword System.getenv("KEY_PASSWORD") ?: "PD@Release2026!"
         }
     }
     buildTypes {
