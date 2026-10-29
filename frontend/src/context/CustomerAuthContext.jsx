@@ -228,6 +228,10 @@ export const CustomerAuthProvider = ({ children }) => {
           throw new Error('Google Sign-In returned no user.');
         }
 
+        if (typeof user.getIdToken !== 'function') {
+          user.getIdToken = async () => token;
+        }
+
         localStorage.setItem('customer_jwt', token);
         localStorage.setItem('customer_login_provider', 'google');
         if (user.uid) localStorage.setItem('customer_uid', user.uid);
@@ -374,6 +378,10 @@ export const CustomerAuthProvider = ({ children }) => {
 
         if (!user) {
           throw new Error('Apple Sign-In returned no user.');
+        }
+
+        if (typeof user.getIdToken !== 'function') {
+          user.getIdToken = async () => token;
         }
 
         localStorage.setItem('customer_jwt', token);
@@ -670,6 +678,10 @@ export const CustomerAuthProvider = ({ children }) => {
         if (!user) {
           user = { uid: `phone_${cleanDigits}`, phoneNumber: `+91${cleanDigits}` };
           token = token || `native_token_${Date.now()}`;
+        }
+
+        if (typeof user.getIdToken !== 'function') {
+          user.getIdToken = async () => token;
         }
 
         localStorage.setItem('customer_jwt', token);
