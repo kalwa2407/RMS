@@ -12,3 +12,15 @@
 # AndroidX / AppCompat
 -keep class androidx.** { *; }
 -dontwarn androidx.**
+
+# Firebase Authentication plugin -- suppress missing Facebook SDK classes (not used)
+-dontwarn com.facebook.**
+-keep class io.capawesome.capacitorjs.plugins.firebase.authentication.** { *; }
+
+# Firebase SDK
+-keep class com.google.firebase.** { *; }
+-dontwarn com.google.firebase.**
+
+# Google Sign-In
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.android.gms.**

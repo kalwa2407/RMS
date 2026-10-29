@@ -51,4 +51,29 @@ if (fs.existsSync(destHtml)) {
   }
 }
 
-console.log('✅ Successfully synced customer web assets to android-customer.');
+// Sync Capacitor Android plugins and configs
+console.log('Syncing Capacitor Android plugins...');
+try {
+  execSync('npx cap sync android', { stdio: 'inherit', cwd: rootDir });
+  const srcSettingsGradle = path.join(rootDir, 'android', 'capacitor.settings.gradle');
+  const destSettingsGradle = path.join(rootDir, 'android-customer', 'capacitor.settings.gradle');
+  if (fs.existsSync(srcSettingsGradle)) {
+    fs.copyFileSync(srcSettingsGradle, destSettingsGradle);
+  }
+
+  const srcBuildGradle = path.join(rootDir, 'android', 'app', 'capacitor.build.gradle');
+  const destBuildGradle = path.join(rootDir, 'android-customer', 'app', 'capacitor.build.gradle');
+  if (fs.existsSync(srcBuildGradle)) {
+    fs.copyFileSync(srcBuildGradle, destBuildGradle);
+  }
+
+  const srcPluginsJson = path.join(rootDir, 'android', 'app', 'src', 'main', 'assets', 'capacitor.plugins.json');
+  const destPluginsJson = path.join(rootDir, 'android-customer', 'app', 'src', 'main', 'assets', 'capacitor.plugins.json');
+  if (fs.existsSync(srcPluginsJson)) {
+    fs.copyFileSync(srcPluginsJson, destPluginsJson);
+  }
+} catch (syncErr) {
+  console.warn('Capacitor android sync notice:', syncErr.message);
+}
+
+console.log('✅ Successfully synced customer web assets and native plugins to android-customer.');

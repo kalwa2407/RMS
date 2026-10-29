@@ -151,7 +151,7 @@ const CustomerDashboard = () => {
 
         // ── 1. Google Maps Geocoding (Direct Doorstep Street Address) ──
         let detectedAddress = '';
-        const GOOGLE_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || 'AIzaSyCX4YYM60Z0IXcdC3zNB7YamsoafDfmbxo';
+        const GOOGLE_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || '';
 
         if (window.google?.maps?.Geocoder) {
           try {
@@ -176,7 +176,7 @@ const CustomerDashboard = () => {
                 detectedAddress = gData.results[0].formatted_address;
               }
             }
-          } catch (e) {}
+          } catch (e) { }
         }
 
         // ── 2. Fallback to BigDataCloud ──
@@ -194,7 +194,7 @@ const CustomerDashboard = () => {
                 detectedAddress = [locality, city, bdcData.countryName].filter(Boolean).join(', ') + postcode;
               }
             }
-          } catch (e) {}
+          } catch (e) { }
         }
 
         if (!detectedAddress) {
@@ -1155,7 +1155,7 @@ const CustomerDashboard = () => {
               setUserCoords(newCoords);
               try {
                 localStorage.setItem('customer_user_coords', JSON.stringify(newCoords));
-              } catch (e) {}
+              } catch (e) { }
             }
             updateDistanceForBranch(selectedBranch, activeCoords, addr);
           }}

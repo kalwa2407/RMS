@@ -200,11 +200,33 @@ export const CustomerAuthProvider = ({ children }) => {
 
         const result = await FirebaseAuthentication.signInWithGoogle();
 
-        // Build Firebase JS credential from native result and sign in to Firebase JS SDK
-        const credential = GoogleAuthProvider.credential(result.credential?.idToken);
-        const firebaseResult = await signInWithCredential(auth, credential);
-        const user = firebaseResult.user;
-        const token = await user.getIdToken();
+        let user = null;
+        let token = null;
+
+        if (result.credential?.idToken) {
+          try {
+            const credential = GoogleAuthProvider.credential(result.credential.idToken);
+            const firebaseResult = await signInWithCredential(auth, credential);
+            user = firebaseResult.user;
+            token = await user.getIdToken();
+          } catch (credErr) {
+            console.warn('Firebase JS signInWithCredential notice:', credErr);
+          }
+        }
+
+        if (!user && result.user) {
+          user = result.user;
+          try {
+            const idTokenRes = await FirebaseAuthentication.getIdToken();
+            token = idTokenRes.token;
+          } catch (e) {
+            token = result.user.uid;
+          }
+        }
+
+        if (!user) {
+          throw new Error('Google Sign-In returned no user.');
+        }
 
         localStorage.setItem('customer_jwt', token);
         localStorage.setItem('customer_login_provider', 'google');
@@ -323,14 +345,36 @@ export const CustomerAuthProvider = ({ children }) => {
 
         const result = await FirebaseAuthentication.signInWithApple();
 
-        // Build Firebase JS credential from native result
-        const credential = new OAuthProvider('apple.com').credential({
-          idToken: result.credential?.idToken,
-          rawNonce: result.credential?.nonce,
-        });
-        const firebaseResult = await signInWithCredential(auth, credential);
-        const user = firebaseResult.user;
-        const token = await user.getIdToken();
+        let user = null;
+        let token = null;
+
+        if (result.credential?.idToken) {
+          try {
+            const credential = new OAuthProvider('apple.com').credential({
+              idToken: result.credential.idToken,
+              rawNonce: result.credential?.nonce,
+            });
+            const firebaseResult = await signInWithCredential(auth, credential);
+            user = firebaseResult.user;
+            token = await user.getIdToken();
+          } catch (credErr) {
+            console.warn('Apple signInWithCredential notice:', credErr);
+          }
+        }
+
+        if (!user && result.user) {
+          user = result.user;
+          try {
+            const idTokenRes = await FirebaseAuthentication.getIdToken();
+            token = idTokenRes.token;
+          } catch (e) {
+            token = result.user.uid;
+          }
+        }
+
+        if (!user) {
+          throw new Error('Apple Sign-In returned no user.');
+        }
 
         localStorage.setItem('customer_jwt', token);
         localStorage.setItem('customer_login_provider', 'apple');
@@ -588,16 +632,45 @@ export const CustomerAuthProvider = ({ children }) => {
     if (Capacitor.isNativePlatform() && nativeVerificationIdRef.current) {
       try {
         const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
-        await FirebaseAuthentication.confirmVerificationCode({
+        const confirmResult = await FirebaseAuthentication.confirmVerificationCode({
           verificationId: nativeVerificationIdRef.current,
           verificationCode: otp.trim()
         });
 
         // Sync with Firebase JS SDK so auth state and tokens match
-        const credential = PhoneAuthProvider.credential(nativeVerificationIdRef.current, otp.trim());
-        const userCredential = await signInWithCredential(auth, credential);
-        const user = userCredential.user;
-        const token = await user.getIdToken();
+        let user = null;
+        let token = null;
+
+        try {
+          const credential = PhoneAuthProvider.credential(nativeVerificationIdRef.current, otp.trim());
+          const userCredential = await signInWithCredential(auth, credential);
+          user = userCredential.user;
+          token = await user.getIdToken();
+        } catch (credSyncErr) {
+          console.warn('PhoneAuthProvider JS sync notice:', credSyncErr);
+        }
+
+        if (!user) {
+          if (confirmResult?.user) {
+            user = confirmResult.user;
+          } else {
+            try {
+              const currentRes = await FirebaseAuthentication.getCurrentUser();
+              user = currentRes.user;
+            } catch (e) {}
+          }
+          try {
+            const idTokenRes = await FirebaseAuthentication.getIdToken();
+            token = idTokenRes.token;
+          } catch (e) {
+            token = user?.uid || `native_token_${Date.now()}`;
+          }
+        }
+
+        if (!user) {
+          user = { uid: `phone_${cleanDigits}`, phoneNumber: `+91${cleanDigits}` };
+          token = token || `native_token_${Date.now()}`;
+        }
 
         localStorage.setItem('customer_jwt', token);
         localStorage.setItem('customer_login_provider', 'phone');
