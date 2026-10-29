@@ -234,14 +234,15 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
     };
   }, [propOrderId, fetchOrder]);
 
-  // Live polling every 10 seconds for active orders
+  // Live polling every 6-10 seconds for active orders (faster when rider is moving)
   useEffect(() => {
     if (!order) return;
     if (['delivered', 'cancelled', 'rejected'].includes(order.status)) {
       clearInterval(pollingRef.current);
       return;
     }
-    pollingRef.current = setInterval(() => fetchOrder(order.order_id, true), 10000);
+    const intervalMs = (order.delivery_partner_name || order.status === 'out_for_delivery') ? 6000 : 10000;
+    pollingRef.current = setInterval(() => fetchOrder(order.order_id, true), intervalMs);
     return () => clearInterval(pollingRef.current);
   }, [order, fetchOrder]);
 

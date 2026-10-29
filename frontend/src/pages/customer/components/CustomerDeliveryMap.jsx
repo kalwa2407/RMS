@@ -1,13 +1,14 @@
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Maximize2, Minimize2 } from 'lucide-react';
+import { Maximize2, Minimize2, Bike } from 'lucide-react';
 
 /**
  * CustomerDeliveryMap
- * Production-ready real interactive Leaflet map for order tracking.
- * Uses high-res CartoDB Voyager tiles (100% free, no API key required).
- * Renders real GPS coordinates for Persian Darbar and customer doorstep with live rider marker.
+ * Production-ready interactive Leaflet map for live order & rider tracking.
+ * - Uses Esri World Street Map tiles (100% Free, NO API key required, NO watermark).
+ * - Live GPS coordinates from rider's phone or smart route fallback upon assignment.
+ * - Robust lifecycle management preventing Leaflet _leaflet_pos race conditions.
  */
 
 // Official Persian Darbar Camp Pune Coordinates
@@ -22,13 +23,16 @@ export const CustomerDeliveryMap = ({
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const riderMarkerRef = useRef(null);
+  const polylineRef = useRef(null);
+  const restaurantMarkerRef = useRef(null);
+  const customerMarkerRef = useRef(null);
+  const resizeTimerRef = useRef(null);
 
   // Branch coordinates or default to Camp, Pune
   const branchCoords = order?.branch_coords || PERSIAN_DARBAR_COORDS;
 
   // Calculate realistic customer coords based on distance_km
   const distKm = parseFloat(order?.distance_km || eta?.distKm || 3.5);
-  // Offset ~0.009 degrees per km south-east
   const customerCoords = order?.customer_coords || [
     branchCoords[0] - (distKm * 0.0065),
     branchCoords[1] + (distKm * 0.0055),
@@ -38,15 +42,24 @@ export const CustomerDeliveryMap = ({
   const isOutForDelivery = status === 'out_for_delivery';
   const isReady = status === 'ready';
 
-  // Rider progress along the route (0 = restaurant, 1 = customer)
-  let progress = 0.05;
-  if (isReady) progress = 0.15;
-  else if (isOutForDelivery) {
-    // If order has ETA, calculate progress
-    progress = 0.65;
-  }
+  // Rider assignment detection (Admin assigned personal rider OR Porter 3rd-party)
+  const riderName = order?.delivery_partner_name || order?.porter_rider_name || order?.assigned_rider_name;
+  const hasAssignedRider = Boolean(
+    order?.delivery_partner_name ||
+    order?.delivery_partner_id ||
+    order?.delivery_partner ||
+    order?.porter_order_id ||
+    order?.assigned_rider ||
+    isReady ||
+    isOutForDelivery
+  );
 
-  // Live GPS from rider's phone (100% Free Hardware GPS) or route progress fallback
+  // Rider progress along the route (0 = restaurant, 1 = customer)
+  let progress = 0.08;
+  if (isReady) progress = 0.22;
+  else if (isOutForDelivery) progress = 0.65;
+
+  // Live GPS from rider's phone (native HTML5/Capacitor GPS broadcast)
   const liveLat = order?.rider_lat != null ? parseFloat(order.rider_lat) : null;
   const liveLng = order?.rider_lng != null ? parseFloat(order.rider_lng) : null;
   const hasLiveGps = liveLat !== null && liveLng !== null && !isNaN(liveLat) && !isNaN(liveLng);
@@ -57,37 +70,46 @@ export const CustomerDeliveryMap = ({
   const riderLat = hasLiveGps ? liveLat : fallbackLat;
   const riderLng = hasLiveGps ? liveLng : fallbackLng;
 
+  // Initialize Leaflet Map once
   useEffect(() => {
-    if (!mapContainerRef.current) return;
+    const container = mapContainerRef.current;
+    if (!container) return;
 
-    // Clean up existing map instance if any
+    // Destroy prior map instance cleanly if exists
     if (mapInstanceRef.current) {
-      mapInstanceRef.current.remove();
+      try {
+        mapInstanceRef.current.stop();
+        mapInstanceRef.current.off();
+        mapInstanceRef.current.remove();
+      } catch (err) {
+        // safe ignore
+      }
       mapInstanceRef.current = null;
     }
 
     try {
-      // Initialize map
-      const map = L.map(mapContainerRef.current, {
+      const map = L.map(container, {
         center: branchCoords,
         zoom: 14,
         zoomControl: false,
         attributionControl: false,
+        fadeAnimation: false,
+        zoomAnimation: false, // Prevents DomUtil _leaflet_pos transition race condition
       });
 
-      // CartoDB Voyager high-res modern tiles (clean, beautiful, like Zomato - 100% Free)
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      // 100% Free World Street Map Tiles (Zero API key required, zero watermarks)
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
         maxZoom: 19,
-        subdomains: 'abcd',
+        attribution: 'Tiles &copy; Esri',
       }).addTo(map);
 
-      // Custom Restaurant Icon
+      // Custom Restaurant Pin
       const restaurantIcon = L.divIcon({
         className: 'custom-map-pin',
         html: `
           <div style="position:relative; display:flex; flex-direction:column; align-items:center;">
             <div style="background:#E40000; color:white; width:36px; height:36px; border-radius:12px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(228,0,0,0.45); border:2.5px solid white;">
-              <svg width="18" height="18" viewBox="24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"/>
                 <line x1="6" y1="17" x2="18" y2="17"/>
               </svg>
@@ -101,9 +123,9 @@ export const CustomerDeliveryMap = ({
         iconAnchor: [18, 52],
       });
 
-      L.marker(branchCoords, { icon: restaurantIcon }).addTo(map);
+      restaurantMarkerRef.current = L.marker(branchCoords, { icon: restaurantIcon }).addTo(map);
 
-      // Custom Customer Home Icon
+      // Custom Customer Home Pin
       const customerIcon = L.divIcon({
         className: 'custom-map-pin',
         html: `
@@ -123,9 +145,9 @@ export const CustomerDeliveryMap = ({
         iconAnchor: [17, 50],
       });
 
-      L.marker(customerCoords, { icon: customerIcon }).addTo(map);
+      customerMarkerRef.current = L.marker(customerCoords, { icon: customerIcon }).addTo(map);
 
-      // Polyline route connecting restaurant to customer
+      // Route Path connecting restaurant to customer
       const routePoints = [
         branchCoords,
         [branchCoords[0] - (customerCoords[0] - branchCoords[0]) * 0.35, branchCoords[1] + (customerCoords[1] - branchCoords[1]) * 0.15],
@@ -133,76 +155,92 @@ export const CustomerDeliveryMap = ({
         customerCoords,
       ];
 
-      // Background route line
-      L.polyline(routePoints, {
-        color: '#1F2937',
-        weight: 4,
-        opacity: 0.8,
-        dashArray: '6, 8',
+      polylineRef.current = L.polyline(routePoints, {
+        color: '#E40000',
+        weight: 3.5,
+        opacity: 0.85,
+        dashArray: '7, 9',
         lineCap: 'round',
       }).addTo(map);
 
-      // Rider Live Marker (shown when preparing, ready, or out for delivery)
-      if (isOutForDelivery || isReady) {
-        const riderIcon = L.divIcon({
-          className: 'custom-rider-pin',
-          html: `
-            <div style="position:relative; width:40px; height:40px; display:flex; align-items:center; justify-content:center;">
-              <span style="position:absolute; width:100%; height:100%; border-radius:50%; background:rgba(228,0,0,0.35); animation:ping 1.5s cubic-bezier(0,0,0.2,1) infinite;"></span>
-              <div style="background:white; color:#E40000; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,0.3); border:2.5px solid #E40000;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="18.5" cy="17.5" r="3.5"/>
-                  <circle cx="5.5" cy="17.5" r="3.5"/>
-                  <circle cx="15" cy="5" r="1"/>
-                  <path d="M12 17.5V14l-3-3 4-3 2 3h2"/>
-                </svg>
-              </div>
-            </div>
-          `,
-          iconSize: [40, 40],
-          iconAnchor: [20, 20],
-        });
-
-        riderMarkerRef.current = L.marker([riderLat, riderLng], { icon: riderIcon }).addTo(map);
-      }
-
-      // Fit map to show both restaurant and customer comfortably
+      // Fit map without animation to avoid transition error
       const bounds = L.latLngBounds([branchCoords, customerCoords]);
-      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15, animate: false });
 
       mapInstanceRef.current = map;
-
-      // Invalidate size after layout settles
-      setTimeout(() => {
-        if (mapInstanceRef.current) {
-          mapInstanceRef.current.invalidateSize();
-        }
-      }, 250);
     } catch (e) {
       console.error('Error initializing Leaflet map:', e);
     }
 
     return () => {
+      if (resizeTimerRef.current) clearTimeout(resizeTimerRef.current);
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
+        try {
+          mapInstanceRef.current.stop();
+          mapInstanceRef.current.off();
+          mapInstanceRef.current.remove();
+        } catch (err) {
+          // safe ignore
+        }
         mapInstanceRef.current = null;
       }
     };
   }, [branchCoords[0], branchCoords[1], customerCoords[0], customerCoords[1]]);
 
-  // Smooth live marker repositioning without destroying map instance
+  // Manage Rider Marker independently (shows upon Rider Assignment OR Out for Delivery)
   useEffect(() => {
-    if (riderMarkerRef.current && (isOutForDelivery || isReady)) {
-      riderMarkerRef.current.setLatLng([riderLat, riderLng]);
-    }
-  }, [riderLat, riderLng, isOutForDelivery, isReady]);
+    const map = mapInstanceRef.current;
+    if (!map) return;
 
-  // Handle expand/collapse resize
+    if (hasAssignedRider) {
+      const displayName = riderName || 'Delivery Fleet';
+      const riderHtml = `
+        <div style="position:relative; width:44px; height:44px; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+          <span style="position:absolute; width:100%; height:100%; border-radius:50%; background:${hasLiveGps ? 'rgba(16,185,129,0.35)' : 'rgba(228,0,0,0.35)'}; animation:ping 1.6s cubic-bezier(0,0,0.2,1) infinite;"></span>
+          <div style="background:white; color:${hasLiveGps ? '#059669' : '#E40000'}; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(0,0,0,0.28); border:2.5px solid ${hasLiveGps ? '#10B981' : '#E40000'};">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="18.5" cy="17.5" r="3.5"/>
+              <circle cx="5.5" cy="17.5" r="3.5"/>
+              <circle cx="15" cy="5" r="1"/>
+              <path d="M12 17.5V14l-3-3 4-3 2 3h2"/>
+            </svg>
+          </div>
+          <div style="background:#111827; color:white; font-size:8.5px; font-weight:800; padding:1.5px 6px; border-radius:6px; margin-top:2px; white-space:nowrap; box-shadow:0 2px 6px rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.15);">
+            ${displayName}
+          </div>
+        </div>
+      `;
+
+      const riderIcon = L.divIcon({
+        className: 'custom-rider-pin',
+        html: riderHtml,
+        iconSize: [44, 56],
+        iconAnchor: [22, 28],
+      });
+
+      if (!riderMarkerRef.current) {
+        riderMarkerRef.current = L.marker([riderLat, riderLng], { icon: riderIcon }).addTo(map);
+      } else {
+        riderMarkerRef.current.setIcon(riderIcon);
+        riderMarkerRef.current.setLatLng([riderLat, riderLng]);
+      }
+    } else if (riderMarkerRef.current) {
+      map.removeLayer(riderMarkerRef.current);
+      riderMarkerRef.current = null;
+    }
+  }, [hasAssignedRider, riderLat, riderLng, riderName, hasLiveGps]);
+
+  // Handle expand/collapse resize without destroying map
   useEffect(() => {
     if (mapInstanceRef.current) {
-      setTimeout(() => {
-        mapInstanceRef.current.invalidateSize();
-      }, 300);
+      if (resizeTimerRef.current) clearTimeout(resizeTimerRef.current);
+      resizeTimerRef.current = setTimeout(() => {
+        if (mapInstanceRef.current && mapContainerRef.current) {
+          try {
+            mapInstanceRef.current.invalidateSize({ animate: false });
+          } catch (e) {}
+        }
+      }, 250);
     }
   }, [isExpanded]);
 
@@ -219,7 +257,12 @@ export const CustomerDeliveryMap = ({
       {hasLiveGps ? (
         <div className="absolute top-3 left-3 z-10 bg-emerald-600/95 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-sm text-white flex items-center gap-1.5 text-[10px] font-black tracking-wide border border-emerald-500/40">
           <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-          <span>Live Rider GPS</span>
+          <span>Live Rider GPS ({riderName || 'Rider'})</span>
+        </div>
+      ) : hasAssignedRider ? (
+        <div className="absolute top-3 left-3 z-10 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-sm border border-neutral-200 flex items-center gap-1.5 text-[10px] font-black text-neutral-800">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+          <span>Rider Assigned: {riderName || 'Fleet Partner'}</span>
         </div>
       ) : isOutForDelivery ? (
         <div className="absolute top-3 left-3 z-10 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-sm border border-neutral-200 flex items-center gap-1.5 text-[10px] font-black text-neutral-700">
