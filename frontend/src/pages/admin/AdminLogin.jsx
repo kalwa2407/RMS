@@ -77,37 +77,45 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0f2933] flex items-center justify-center px-4 relative overflow-hidden">
-      {/* Background Ornaments */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#1a4855] blur-[120px] rounded-full pointer-events-none" />
+    <div className="min-h-screen bg-[#0B0F15] flex items-center justify-center px-4 relative overflow-hidden font-sans">
+      {/* Background Ambient Glows */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-red-600/10 blur-[140px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-10 right-10 w-[300px] h-[300px] bg-amber-500/10 blur-[100px] rounded-full pointer-events-none" />
 
-      <div className="max-w-md w-full relative z-10">
-        <div className="text-center mb-10">
-          <div className="flex justify-center mb-6">
+      <div className="max-w-md w-full relative z-10 space-y-6">
+        {/* macOS Window Card */}
+        <div className="bg-[#101721]/90 backdrop-blur-2xl border border-white/[0.08] rounded-3xl p-7 sm:p-9 shadow-2xl space-y-6">
+          {/* macOS Window Controls */}
+          <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
+            <div className="flex items-center space-x-2">
+              <span className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E] shadow-inner inline-block" />
+              <span className="w-3 h-3 rounded-full bg-[#FFBD2E] border-[#DEA123] shadow-inner inline-block" />
+              <span className="w-3 h-3 rounded-full bg-[#27C93F] border-[#1AAB29] shadow-inner inline-block" />
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-wider text-neutral-400">
+              macOS Master Portal
+            </span>
+          </div>
+
+          <div className="text-center pt-2">
             <img
               src={logoImg}
               alt="Persian Darbar"
-              className="h-72 w-auto object-contain drop-shadow-xl"
+              className="h-14 w-auto object-contain mx-auto mb-3"
               style={{ mixBlendMode: 'screen' }}
             />
+            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              Admin Master Suite
+            </h1>
+            <p className="text-neutral-400 font-semibold tracking-wider text-[10px] uppercase mt-1">
+              Persian Darbar · Executive Access
+            </p>
           </div>
-          <h1
-            className="text-4xl text-white mb-2"
-            style={{ fontFamily: "'Playfair Display', serif" }}
-          >
-            Admin Panel
-          </h1>
-          <p className="text-gray-400 font-light tracking-widest text-[10px] uppercase">
-            Persian Darbar Management System
-          </p>
-        </div>
 
-        <div className="bg-[#1a4855] border border-[#EAB308]/20 rounded-xl p-10 shadow-2xl">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                Username
+          <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+            <div>
+              <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-wider mb-1.5">
+                Admin Username
               </label>
               <input
                 type="text"
@@ -116,14 +124,14 @@ const AdminLogin = () => {
                 onChange={(e) =>
                   setCredentials({ ...credentials, username: e.target.value })
                 }
-                placeholder="Enter your username"
-                className="w-full bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl px-6 py-4 text-sm font-medium text-white outline-none focus:border-primary/50 transition-all placeholder:text-gray-400"
+                placeholder="Enter admin username"
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-2xl px-4 py-3.5 text-xs font-semibold text-white outline-none focus:border-amber-400/60 focus:ring-2 focus:ring-amber-400/20 transition-all placeholder:text-neutral-500 shadow-inner"
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                Password
+            <div>
+              <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-wider mb-1.5">
+                Master Password
               </label>
               <input
                 type="password"
@@ -132,26 +140,26 @@ const AdminLogin = () => {
                 onChange={(e) =>
                   setCredentials({ ...credentials, password: e.target.value })
                 }
-                placeholder="Enter your password"
-                className="w-full bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl px-6 py-4 text-sm font-medium text-white outline-none focus:border-primary/50 transition-all placeholder:text-gray-400"
+                placeholder="••••••••••••"
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-2xl px-4 py-3.5 text-xs font-semibold text-white outline-none focus:border-amber-400/60 focus:ring-2 focus:ring-amber-400/20 transition-all placeholder:text-neutral-500 shadow-inner"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary text-black py-4 rounded-2xl font-bold uppercase tracking-[0.25em] text-[11px] shadow-2xl shadow-primary/20 hover:bg-white transition-all mt-4"
+              className="w-full bg-gradient-to-r from-[#E40000] via-[#D31027] to-[#B91C1C] text-white py-4 rounded-2xl font-black text-xs uppercase tracking-wider shadow-[0_6px_20px_-2px_rgba(228,0,0,0.4)] ios-press transition-all cursor-pointer border border-white/20 active:scale-95 disabled:opacity-50 mt-2"
             >
-              {loading ? "Authenticating..." : "Secure Login"}
+              {loading ? "Authenticating Master Session..." : "Secure Studio Login ›"}
             </button>
 
             <button
               type="button"
               onClick={() => navigate("/staff-entry")}
-              className="w-full text-center text-xs text-gray-400 hover:text-white transition-colors py-2 flex items-center justify-center gap-1.5 mt-2"
+              className="w-full text-center text-xs font-semibold text-neutral-400 hover:text-white transition-colors py-2 flex items-center justify-center gap-1.5 ios-press cursor-pointer"
             >
               <span>&larr;</span>
-              <span>Back to Staff Portal</span>
+              <span>Back to Staff Portals</span>
             </button>
           </form>
         </div>

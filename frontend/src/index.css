@@ -206,3 +206,25 @@ code {
     @apply bg-[#F2F2F7] text-neutral-900;
   }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   macOS Pro Studio / Apple Aesthetic Overrides for Staff & Admin
+   ════════════════════════════════════════════════════════════════════ */
+.bg-\[\#0f2933\] {
+  background-color: #0B0F15 !important;
+}
+
+.bg-\[\#1a4855\] {
+  background-color: #141B26 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.bg-\[\#2a5865\] {
+  background-color: #1E2838 !important;
+}
+
+.border-\[\#EAB308\]\/20,
+.border-\[\#EAB308\]\/30 {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
