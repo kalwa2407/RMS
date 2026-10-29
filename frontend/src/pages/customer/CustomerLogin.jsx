@@ -329,6 +329,9 @@ const CustomerLogin = () => {
               </button>
             </form>
 
+            {/* Invisible Firebase Phone Auth reCAPTCHA container for Web */}
+            <div id="recaptcha-container"></div>
+
             {/* Alternative Auth Methods */}
             <div className="pt-6 pb-2 space-y-3.5">
               {/* Or Divider */}

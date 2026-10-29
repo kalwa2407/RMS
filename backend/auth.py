@@ -144,11 +144,15 @@ def _verify_token_claims(token: str) -> Optional[dict]:
         from firebase_admin import auth as fb_auth
         if firebase_admin._apps:
             decoded = fb_auth.verify_id_token(token, clock_skew_seconds=10)
+            phone_num = decoded.get("phone_number") or decoded.get("phone") or ""
+            if phone_num.startswith("+91"):
+                phone_num = phone_num[3:]
             return {
                 "uid": decoded.get("uid"),
                 "email": decoded.get("email"),
                 "name": decoded.get("name", "Customer"),
-                "picture": decoded.get("picture")
+                "picture": decoded.get("picture"),
+                "phone": phone_num
             }
     except Exception as e:
         logger.debug(f"Firebase Admin verify_id_token failed: {e}")
@@ -161,11 +165,15 @@ def _verify_token_claims(token: str) -> Optional[dict]:
         req = google_requests.Request()
         decoded = google_id_token.verify_firebase_token(token, req, audience=project_id)
         if decoded:
+            phone_num = decoded.get("phone_number") or decoded.get("phone") or ""
+            if phone_num.startswith("+91"):
+                phone_num = phone_num[3:]
             return {
                 "uid": decoded.get("user_id") or decoded.get("sub"),
                 "email": decoded.get("email"),
                 "name": decoded.get("name", "Customer"),
-                "picture": decoded.get("picture")
+                "picture": decoded.get("picture"),
+                "phone": phone_num
             }
     except Exception as e:
         logger.debug(f"Google ID token direct verification failed: {e}")
