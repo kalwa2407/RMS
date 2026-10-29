@@ -38,7 +38,7 @@ const CustomerProfileSheet = ({
   onShareApp,
   onSignOut,
   onDeleteAccount,
-  pdCoins = 450,
+  pdCoins = 100,
   initialTab = 'membership'
 }) => {
   // 'membership' | 'orders' | 'reservations' | 'details'

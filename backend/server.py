@@ -765,8 +765,8 @@ async def create_order(
             customer = apply_coin_expiry(customer)
             available_coins = customer.get("pd_coins", 0)
 
-            COINS_MIN_BILL    = 300     # Minimum subtotal to allow redemption
-            COINS_MAX_BURN_PC = 0.25    # Max 25% of subtotal can be paid in coins
+            COINS_MIN_BILL    = 100     # Minimum subtotal to allow redemption
+            COINS_MAX_BURN_PC = 0.50    # Allow up to 50% of subtotal in coins
 
             if requested_coins > 0 and order.subtotal >= COINS_MIN_BILL:
                 max_allowed = int(order.subtotal * COINS_MAX_BURN_PC)
@@ -784,7 +784,7 @@ async def create_order(
                 new_total    = max(1.0, round(new_total, 2))  # Never go below â‚¹1
 
                 # Auto-award 10% on NET paid amount
-                coins_earned_back = int(net_subtotal * 0.10)
+                coins_earned_back = max(1, int(net_subtotal * 0.05))
 
                 redemption_txn = {
                     "type": "redeemed",
@@ -804,7 +804,7 @@ async def create_order(
                         "coins": coins_earned_back,
                         "bill_amount": net_subtotal,
                         "balance_after": earn_balance_after,
-                        "note": f"10% cashback on online order #{order_id[-8:]} (net â‚¹{net_subtotal:.0f})",
+                        "note": f"5% cashback on online order #{order_id[-8:]} (net â‚¹{net_subtotal:.0f})",
                         "order_id": order_id,
                         "timestamp": now.isoformat(),
                     }
@@ -825,7 +825,7 @@ async def create_order(
             else:
                 # No coins redeemed, but award 10% cashback on order subtotal for registered customer
                 if order.subtotal >= 100:
-                    coins_earned_back = int(order.subtotal * 0.10)
+                    coins_earned_back = max(1, int(order.subtotal * 0.05))
                     if coins_earned_back > 0:
                         earn_balance_after = new_coin_balance + coins_earned_back
                         earn_txn = {
@@ -833,7 +833,7 @@ async def create_order(
                             "coins": coins_earned_back,
                             "bill_amount": order.subtotal,
                             "balance_after": earn_balance_after,
-                            "note": f"10% cashback on online order #{order_id[-8:]}",
+                            "note": f"5% cashback on online order #{order_id[-8:]}",
                             "order_id": order_id,
                             "timestamp": now.isoformat(),
                         }
@@ -3879,6 +3879,38 @@ async def admin_close_session(session_id: str, payment_method: str = "cash", use
             break
     await manager._write("tables", tables)
     
+    # ── Award 5% PD Coins Cashback on Table Dine-In / Reservation Bill ──
+    try:
+        table_bill_total = float(session.get("final_amount") or session.get("total") or 0.0)
+        if not table_bill_total:
+            table_bill_total = sum(float(o.get("total", 0.0)) for o in orders if o.get("order_id") in session_order_ids)
+        cust_phone = session.get("customer_phone") or session.get("phone")
+        if not cust_phone and session_order_ids:
+            for o in orders:
+                if o.get("order_id") in session_order_ids and o.get("phone"):
+                    cust_phone = o.get("phone")
+                    break
+        if cust_phone and table_bill_total >= 100:
+            clean_digits = "".join(ch for ch in str(cust_phone) if ch.isdigit())[-10:]
+            coins_earned = max(1, int(table_bill_total * 0.05))
+            customers = await manager._read("customers")
+            for c in customers:
+                c_p = "".join(ch for ch in str(c.get("phone", "")) if ch.isdigit())
+                if (c_p and c_p.endswith(clean_digits)) or (c.get("uid") == f"wa_{clean_digits}"):
+                    c["pd_coins"] = (c.get("pd_coins") or 0) + coins_earned
+                    c.setdefault("coins_history", []).append({
+                        "type": "earned",
+                        "coins": coins_earned,
+                        "bill_amount": table_bill_total,
+                        "balance_after": c["pd_coins"],
+                        "note": f"5% cashback on Table {session.get('table_number')} Bill #{session.get('bill_number') or session_id[-6:]}",
+                        "timestamp": now.isoformat()
+                    })
+                    await manager._write("customers", customers)
+                    break
+    except Exception as reward_err:
+        logger.warning(f"Error awarding 5% table coins cashback: {reward_err}")
+    
     return {"message": "Session closed, table is now free", "session_id": session_id}
 
 # =============================================================================
@@ -5046,6 +5078,29 @@ async def customer_send_otp(payload: CustomerSendOtpRequest):
         "resend_cool_down": 30
     }
 
+@customer_router.get("/auth/check-phone")
+async def customer_check_phone(phone: str, manager: BaseDataManager = Depends(get_data_manager)):
+    """Check if customer with this phone number already exists, so we don't prompt for name again."""
+    clean = "".join(ch for ch in str(phone) if ch.isdigit())[-10:]
+    if len(clean) < 10:
+        return {"exists": False, "name": ""}
+    
+    customers = await manager._read("customers")
+    for c in customers:
+        c_phone = "".join(ch for ch in str(c.get("phone", "")) if ch.isdigit())
+        if c_phone and c_phone.endswith(clean):
+            name = (c.get("name") or "").strip()
+            if name and name.lower() not in ["customer", "guest", "valued patron"]:
+                return {"exists": True, "name": name}
+            return {"exists": True, "name": ""}
+        if c.get("uid") == f"wa_{clean}":
+            name = (c.get("name") or "").strip()
+            if name and name.lower() not in ["customer", "guest", "valued patron"]:
+                return {"exists": True, "name": name}
+            return {"exists": True, "name": ""}
+            
+    return {"exists": False, "name": ""}
+
 @customer_router.post("/auth/verify-otp")
 async def customer_verify_otp(
     payload: CustomerVerifyOtpRequest,
@@ -5175,12 +5230,19 @@ async def get_customer_profile(
             "uid": uid,
             "email": user.get("email", ""),
             "name": user.get("name", "Customer"),
-            "phone": "",
+            "phone": user.get("phone", ""),
             "picture": user.get("picture", ""),
             "address": "",
             "addresses": [],
-            "pd_coins": 0,
-            "coins_history": [],
+            "pd_coins": 100,  # 100 welcome joining bonus coins
+            "coins_history": [
+                {
+                    "amount": 100,
+                    "type": "credit",
+                    "reason": "Welcome Joining Bonus",
+                    "timestamp": now
+                }
+            ],
             "created_at": now,
             "updated_at": now
         }
@@ -5222,8 +5284,15 @@ async def update_customer_profile(
             "picture": user.get("picture", ""),
             "address": addr,
             "addresses": update_data.addresses or ([addr] if addr else []),
-            "pd_coins": 0,
-            "coins_history": [],
+            "pd_coins": 100,  # 100 welcome joining bonus coins
+            "coins_history": [
+                {
+                    "amount": 100,
+                    "type": "credit",
+                    "reason": "Welcome Joining Bonus",
+                    "timestamp": now
+                }
+            ],
             "created_at": now,
             "updated_at": now
         }

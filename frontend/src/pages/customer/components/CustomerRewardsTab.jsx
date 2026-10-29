@@ -27,7 +27,7 @@ import { REWARD_TIERS, REWARD_VOUCHERS, ROYAL_MEMBERSHIP_PRIVILEGES } from '../c
 const CustomerRewardsTab = ({
   currentUser,
   customerProfile,
-  pdCoins = 450,
+  pdCoins = 100,
   onGoToOrder,
   onGoToReserve,
   onApplyVoucher
@@ -35,6 +35,11 @@ const CustomerRewardsTab = ({
   // Scratch card / daily reward state
   const [dailyClaimed, setDailyClaimed] = useState(false);
   const [coinsBalance, setCoinsBalance] = useState(pdCoins);
+
+  // Sync with live profile balance
+  React.useEffect(() => {
+    setCoinsBalance(pdCoins);
+  }, [pdCoins]);
   const [activeTab, setActiveTab] = useState('perks'); // 'perks' | 'vouchers' | 'passbook'
   const [redeemedCode, setRedeemedCode] = useState(null);
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useCustomerAuth } from '../../context/CustomerAuthContext';
+import API_BASE from '../../lib/config';
 import {
   ChevronLeft,
   Crown,
@@ -22,6 +23,7 @@ const CustomerLogin = () => {
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [fullName, setFullName] = useState('');
+  const [isExistingUser, setIsExistingUser] = useState(false);
 
   // UI states
   const [submitting, setSubmitting] = useState(false);
@@ -90,6 +92,39 @@ const CustomerLogin = () => {
     setSubmitting(true);
     setError(null);
     setSuccessNotice(null);
+
+    // Pre-check if patron already has an account & registered name
+    try {
+      const checkRes = await fetch(`${API_BASE}/api/customer/auth/check-phone?phone=${phone}`);
+      const checkData = await checkRes.json();
+      if (checkData.exists) {
+        setIsExistingUser(true);
+        if (checkData.name) {
+          setFullName(checkData.name);
+        } else {
+          const localName = localStorage.getItem('customer_name');
+          if (localName) setFullName(localName);
+        }
+      } else {
+        const localPhone = localStorage.getItem('customer_phone') || '';
+        const localName = localStorage.getItem('customer_name') || '';
+        if (localPhone.slice(-10) === phone.slice(-10)) {
+          setIsExistingUser(true);
+          if (localName) setFullName(localName);
+        } else {
+          setIsExistingUser(false);
+        }
+      }
+    } catch (e) {
+      const localPhone = localStorage.getItem('customer_phone') || '';
+      const localName = localStorage.getItem('customer_name') || '';
+      if (localPhone.slice(-10) === phone.slice(-10)) {
+        setIsExistingUser(true);
+        if (localName) setFullName(localName);
+      } else {
+        setIsExistingUser(false);
+      }
+    }
 
     const res = await sendWhatsAppOtp(phone);
     setSubmitting(false);
@@ -329,9 +364,6 @@ const CustomerLogin = () => {
               </button>
             </form>
 
-            {/* Invisible Firebase Phone Auth reCAPTCHA container for Web */}
-            <div id="recaptcha-container"></div>
-
             {/* Alternative Auth Methods */}
             <div className="pt-6 pb-2 space-y-3.5">
               {/* Or Divider */}
@@ -455,24 +487,35 @@ const CustomerLogin = () => {
                 />
               </div>
 
-              {/* Optional Name for personalization */}
-              <div>
-                <label className="block text-[11px] font-black text-neutral-400 uppercase tracking-wider mb-1.5">
-                  Your Name <span className="text-neutral-400 lowercase font-normal">(optional)</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Rahul Sharma"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  autoComplete="name"
-                  autoCorrect="off"
-                  autoCapitalize="words"
-                  spellCheck={false}
-                  enterKeyHint="done"
-                  className="w-full bg-white border border-neutral-300 focus:border-[#E40000] focus:ring-2 focus:ring-red-100 rounded-2xl px-4 py-3 text-sm font-bold text-neutral-900 placeholder:text-neutral-400 outline-none transition-all"
-                />
-              </div>
+              {/* Name field: Hidden for existing patrons, shown only for new accounts */}
+              {isExistingUser ? (
+                <div className="bg-amber-50/80 border border-amber-200/80 rounded-2xl px-3.5 py-2.5 flex items-center space-x-2">
+                  <div className="w-5 h-5 rounded-full bg-amber-400 flex items-center justify-center text-neutral-900 text-[10px] font-black shrink-0">
+                    👑
+                  </div>
+                  <span className="text-xs font-bold text-neutral-900">
+                    Welcome back, <strong className="text-amber-950 font-black">{fullName || 'Valued Patron'}</strong>
+                  </span>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-[11px] font-black text-neutral-400 uppercase tracking-wider mb-1.5">
+                    Your Name <span className="text-neutral-400 lowercase font-normal">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Rahul Sharma"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    autoComplete="name"
+                    autoCorrect="off"
+                    autoCapitalize="words"
+                    spellCheck={false}
+                    enterKeyHint="done"
+                    className="w-full bg-white border border-neutral-300 focus:border-[#E40000] focus:ring-2 focus:ring-red-100 rounded-2xl px-4 py-3 text-sm font-bold text-neutral-900 placeholder:text-neutral-400 outline-none transition-all"
+                  />
+                </div>
+              )}
 
               {/* Resend Link / Timer */}
               <div className="flex items-center justify-between text-xs text-neutral-500 pt-1">

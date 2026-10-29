@@ -47,7 +47,7 @@ const CustomerProfileTab = ({
   onDeleteAccount,
   onGoToOrder,
   onGoToReserve,
-  pdCoins = 450,
+  pdCoins = 100,
   initialSection = 'overview'
 }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);

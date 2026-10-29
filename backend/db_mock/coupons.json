@@ -44,5 +44,51 @@
     "min_order_value": 250,
     "description": "Flat ₹50 OFF on orders above ₹250",
     "active": true
+  },
+  {
+    "id": "cpn_royal100",
+    "code": "ROYAL100",
+    "discount_type": "flat",
+    "discount_value": 100,
+    "min_order_value": 300,
+    "description": "Flat ₹100 OFF Loyalty Reward Voucher",
+    "active": true
+  },
+  {
+    "id": "cpn_freedessert",
+    "code": "FREEDESSERT",
+    "discount_type": "flat",
+    "discount_value": 120,
+    "min_order_value": 499,
+    "description": "Complimentary Shahi Tukda (Flat ₹120 OFF)",
+    "active": true
+  },
+  {
+    "id": "cpn_vipdine20",
+    "code": "VIPDINE20",
+    "discount_type": "percentage",
+    "discount_value": 20,
+    "max_discount": 200,
+    "min_order_value": 400,
+    "description": "VIP Privilege: 20% OFF up to ₹200",
+    "active": true
+  },
+  {
+    "id": "cpn_freebiryani",
+    "code": "FREEBIRYANI",
+    "discount_type": "flat",
+    "discount_value": 250,
+    "min_order_value": 600,
+    "description": "Free Murgh Dum Biryani Handi (Flat ₹250 OFF)",
+    "active": true
+  },
+  {
+    "id": "cpn_darbar_invite",
+    "code": "DARBAR-ROYAL-100",
+    "discount_type": "flat",
+    "discount_value": 150,
+    "min_order_value": 450,
+    "description": "Exclusive Referral Invite: Flat ₹150 OFF",
+    "active": true
   }
 ]

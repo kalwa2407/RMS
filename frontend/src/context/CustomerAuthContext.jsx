@@ -486,23 +486,34 @@ export const CustomerAuthProvider = ({ children }) => {
 
     // 3. Web & Browser Fallback: Firebase Web SDK RecaptchaVerifier
     try {
+      // Ensure a dedicated, stable container attached directly to body
+      // We DO NOT wipe innerHTML dynamically on every submit because doing so destroys
+      // active grecaptcha widgets and throws "reCAPTCHA client element has been removed"
+      let container = document.getElementById('persian-darbar-recaptcha-root');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'persian-darbar-recaptcha-root';
+        container.style.position = 'fixed';
+        container.style.bottom = '0';
+        container.style.right = '0';
+        container.style.zIndex = '999999';
+        document.body.appendChild(container);
+      }
+
       if (!window.recaptchaVerifier) {
-        let container = document.getElementById('recaptcha-container');
-        if (!container) {
-          container = document.createElement('div');
-          container.id = 'recaptcha-container';
-          document.body.appendChild(container);
-        }
-        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, container, {
           size: 'invisible',
           callback: () => {},
           'expired-callback': () => {
-            if (window.recaptchaVerifier) {
-              try { window.recaptchaVerifier.clear(); } catch (e) {}
-              window.recaptchaVerifier = null;
-            }
+            try {
+              if (window.recaptchaVerifier) {
+                window.recaptchaVerifier.clear();
+              }
+            } catch (e) {}
+            window.recaptchaVerifier = null;
           }
         });
+        await window.recaptchaVerifier.render();
       }
 
       const confirmationResult = await signInWithPhoneNumber(auth, e164, window.recaptchaVerifier);
@@ -514,10 +525,15 @@ export const CustomerAuthProvider = ({ children }) => {
       };
     } catch (error) {
       console.error('Firebase Phone Auth send error:', error);
-      if (window.recaptchaVerifier) {
-        try { window.recaptchaVerifier.clear(); } catch (e) {}
-        window.recaptchaVerifier = null;
-      }
+      // If client element was removed or captcha failed, clear verifier so next call starts fresh
+      try {
+        if (window.recaptchaVerifier) {
+          window.recaptchaVerifier.clear();
+        }
+      } catch (e) {}
+      window.recaptchaVerifier = null;
+      const c = document.getElementById('persian-darbar-recaptcha-root');
+      if (c) c.innerHTML = '';
 
       let errorMsg = error.message || 'Failed to send SMS verification code.';
       if (error.code === 'auth/invalid-phone-number') {
@@ -526,8 +542,8 @@ export const CustomerAuthProvider = ({ children }) => {
         errorMsg = 'Too many requests. Please wait a moment before trying again.';
       } else if (error.code === 'auth/quota-exceeded') {
         errorMsg = 'Daily SMS quota reached. Please sign in with Google or Apple.';
-      } else if (error.code === 'auth/captcha-check-failed') {
-        errorMsg = 'Security reCAPTCHA verification failed. Please retry.';
+      } else if (error.code === 'auth/captcha-check-failed' || error?.message?.includes('reCAPTCHA') || error?.message?.includes('removed')) {
+        errorMsg = 'Security verification check ready. Please tap Continue.';
       }
       return { success: false, error: errorMsg };
     }
@@ -659,20 +675,39 @@ export const CustomerAuthProvider = ({ children }) => {
   const sendWhatsAppOtp = sendPhoneOtp;
   const verifyWhatsAppOtp = verifyPhoneOtp;
 
-  // Sign Out — strictly clears all cached session data
+  // Sign Out — strictly clears all cached session data (handles Native iOS/Android + Web)
   const signOutCustomer = async () => {
     try {
-      localStorage.removeItem('customer_jwt');
-      localStorage.removeItem('customer_phone');
-      localStorage.removeItem('customer_address');
-      localStorage.removeItem('customer_email');
-      localStorage.removeItem('customer_name');
-      localStorage.removeItem('customer_photo');
-      localStorage.removeItem('customer_uid');
-      localStorage.removeItem('customer_login_provider');
-      localStorage.removeItem('customer_profile');
-      localStorage.removeItem('customer_saved_addresses');
-      sessionStorage.clear();
+      // 1. Native Capacitor Sign-Out (clears native keychain credentials on iOS/Android)
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
+          await FirebaseAuthentication.signOut();
+        } catch (nativeSignOutErr) {
+          console.warn('Native Firebase signOut notice:', nativeSignOutErr);
+        }
+      }
+
+      // 2. Clear all customer session and cache keys
+      const keysToRemove = [
+        'customer_jwt',
+        'customer_phone',
+        'customer_address',
+        'customer_email',
+        'customer_name',
+        'customer_photo',
+        'customer_uid',
+        'customer_login_provider',
+        'customer_profile',
+        'customer_saved_addresses',
+        'customer_guest_browse'
+      ];
+      keysToRemove.forEach(k => {
+        try { localStorage.removeItem(k); } catch (e) {}
+      });
+      try { sessionStorage.clear(); } catch (e) {}
+
+      // 3. Firebase Web SDK Sign-Out
       await firebaseSignOut(auth).catch(() => {});
     } catch (error) {
       console.warn('Sign Out Error:', error);
@@ -708,15 +743,24 @@ export const CustomerAuthProvider = ({ children }) => {
       // 2. Delete the Firebase Auth account (the critical part for App Store compliance)
       if (firebaseUser) {
         try {
+          // Refresh token once to avoid token-expired error
+          try {
+            await firebaseUser.getIdToken(true);
+          } catch (e) {}
+
           await deleteUser(firebaseUser);
         } catch (deleteErr) {
-          // If requires-recent-login, re-authenticate and retry
-          if (deleteErr?.code === 'auth/requires-recent-login') {
+          const isReauthNeeded = 
+            deleteErr?.code === 'auth/requires-recent-login' || 
+            deleteErr?.code === 'auth/user-token-expired' ||
+            deleteErr?.message?.includes('token-expired') ||
+            deleteErr?.message?.includes('requires-recent-login');
+
+          if (isReauthNeeded) {
             const provider = localStorage.getItem('customer_login_provider');
 
             try {
               if (Capacitor.isNativePlatform()) {
-                // Re-authenticate via native plugin
                 const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
 
                 if (provider === 'google') {
@@ -732,20 +776,18 @@ export const CustomerAuthProvider = ({ children }) => {
                   await reauthenticateWithCredential(firebaseUser, credential);
                 }
               } else {
-                // Web: re-authenticate via popup
                 if (provider === 'google') {
-                  const result = await signInWithPopup(auth, googleProvider);
-                  // signInWithPopup already re-authenticates the user on web
+                  await signInWithPopup(auth, googleProvider);
                 } else if (provider === 'apple') {
-                  const result = await signInWithPopup(auth, appleProvider);
+                  await signInWithPopup(auth, appleProvider);
                 }
               }
 
-              // Retry deletion after re-authentication
-              await deleteUser(auth.currentUser);
+              if (auth.currentUser) {
+                await deleteUser(auth.currentUser);
+              }
             } catch (reauthErr) {
               console.error('Re-authentication for account deletion failed:', reauthErr);
-              // Even if re-auth fails, still clear all local data (partial deletion)
             }
           } else {
             console.error('Firebase deleteUser error:', deleteErr);

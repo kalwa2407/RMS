@@ -57,7 +57,7 @@ const CustomerDashboard = () => {
       if (tabParam && ['home', 'order', 'reserve', 'rewards', 'profile'].includes(tabParam)) {
         return tabParam;
       }
-    } catch (e) {}
+    } catch (e) { }
     return 'home';
   });
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -86,7 +86,7 @@ const CustomerDashboard = () => {
     try {
       const saved = localStorage.getItem('pd_selected_branch');
       if (saved) return JSON.parse(saved);
-    } catch (e) {}
+    } catch (e) { }
     // Default to Camp Pune if user has Kondhwa/Pune, otherwise Bandra Flagship
     return PERSIAN_DARBAR_BRANCHES[3]; // Camp, Pune
   });
@@ -104,8 +104,8 @@ const CustomerDashboard = () => {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(lat1 * Math.PI / 180) *
-        Math.cos(lat2 * Math.PI / 180) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return parseFloat((R * c).toFixed(1));
   };
@@ -179,7 +179,7 @@ const CustomerDashboard = () => {
         setDeliveryAddress(detectedAddress);
         try {
           localStorage.setItem('customer_delivery_address', detectedAddress);
-        } catch (e) {}
+        } catch (e) { }
 
         // Find nearest Persian Darbar branch
         let nearest = PERSIAN_DARBAR_BRANCHES[0];
@@ -198,7 +198,7 @@ const CustomerDashboard = () => {
 
         try {
           localStorage.setItem('pd_selected_branch', JSON.stringify(nearest));
-        } catch (e) {}
+        } catch (e) { }
 
         toast({
           title: 'Location Detected',
@@ -277,8 +277,58 @@ const CustomerDashboard = () => {
     },
   });
 
+  // ── Authentic Public Coupons & Vouchers Preset ──
+  const FALLBACK_COUPONS = [
+    {
+      id: "cpn_flat199",
+      code: "FLAT199",
+      discount_type: "flat",
+      discount_value: 199,
+      min_order_value: 500,
+      description: "Flat ₹199 OFF on royal orders above ₹500",
+      active: true
+    },
+    {
+      id: "cpn_darbar100",
+      code: "DARBAR100",
+      discount_type: "flat",
+      discount_value: 100,
+      min_order_value: 399,
+      description: "Flat ₹100 OFF on orders above ₹399",
+      active: true
+    },
+    {
+      id: "cpn_royal30",
+      code: "ROYAL30",
+      discount_type: "percentage",
+      discount_value: 30,
+      max_discount: 150,
+      min_order_value: 400,
+      description: "30% OFF up to ₹150 on royal feasts above ₹400",
+      active: true
+    },
+    {
+      id: "cpn_welcome",
+      code: "WELCOME",
+      discount_type: "flat",
+      discount_value: 100,
+      min_order_value: 300,
+      description: "Flat ₹100 OFF on your order above ₹300",
+      active: true
+    },
+    {
+      id: "cpn_darbar50",
+      code: "DARBAR50",
+      discount_type: "flat",
+      discount_value: 50,
+      min_order_value: 250,
+      description: "Flat ₹50 OFF on orders above ₹250",
+      active: true
+    }
+  ];
+
   // ── Coupons & Loyalty State ──
-  const [coupons, setCoupons] = useState([]);
+  const [coupons, setCoupons] = useState(FALLBACK_COUPONS);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [validatingCoupon, setValidatingCoupon] = useState(false);
@@ -396,7 +446,7 @@ const CustomerDashboard = () => {
           const d = await r.json();
           if (Array.isArray(d)) setTables(d);
         }
-      } catch {}
+      } catch { }
     };
     fetchTables();
     const t = setInterval(fetchTables, 60000);
@@ -410,9 +460,17 @@ const CustomerDashboard = () => {
         const res = await fetch(`${API_BASE}/api/coupons/public`);
         if (res.ok) {
           const data = await res.json();
-          setCoupons(Array.isArray(data) ? data : []);
+          if (Array.isArray(data) && data.length > 0) {
+            setCoupons(data);
+          } else {
+            setCoupons(FALLBACK_COUPONS);
+          }
+        } else {
+          setCoupons(FALLBACK_COUPONS);
         }
-      } catch (err) {}
+      } catch (err) {
+        setCoupons(FALLBACK_COUPONS);
+      }
     };
 
     const fetchOffers = async () => {
@@ -424,7 +482,7 @@ const CustomerDashboard = () => {
             setOffers(data);
           }
         }
-      } catch (err) {}
+      } catch (err) { }
     };
 
     fetchCoupons();
@@ -436,7 +494,7 @@ const CustomerDashboard = () => {
     setSelectedBranch(branch);
     try {
       localStorage.setItem('pd_selected_branch', JSON.stringify(branch));
-    } catch (e) {}
+    } catch (e) { }
     updateDistanceForBranch(branch);
     toast({
       title: 'Branch Switched',
@@ -461,8 +519,8 @@ const CustomerDashboard = () => {
     return Math.round(cartSubtotal * 0.05); // 5% GST
   }, [cartSubtotal]);
 
-  const availableCoins = customerProfile?.coins || 0;
-  const maxCoinsUsable = Math.min(availableCoins, Math.floor(cartSubtotal * 0.2));
+  const availableCoins = customerProfile?.pd_coins ?? customerProfile?.coins ?? 0;
+  const maxCoinsUsable = Math.min(availableCoins, Math.floor(cartSubtotal * 0.5));
   const coinsDiscount = applyCoins ? maxCoinsUsable : 0;
   const totalDiscount = (couponDiscount || 0) + coinsDiscount;
 
@@ -670,7 +728,7 @@ const CustomerDashboard = () => {
       if (currentUser) {
         try {
           activeToken = await currentUser.getIdToken();
-        } catch (e) {}
+        } catch (e) { }
       }
       const headers = { 'Content-Type': 'application/json' };
       if (activeToken) headers['Authorization'] = `Bearer ${activeToken}`;
@@ -748,7 +806,7 @@ const CustomerDashboard = () => {
       if (currentUser) {
         try {
           activeToken = await currentUser.getIdToken();
-        } catch (e) {}
+        } catch (e) { }
       }
       const headers = { 'Content-Type': 'application/json' };
       if (activeToken) headers['Authorization'] = `Bearer ${activeToken}`;
@@ -805,9 +863,10 @@ const CustomerDashboard = () => {
     } else if (offer.coupon_code) {
       navigator.clipboard?.writeText(offer.coupon_code);
       toast({
-        title: 'Code Copied',
-        description: `Copied ${offer.coupon_code}. Apply at checkout for discount.`,
+        title: 'Offer Applied',
+        description: `Code ${offer.coupon_code} applied to your cart!`,
       });
+      applyCouponCode(offer.coupon_code);
       setIsCartOpen(true);
     } else {
       setActiveTab('order');
@@ -948,10 +1007,13 @@ const CustomerDashboard = () => {
             <CustomerRewardsTab
               currentUser={currentUser}
               customerProfile={customerProfile}
-              pdCoins={customerProfile?.coins ?? customerProfile?.loyalty_points ?? 450}
+              pdCoins={availableCoins}
               onGoToOrder={() => setActiveTab('order')}
               onGoToReserve={() => setActiveTab('reserve')}
-              onApplyVoucher={(code) => applyCouponCode(code)}
+              onApplyVoucher={(code) => {
+                applyCouponCode(code);
+                setIsCartOpen(true);
+              }}
             />
           )}
 
@@ -962,7 +1024,7 @@ const CustomerDashboard = () => {
               customerProfile={customerProfile}
               orders={orders}
               reservations={reservations}
-              pdCoins={customerProfile?.coins ?? customerProfile?.loyalty_points ?? 450}
+              pdCoins={availableCoins}
               onReorder={(order) => {
                 if (!order?.items) return;
                 order.items.forEach((item) => {
@@ -988,25 +1050,24 @@ const CustomerDashboard = () => {
                 toast({ title: 'Address Saved', description: 'Default address updated.' });
               }}
               onSignOut={async () => {
-                sessionStorage.removeItem('customer_guest_browse');
+                try { sessionStorage.clear(); } catch (e) { }
                 await signOutCustomer();
-                setActiveTab('home');
                 toast({ title: 'Signed Out', description: 'See you again at Persian Darbar!' });
-                navigate('/customer/login', { replace: true });
+                window.location.replace('/customer/login');
               }}
               onDeleteAccount={async () => {
-                sessionStorage.removeItem('customer_guest_browse');
+                try { sessionStorage.clear(); } catch (e) { }
                 await deleteCustomerAccount();
-                setActiveTab('home');
                 toast({
                   title: 'Account Deleted',
                   description: 'Your account and personal data have been permanently removed.',
                   variant: 'destructive'
                 });
-                navigate('/customer/login', { replace: true });
+                window.location.replace('/customer/login');
               }}
               onGoToOrder={() => setActiveTab('order')}
               onGoToReserve={() => setActiveTab('reserve')}
+              pdCoins={availableCoins}
               initialSection={profileInitialTab === 'orders' ? 'orders' : 'overview'}
             />
           )}
@@ -1149,25 +1210,24 @@ const CustomerDashboard = () => {
             }
           }}
           onSignOut={async () => {
-            sessionStorage.removeItem('customer_guest_browse');
+            try { sessionStorage.clear(); } catch (e) { }
             await signOutCustomer();
             setIsProfileOpen(false);
             toast({ title: 'Signed Out', description: 'See you again at Persian Darbar!' });
-            navigate('/customer/login', { replace: true });
+            window.location.replace('/customer/login');
           }}
           onDeleteAccount={async () => {
-            sessionStorage.removeItem('customer_guest_browse');
+            try { sessionStorage.clear(); } catch (e) { }
             setIsProfileOpen(false);
             await deleteCustomerAccount();
-            setActiveTab('home');
             toast({
               title: 'Account Deleted',
               description: 'Your account and personal data have been permanently removed.',
               variant: 'destructive'
             });
-            navigate('/customer/login', { replace: true });
+            window.location.replace('/customer/login');
           }}
-          pdCoins={customerProfile?.coins ?? customerProfile?.loyalty_points ?? 450}
+          pdCoins={availableCoins}
           initialTab={profileInitialTab}
         />
 
