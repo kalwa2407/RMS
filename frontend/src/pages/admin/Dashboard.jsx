@@ -140,7 +140,7 @@ const Dashboard = () => {
     return (
       <div className="flex flex-col items-center justify-center py-24 space-y-3">
         <div className="w-8 h-8 border-2 border-red-500/20 border-t-[#E40000] rounded-full animate-spin" />
-        <p className="text-xs font-semibold text-neutral-400">Loading Master Dashboard...</p>
+        <p className="text-xs font-semibold text-neutral-500">Loading Master Dashboard...</p>
       </div>
     );
   }
@@ -150,16 +150,16 @@ const Dashboard = () => {
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-black text-neutral-900 tracking-tight">
             Executive Dashboard
           </h2>
-          <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400 mt-1">
+          <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mt-1">
             Persian Darbar · Camp Pune Live Telemetry
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="px-3 py-1.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5 shadow-xs">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="px-3.5 py-1.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 flex items-center gap-1.5 shadow-2xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             <span>All Systems Live</span>
           </span>
         </div>
@@ -172,30 +172,30 @@ const Dashboard = () => {
           return (
             <div
               key={index}
-              className="bg-white/[0.03] hover:bg-white/[0.05] border border-white/[0.08] hover:border-amber-400/40 rounded-3xl p-5 transition-all duration-200 ios-press group shadow-xs"
+              className="bg-white hover:bg-neutral-50/60 border border-black/[0.06] hover:border-amber-400/50 rounded-3xl p-5 transition-all duration-200 ios-press group shadow-xs"
             >
               <div className="flex items-center justify-between mb-4">
-                <div className="w-10 h-10 rounded-2xl bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform shadow-xs">
-                  <Icon className="h-5 w-5 text-amber-300" />
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 group-hover:scale-105 transition-transform shadow-xs">
+                  <Icon className="h-5 w-5 text-amber-600" />
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/[0.05] text-neutral-400 border border-white/[0.06]">
+                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600 border border-neutral-200/60">
                   {card.title}
                 </span>
               </div>
 
-              <h3 className="text-3xl font-black text-white tracking-tight mb-1">
+              <h3 className="text-3xl font-black text-neutral-900 tracking-tight mb-1">
                 {card.value}
               </h3>
-              <p className="text-xs font-medium text-neutral-400">{card.subtitle}</p>
+              <p className="text-xs font-medium text-neutral-500">{card.subtitle}</p>
             </div>
           );
         })}
       </div>
 
       {/* QUICK ACTIONS */}
-      <div className="bg-white/[0.02] border border-white/[0.08] rounded-3xl p-6 sm:p-7 space-y-4 shadow-sm">
+      <div className="bg-neutral-50/70 border border-black/[0.06] rounded-3xl p-6 sm:p-7 space-y-4 shadow-2xs">
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-black text-white tracking-tight">
+          <h3 className="text-base font-black text-neutral-900 tracking-tight">
             Quick Actions &amp; Operations
           </h3>
           <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
@@ -206,33 +206,33 @@ const Dashboard = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <button
             onClick={() => navigate("/admin/menu")}
-            className="bg-white/[0.04] border border-white/[0.08] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-white/20 text-neutral-300 hover:text-white p-5 rounded-2xl transition-all ios-press cursor-pointer text-center group active:scale-95 shadow-xs"
+            className="bg-white border border-black/[0.06] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-transparent text-neutral-800 hover:text-white p-5 rounded-2xl transition-all ios-press cursor-pointer text-center group active:scale-95 shadow-xs"
           >
-            <MenuIcon className="h-5 w-5 mx-auto mb-2 group-hover:scale-110 transition-transform text-amber-300 group-hover:text-white" />
+            <MenuIcon className="h-5 w-5 mx-auto mb-2 group-hover:scale-110 transition-transform text-amber-600 group-hover:text-white" />
             <p className="text-xs font-black uppercase tracking-wider">Manage Menu</p>
           </button>
 
           <button
             onClick={() => navigate("/admin/gallery")}
-            className="bg-white/[0.04] border border-white/[0.08] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-white/20 text-neutral-300 hover:text-white p-5 rounded-2xl transition-all ios-press cursor-pointer text-center group active:scale-95 shadow-xs"
+            className="bg-white border border-black/[0.06] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-transparent text-neutral-800 hover:text-white p-5 rounded-2xl transition-all ios-press cursor-pointer text-center group active:scale-95 shadow-xs"
           >
-            <Image className="h-5 w-5 mx-auto mb-2 group-hover:scale-110 transition-transform text-amber-300 group-hover:text-white" />
+            <Image className="h-5 w-5 mx-auto mb-2 group-hover:scale-110 transition-transform text-amber-600 group-hover:text-white" />
             <p className="text-xs font-black uppercase tracking-wider">Gallery</p>
           </button>
 
           <button
             onClick={() => navigate("/admin/orders")}
-            className="bg-white/[0.04] border border-white/[0.08] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-white/20 text-neutral-300 hover:text-white p-5 rounded-2xl transition-all ios-press cursor-pointer text-center group active:scale-95 shadow-xs"
+            className="bg-white border border-black/[0.06] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-transparent text-neutral-800 hover:text-white p-5 rounded-2xl transition-all ios-press cursor-pointer text-center group active:scale-95 shadow-xs"
           >
-            <ShoppingBag className="h-5 w-5 mx-auto mb-2 group-hover:scale-110 transition-transform text-amber-300 group-hover:text-white" />
+            <ShoppingBag className="h-5 w-5 mx-auto mb-2 group-hover:scale-110 transition-transform text-amber-600 group-hover:text-white" />
             <p className="text-xs font-black uppercase tracking-wider">Live Orders</p>
           </button>
 
           <button
             onClick={() => navigate("/admin/reservations")}
-            className="bg-white/[0.04] border border-white/[0.08] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-white/20 text-neutral-300 hover:text-white p-5 rounded-2xl transition-all ios-press cursor-pointer text-center group active:scale-95 shadow-xs"
+            className="bg-white border border-black/[0.06] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-transparent text-neutral-800 hover:text-white p-5 rounded-2xl transition-all ios-press cursor-pointer text-center group active:scale-95 shadow-xs"
           >
-            <Calendar className="h-5 w-5 mx-auto mb-2 group-hover:scale-110 transition-transform text-amber-300 group-hover:text-white" />
+            <Calendar className="h-5 w-5 mx-auto mb-2 group-hover:scale-110 transition-transform text-amber-600 group-hover:text-white" />
             <p className="text-xs font-black uppercase tracking-wider">Table Bookings</p>
           </button>
         </div>

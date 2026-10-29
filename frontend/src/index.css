@@ -208,23 +208,34 @@ code {
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   macOS Pro Studio / Apple Aesthetic Overrides for Staff & Admin
+   macOS Pro Studio / Apple Aesthetic Light Mode Overrides
+   Matches the Persian Darbar Mobile App Design System (#F2F2F7 & #FFFFFF)
    ════════════════════════════════════════════════════════════════════ */
 .bg-\[\#0f2933\] {
-  background-color: #0B0F15 !important;
+  background-color: #F2F2F7 !important;
+  color: #111827 !important;
 }
 
 .bg-\[\#1a4855\] {
-  background-color: #141B26 !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
+  background-color: #FFFFFF !important;
+  border-color: rgba(0, 0, 0, 0.07) !important;
+  color: #111827 !important;
+}
+
+.bg-\[\#1a4855\]\/50,
+.bg-\[\#1a4855\]\/70 {
+  background-color: #FFFFFF !important;
+  border-color: rgba(0, 0, 0, 0.07) !important;
 }
 
 .bg-\[\#2a5865\] {
-  background-color: #1E2838 !important;
+  background-color: #F8F9FA !important;
+  color: #111827 !important;
 }
 
 .border-\[\#EAB308\]\/20,
 .border-\[\#EAB308\]\/30 {
-  border-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
 }
+
 
