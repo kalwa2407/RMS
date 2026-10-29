@@ -78,5 +78,7 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Persian Darbar uses your location to calculate accurate delivery distance, calculate delivery charges, and autofill your delivery address.</string>
 </dict>
 </plist>

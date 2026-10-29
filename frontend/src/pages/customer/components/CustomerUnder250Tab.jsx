@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronDown, Plus, Minus } from 'lucide-react';
-import { UNDER_250_ROUNDELS } from '../customerAssets';
+import { UNDER_250_ROUNDELS, findCartItem } from '../customerAssets';
 
 const CustomerUnder250Tab = ({
   menu = [],
@@ -188,12 +188,12 @@ const CustomerUnder250Tab = ({
 
         {/* 2-column or list cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          {displayDishes.map((dish) => {
-            const inCart = cart.find(c => c._id === dish._id);
+          {displayDishes.map((dish, uIdx) => {
+            const inCart = findCartItem(cart, dish);
             const isVeg = dish.is_veg !== false && !dish.category?.toLowerCase().includes('non') && dish.veg !== false;
             return (
               <div
-                key={dish._id}
+                key={dish._id || dish.id || uIdx}
                 className="bg-white rounded-2xl border border-neutral-100 shadow-xs overflow-hidden flex flex-col justify-between p-3"
               >
                 <div className="relative h-36 w-full rounded-xl overflow-hidden bg-neutral-100 mb-2.5">
@@ -242,14 +242,16 @@ const CustomerUnder250Tab = ({
                     {inCart ? (
                       <div className="flex items-center space-x-1.5 bg-white text-[#E40000] border border-[#E40000] rounded-lg px-2 py-1 text-xs font-bold">
                         <button
-                          onClick={() => onUpdateCartQty(dish._id, -1)}
+                          type="button"
+                          onClick={() => onUpdateCartQty(dish._id || dish.id, -1)}
                           className="p-0.5 active:scale-75 transition-transform"
                         >
                           <Minus className="w-3.5 h-3.5" />
                         </button>
                         <span>{inCart.quantity}</span>
                         <button
-                          onClick={() => onUpdateCartQty(dish._id, 1)}
+                          type="button"
+                          onClick={() => onUpdateCartQty(dish._id || dish.id, 1)}
                           className="p-0.5 active:scale-75 transition-transform"
                         >
                           <Plus className="w-3.5 h-3.5" />
@@ -257,6 +259,7 @@ const CustomerUnder250Tab = ({
                       </div>
                     ) : (
                       <button
+                        type="button"
                         onClick={() => onAddToCart(dish)}
                         className="bg-red-50 hover:bg-red-100 text-[#E40000] border border-red-200 text-xs font-bold px-3 py-1.5 rounded-lg active:scale-95 transition-transform"
                       >

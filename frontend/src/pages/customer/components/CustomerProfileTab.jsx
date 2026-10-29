@@ -29,7 +29,8 @@ import {
   UtensilsCrossed,
   Printer,
   Copy,
-  Plus
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { ROYAL_MEMBERSHIP_PRIVILEGES, PERSIAN_DARBAR_BRANCHES } from '../customerAssets';
 
@@ -43,11 +44,14 @@ const CustomerProfileTab = ({
   onSavePhone,
   onSaveAddress,
   onSignOut,
+  onDeleteAccount,
   onGoToOrder,
   onGoToReserve,
   pdCoins = 450,
   initialSection = 'overview'
 }) => {
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const navigate = useNavigate();
   const [section, setSection] = useState(initialSection); // 'overview' | 'orders' | 'reservations' | 'addresses' | 'rewards'
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -85,7 +89,8 @@ const CustomerProfileTab = ({
   const [newAddressTag, setNewAddressTag] = useState('Home');
   const [newAddressText, setNewAddressText] = useState('');
 
-  const patronName = nameVal || (currentUser ? 'Valued Patron' : 'Guest');
+  const isLoggedIn = !!currentUser || !!customerProfile?.phone || !!localStorage.getItem('customer_phone') || !!localStorage.getItem('customer_jwt');
+  const patronName = nameVal || (isLoggedIn ? 'Valued Patron' : 'Guest');
   const patronPhone = phoneVal;
   const patronEmail = customerProfile?.email || currentUser?.email || localStorage.getItem('customer_email') || '';
   const patronInitial = (patronName?.[0] || 'P').toUpperCase();
@@ -121,9 +126,9 @@ const CustomerProfileTab = ({
 
   return (
     <div className="flex-1 pb-32 pt-2 px-4 space-y-4">
-      {/* ── 1. ZOMATO STYLE PATRON HEADER CARD OR GUEST STATE ── */}
-      {!currentUser ? (
-        <section className="bg-white rounded-3xl p-6 border border-neutral-200/80 shadow-xs relative overflow-hidden text-center space-y-4">
+      {/* ── 1. APPLE HIG PATRON HEADER CARD OR GUEST STATE ── */}
+      {!isLoggedIn ? (
+        <section className="bg-white/95 backdrop-blur-md rounded-3xl p-6 border border-black/[0.06] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.05)] relative overflow-hidden text-center space-y-4">
           <div className="absolute top-0 right-0 w-36 h-36 bg-gradient-to-bl from-amber-400/10 via-amber-200/5 to-transparent rounded-bl-full pointer-events-none" />
           
           <img
@@ -136,7 +141,7 @@ const CustomerProfileTab = ({
             <h2 className="text-lg font-black text-neutral-900 leading-tight">
               Welcome to Persian Darbar
             </h2>
-            <p className="text-xs text-neutral-500 mt-1.5 max-w-xs mx-auto leading-relaxed">
+            <p className="text-xs text-neutral-500 mt-1.5 max-w-xs mx-auto leading-relaxed font-medium">
               Log in to track live biryani orders, redeem your Royalty PD Coins, and view saved delivery addresses.
             </p>
           </div>
@@ -144,7 +149,7 @@ const CustomerProfileTab = ({
           <div className="pt-1 space-y-2">
             <button
               onClick={() => navigate('/customer/login')}
-              className="w-full py-3.5 px-4 rounded-2xl bg-[#E40000] hover:bg-[#CC0000] text-white font-black text-xs uppercase tracking-wider shadow-md active:scale-98 transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+              className="w-full py-4 px-4 rounded-2xl bg-gradient-to-r from-[#E40000] via-[#D31027] to-[#B91C1C] text-white font-black text-xs uppercase tracking-wider shadow-[0_6px_20px_-2px_rgba(228,0,0,0.38)] ios-press transition-all flex items-center justify-center space-x-1.5 cursor-pointer border border-white/20 active:scale-95"
             >
               <span>Log in or Sign up</span>
               <ChevronRight className="w-4 h-4" />
@@ -152,7 +157,7 @@ const CustomerProfileTab = ({
           </div>
         </section>
       ) : (
-        <section className="bg-white rounded-3xl p-5 border border-neutral-200/80 shadow-xs relative overflow-hidden">
+        <section className="bg-white/95 backdrop-blur-md rounded-3xl p-5 border border-black/[0.06] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.05)] relative overflow-hidden">
           {/* Subtle royal background glow */}
           <div className="absolute top-0 right-0 w-36 h-36 bg-gradient-to-bl from-amber-400/10 via-amber-200/5 to-transparent rounded-bl-full pointer-events-none" />
 
@@ -194,7 +199,7 @@ const CustomerProfileTab = ({
                     {patronEmail}
                   </p>
                 )}
-                <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-400/20 text-amber-800 border border-amber-400/40">
+                <div className="mt-1.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-400/20 text-amber-800 border border-amber-400/40 shadow-xs">
                   <Sparkles className="w-2.5 h-2.5" />
                   <span>GOLD VIP PATRON</span>
                 </div>
@@ -204,14 +209,14 @@ const CustomerProfileTab = ({
             <div className="flex items-center gap-1.5 shrink-0">
               <button
                 onClick={() => setIsEditModalOpen(true)}
-                className="p-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 active:scale-95 transition-all shrink-0 cursor-pointer"
+                className="p-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 ios-press transition-all shrink-0 cursor-pointer border border-black/[0.04]"
                 title="Edit Profile Details"
               >
                 <Edit2 className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setShowLogoutModal(true)}
-                className="p-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-[#E40000] border border-red-200 active:scale-95 transition-all shrink-0 cursor-pointer flex items-center justify-center"
+                className="p-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-[#E40000] border border-red-200/80 ios-press transition-all shrink-0 cursor-pointer flex items-center justify-center shadow-xs"
                 title="Sign Out"
               >
                 <LogOut className="w-4 h-4" />
@@ -219,12 +224,14 @@ const CustomerProfileTab = ({
             </div>
           </div>
 
-          {/* ── 2. ZOMATO 4-CARD QUICK STATS ── */}
-          <div className="grid grid-cols-4 gap-2 mt-5 pt-4 border-t border-neutral-100 text-center">
+          {/* ── 2. APPLE 4-CARD QUICK STATS ── */}
+          <div className="grid grid-cols-4 gap-2 mt-5 pt-4 border-t border-black/[0.05] text-center">
             <div
               onClick={() => setSection('orders')}
-              className={`p-2 rounded-2xl cursor-pointer transition-all ${
-                section === 'orders' ? 'bg-red-50 border border-red-200 text-[#E40000]' : 'bg-[#FAF8F5] text-neutral-800 hover:bg-neutral-100'
+              className={`p-2.5 rounded-2xl cursor-pointer transition-all ios-press ${
+                section === 'orders'
+                  ? 'bg-gradient-to-b from-red-50 to-white border border-red-300 text-[#E40000] shadow-[0_4px_12px_rgba(228,0,0,0.12)]'
+                  : 'bg-neutral-100/70 text-neutral-800 hover:bg-neutral-200/70 border border-black/[0.04]'
               }`}
             >
               <span className="block text-base font-black">{orders.length}</span>
@@ -233,8 +240,10 @@ const CustomerProfileTab = ({
 
             <div
               onClick={() => setSection('reservations')}
-              className={`p-2 rounded-2xl cursor-pointer transition-all ${
-                section === 'reservations' ? 'bg-red-50 border border-red-200 text-[#E40000]' : 'bg-[#FAF8F5] text-neutral-800 hover:bg-neutral-100'
+              className={`p-2.5 rounded-2xl cursor-pointer transition-all ios-press ${
+                section === 'reservations'
+                  ? 'bg-gradient-to-b from-red-50 to-white border border-red-300 text-[#E40000] shadow-[0_4px_12px_rgba(228,0,0,0.12)]'
+                  : 'bg-neutral-100/70 text-neutral-800 hover:bg-neutral-200/70 border border-black/[0.04]'
               }`}
             >
               <span className="block text-base font-black">{reservations.length}</span>
@@ -243,8 +252,10 @@ const CustomerProfileTab = ({
 
             <div
               onClick={() => setSection('rewards')}
-              className={`p-2 rounded-2xl cursor-pointer transition-all ${
-                section === 'rewards' ? 'bg-amber-50 border border-amber-300 text-amber-800' : 'bg-[#FAF8F5] text-neutral-800 hover:bg-neutral-100'
+              className={`p-2.5 rounded-2xl cursor-pointer transition-all ios-press ${
+                section === 'rewards'
+                  ? 'bg-gradient-to-b from-amber-50 to-white border border-amber-300 text-amber-800 shadow-[0_4px_12px_rgba(245,158,11,0.15)]'
+                  : 'bg-neutral-100/70 text-neutral-800 hover:bg-neutral-200/70 border border-black/[0.04]'
               }`}
             >
               <span className="block text-base font-black text-amber-700">{pdCoins}</span>
@@ -253,8 +264,10 @@ const CustomerProfileTab = ({
 
             <div
               onClick={() => setSection('addresses')}
-              className={`p-2 rounded-2xl cursor-pointer transition-all ${
-                section === 'addresses' ? 'bg-red-50 border border-red-200 text-[#E40000]' : 'bg-[#FAF8F5] text-neutral-800 hover:bg-neutral-100'
+              className={`p-2.5 rounded-2xl cursor-pointer transition-all ios-press ${
+                section === 'addresses'
+                  ? 'bg-gradient-to-b from-red-50 to-white border border-red-300 text-[#E40000] shadow-[0_4px_12px_rgba(228,0,0,0.12)]'
+                  : 'bg-neutral-100/70 text-neutral-800 hover:bg-neutral-200/70 border border-black/[0.04]'
               }`}
             >
               <span className="block text-base font-black">{savedAddresses.length}</span>
@@ -264,7 +277,7 @@ const CustomerProfileTab = ({
         </section>
       )}
 
-      {/* ── 3. SECTION SELECTOR PILLS (Zomato Style) ── */}
+      {/* ── 3. SECTION SELECTOR PILLS (Apple Tactile Pills) ── */}
       <div className="flex space-x-1.5 overflow-x-auto no-scrollbar pb-1">
         {[
           { id: 'overview', label: 'All Services', icon: Sparkles },
@@ -279,10 +292,10 @@ const CustomerProfileTab = ({
             <button
               key={tab.id}
               onClick={() => setSection(tab.id)}
-              className={`py-2 px-3.5 rounded-2xl text-xs font-bold transition-all flex items-center space-x-1.5 shrink-0 whitespace-nowrap cursor-pointer ${
+              className={`py-2 px-3.5 rounded-2xl text-xs font-bold transition-all flex items-center space-x-1.5 shrink-0 whitespace-nowrap cursor-pointer ios-press ${
                 isActive
-                  ? 'bg-neutral-900 text-white shadow-xs'
-                  : 'bg-white text-neutral-600 border border-neutral-200/70 hover:bg-neutral-50'
+                  ? 'bg-neutral-900 text-white shadow-sm'
+                  : 'bg-white text-neutral-600 border border-black/[0.06] hover:bg-neutral-50 shadow-xs'
               }`}
             >
               <Icon className="w-3.5 h-3.5 shrink-0" />
@@ -292,37 +305,39 @@ const CustomerProfileTab = ({
         })}
       </div>
 
+
       {/* ══════════════════════════════════════════════════════════════════
           SECTION 1: OVERVIEW (Hub of All Zomato-style Features)
          ══════════════════════════════════════════════════════════════════ */}
       {section === 'overview' && (
         <div className="space-y-4">
-          {/* Zomato Gold / Royal Pass Banner */}
-          <div className="rounded-3xl p-5 text-white bg-gradient-to-br from-[#1C1917] via-[#2A241E] to-[#12100E] border-2 border-amber-400/50 shadow-lg relative overflow-hidden">
-            <div className="flex items-center justify-between">
+          {/* Sovereign Obsidian & Gold Royal Pass */}
+          <div className="rounded-3xl p-5 text-white bg-gradient-to-br from-[#0B131B] via-[#141F2D] to-[#0A1017] border border-amber-400/40 shadow-[0_8px_30px_-6px_rgba(0,0,0,0.25)] relative overflow-hidden">
+            <div className="absolute -top-12 -right-12 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="flex items-center justify-between relative z-10">
               <div className="flex items-center space-x-2">
-                <img src="/persian_darbar_crown_logo.png" alt="" className="w-5 h-5 rounded-md object-contain" />
+                <img src="/persian_darbar_crown_logo.png" alt="" className="w-6 h-6 rounded-lg object-contain shadow-xs border border-amber-400/30" />
                 <span className="text-xs font-black uppercase tracking-wider text-amber-300">
                   PERSIAN DARBAR ROYAL PASS
                 </span>
               </div>
-              <span className="text-[10px] font-black uppercase bg-amber-400/20 text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-400/30">
+              <span className="text-[10px] font-black uppercase bg-amber-400/20 text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-400/40 shadow-xs">
                 ACTIVE PATRON
               </span>
             </div>
 
-            <p className="text-sm font-black text-white mt-3">
+            <p className="text-sm font-black text-white mt-3 relative z-10">
               10% Instant PD Coins on every order + Free Delivery above ₹199
             </p>
-            <p className="text-[11px] text-stone-300 mt-1">
-              Priority table reservation across Bandra, Andheri, Kurla & Camp Pune outlets.
+            <p className="text-[11px] text-neutral-300 mt-1 relative z-10 font-medium">
+              Priority table reservation across Bandra, Andheri, Kurla &amp; Camp Pune outlets.
             </p>
 
-            <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs">
-              <span className="text-stone-300">Available Balance: <strong className="text-amber-300">{pdCoins} Coins</strong></span>
+            <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs relative z-10">
+              <span className="text-neutral-300 font-medium">Available Balance: <strong className="text-amber-300 font-black">{pdCoins} Coins</strong></span>
               <button
                 onClick={() => setSection('rewards')}
-                className="text-amber-400 hover:text-amber-300 font-black flex items-center gap-0.5"
+                className="text-amber-400 hover:text-amber-300 font-black flex items-center gap-0.5 ios-press cursor-pointer"
               >
                 <span>Passbook</span>
                 <ChevronRight className="w-3.5 h-3.5" />
@@ -391,7 +406,7 @@ const CustomerProfileTab = ({
               PERSIAN DARBAR OUTLETS & DIRECT PHONES
             </h3>
 
-            <div className="space-y-2 text-xs">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
               {PERSIAN_DARBAR_BRANCHES.map((b) => (
                 <div key={b.id} className="p-3 rounded-2xl bg-[#FAF8F5] border border-neutral-100 flex items-center justify-between">
                   <div>
@@ -416,7 +431,7 @@ const CustomerProfileTab = ({
             href="https://wa.me/917028033763?text=Hello%20Persian%20Darbar%20Concierge,%20I%20need%20assistance%20with%20my%20order."
             target="_blank"
             rel="noreferrer"
-            className="w-full py-3.5 rounded-2xl bg-[#25D366] hover:bg-[#20BD5A] text-white font-black text-xs flex items-center justify-center space-x-2 shadow-sm active:scale-98 transition-all"
+            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white font-black text-xs flex items-center justify-center space-x-2 shadow-sm ios-press transition-all border border-white/20"
           >
             <MessageCircle className="w-4 h-4 text-white" />
             <span>24x7 Royal WhatsApp Concierge</span>
@@ -428,7 +443,7 @@ const CustomerProfileTab = ({
               <button
                 type="button"
                 onClick={() => setShowLogoutModal(true)}
-                className="w-full py-3.5 rounded-2xl bg-red-50 hover:bg-red-100 text-[#E40000] font-black text-xs flex items-center justify-center space-x-2 border border-red-200 active:scale-98 transition-all cursor-pointer shadow-xs"
+                className="w-full py-3.5 rounded-2xl bg-red-50/80 hover:bg-red-100 text-[#E40000] font-black text-xs flex items-center justify-center space-x-2 border border-red-200 ios-press transition-all cursor-pointer shadow-xs"
               >
                 <LogOut className="w-4 h-4 text-[#E40000]" />
                 <span>Log Out from Persian Darbar</span>
@@ -472,7 +487,8 @@ const CustomerProfileTab = ({
               </button>
             </div>
           ) : (
-            orders.map((ord) => {
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {orders.map((ord) => {
               const orderId = ord.order_id || ord.id || ord._id;
               const dateStr = ord.created_at ? new Date(ord.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recent';
               const itemsList = ord.items || [];
@@ -560,7 +576,8 @@ const CustomerProfileTab = ({
                   </div>
                 </div>
               );
-            })
+            })}
+            </div>
           )}
         </div>
       )}
@@ -599,39 +616,41 @@ const CustomerProfileTab = ({
               </button>
             </div>
           ) : (
-            reservations.map((res, idx) => (
-              <div key={idx} className="bg-white rounded-3xl p-4 border border-neutral-200/80 shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] font-black uppercase text-neutral-400">
-                      Table for {res.guests} Guests
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {reservations.map((res, idx) => (
+                <div key={idx} className="bg-white rounded-3xl p-4 border border-neutral-200/80 shadow-xs space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] font-black uppercase text-neutral-400">
+                        Table for {res.guests} Guests
+                      </span>
+                      <h4 className="font-black text-sm text-neutral-900">
+                        {res.date} at {res.time}
+                      </h4>
+                    </div>
+
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      {res.status || 'Confirmed'}
                     </span>
-                    <h4 className="font-black text-sm text-neutral-900">
-                      {res.date} at {res.time}
-                    </h4>
                   </div>
 
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    {res.status || 'Confirmed'}
-                  </span>
+                  {/* Dining Mood Badge */}
+                  {(res.dining_mood || (res.special_requests && res.special_requests.includes('Mood:'))) && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-black uppercase text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full">
+                        Mood: {res.dining_mood || (res.special_requests.match(/Mood:\s*([^|\]]+)/)?.[1]?.trim()) || 'Royal Dastarkhwan'}
+                      </span>
+                    </div>
+                  )}
+
+                  {res.special_requests && (
+                    <p className="text-[11px] text-neutral-500 bg-[#FAF8F5] p-2.5 rounded-2xl border border-neutral-100">
+                      {res.special_requests}
+                    </p>
+                  )}
                 </div>
-
-                {/* Dining Mood Badge */}
-                {(res.dining_mood || (res.special_requests && res.special_requests.includes('Mood:'))) && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-black uppercase text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full">
-                      Mood: {res.dining_mood || (res.special_requests.match(/Mood:\s*([^|\]]+)/)?.[1]?.trim()) || 'Royal Dastarkhwan'}
-                    </span>
-                  </div>
-                )}
-
-                {res.special_requests && (
-                  <p className="text-[11px] text-neutral-500 bg-[#FAF8F5] p-2.5 rounded-2xl border border-neutral-100">
-                    {res.special_requests}
-                  </p>
-                )}
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
       )}
@@ -654,7 +673,7 @@ const CustomerProfileTab = ({
             </button>
           </div>
 
-          <div className="space-y-2.5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 space-y-0">
             {savedAddresses.map((addr) => (
               <div key={addr.id} className="bg-white rounded-3xl p-4 border border-neutral-200/80 shadow-xs flex items-start justify-between space-x-3">
                 <div className="flex items-start space-x-3">
@@ -795,18 +814,44 @@ const CustomerProfileTab = ({
         </div>
       )}
 
-      {/* ── 6. PROMINENT SIGN OUT BUTTON (Always accessible to logged in patron) ── */}
-      {currentUser && (
-        <section className="pt-2">
+      {/* ── 6. PROMINENT SIGN OUT & ACCOUNT DELETION (Guideline 5.1.1(v) Compliance) ── */}
+      {isLoggedIn && (
+        <section className="pt-2 space-y-3">
+          {/* Sign Out Button */}
           <button
             type="button"
             onClick={() => setShowLogoutModal(true)}
-            className="w-full py-3.5 px-4 rounded-2xl bg-white border border-red-200/90 hover:bg-red-50 text-[#E40000] font-black text-xs uppercase tracking-wider shadow-xs active:scale-98 transition-all flex items-center justify-center space-x-2 cursor-pointer"
+            className="w-full py-3.5 px-4 rounded-2xl bg-white border border-black/[0.08] hover:bg-neutral-50 text-neutral-800 font-black text-xs uppercase tracking-wider shadow-xs ios-press transition-all flex items-center justify-center space-x-2 cursor-pointer active:scale-98"
           >
-            <LogOut className="w-4 h-4 text-[#E40000]" />
+            <LogOut className="w-4 h-4 text-neutral-600" />
             <span>Sign Out of Persian Darbar</span>
           </button>
-          <p className="text-[10px] text-neutral-400 text-center mt-2">
+
+          {/* Delete Account Danger Card (App Store Guideline 5.1.1(v)) */}
+          <div className="p-4 rounded-3xl bg-red-50/70 border border-red-200/80 space-y-2.5 shadow-xs">
+            <div className="flex items-center space-x-2">
+              <div className="w-6 h-6 rounded-lg bg-red-100 flex items-center justify-center text-red-600 shrink-0">
+                <Trash2 className="w-3.5 h-3.5 text-red-600" />
+              </div>
+              <span className="text-xs font-black text-red-900 uppercase tracking-wide">
+                Account Privacy &amp; Data Deletion
+              </span>
+            </div>
+            <p className="text-[11px] text-red-800/80 leading-relaxed font-medium">
+              Permanently erase your account, login credentials, saved delivery addresses, and loyalty PD coins from Persian Darbar.
+            </p>
+            <button
+              type="button"
+              id="delete-account-btn"
+              onClick={() => setShowDeleteModal(true)}
+              className="w-full py-2.5 px-3 rounded-xl bg-white hover:bg-red-600 text-red-600 hover:text-white border border-red-300 font-bold text-xs ios-press transition-all flex items-center justify-center space-x-2 cursor-pointer shadow-xs active:scale-95"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Delete My Account</span>
+            </button>
+          </div>
+
+          <p className="text-[10px] text-neutral-400 text-center mt-2 font-medium">
             Logged in as {patronName} {patronPhone ? `(+91 ${patronPhone})` : ''}
           </p>
         </section>
@@ -881,8 +926,8 @@ const CustomerProfileTab = ({
       {showLogoutModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl border border-neutral-200 text-center animate-in zoom-in-95 duration-200">
-            <div className="w-14 h-14 rounded-2xl bg-red-50 text-[#E40000] flex items-center justify-center mx-auto border border-red-100">
-              <LogOut className="w-7 h-7 text-[#E40000]" />
+            <div className="w-14 h-14 rounded-2xl bg-neutral-100 text-neutral-800 flex items-center justify-center mx-auto border border-neutral-200">
+              <LogOut className="w-7 h-7 text-neutral-700" />
             </div>
             <div>
               <h3 className="font-black text-base text-neutral-900">Sign Out of Persian Darbar?</h3>
@@ -907,6 +952,57 @@ const CustomerProfileTab = ({
                 className="py-3 rounded-2xl bg-[#E40000] hover:bg-[#CC0000] text-white font-black text-xs shadow-md active:scale-98 transition-all cursor-pointer"
               >
                 Yes, Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── CUSTOM IN-APP ACCOUNT DELETION CONFIRMATION MODAL (Guideline 5.1.1(v)) ── */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl border border-red-200 text-center animate-in zoom-in-95 duration-200">
+            <div className="w-14 h-14 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mx-auto border border-red-200">
+              <Trash2 className="w-7 h-7 text-red-600" />
+            </div>
+            <div>
+              <h3 className="font-black text-base text-neutral-900">Delete Account Permanently?</h3>
+              <p className="text-xs text-neutral-600 mt-1.5 leading-relaxed">
+                This will permanently delete your Persian Darbar profile, remove all saved delivery addresses, and forfeit your <strong className="text-red-600 font-black">{pdCoins} PD Coins</strong>.
+              </p>
+              <p className="text-[11px] text-neutral-400 mt-2">
+                This action is irreversible and takes effect immediately.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5 pt-2">
+              <button
+                type="button"
+                disabled={deletingAccount}
+                onClick={() => setShowDeleteModal(false)}
+                className="py-3 rounded-2xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-bold text-xs active:scale-98 transition-all cursor-pointer disabled:opacity-50"
+              >
+                Keep Account
+              </button>
+              <button
+                type="button"
+                id="confirm-delete-account-btn"
+                disabled={deletingAccount}
+                onClick={async () => {
+                  setDeletingAccount(true);
+                  try {
+                    if (onDeleteAccount) await onDeleteAccount();
+                  } finally {
+                    setDeletingAccount(false);
+                    setShowDeleteModal(false);
+                  }
+                }}
+                className="py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black text-xs shadow-md active:scale-98 transition-all cursor-pointer flex items-center justify-center space-x-1.5 disabled:opacity-50"
+              >
+                {deletingAccount ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <span>Yes, Delete</span>
+                )}
               </button>
             </div>
           </div>

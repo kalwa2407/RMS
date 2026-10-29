@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Minus, Star, Crown, UtensilsCrossed, Bookmark, Share2 } from 'lucide-react';
-import { PERSIAN_DARBAR_CATEGORIES, getDishMetrics } from '../customerAssets';
+import { PERSIAN_DARBAR_CATEGORIES, getDishMetrics, getDishId, findCartItem } from '../customerAssets';
 import CustomerDishDetailModal from './CustomerDishDetailModal';
 
 const CustomerOrderTab = ({
@@ -240,14 +240,14 @@ const CustomerOrderTab = ({
         </div>
       </section>
 
-      {/* ── Filter Chips (Veg / Non-veg / Bestsellers - Matching Screenshot 2 & 3) ── */}
+      {/* ── Filter Chips (Veg / Non-veg / Bestsellers - Apple Pill Style) ── */}
       <section className="px-4 pt-3 pb-1 flex items-center space-x-2 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setFilterType('all')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 border transition-all cursor-pointer ${
+          className={`px-3.5 py-1.5 rounded-full text-xs font-bold shrink-0 border transition-all ios-press cursor-pointer ${
             filterType === 'all'
-              ? 'bg-neutral-900 text-white border-neutral-900 shadow-xs'
-              : 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50'
+              ? 'bg-neutral-900 text-white border-neutral-900 shadow-sm'
+              : 'bg-white/90 text-neutral-600 border-neutral-200/80 hover:bg-neutral-50 shadow-2xs'
           }`}
         >
           All ({filteredDishes.length})
@@ -255,13 +255,13 @@ const CustomerOrderTab = ({
 
         <button
           onClick={() => setFilterType(filterType === 'veg' ? 'all' : 'veg')}
-          className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 border transition-all cursor-pointer ${
+          className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold shrink-0 border transition-all ios-press cursor-pointer ${
             filterType === 'veg'
-              ? 'bg-emerald-50 text-emerald-800 border-emerald-500 shadow-xs font-black'
-              : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'
+              ? 'bg-emerald-50 text-emerald-800 border-emerald-500 shadow-sm font-black'
+              : 'bg-white/90 text-neutral-700 border-neutral-200/80 hover:bg-neutral-50 shadow-2xs'
           }`}
         >
-          <div className="w-3.5 h-3.5 rounded-[3px] border border-emerald-600 flex items-center justify-center p-[1px]">
+          <div className="w-3.5 h-3.5 rounded-[4px] border border-emerald-600 flex items-center justify-center p-[1px]">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
           </div>
           <span>Veg</span>
@@ -269,13 +269,13 @@ const CustomerOrderTab = ({
 
         <button
           onClick={() => setFilterType(filterType === 'nonveg' ? 'all' : 'nonveg')}
-          className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 border transition-all cursor-pointer ${
+          className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold shrink-0 border transition-all ios-press cursor-pointer ${
             filterType === 'nonveg'
-              ? 'bg-red-50 text-red-800 border-[#8B2500] shadow-xs font-black'
-              : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'
+              ? 'bg-red-50 text-red-800 border-[#8B2500] shadow-sm font-black'
+              : 'bg-white/90 text-neutral-700 border-neutral-200/80 hover:bg-neutral-50 shadow-2xs'
           }`}
         >
-          <div className="w-3.5 h-3.5 rounded-[3px] border border-[#8B2500] flex items-center justify-center p-[1px]">
+          <div className="w-3.5 h-3.5 rounded-[4px] border border-[#8B2500] flex items-center justify-center p-[1px]">
             <div className="w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-b-[5px] border-b-[#8B2500]" />
           </div>
           <span>Non-veg</span>
@@ -283,10 +283,10 @@ const CustomerOrderTab = ({
 
         <button
           onClick={() => setFilterType(filterType === 'bestseller' ? 'all' : 'bestseller')}
-          className={`flex items-center space-x-1 px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 border transition-all cursor-pointer ${
+          className={`flex items-center space-x-1 px-3.5 py-1.5 rounded-full text-xs font-bold shrink-0 border transition-all ios-press cursor-pointer ${
             filterType === 'bestseller'
-              ? 'bg-amber-50 text-amber-900 border-amber-400 shadow-xs font-black'
-              : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'
+              ? 'bg-amber-50 text-amber-900 border-amber-400 shadow-sm font-black'
+              : 'bg-white/90 text-neutral-700 border-neutral-200/80 hover:bg-neutral-50 shadow-2xs'
           }`}
         >
           <Crown className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
@@ -294,10 +294,10 @@ const CustomerOrderTab = ({
         </button>
       </section>
 
-      {/* ── Dishes List (Matching Screenshot 2 & 3) ── */}
-      <section className="px-4 py-2 space-y-3">
+      {/* ── Dishes List (Responsive Grid: 1 col mobile, 2 col iPad/tablet) ── */}
+      <section className="px-4 py-2 grid grid-cols-1 md:grid-cols-2 gap-3 space-y-0">
         {filteredDishes.length === 0 ? (
-          <div className="bg-white rounded-3xl p-8 text-center border border-neutral-200/80 shadow-xs space-y-3">
+          <div className="md:col-span-2 bg-white rounded-3xl p-8 text-center border border-neutral-200/80 shadow-xs space-y-3">
             <div className="w-12 h-12 rounded-full bg-red-50 text-[#E40000] flex items-center justify-center mx-auto">
               <UtensilsCrossed className="w-6 h-6" />
             </div>
@@ -316,7 +316,7 @@ const CustomerOrderTab = ({
           </div>
         ) : (
           filteredDishes.map((dish, idx) => {
-            const inCart = cart.find((c) => c._id === dish._id || c.id === dish.id);
+            const inCart = findCartItem(cart, dish);
             const { rating, orderCount } = getDishMetrics(dish);
             const isVeg = dish.is_veg === true ||
               dish.veg === true ||
@@ -334,8 +334,8 @@ const CustomerOrderTab = ({
             return (
               <div
                 key={dish._id || dish.id || idx}
-                onClick={() => setSelectedDishDetail(dish)}
-                className="bg-white rounded-3xl p-4 border border-neutral-200/80 shadow-xs flex items-start justify-between gap-3 transition-all hover:border-neutral-300 active:scale-[0.99] cursor-pointer"
+                onClick={() => (onSelectDishDetail || setSelectedDishDetail)(dish)}
+                className="ios-card p-4 flex items-start justify-between gap-3 transition-all hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] ios-press-subtle cursor-pointer border border-black/[0.06]"
               >
                 {/* Left Side: Dish Info (Screenshot 2 & 3) */}
                 <div className="flex-1 min-w-0 pr-1 space-y-1">
@@ -427,19 +427,25 @@ const CustomerOrderTab = ({
                   {/* ADD + / Stepper Button (Centered Below Image - Screenshot 2 & 3) */}
                   <div className="mt-[-16px] z-10 w-28" onClick={(e) => e.stopPropagation()}>
                     {inCart ? (
-                      <div className="flex items-center justify-between bg-white text-[#E40000] border-2 border-[#E40000] rounded-xl shadow-md px-2.5 py-1.5 text-xs font-bold">
+                      <div className="flex items-center justify-between bg-neutral-950 text-white rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.18)] px-2.5 py-1.5 text-xs font-bold border border-white/10">
                         <button
                           type="button"
-                          onClick={() => onUpdateCartQty(dish._id || dish.id, -1)}
-                          className="p-0.5 active:scale-75 transition-transform cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onUpdateCartQty(dish._id || dish.id, -1);
+                          }}
+                          className="p-0.5 ios-press cursor-pointer text-amber-400 hover:text-white active:scale-90"
                         >
                           <Minus className="w-3.5 h-3.5 stroke-[3]" />
                         </button>
-                        <span className="font-black text-sm text-neutral-900">{inCart.quantity}</span>
+                        <span className="font-black text-sm text-white px-1">{inCart.quantity}</span>
                         <button
                           type="button"
-                          onClick={() => onUpdateCartQty(dish._id || dish.id, 1)}
-                          className="p-0.5 active:scale-75 transition-transform cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onUpdateCartQty(dish._id || dish.id, 1);
+                          }}
+                          className="p-0.5 ios-press cursor-pointer text-amber-400 hover:text-white active:scale-90"
                         >
                           <Plus className="w-3.5 h-3.5 stroke-[3]" />
                         </button>
@@ -447,21 +453,22 @@ const CustomerOrderTab = ({
                     ) : (
                       <button
                         type="button"
-                        onClick={() => {
-                          if (onSelectDishDetail) {
-                            onSelectDishDetail(dish);
-                          } else {
-                            setSelectedDishDetail(dish);
-                          }
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onAddToCart(dish);
                         }}
-                        className="w-full bg-white text-[#E40000] hover:bg-rose-50/50 border border-red-200 hover:border-[#E40000] rounded-xl shadow-sm py-1.5 text-xs font-black uppercase tracking-wider active:scale-95 transition-all text-center cursor-pointer flex flex-col items-center justify-center"
+                        className="w-full bg-gradient-to-r from-[#E40000] to-[#CC0000] hover:from-[#CC0000] hover:to-[#B30000] text-white rounded-2xl shadow-[0_4px_14px_rgba(228,0,0,0.32)] py-1.5 text-xs font-black uppercase tracking-wider ios-press transition-all text-center cursor-pointer flex flex-col items-center justify-center border border-white/20 active:scale-95"
                       >
                         <span>ADD +</span>
                       </button>
                     )}
-                    <span className="block text-center text-[9px] text-neutral-400 font-medium mt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => (onSelectDishDetail || setSelectedDishDetail)(dish)}
+                      className="block w-full text-center text-[9px] text-neutral-400 hover:text-[#E40000] font-medium mt-0.5 cursor-pointer"
+                    >
                       customisable
-                    </span>
+                    </button>
                   </div>
                 </div>
               </div>

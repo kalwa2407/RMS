@@ -290,12 +290,12 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
   if (showDelivered && isDelivered) {
     return (
       <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex flex-col items-center select-none overflow-hidden animate-in fade-in duration-200">
-        <div className="w-full max-w-[430px] h-full flex flex-col bg-[#F8F9FA] shadow-2xl relative overflow-hidden">
+        <div className="w-full max-w-[430px] md:max-w-3xl lg:max-w-4xl h-full flex flex-col bg-[#F8F9FA] shadow-2xl md:shadow-md relative overflow-hidden md:border-x md:border-neutral-200/50">
           <header
             className="shrink-0 px-4 pb-4 text-white relative shadow-md"
             style={{
               backgroundColor: '#151E33',
-              paddingTop: 'calc(max(env(safe-area-inset-top, 50px), 50px) + 8px)'
+              paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)'
             }}
           >
             <div className="flex items-center justify-between">
@@ -340,14 +340,14 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex flex-col items-center select-none overflow-hidden animate-in fade-in duration-200">
-      <div className="w-full max-w-[430px] h-full flex flex-col bg-[#F8F9FA] shadow-2xl relative overflow-hidden">
+      <div className="w-full max-w-[430px] md:max-w-3xl lg:max-w-4xl h-full flex flex-col bg-[#F8F9FA] shadow-2xl md:shadow-md relative overflow-hidden md:border-x md:border-neutral-200/50">
 
         {/* ═══ HEADER ═══ */}
         <header
           className="shrink-0 px-4 pb-4 text-white relative shadow-md"
           style={{
             backgroundColor: '#151E33',
-            paddingTop: 'calc(max(env(safe-area-inset-top, 50px), 50px) + 8px)'
+            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)'
           }}
         >
           {/* Row 1: Back - Restaurant Name - Share */}

@@ -62,7 +62,7 @@ const CustomerAddressModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity p-0 sm:p-4">
-      <div className="w-full max-w-[430px] bg-white rounded-t-[32px] sm:rounded-3xl shadow-2xl p-5 space-y-4 animate-in slide-in-from-bottom duration-300 max-h-[88vh] overflow-y-auto no-scrollbar">
+      <div className="w-full max-w-[430px] md:max-w-2xl bg-white rounded-t-[32px] sm:rounded-3xl shadow-2xl p-5 md:p-6 space-y-4 animate-in slide-in-from-bottom duration-300 max-h-[88vh] overflow-y-auto no-scrollbar">
         {/* Modal Header */}
         <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
           <div className="flex items-center space-x-2.5">
@@ -120,7 +120,8 @@ const CustomerAddressModal = ({
             </span>
           </div>
 
-          {PERSIAN_DARBAR_BRANCHES.map((branch) => {
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+            {PERSIAN_DARBAR_BRANCHES.map((branch) => {
             const isSelected = selectedBranch?.id === branch.id || selectedBranch?.name === branch.name;
             const dist = getBranchDistance(branch);
             const isFar = dist > 35; // Intercity check
@@ -197,6 +198,7 @@ const CustomerAddressModal = ({
               </div>
             );
           })}
+          </div>
         </div>
 
         {/* Custom Locality/Area Input for Doorstep Delivery */}

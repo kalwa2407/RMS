@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { ChevronLeft, Search, X, Mic, Plus, Minus, Sparkles, UtensilsCrossed } from 'lucide-react';
-import { SEARCH_CRAVINGS, SEARCH_ROUNDELS_GRID } from '../customerAssets';
+import { SEARCH_CRAVINGS, SEARCH_ROUNDELS_GRID, findCartItem } from '../customerAssets';
 
 
 const CustomerSearchExplore = ({
@@ -28,12 +28,12 @@ const CustomerSearchExplore = ({
     : [];
 
   return (
-    <div className="fixed inset-0 z-50 bg-white flex flex-col overflow-y-auto no-scrollbar max-w-[430px] mx-auto animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 bg-white flex flex-col overflow-y-auto no-scrollbar w-full max-w-[430px] md:max-w-4xl mx-auto animate-in fade-in duration-200 md:border-x md:border-neutral-200/50">
       {/* ── Search Header (Safe Area Padded for Dynamic Island & Notch) ── */}
       <div
         className="sticky top-0 z-20 bg-white border-b border-neutral-100 px-4 pb-3"
         style={{
-          paddingTop: 'calc(max(env(safe-area-inset-top, 54px), 54px) + 8px)'
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)'
         }}
       >
         <div className="flex items-center gap-2.5">
@@ -89,12 +89,12 @@ const CustomerSearchExplore = ({
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {searchResults.map((dish) => {
-                const inCart = cart.find(c => c._id === dish._id);
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 space-y-0">
+              {searchResults.map((dish, sIdx) => {
+                const inCart = findCartItem(cart, dish);
                 return (
                   <div
-                    key={dish._id}
+                    key={dish._id || dish.id || sIdx}
                     className="flex items-center justify-between p-3.5 rounded-2xl border border-neutral-200/80 bg-white shadow-xs gap-3"
                   >
                     <div className="flex-1 pr-1">
@@ -131,14 +131,16 @@ const CustomerSearchExplore = ({
                         {inCart ? (
                           <div className="flex items-center justify-between bg-white text-[#E40000] border border-[#E40000] rounded-lg shadow-sm px-2 py-0.5 text-xs font-bold">
                             <button
-                              onClick={() => onUpdateCartQty(dish._id, -1)}
+                              type="button"
+                              onClick={() => onUpdateCartQty(dish._id || dish.id, -1)}
                               className="p-0.5 active:scale-75 transition-transform"
                             >
                               <Minus className="w-3 h-3" />
                             </button>
                             <span className="font-black">{inCart.quantity}</span>
                             <button
-                              onClick={() => onUpdateCartQty(dish._id, 1)}
+                              type="button"
+                              onClick={() => onUpdateCartQty(dish._id || dish.id, 1)}
                               className="p-0.5 active:scale-75 transition-transform"
                             >
                               <Plus className="w-3 h-3" />
@@ -146,10 +148,11 @@ const CustomerSearchExplore = ({
                           </div>
                         ) : (
                           <button
+                            type="button"
                             onClick={() => onAddToCart(dish)}
-                            className="w-full bg-white text-[#E40000] border border-red-200 hover:border-[#E40000] rounded-lg shadow-xs py-1 text-[11px] font-black uppercase tracking-wider active:scale-95 transition-all text-center"
+                            className="w-full bg-[#E40000] hover:bg-[#CC0000] text-white rounded-lg shadow-xs py-1 text-[11px] font-black uppercase tracking-wider active:scale-95 transition-all text-center"
                           >
-                            ADD
+                            + ADD
                           </button>
                         )}
                       </div>

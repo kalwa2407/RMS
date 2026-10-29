@@ -37,6 +37,7 @@ const CustomerDashboard = () => {
     customerProfile,
     updateProfile,
     signOutCustomer,
+    deleteCustomerAccount,
     idToken,
     fetchWithAuth,
     refreshProfile
@@ -470,16 +471,30 @@ const CustomerDashboard = () => {
     return Math.max(0, grand);
   }, [cartSubtotal, cartDeliveryFee, cartTaxes, totalDiscount]);
 
-  // Cart operations
+  // Cart operations — robust ID matching (items may have _id or id)
+  const getItemId = (item) => {
+    if (!item) return '';
+    const raw = item._id ?? item.id;
+    if (raw === null || raw === undefined) return '';
+    return String(raw).trim();
+  };
+
   const addToCart = (item) => {
+    if (!item) return;
+    const itemId = getItemId(item);
+    if (!itemId) return;
     setCart((prev) => {
-      const idx = prev.findIndex((i) => i._id === item._id);
+      const idx = prev.findIndex((i) => getItemId(i) === itemId);
       if (idx > -1) {
-        const next = [...prev];
-        next[idx].quantity += 1;
-        return next;
+        // Item exists — increment by passed quantity (default 1)
+        return prev.map((ci, i) =>
+          i === idx
+            ? { ...ci, quantity: ci.quantity + (item.quantity || 1) }
+            : ci
+        );
       }
-      return [...prev, { ...item, quantity: 1 }];
+      // New item — preserve passed quantity (from detail modal), default to 1
+      return [...prev, { ...item, quantity: item.quantity || 1 }];
     });
     toast({
       title: 'Added to Cart',
@@ -487,18 +502,25 @@ const CustomerDashboard = () => {
     });
   };
 
-  const updateCartQty = (id, delta) => {
+  const updateCartQty = (idOrItem, delta) => {
+    const strId = typeof idOrItem === 'object' ? getItemId(idOrItem) : String(idOrItem || '').trim();
+    if (!strId) return;
     setCart((prev) => {
-      const idx = prev.findIndex((i) => i._id === id);
-      if (idx === -1) return prev;
-      const next = [...prev];
-      const newQty = next[idx].quantity + delta;
-      if (newQty <= 0) {
-        next.splice(idx, 1);
-      } else {
-        next[idx].quantity = newQty;
+      const idx = prev.findIndex((i) => getItemId(i) === strId);
+      if (idx === -1) {
+        if (delta > 0) {
+          const dishToAdd = menu.find((m) => getItemId(m) === strId);
+          if (dishToAdd) {
+            return [...prev, { ...dishToAdd, quantity: delta }];
+          }
+        }
+        return prev;
       }
-      return next;
+      const newQty = prev[idx].quantity + delta;
+      if (newQty <= 0) {
+        return prev.filter((_, i) => i !== idx);
+      }
+      return prev.map((ci, i) => (i === idx ? { ...ci, quantity: newQty } : ci));
     });
   };
 
@@ -793,12 +815,12 @@ const CustomerDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] text-neutral-900 font-sans flex flex-col items-center">
+    <div className="min-h-screen bg-[#F2F2F7] text-neutral-900 font-sans flex flex-col items-center">
       {/* ── Apple iOS Luxury Startup Splash Preloader ── */}
       <CustomerAppSplash isReady={!offersLoading} minDurationMs={600} />
 
-      {/* ── Main Mobile Shell Container (Zomato iOS 430px) ── */}
-      <div className="w-full max-w-[430px] min-h-screen bg-[#F8F9FA] flex flex-col shadow-2xl relative pb-28">
+      {/* ── Main Responsive Shell Container (Mobile 430px, iPad/Tablet 4xl) ── */}
+      <div className="w-full max-w-[430px] md:max-w-4xl min-h-screen bg-[#F8F9FA] flex flex-col shadow-2xl md:shadow-xl relative pb-28 md:border-x md:border-black/[0.06]">
 
         {/* ── Heads-Up Floating Alert (Zomato-style dropdown with chime) ── */}
         <HeadsUpNotificationBanner
@@ -845,7 +867,7 @@ const CustomerDashboard = () => {
 
 
         {/* ── Scrollable Body with smooth tab fade transition ── */}
-        <main ref={mainScrollRef} key={activeTab} className="flex-1 overflow-y-auto no-scrollbar animate-in fade-in duration-200">
+        <main ref={mainScrollRef} key={activeTab} className="flex-1 overflow-y-auto no-scrollbar animate-in fade-in duration-300 ios-spring">
 
           {/* Tab 1: Home (Royal Discovery & Showcase) */}
           {activeTab === 'home' && (
@@ -954,6 +976,17 @@ const CustomerDashboard = () => {
                 await signOutCustomer();
                 setActiveTab('home');
                 toast({ title: 'Signed Out', description: 'See you again at Persian Darbar!' });
+                navigate('/customer/login', { replace: true });
+              }}
+              onDeleteAccount={async () => {
+                sessionStorage.removeItem('customer_guest_browse');
+                await deleteCustomerAccount();
+                setActiveTab('home');
+                toast({
+                  title: 'Account Deleted',
+                  description: 'Your account and personal data have been permanently removed.',
+                  variant: 'destructive'
+                });
                 navigate('/customer/login', { replace: true });
               }}
               onGoToOrder={() => setActiveTab('order')}
@@ -1104,6 +1137,18 @@ const CustomerDashboard = () => {
             await signOutCustomer();
             setIsProfileOpen(false);
             toast({ title: 'Signed Out', description: 'See you again at Persian Darbar!' });
+            navigate('/customer/login', { replace: true });
+          }}
+          onDeleteAccount={async () => {
+            sessionStorage.removeItem('customer_guest_browse');
+            setIsProfileOpen(false);
+            await deleteCustomerAccount();
+            setActiveTab('home');
+            toast({
+              title: 'Account Deleted',
+              description: 'Your account and personal data have been permanently removed.',
+              variant: 'destructive'
+            });
             navigate('/customer/login', { replace: true });
           }}
           pdCoins={customerProfile?.coins ?? customerProfile?.loyalty_points ?? 450}

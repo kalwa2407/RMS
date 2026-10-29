@@ -298,14 +298,14 @@ const CustomerReservations = () => {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] text-neutral-900 font-sans flex flex-col items-center">
-      {/* ── Main Mobile Shell Container (Zomato iOS 430px) ── */}
-      <div className="w-full max-w-[430px] min-h-screen bg-[#F8F9FA] flex flex-col shadow-2xl relative pb-28">
+      {/* ── Main Responsive Shell Container (Mobile 430px, iPad/Tablet 4xl) ── */}
+      <div className="w-full max-w-[430px] md:max-w-4xl min-h-screen bg-[#F8F9FA] flex flex-col shadow-2xl md:shadow-md relative pb-28 md:border-x md:border-neutral-200/50">
 
         {/* ── BEGIN: iOS Top Navigation Bar ── */}
         <header
           className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-neutral-200/80 px-4 py-3"
           style={{
-            paddingTop: "calc(max(env(safe-area-inset-top, 54px), 54px) + 8px)"
+            paddingTop: "calc(env(safe-area-inset-top, 0px) + 8px)"
           }}
         >
           <div className="flex items-center justify-between">
@@ -1033,7 +1033,7 @@ const CustomerReservations = () => {
         )}
 
         {/* ── Fixed Bottom Floating Bar ── */}
-        <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[430px] px-4 pb-3 pt-2 z-40 bg-gradient-to-t from-white via-white/95 to-transparent pointer-events-none">
+        <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-[430px] md:max-w-lg lg:max-w-xl px-4 pb-3 pt-2 z-40 bg-gradient-to-t from-white via-white/95 to-transparent pointer-events-none">
           <div className="pointer-events-auto bg-white/95 backdrop-blur-xl border border-neutral-200/80 rounded-full px-4 py-2 shadow-lg flex items-center justify-around">
             <button
               onClick={() => navigate('/customer/dashboard')}

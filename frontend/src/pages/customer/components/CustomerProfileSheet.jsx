@@ -19,7 +19,8 @@ import {
   Gift,
   ShieldCheck,
   Edit2,
-  Bike
+  Bike,
+  Trash2
 } from 'lucide-react';
 import { ROYAL_MEMBERSHIP_PRIVILEGES } from '../customerAssets';
 
@@ -36,11 +37,14 @@ const CustomerProfileSheet = ({
   onSaveAddress,
   onShareApp,
   onSignOut,
+  onDeleteAccount,
   pdCoins = 450,
   initialTab = 'membership'
 }) => {
   // 'membership' | 'orders' | 'reservations' | 'details'
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [editPhone, setEditPhone] = useState(false);
   const [phoneVal, setPhoneVal] = useState(customerProfile?.phone || localStorage.getItem('customer_phone') || '');
   const [editAddr, setEditAddr] = useState(false);
@@ -63,8 +67,8 @@ const CustomerProfileSheet = ({
   const patronInitial = (patronName?.[0] || 'A').toUpperCase();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200">
-      <div className="w-full max-w-[430px] max-h-[92vh] bg-[#F8F9FA] rounded-t-[36px] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300">
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-6 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200">
+      <div className="w-full max-w-[430px] md:max-w-xl max-h-[92vh] md:max-h-[85vh] bg-[#F8F9FA] rounded-t-[36px] md:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300">
 
         {/* Grab Handle */}
         <div className="pt-3 pb-1 flex justify-center bg-white">
@@ -433,24 +437,86 @@ const CustomerProfileSheet = ({
               <div className="grid grid-cols-2 gap-2 pt-2">
                 <button
                   onClick={onShareApp}
-                  className="bg-neutral-100 hover:bg-neutral-200 text-neutral-800 p-3 rounded-2xl font-bold text-xs flex items-center justify-center space-x-1.5 transition-colors"
+                  className="bg-neutral-100 hover:bg-neutral-200 text-neutral-800 p-3 rounded-2xl font-bold text-xs flex items-center justify-center space-x-1.5 transition-colors ios-press"
                 >
                   <Share2 className="w-3.5 h-3.5" />
                   <span>Share App</span>
                 </button>
                 <button
                   onClick={onSignOut}
-                  className="bg-red-50 hover:bg-red-100 text-[#E40000] border border-red-200 p-3 rounded-2xl font-bold text-xs flex items-center justify-center space-x-1.5 transition-colors"
+                  className="bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200 p-3 rounded-2xl font-bold text-xs flex items-center justify-center space-x-1.5 transition-colors ios-press"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                   <span>Sign Out</span>
                 </button>
               </div>
+
+              {/* Guideline 5.1.1(v): Account Deletion in Profile Sheet */}
+              {currentUser && onDeleteAccount && (
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="w-full py-2.5 px-3 rounded-xl bg-red-50 hover:bg-red-600 text-red-600 hover:text-white border border-red-200/90 font-bold text-xs active:scale-98 transition-all flex items-center justify-center space-x-1.5 cursor-pointer ios-press"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete My Account</span>
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
         </div>
       </div>
+
+      {/* Account Deletion Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-60 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl border border-red-200 text-center animate-in zoom-in-95 duration-200">
+            <div className="w-14 h-14 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mx-auto border border-red-200">
+              <Trash2 className="w-7 h-7 text-red-600" />
+            </div>
+            <div>
+              <h3 className="font-black text-base text-neutral-900">Delete Account Permanently?</h3>
+              <p className="text-xs text-neutral-600 mt-1.5 leading-relaxed">
+                This will immediately remove your Persian Darbar profile, delete saved delivery addresses, and forfeit your <strong className="text-red-600 font-black">{pdCoins} PD Coins</strong>.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5 pt-2">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setShowDeleteConfirm(false)}
+                className="py-3 rounded-2xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-bold text-xs active:scale-98 transition-all cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={async () => {
+                  setIsDeleting(true);
+                  try {
+                    setShowDeleteConfirm(false);
+                    onClose();
+                    await onDeleteAccount();
+                  } finally {
+                    setIsDeleting(false);
+                  }
+                }}
+                className="py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black text-xs shadow-md active:scale-98 transition-all cursor-pointer flex items-center justify-center space-x-1.5 disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <span>Yes, Delete</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

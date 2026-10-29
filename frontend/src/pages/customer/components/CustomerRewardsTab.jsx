@@ -168,118 +168,128 @@ const CustomerRewardsTab = ({
 
   return (
     <div className="flex-1 pb-32 pt-2 px-4 space-y-4">
-      {/* ── 1. PD COINS ROYALTY CARD — clean red & white ── */}
-      <section className="relative overflow-hidden rounded-3xl bg-white border border-neutral-200/80 shadow-sm p-5">
-        {/* Subtle red accent strip at top */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-[#E40000] rounded-t-3xl" />
+      {/* ── 1. APPLE WALLET STYLE SOVEREIGN VIP PASS ── */}
+      <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#0B131B] via-[#141F2D] to-[#0A1017] border border-amber-400/35 shadow-[0_14px_44px_-10px_rgba(245,158,11,0.22)] p-6 text-white">
+        {/* Subtle Gold Foil Radial Sheen & Crown Watermark */}
+        <div className="absolute -top-16 -right-16 w-52 h-52 bg-gradient-to-bl from-amber-400/20 via-amber-300/10 to-transparent rounded-full pointer-events-none blur-2xl" />
+        <Crown className="absolute -right-4 -bottom-6 w-40 h-40 text-amber-400/[0.06] pointer-events-none stroke-[1.2]" />
 
-        {/* Profile row */}
-        <div className="flex items-start justify-between gap-3 mt-1">
+        {/* Top Header: App Brand + VIP Chip */}
+        <div className="flex items-start justify-between relative z-10">
           <div className="flex items-center space-x-3 min-w-0 flex-1">
             <div className="relative shrink-0">
-              <div className="w-12 h-12 rounded-2xl bg-[#E40000] text-white flex items-center justify-center font-black text-xl shadow-sm">
+              <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-[#E40000] to-[#B91C1C] text-white flex items-center justify-center font-black text-xl shadow-md border-2 border-amber-400/60">
                 {patronInitial}
               </div>
-              <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-amber-400 border-2 border-white flex items-center justify-center shadow-xs">
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-amber-400 border-2 border-[#0B131B] flex items-center justify-center shadow-xs">
                 <Crown className="w-2.5 h-2.5 text-neutral-950 fill-neutral-950" />
               </div>
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="text-sm font-black tracking-tight text-neutral-900 capitalize truncate leading-tight">
-                {patronName}
-              </h2>
-              <p className="text-[11px] text-neutral-500 font-medium truncate mt-0.5">
-                +91 {patronPhone}{patronEmail ? ` · ${patronEmail}` : ' · Verified Patron'}
+              <div className="flex items-center space-x-1.5">
+                <h2 className="text-base font-black tracking-tight text-white capitalize truncate leading-tight">
+                  {patronName}
+                </h2>
+                <div className="w-4 h-4 rounded-full bg-amber-400/20 text-amber-300 flex items-center justify-center text-[10px] font-black border border-amber-400/40" title="Royalty Member">
+                  ★
+                </div>
+              </div>
+              <p className="text-[11px] text-stone-300/80 font-medium truncate mt-0.5">
+                +91 {patronPhone}{patronEmail ? ` · ${patronEmail}` : ' · Sovereign Patron'}
               </p>
             </div>
           </div>
 
           <div className="text-right shrink-0 flex flex-col items-end gap-1">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-neutral-950 text-amber-300 border border-neutral-800 flex items-center gap-1 whitespace-nowrap shadow-xs">
-              <Sparkles className="w-2.5 h-2.5 text-amber-300" />
+            <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400/25 to-amber-300/15 text-amber-300 border border-amber-400/40 flex items-center gap-1.5 whitespace-nowrap shadow-xs backdrop-blur-md">
+              <Sparkles className="w-3 h-3 text-amber-300" />
               GOLD VIP
             </span>
-            <span className="text-[9px] uppercase font-black tracking-widest text-neutral-400 whitespace-nowrap">
-              ROYALTY CLUB
+            <span className="text-[8px] uppercase font-black tracking-widest text-amber-400/60 whitespace-nowrap">
+              SOVEREIGN CLUB
             </span>
           </div>
         </div>
 
-        {/* Coins Balance */}
-        <div className="mt-4 pt-4 border-t border-neutral-100 flex items-end justify-between">
+        {/* Coins Balance with Gold Glow */}
+        <div className="mt-6 pt-5 border-t border-white/10 flex items-end justify-between relative z-10">
           <div>
-            <span className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block">
-              Available Royalty Balance
+            <span className="text-[10px] font-black uppercase tracking-widest text-amber-400/70 block">
+              AVAILABLE ROYALTY BALANCE
             </span>
-            <div className="flex items-baseline space-x-2 mt-0.5">
-              <span className="text-3xl font-black text-[#E40000]">
+            <div className="flex items-baseline space-x-2.5 mt-1">
+              <span className="text-4xl font-black text-amber-300 drop-shadow-[0_2px_12px_rgba(252,211,77,0.35)] tracking-tight">
                 {coinsBalance.toLocaleString()}
               </span>
-              <span className="text-xs font-bold text-neutral-600">PD Coins</span>
+              <span className="text-xs font-black uppercase tracking-wider text-stone-300">PD Coins</span>
             </div>
-            <p className="text-[11px] text-neutral-500 font-medium mt-1">
-              Worth <strong className="text-[#E40000] font-black">₹{coinsBalance}</strong> direct discount on your next order
+            <p className="text-[11px] text-stone-300 font-medium mt-1">
+              Worth <strong className="text-amber-300 font-black">₹{coinsBalance}</strong> direct discount on your feast
             </p>
           </div>
 
           <button
+            type="button"
             onClick={onGoToOrder}
-            className="px-4 py-2 rounded-xl bg-[#E40000] hover:bg-[#CC0000] text-white text-xs font-black shadow-sm flex items-center space-x-1 active:scale-95 transition-all"
+            className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 text-stone-950 text-xs font-black shadow-lg flex items-center space-x-1.5 active:scale-95 transition-all ios-press cursor-pointer border border-amber-200/60"
           >
-            <span>Redeem</span>
-            <ChevronRight className="w-3.5 h-3.5" />
+            <span>Redeem Now</span>
+            <ChevronRight className="w-4 h-4 stroke-[2.5]" />
           </button>
         </div>
 
-        {/* Tier progress */}
-        <div className="mt-4 pt-3 border-t border-neutral-100">
-          <div className="flex justify-between text-[11px] text-neutral-500 mb-1.5 font-semibold">
-            <span>Current: <strong className="text-neutral-800">Gold Patron</strong></span>
-            <span className="text-[#E40000] font-bold">{Math.max(0, 750 - coinsBalance)} Coins to Emperor Tier</span>
+        {/* Tier progress to Emperor Sovereign */}
+        <div className="mt-5 pt-3.5 border-t border-white/10 relative z-10">
+          <div className="flex justify-between text-[11px] text-stone-300/80 mb-1.5 font-semibold">
+            <span>Tier Status: <strong className="text-amber-300 font-bold">Gold Patron</strong></span>
+            <span className="text-amber-400 font-black">{Math.max(0, 750 - coinsBalance)} Coins to Emperor Elite</span>
           </div>
-          <div className="w-full h-2 rounded-full bg-neutral-100 overflow-hidden">
+          <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden p-[1px]">
             <div
-              className="h-full bg-[#E40000] rounded-full transition-all duration-700"
+              className="h-full bg-gradient-to-r from-amber-400 to-amber-300 rounded-full transition-all duration-700 shadow-[0_0_12px_rgba(252,211,77,0.5)]"
               style={{ width: `${Math.min(100, (coinsBalance / 750) * 100)}%` }}
             />
           </div>
         </div>
       </section>
 
-      {/* ── 2. DAILY ROYAL REWARD / CLAIM COINS (No Emojis) ── */}
-      <section className="bg-white border border-neutral-200/80 rounded-2xl p-4 shadow-xs flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="w-11 h-11 rounded-2xl bg-red-50 border border-red-200 text-[#E40000] flex items-center justify-center shrink-0 shadow-xs">
-            <Gift className="w-5 h-5 text-[#E40000]" />
+      {/* ── 2. DAILY ROYAL REWARD / CLAIM COINS (Apple Frosted Card) ── */}
+      <section className="ios-card p-4 flex items-center justify-between border border-black/[0.06] hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all">
+        <div className="flex items-center space-x-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400/20 to-amber-500/10 border border-amber-400/30 text-amber-600 flex items-center justify-center shrink-0 shadow-xs">
+            <Gift className="w-6 h-6 text-amber-600" />
           </div>
           <div>
-            <span className="text-[10px] font-black uppercase text-[#E40000] bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
-              Daily Shahi Surprise
-            </span>
+            <div className="flex items-center space-x-1.5">
+              <span className="text-[10px] font-black uppercase text-amber-700 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-full">
+                Daily Check-in
+              </span>
+            </div>
             <h4 className="text-xs font-black text-neutral-900 mt-1">
-              {dailyClaimed ? '25 Coins Added Today!' : 'Claim 25 Free PD Coins'}
+              {dailyClaimed ? '25 Coins Added Today!' : 'Claim Free 25 PD Coins'}
             </h4>
-            <p className="text-[10px] text-neutral-500">
+            <p className="text-[10px] text-neutral-500 font-medium">
               {dailyClaimed ? 'Come back tomorrow for your next royal bonus' : 'Free daily loyalty reward for active patrons'}
             </p>
           </div>
         </div>
 
         <button
+          type="button"
           onClick={handleClaimDailyCoins}
           disabled={dailyClaimed}
-          className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all ${
+          className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all ios-press cursor-pointer shadow-xs ${
             dailyClaimed
-              ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
-              : 'bg-[#E40000] hover:bg-[#CC0000] text-white shadow-sm active:scale-95'
+              ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed border border-neutral-200/60'
+              : 'bg-[#E40000] hover:bg-[#CC0000] text-white active:scale-95 shadow-[0_4px_14px_rgba(228,0,0,0.25)] border border-white/20'
           }`}
         >
           {dailyClaimed ? 'Claimed ✓' : 'Claim +25'}
         </button>
       </section>
 
-      {/* ── 3. SEGMENTED VIEWS: Perks | Vouchers | Passbook (Solid Black Active Highlight) ── */}
-      <div className="bg-neutral-100 p-1.5 rounded-2xl flex items-center justify-between gap-1 border border-neutral-200/60">
+      {/* ── 3. SEGMENTED VIEWS: Perks | Vouchers | Passbook (Apple iOS Segmented Control) ── */}
+      <div className="bg-[#E5E5EA] p-1 rounded-2xl flex items-center justify-between gap-1 border border-black/[0.04]">
         {[
           { id: 'perks', label: 'VIP Privileges', icon: Crown },
           { id: 'vouchers', label: 'Redeem Vouchers', icon: Tag },
@@ -291,10 +301,10 @@ const CustomerRewardsTab = ({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-2 px-1.5 rounded-xl text-[11px] sm:text-xs font-black transition-all flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer select-none ${
+              className={`flex-1 py-2.5 px-1.5 rounded-xl text-[11px] sm:text-xs font-black transition-all ios-press flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer select-none ${
                 isActive
-                  ? 'bg-neutral-950 text-white shadow-sm'
-                  : 'text-neutral-600 hover:text-neutral-950 font-bold'
+                  ? 'bg-white text-neutral-900 shadow-sm'
+                  : 'text-neutral-500 hover:text-neutral-900'
               }`}
             >
               <TabIcon className="w-3.5 h-3.5 shrink-0" />
@@ -383,7 +393,7 @@ const CustomerRewardsTab = ({
             </div>
           )}
 
-          <div className="grid grid-cols-1 gap-2.5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
             {REWARD_VOUCHERS.map((vouch) => {
               const canRedeem = coinsBalance >= vouch.requiredCoins;
               return (
@@ -456,7 +466,7 @@ const CustomerRewardsTab = ({
           <span>Ways to Earn Royalty Coins</span>
         </h3>
 
-        <div className="grid grid-cols-2 gap-2.5 text-xs">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 text-xs">
           {/* Card 1: 10% on Delivery */}
           <div
             onClick={onGoToOrder}

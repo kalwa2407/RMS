@@ -54,13 +54,77 @@
 
 body {
     margin: 0;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
-        "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
-        "Helvetica Neue", sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Plus Jakarta Sans", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     /* iOS: prevent elastic overscroll on the body itself */
     overscroll-behavior: none;
+    background-color: #F2F2F7;
+    color: #1C1C1E;
+}
+
+/* ── Apple HIG Spring Transitions & Micro-Interactions ───────── */
+.ios-spring {
+    transition: all 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.ios-press {
+    transition: transform 0.16s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.16s ease;
+    user-select: none;
+    -webkit-user-select: none;
+}
+.ios-press:active {
+    transform: scale(0.96);
+    opacity: 0.9;
+}
+
+.ios-press-subtle {
+    transition: transform 0.16s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.ios-press-subtle:active {
+    transform: scale(0.98);
+}
+
+/* Apple Squircle Card Materials */
+.ios-card {
+    background: #FFFFFF;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+    border-radius: 1.5rem;
+}
+
+.ios-card-glass {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.06);
+    border-radius: 1.5rem;
+}
+
+.ios-dock {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(28px) saturate(190%);
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    box-shadow: 0 16px 48px -6px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.ios-glow-red {
+    box-shadow: 0 6px 24px -2px rgba(228, 0, 0, 0.38);
+}
+
+.ios-glow-amber {
+    box-shadow: 0 6px 20px -2px rgba(245, 158, 11, 0.3);
+}
+
+/* Shimmer pulse for VIP highlights */
+@keyframes ios-shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(200%); }
+}
+.animate-ios-shimmer {
+    animation: ios-shimmer 2.4s infinite ease-in-out;
 }
 
 /* ── iOS Safari global fixes ─────────────────────────────────── */
@@ -139,6 +203,6 @@ code {
     @apply border-border;
     }
   body {
-    @apply bg-[#0f2933] text-foreground;
-    }
+    @apply bg-[#F2F2F7] text-neutral-900;
+  }
 }

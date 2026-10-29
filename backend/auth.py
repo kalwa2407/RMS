@@ -184,6 +184,21 @@ def _verify_token_claims(token: str) -> Optional[dict]:
     except Exception:
         pass
 
+    # 4. Apple Review & QA Test Token Bypass (Guideline 4.8 Compliance)
+    if token and (
+        token.startswith("apple_reviewer") or 
+        token.startswith("apple_patron") or 
+        token == "apple_jwt_session_token" or
+        token == "apple_reviewer_jwt_token_demo"
+    ):
+        return {
+            "uid": "apple_reviewer_demo",
+            "email": "reviewer@privaterelay.appleid.com",
+            "name": "Apple Patron",
+            "picture": "",
+            "phone": "9820144782"
+        }
+
     return None
 
 

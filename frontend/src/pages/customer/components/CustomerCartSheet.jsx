@@ -56,9 +56,9 @@ const CustomerCartSheet = ({
   const freeDeliveryDiff = Math.max(0, freeDeliveryThreshold - cartSubtotal);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-xs transition-opacity">
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity p-0 md:p-6">
       <div
-        className="w-full max-w-[430px] max-h-[90vh] bg-white rounded-t-[28px] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300"
+        className="w-full max-w-[430px] md:max-w-xl max-h-[90vh] bg-white rounded-t-[28px] md:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300"
       >
         {/* Grab Handle */}
         <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-2.5 mb-1" />
@@ -233,15 +233,17 @@ const CustomerCartSheet = ({
                   {/* Quantity Stepper */}
                   <div className="flex items-center space-x-2 bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-1 text-xs font-black">
                     <button
-                      onClick={() => onUpdateCartQty(item._id, -1)}
-                      className="text-neutral-600 hover:text-[#E40000] p-0.5"
+                      type="button"
+                      onClick={() => onUpdateCartQty(item._id || item.id, -1)}
+                      className="text-neutral-600 hover:text-[#E40000] p-0.5 active:scale-90"
                     >
                       <Minus className="w-3.5 h-3.5" />
                     </button>
                     <span className="w-4 text-center">{item.quantity}</span>
                     <button
-                      onClick={() => onUpdateCartQty(item._id, 1)}
-                      className="text-neutral-600 hover:text-[#E40000] p-0.5"
+                      type="button"
+                      onClick={() => onUpdateCartQty(item._id || item.id, 1)}
+                      className="text-neutral-600 hover:text-[#E40000] p-0.5 active:scale-90"
                     >
                       <Plus className="w-3.5 h-3.5" />
                     </button>
@@ -472,42 +474,42 @@ const CustomerCartSheet = ({
             <label className="block text-[11px] font-extrabold text-neutral-500 uppercase tracking-wider mb-2">
               Payment Method
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2.5">
               <button
                 type="button"
                 onClick={() => onSetPayMethod('cod')}
-                className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center justify-center space-y-1.5 transition-all ${
+                className={`p-3.5 rounded-2xl border text-xs font-bold flex flex-col items-center justify-center space-y-1.5 transition-all ios-press cursor-pointer ${
                   payMethod === 'cod'
-                    ? 'border-[#E40000] bg-red-50 text-[#E40000] ring-1 ring-[#E40000]'
-                    : 'border-neutral-200 bg-white text-neutral-700'
+                    ? 'border-[#E40000] bg-red-50/70 text-[#E40000] ring-1 ring-[#E40000]/40 shadow-xs'
+                    : 'border-neutral-200/80 bg-neutral-50/80 hover:bg-neutral-100 text-neutral-700'
                 }`}
               >
                 <div className="flex items-center space-x-1.5">
                   <Banknote className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Cash on Delivery</span>
+                  <span className="font-extrabold">Cash on Delivery</span>
                 </div>
               </button>
               <button
                 type="button"
                 onClick={() => onSetPayMethod('online')}
-                className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center justify-center space-y-1.5 transition-all ${
+                className={`p-3.5 rounded-2xl border text-xs font-bold flex flex-col items-center justify-center space-y-1.5 transition-all ios-press cursor-pointer ${
                   payMethod === 'online'
-                    ? 'border-[#E40000] bg-red-50 text-[#E40000] ring-1 ring-[#E40000]'
-                    : 'border-neutral-200 bg-white text-neutral-700'
+                    ? 'border-[#E40000] bg-red-50/70 text-[#E40000] ring-1 ring-[#E40000]/40 shadow-xs'
+                    : 'border-neutral-200/80 bg-neutral-50/80 hover:bg-neutral-100 text-neutral-700'
                 }`}
               >
                 <div className="flex items-center space-x-1.5">
                   <CreditCard className="w-4 h-4 text-sky-600 shrink-0" />
-                  <span>UPI / Online (Razorpay)</span>
+                  <span className="font-extrabold">UPI / Online Pay</span>
                 </div>
               </button>
             </div>
           </div>
         </div>
 
-        {/* ── Fixed Footer CTA ── */}
+        {/* ── Fixed Footer CTA: Apple Pay / High-Contrast Action ── */}
         <div
-          className="p-4 border-t border-gray-100 bg-white"
+          className="p-4 border-t border-neutral-100 bg-white/95 backdrop-blur-xl"
           style={{
             paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)'
           }}
@@ -515,14 +517,14 @@ const CustomerCartSheet = ({
           <button
             onClick={onPlaceOrder}
             disabled={placingOrder}
-            className="w-full bg-[#E40000] hover:bg-[#CC0000] text-white font-extrabold text-sm py-3.5 rounded-2xl shadow-lg active:scale-98 transition-all disabled:opacity-50 flex items-center justify-center space-x-2"
+            className="w-full bg-gradient-to-r from-[#E40000] via-[#D31027] to-[#B91C1C] hover:brightness-105 text-white font-black text-sm py-4 rounded-2xl shadow-[0_8px_24px_-4px_rgba(228,0,0,0.45)] ios-press transition-all disabled:opacity-50 flex items-center justify-center space-x-2 border border-white/20 cursor-pointer"
           >
             <span>
               {placingOrder
-                ? 'Confirming Order...'
+                ? 'Confirming Feast...'
                 : currentUser
-                ? `Confirm Order · ₹${cartTotal.toLocaleString()}`
-                : `Login to Confirm Order · ₹${cartTotal.toLocaleString()}`}
+                ? `Confirm Royal Feast · ₹${cartTotal.toLocaleString()}`
+                : `Login to Confirm · ₹${cartTotal.toLocaleString()}`}
             </span>
           </button>
         </div>

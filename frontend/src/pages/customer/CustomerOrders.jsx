@@ -147,7 +147,7 @@ const CustomerOrders = () => {
           background: "rgba(7,13,20,0.98)",
           borderBottom: "1px solid rgba(234,179,8,0.1)",
           backdropFilter: "blur(16px)",
-          paddingTop: "calc(max(env(safe-area-inset-top, 54px), 54px) + 8px)"
+          paddingTop: "calc(env(safe-area-inset-top, 0px) + 8px)"
         }}
       >
         <div className="flex items-center justify-between px-4 py-3">
@@ -199,7 +199,7 @@ const CustomerOrders = () => {
 
       {/* ─── Scrollable Content ─── */}
       <div className="flex-1 overflow-y-auto">
-        <div className="p-4 space-y-4">
+        <div className="p-4 space-y-4 max-w-4xl mx-auto w-full">
 
 
         {/* Orders List */}
@@ -217,7 +217,7 @@ const CustomerOrders = () => {
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredOrders.map(order => {
               const isActive = ['placed', 'accepted', 'preparing', 'ready', 'out_for_delivery'].includes(order.status);
               const canCancel = order.status === 'placed';

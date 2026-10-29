@@ -434,3 +434,19 @@ export const ROYAL_MEMBERSHIP_PRIVILEGES = [
     icon: 'Gift'
   }
 ];
+
+// ── Bulletproof dish & cart item ID matching (Eliminates undefined === undefined matching bugs) ──
+export const getDishId = (item) => {
+  if (!item) return '';
+  const rawId = item._id ?? item.id;
+  if (rawId === null || rawId === undefined) return '';
+  return String(rawId).trim();
+};
+
+export const findCartItem = (cart, dish) => {
+  if (!Array.isArray(cart) || !dish) return null;
+  const dId = getDishId(dish);
+  if (!dId) return null;
+  return cart.find((c) => getDishId(c) === dId) || null;
+};
+

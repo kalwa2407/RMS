@@ -109,7 +109,7 @@ export const HeadsUpNotificationBanner = ({ alert, onClose, onTap }) => {
   return (
     <div
       onClick={onTap}
-      className="fixed top-4 left-1/2 -translate-x-1/2 w-[92%] max-w-[400px] z-[999] pointer-events-auto cursor-pointer animate-in slide-in-from-top-4 duration-300 select-none"
+      className="fixed top-4 left-1/2 -translate-x-1/2 w-[92%] max-w-[400px] md:max-w-md z-[999] pointer-events-auto cursor-pointer animate-in slide-in-from-top-4 duration-300 select-none"
     >
       <div className="bg-neutral-900/95 backdrop-blur-md text-white p-3.5 rounded-3xl shadow-2xl border border-white/20 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
@@ -172,8 +172,8 @@ export const CustomerNotificationDrawer = ({
       {/* Drawer */}
       <div className="fixed inset-0 z-[91] flex flex-col items-center pointer-events-none">
         <div
-          className="w-full max-w-[430px] h-full flex flex-col pointer-events-auto"
-          style={{ paddingTop: 'calc(max(env(safe-area-inset-top, 54px), 54px) + 60px)' }}
+          className="w-full max-w-[430px] md:max-w-lg lg:max-w-xl h-full flex flex-col pointer-events-auto"
+          style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 60px)' }}
         >
           <div className="flex-1 bg-white rounded-t-3xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300">
 

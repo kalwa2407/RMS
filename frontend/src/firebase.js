@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics, isSupported } from "firebase/analytics";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, OAuthProvider } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBNWnChrD5s0Ky5rnKdtm9HQP2_179hmUQ",
@@ -20,6 +20,11 @@ const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
+// Initialize Apple OAuth Provider (App Store Guideline 4.8 Compliance)
+const appleProvider = new OAuthProvider('apple.com');
+appleProvider.addScope('email');
+appleProvider.addScope('name');
+
 // Safe analytics init
 let analytics = null;
 if (typeof window !== 'undefined') {
@@ -28,4 +33,4 @@ if (typeof window !== 'undefined') {
   }).catch(() => {});
 }
 
-export { app, auth, googleProvider, analytics };
+export { app, auth, googleProvider, appleProvider, analytics };

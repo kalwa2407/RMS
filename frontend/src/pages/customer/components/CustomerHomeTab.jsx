@@ -5,7 +5,9 @@ import {
   DEFAULT_PERSIAN_DARBAR_OFFERS,
   PERSIAN_DARBAR_HALLMARKS,
   PATRON_REVIEWS,
-  getDishMetrics
+  getDishMetrics,
+  getDishId,
+  findCartItem
 } from '../customerAssets';
 import CustomerDishDetailModal from './CustomerDishDetailModal';
 
@@ -233,7 +235,7 @@ const CustomerHomeTab = ({
 
           <div className="flex space-x-3 overflow-x-auto no-scrollbar pb-2">
             {displayedChefSpecials.map((dish, idx) => {
-              const inCart = cart.find((c) => c._id === dish._id || c.id === dish.id);
+              const inCart = findCartItem(cart, dish);
               const fallbackImg = `/dynamic_images/img${((idx % 9) + 1)}.jpeg`;
               const dishImg = dish.image && !dish.image.includes('no-image.png') && !dish.image.includes('photo-1701579231305-d7d8af9a3fd')
                 ? dish.image
@@ -278,19 +280,31 @@ const CustomerHomeTab = ({
                       </span>
 
                       {inCart ? (
-                        <div className="flex items-center space-x-1.5 bg-red-50 text-[#E40000] border border-[#E40000] rounded-lg px-2 py-0.5 text-xs font-bold">
-                          <button onClick={() => onUpdateCartQty(dish._id || dish.id, -1)}>
-                            <Minus className="w-3 h-3" />
+                        <div className="flex items-center space-x-1.5 bg-neutral-900 text-white rounded-xl px-2 py-1 text-xs font-bold shadow-xs">
+                          <button
+                            type="button"
+                            onClick={() => onUpdateCartQty(dish._id || dish.id, -1)}
+                            className="p-0.5 text-amber-400 hover:text-white active:scale-90"
+                          >
+                            <Minus className="w-3 h-3 stroke-[3]" />
                           </button>
-                          <span className="font-black">{inCart.quantity}</span>
-                          <button onClick={() => onUpdateCartQty(dish._id || dish.id, 1)}>
-                            <Plus className="w-3 h-3" />
+                          <span className="font-black px-1 text-white">{inCart.quantity}</span>
+                          <button
+                            type="button"
+                            onClick={() => onUpdateCartQty(dish._id || dish.id, 1)}
+                            className="p-0.5 text-amber-400 hover:text-white active:scale-90"
+                          >
+                            <Plus className="w-3 h-3 stroke-[3]" />
                           </button>
                         </div>
                       ) : (
                         <button
-                          onClick={() => (onSelectDishDetail || setSelectedDishDetail)(dish)}
-                          className="bg-red-50 hover:bg-[#E40000] hover:text-white text-[#E40000] border border-red-200 font-black text-[11px] px-3 py-1 rounded-lg transition-colors active:scale-95 cursor-pointer"
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onAddToCart(dish);
+                          }}
+                          className="bg-red-50 hover:bg-[#E40000] hover:text-white text-[#E40000] border border-red-200 font-black text-[11px] px-3 py-1 rounded-xl transition-all active:scale-95 cursor-pointer shadow-xs"
                         >
                           + ADD
                         </button>
@@ -327,9 +341,9 @@ const CustomerHomeTab = ({
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
               {trendingDelicacies.slice(0, 4).map((dish, idx) => {
-                const inCart = cart.find((c) => c._id === dish._id || c.id === dish.id);
+                const inCart = findCartItem(cart, dish);
                 const { orderCount } = getDishMetrics(dish);
                 const fallbackImg = `/dynamic_images/img${(((idx + 2) % 9) + 1)}.jpeg`;
                 const dishImg = dish.image && !dish.image.includes('no-image.png') && !dish.image.includes('photo-1701579231305-d7d8af9a3fd')
@@ -339,7 +353,7 @@ const CustomerHomeTab = ({
                 return (
                   <div
                     key={dish._id || dish.id || idx}
-                    onClick={() => setSelectedDishDetail(dish)}
+                    onClick={() => (onSelectDishDetail || setSelectedDishDetail)(dish)}
                     className="bg-white rounded-2xl p-2.5 border border-amber-900/10 flex flex-col justify-between shadow-xs cursor-pointer active:scale-[0.98] transition-all hover:border-amber-300"
                   >
                     <div className="h-20 w-full rounded-xl overflow-hidden bg-neutral-100 mb-2 relative">
@@ -366,15 +380,31 @@ const CustomerHomeTab = ({
                           ₹{dish.price}
                         </span>
                         {inCart ? (
-                          <div className="flex items-center space-x-1 bg-red-50 text-[#E40000] border border-[#E40000] rounded px-1.5 py-0.2 text-[11px] font-bold">
-                            <button onClick={() => onUpdateCartQty(dish._id || dish.id, -1)}>-</button>
-                            <span className="font-black px-1">{inCart.quantity}</span>
-                            <button onClick={() => onUpdateCartQty(dish._id || dish.id, 1)}>+</button>
+                          <div className="flex items-center space-x-1 bg-neutral-900 text-white rounded-lg px-2 py-0.5 text-xs font-bold shadow-xs">
+                            <button
+                              type="button"
+                              onClick={() => onUpdateCartQty(dish._id || dish.id, -1)}
+                              className="p-0.5 text-amber-400 hover:text-white active:scale-90"
+                            >
+                              <Minus className="w-3 h-3 stroke-[3]" />
+                            </button>
+                            <span className="font-black px-1 text-white">{inCart.quantity}</span>
+                            <button
+                              type="button"
+                              onClick={() => onUpdateCartQty(dish._id || dish.id, 1)}
+                              className="p-0.5 text-amber-400 hover:text-white active:scale-90"
+                            >
+                              <Plus className="w-3 h-3 stroke-[3]" />
+                            </button>
                           </div>
                         ) : (
                           <button
-                            onClick={() => (onSelectDishDetail || setSelectedDishDetail)(dish)}
-                            className="bg-red-50 text-[#E40000] hover:bg-[#E40000] hover:text-white border border-red-200 text-[10px] font-black px-2 py-0.5 rounded transition-colors"
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onAddToCart(dish);
+                            }}
+                            className="bg-red-50 text-[#E40000] hover:bg-[#E40000] hover:text-white border border-red-200 text-[10px] font-black px-2 py-0.5 rounded-lg transition-all active:scale-95 shadow-xs"
                           >
                             + ADD
                           </button>
@@ -399,7 +429,7 @@ const CustomerHomeTab = ({
             </h3>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-left">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-left">
             {PERSIAN_DARBAR_HALLMARKS.map((item, idx) => {
               const IconComponent =
                 item.iconName === 'Flame' ? Flame :

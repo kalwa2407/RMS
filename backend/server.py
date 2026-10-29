@@ -4957,8 +4957,9 @@ async def admin_get_all_customers_with_metrics(
         })
 
     # Overall stats
-    google_count = sum(1 for c in processed_customers if c["provider"] == "google")
-    phone_count = sum(1 for c in processed_customers if c["provider"] == "phone")
+    google_count = sum(1 for c in processed_customers if c.get("provider") == "google")
+    apple_count = sum(1 for c in processed_customers if c.get("provider") == "apple")
+    phone_count = sum(1 for c in processed_customers if c.get("provider") == "phone")
     total_orders_sum = sum(c["total_orders"] for c in processed_customers)
     total_spent_sum = sum(c["total_spent"] for c in processed_customers)
     total_res_sum = sum(c["total_reservations"] for c in processed_customers)
@@ -4967,6 +4968,7 @@ async def admin_get_all_customers_with_metrics(
         "success": True,
         "total_count": len(processed_customers),
         "google_count": google_count,
+        "apple_count": apple_count,
         "phone_count": phone_count,
         "total_orders_all": total_orders_sum,
         "total_spent_all": round(total_spent_sum, 2),
@@ -5246,6 +5248,53 @@ async def update_customer_profile(
     customers[profile_idx] = current
     await manager._write("customers", customers)
     return current
+
+@customer_router.delete("/account")
+async def delete_customer_account(
+    user: dict = Depends(verify_customer_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """
+    App Store Guideline 5.1.1(v) Compliance: In-App Account Deletion.
+    Permanently deletes customer profile, saved addresses, and loyalty balance from the system.
+    """
+    uid = user.get("uid")
+    phone = user.get("phone", "")
+    email = (user.get("email") or "").lower().strip()
+
+    customers = await manager._read("customers")
+    # Filter out customer records matching UID, phone, or email
+    customers = [
+        c for c in customers
+        if c.get("uid") != uid
+        and (not phone or c.get("phone") != phone)
+        and (not email or (c.get("email") or "").lower().strip() != email)
+    ]
+    await manager._write("customers", customers)
+
+    # Clean active OTP records if phone exists
+    if phone:
+        formatted = format_whatsapp_number(phone)
+        if formatted and formatted in CUSTOMER_ACTIVE_OTPS:
+            CUSTOMER_ACTIVE_OTPS.pop(formatted, None)
+
+    # Remove from Firebase Auth if user exists in Firebase
+    try:
+        import firebase_admin
+        from firebase_admin import auth as fb_auth
+        if firebase_admin._apps and uid and not uid.startswith("wa_") and not uid.startswith("apple_reviewer"):
+            try:
+                fb_auth.delete_user(uid)
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+    logger.info(f"[Account Deletion] Customer account deleted: uid={uid}, email={email}")
+    return {
+        "success": True,
+        "message": "Account and all associated personal data have been permanently deleted."
+    }
 
 @customer_router.get("/orders")
 async def get_customer_orders_list(

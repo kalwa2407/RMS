@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 const CustomerLogin = () => {
-  const { currentUser, signInWithGoogle, sendWhatsAppOtp, verifyWhatsAppOtp, loading } = useCustomerAuth();
+  const { currentUser, signInWithGoogle, signInWithApple, sendWhatsAppOtp, verifyWhatsAppOtp, loading } = useCustomerAuth();
 
   // Step: 'phone' or 'otp'
   const [step, setStep] = useState('phone');
@@ -26,6 +26,7 @@ const CustomerLogin = () => {
   // UI states
   const [submitting, setSubmitting] = useState(false);
   const [signingInGoogle, setSigningInGoogle] = useState(false);
+  const [signingInApple, setSigningInApple] = useState(false);
   const [error, setError] = useState(null);
   const [successNotice, setSuccessNotice] = useState(null);
 
@@ -152,13 +153,34 @@ const CustomerLogin = () => {
     }
   };
 
+  // Apple Sign-In (App Store Guideline 4.8 Compliance)
+  const handleAppleSignIn = async () => {
+    setSigningInApple(true);
+    setError(null);
+    try {
+      const res = await signInWithApple();
+      if (res.success) {
+        sessionStorage.setItem('customer_guest_browse', 'true');
+        navigate(from, { replace: true });
+      } else {
+        if (res.error) {
+          setError(res.error);
+        }
+        setSigningInApple(false);
+      }
+    } catch (err) {
+      setError(err?.message || 'Apple sign-in could not be completed.');
+      setSigningInApple(false);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 w-full h-[100dvh] bg-[#F8F9FA] flex flex-col items-center justify-center text-neutral-900 font-sans select-none overflow-hidden">
-      {/* ── Mobile Container (Locked Viewport, No Over-swiping) ── */}
+    <div className="fixed inset-0 w-full h-[100dvh] bg-[#F8F9FA] flex flex-col items-center justify-center text-neutral-900 font-sans select-none overflow-hidden p-0 md:p-6">
+      {/* ── Responsive Login Card (Mobile 430px, iPad/Tablet Center Card) ── */}
       <div
-        className="w-full max-w-[430px] h-full max-h-[100dvh] bg-white flex flex-col shadow-xl relative overflow-y-auto no-scrollbar"
+        className="w-full max-w-[430px] md:max-w-md lg:max-w-lg h-full md:h-auto md:max-h-[92vh] md:rounded-3xl md:border md:border-neutral-200/80 md:shadow-2xl bg-white flex flex-col shadow-xl relative overflow-y-auto no-scrollbar"
         style={{
-          paddingTop: 'calc(max(env(safe-area-inset-top, 54px), 54px) + 8px)',
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)',
           paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)',
           overscrollBehavior: 'none',
           WebkitOverflowScrolling: 'touch'
@@ -290,11 +312,11 @@ const CustomerLogin = () => {
                 </div>
               </div>
 
-              {/* Primary Continue Button (Airtel Tomato Red) */}
+              {/* Primary Continue Button */}
               <button
                 type="submit"
                 disabled={submitting || phone.length !== 10}
-                className="w-full py-3.5 px-5 rounded-2xl bg-[#E40000] hover:bg-[#CC0000] text-white font-black text-sm uppercase tracking-wider shadow-md hover:shadow-lg active:scale-98 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center space-x-2"
+                className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-[#E40000] via-[#D31027] to-[#B91C1C] hover:brightness-105 text-white font-black text-sm uppercase tracking-wider shadow-[0_6px_20px_-2px_rgba(228,0,0,0.38)] ios-press transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center space-x-2 border border-white/20"
               >
                 {submitting ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -308,7 +330,7 @@ const CustomerLogin = () => {
             </form>
 
             {/* Alternative Auth Methods */}
-            <div className="pt-6 pb-2 space-y-4">
+            <div className="pt-6 pb-2 space-y-3.5">
               {/* Or Divider */}
               <div className="flex items-center gap-3">
                 <div className="h-px bg-neutral-200 flex-1" />
@@ -318,13 +340,13 @@ const CustomerLogin = () => {
                 <div className="h-px bg-neutral-200 flex-1" />
               </div>
 
-              {/* ── GOOGLE 1-CLICK SIGN-IN (Prominent Zomato style) ── */}
+              {/* ── GOOGLE 1-CLICK SIGN-IN ── */}
               <button
                 type="button"
                 id="google-signin-btn"
                 onClick={handleGoogleSignIn}
-                disabled={signingInGoogle || submitting || loading}
-                className="w-full flex items-center justify-center space-x-3 bg-white hover:bg-neutral-50 border border-neutral-300 text-neutral-800 font-bold py-3.5 px-4 rounded-2xl transition-all text-xs sm:text-sm shadow-xs active:scale-98 cursor-pointer disabled:opacity-50"
+                disabled={signingInGoogle || signingInApple || submitting || loading}
+                className="w-full flex items-center justify-center space-x-3 bg-white hover:bg-neutral-50/80 border border-black/[0.08] text-neutral-800 font-bold py-3.5 px-4 rounded-2xl transition-all text-xs sm:text-sm shadow-xs ios-press cursor-pointer disabled:opacity-50"
               >
                 {signingInGoogle ? (
                   <div className="w-5 h-5 border-2 border-neutral-300 border-t-neutral-800 rounded-full animate-spin" />
@@ -339,6 +361,24 @@ const CustomerLogin = () => {
                 <span>{signingInGoogle ? 'Redirecting to Google...' : 'Continue with Google'}</span>
               </button>
 
+              {/* ── SIGN IN WITH APPLE (Guideline 4.8 Compliance) ── */}
+              <button
+                type="button"
+                id="apple-signin-btn"
+                onClick={handleAppleSignIn}
+                disabled={signingInApple || signingInGoogle || submitting || loading}
+                className="w-full flex items-center justify-center space-x-3 bg-black hover:bg-neutral-900 border border-black text-white font-bold py-3.5 px-4 rounded-2xl transition-all text-xs sm:text-sm shadow-sm ios-press cursor-pointer disabled:opacity-50"
+              >
+                {signingInApple ? (
+                  <div className="w-5 h-5 border-2 border-neutral-600 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 170 170">
+                    <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.04-7.58-7.7-11.64-13.99-6.3-9.77-11.16-20.91-14.59-33.41-3.42-12.5-5.14-24.31-5.14-35.43 0-14.72 3.61-26.96 10.84-36.71 7.23-9.75 16.32-14.77 27.27-15.07 4.12 0 9.07 1.15 14.85 3.44 5.78 2.29 9.38 3.48 10.8 3.57 1.84-.19 5.6-1.48 11.28-3.87 5.68-2.39 10.51-3.52 14.5-3.4 10.23.44 18.73 4.29 25.5 11.56-9.14 5.54-13.61 13.25-13.42 23.12.19 7.74 3.19 14.28 9 19.63 5.82 5.35 12.63 8.35 20.44 9-2.39 7.37-5.33 14.65-8.82 21.84zM119.22 31.84c0-7.39 2.65-14.25 7.96-20.59 5.3-6.34 11.83-10.22 19.57-11.65-.22 1.41-.33 2.72-.33 3.92 0 7.39-2.73 14.42-8.19 21.09-5.46 6.67-12.18 10.51-20.17 11.53-.22-1.42-.33-2.72-.33-4.3z" />
+                  </svg>
+                )}
+                <span>{signingInApple ? 'Connecting to Apple...' : 'Sign in with Apple'}</span>
+              </button>
+
               {/* Guest Explore Pill */}
               <button
                 type="button"
@@ -346,7 +386,7 @@ const CustomerLogin = () => {
                   sessionStorage.setItem('customer_guest_browse', 'true');
                   navigate('/customer/dashboard');
                 }}
-                className="w-full flex items-center justify-center space-x-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 font-bold py-3 px-4 rounded-2xl text-xs transition-colors cursor-pointer"
+                className="w-full flex items-center justify-center space-x-2 bg-neutral-100 hover:bg-neutral-200/70 text-neutral-800 border border-black/[0.05] font-bold py-3.5 px-4 rounded-2xl text-xs ios-press transition-colors cursor-pointer"
               >
                 <UtensilsCrossed className="w-4 h-4 text-amber-700" />
                 <span>Explore Menu as Guest ›</span>
@@ -455,7 +495,7 @@ const CustomerLogin = () => {
               <button
                 type="submit"
                 disabled={submitting || otp.length !== 6}
-                className="w-full py-3.5 px-5 rounded-2xl bg-[#E40000] hover:bg-[#CC0000] text-white font-black text-sm uppercase tracking-wider shadow-md hover:shadow-lg active:scale-98 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center space-x-2"
+                className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-[#E40000] via-[#D31027] to-[#B91C1C] hover:brightness-105 text-white font-black text-sm uppercase tracking-wider shadow-[0_6px_20px_-2px_rgba(228,0,0,0.38)] ios-press transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center space-x-2 border border-white/20"
               >
                 {submitting ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

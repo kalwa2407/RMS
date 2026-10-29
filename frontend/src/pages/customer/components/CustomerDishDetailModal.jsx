@@ -129,7 +129,7 @@ const CustomerDishDetailModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex flex-col justify-end items-center bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[70] flex flex-col justify-end md:justify-center items-center bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 p-0 md:p-6">
       {/* ── Top Floating Close (X) Button (Matching Screenshot 4) ── */}
       <button
         onClick={onClose}
@@ -139,8 +139,8 @@ const CustomerDishDetailModal = ({
         <X className="w-5 h-5 stroke-[2.5]" />
       </button>
 
-      {/* ── Modal Container (White Bottom Sheet) ── */}
-      <div className="w-full max-w-[430px] max-h-[85vh] bg-white rounded-t-[28px] overflow-hidden flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-300">
+      {/* ── Modal Container (White Bottom Sheet / Centered Card on iPad) ── */}
+      <div className="w-full max-w-[430px] md:max-w-xl max-h-[85vh] bg-white rounded-t-[28px] md:rounded-3xl overflow-hidden flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-300">
         
         {/* Scrollable Content Body */}
         <div className="flex-1 overflow-y-auto no-scrollbar pb-24">
@@ -333,9 +333,9 @@ const CustomerDishDetailModal = ({
                           e.stopPropagation();
                           addAddon(addon);
                         }}
-                        className="ml-2 px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 shrink-0 border bg-white text-[#E40000] border-red-200 hover:border-[#E40000]"
+                        className="ml-2 px-3 py-1.5 rounded-full text-xs font-black transition-all ios-press shrink-0 bg-red-50 text-[#E40000] border border-red-200 hover:bg-[#E40000] hover:text-white"
                       >
-                        ADD +
+                        + ADD
                       </button>
                     )}
                   </div>
@@ -345,19 +345,19 @@ const CustomerDishDetailModal = ({
           </div>
         </div>
 
-        {/* ── 4. Sticky Bottom Action Bar (Screenshot 4) ── */}
+        {/* ── 4. Sticky Bottom Action Bar ── */}
         <div
-          className="p-3.5 bg-white border-t border-neutral-200/80 flex items-center justify-between gap-3 shadow-lg"
+          className="p-3.5 bg-white/95 backdrop-blur-xl border-t border-neutral-200/80 flex items-center justify-between gap-3 shadow-lg"
           style={{
             paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)'
           }}
         >
-          {/* Quantity Selector: [- 1 +] in rounded pink outline */}
-          <div className="flex items-center justify-between w-28 px-3 py-2.5 rounded-2xl border border-rose-200 bg-rose-50/50 text-[#E40000]">
+          {/* Quantity Selector: [- 1 +] in Apple styled rounded container */}
+          <div className="flex items-center justify-between w-28 px-3 py-2.5 rounded-2xl border border-neutral-200/80 bg-neutral-100/80 text-neutral-900 shadow-2xs">
             <button
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
               aria-label="Decrease quantity"
-              className="p-0.5 active:scale-75 transition-transform cursor-pointer"
+              className="p-0.5 ios-press cursor-pointer text-neutral-600 hover:text-black"
             >
               <Minus className="w-4 h-4 stroke-[3]" />
             </button>
@@ -367,18 +367,18 @@ const CustomerDishDetailModal = ({
             <button
               onClick={() => setQuantity(quantity + 1)}
               aria-label="Increase quantity"
-              className="p-0.5 active:scale-75 transition-transform cursor-pointer"
+              className="p-0.5 ios-press cursor-pointer text-neutral-600 hover:text-black"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
             </button>
           </div>
 
-          {/* Big Red CTA: Add item - ₹XXX */}
+          {/* Big Crimson CTA: Add item - ₹XXX */}
           <button
             onClick={handleAdd}
-            className="flex-1 bg-[#E40000] hover:bg-[#CC0000] text-white font-black text-sm py-3 px-4 rounded-2xl shadow-md active:scale-98 transition-all flex items-center justify-center space-x-1 cursor-pointer"
+            className="flex-1 bg-gradient-to-r from-[#E40000] via-[#D31027] to-[#B91C1C] text-white font-black text-sm py-3.5 px-4 rounded-2xl shadow-[0_6px_20px_-2px_rgba(228,0,0,0.4)] ios-press transition-all flex items-center justify-center space-x-1 cursor-pointer border border-white/20"
           >
-            <span>Add item - ₹{totalPrice}</span>
+            <span>Add to Feast · ₹{totalPrice}</span>
           </button>
         </div>
       </div>
