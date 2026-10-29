@@ -40,6 +40,10 @@ if (fs.existsSync(customerConfigFile)) {
   console.log('Copied capacitor.customer.config.json to iOS App assets.');
 }
 
+// Run capacitor sync
+console.log('Running Capacitor sync for iOS...');
+execSync('npx cap sync ios', { stdio: 'inherit', cwd: rootDir });
+
 // Inject static runtime flag into index.html so iOS native app is 100% guaranteed to launch Customer mode
 const destHtml = path.join(destPublicDir, 'index.html');
 if (fs.existsSync(destHtml)) {
@@ -50,9 +54,5 @@ if (fs.existsSync(destHtml)) {
     console.log('Injected window.__RMS_APP_MODE__="customer" into iOS index.html');
   }
 }
-
-// Run capacitor sync
-console.log('Running Capacitor sync for iOS...');
-execSync('npx cap sync ios', { stdio: 'inherit', cwd: rootDir });
 
 console.log('✅ Successfully synced customer web assets to iOS App.');

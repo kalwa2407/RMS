@@ -14,12 +14,16 @@
 		},
 		"FirebaseAuthentication": {
 			"skipNativeAuth": false,
-			"providers": ["google.com", "apple.com", "phone"]
+			"providers": [
+				"google.com",
+				"apple.com",
+				"phone"
+			]
 		}
 	},
 	"packageClassList": [
+		"FirebaseAuthenticationPlugin",
 		"AppPlugin",
-		"SplashScreenPlugin",
-		"FirebaseAuthenticationPlugin"
+		"SplashScreenPlugin"
 	]
 }
