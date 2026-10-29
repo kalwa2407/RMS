@@ -1,18 +1,54 @@
-import React, { useEffect, useRef } from 'react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import { Maximize2, Minimize2, Bike } from 'lucide-react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { Maximize2, Minimize2 } from 'lucide-react';
 
 /**
  * CustomerDeliveryMap
- * Production-ready interactive Leaflet map for live order & rider tracking.
- * - Uses Esri World Street Map tiles (100% Free, NO API key required, NO watermark).
- * - Live GPS coordinates from rider's phone or smart route fallback upon assignment.
- * - Robust lifecycle management preventing Leaflet _leaflet_pos race conditions.
+ * Google Maps powered live order & rider tracking map.
+ * - Uses Google Maps JavaScript API (styled, smooth, satellite-quality tiles).
+ * - Loads Google Maps dynamically to prevent URI malformed error.
+ * - Live GPS coordinates from rider's phone or smart route fallback.
+ * - Works on Web, iOS native (Capacitor), and Android native (Capacitor).
  */
 
-// Official Persian Darbar Camp Pune Coordinates
-const PERSIAN_DARBAR_COORDS = [18.5138, 73.8785];
+const PERSIAN_DARBAR_COORDS = { lat: 18.5138, lng: 73.8785 };
+const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || '';
+
+// Singleton loader — loads Google Maps script only once across the app
+let googleMapsLoadPromise = null;
+const loadGoogleMapsScript = () => {
+  if (googleMapsLoadPromise) return googleMapsLoadPromise;
+
+  googleMapsLoadPromise = new Promise((resolve, reject) => {
+    // Already loaded
+    if (window.google?.maps?.Map) {
+      resolve(window.google.maps);
+      return;
+    }
+
+    if (!GOOGLE_MAPS_API_KEY) {
+      reject(new Error('Google Maps API key missing'));
+      return;
+    }
+
+    const callbackName = `__gmaps_cb_${Date.now()}`;
+    window[callbackName] = () => {
+      resolve(window.google.maps);
+      delete window[callbackName];
+    };
+
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places,geometry&loading=async&callback=${callbackName}`;
+    script.async = true;
+    script.defer = true;
+    script.onerror = (e) => {
+      googleMapsLoadPromise = null; // allow retry
+      reject(e);
+    };
+    document.head.appendChild(script);
+  });
+
+  return googleMapsLoadPromise;
+};
 
 export const CustomerDeliveryMap = ({
   order,
@@ -23,238 +59,280 @@ export const CustomerDeliveryMap = ({
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const riderMarkerRef = useRef(null);
-  const polylineRef = useRef(null);
   const restaurantMarkerRef = useRef(null);
   const customerMarkerRef = useRef(null);
-  const resizeTimerRef = useRef(null);
+  const polylineRef = useRef(null);
+  const [mapsError, setMapsError] = useState(false);
+  const [mapsReady, setMapsReady] = useState(!!window.google?.maps?.Map);
 
   // Branch coordinates or default to Camp, Pune
-  const branchCoords = order?.branch_coords || PERSIAN_DARBAR_COORDS;
+  const branchCoords = order?.branch_coords
+    ? { lat: order.branch_coords[0], lng: order.branch_coords[1] }
+    : PERSIAN_DARBAR_COORDS;
 
   // Calculate realistic customer coords based on distance_km
   const distKm = parseFloat(order?.distance_km || eta?.distKm || 3.5);
-  const customerCoords = order?.customer_coords || [
-    branchCoords[0] - (distKm * 0.0065),
-    branchCoords[1] + (distKm * 0.0055),
-  ];
+  const customerCoords = order?.customer_coords
+    ? { lat: order.customer_coords[0], lng: order.customer_coords[1] }
+    : {
+        lat: branchCoords.lat - distKm * 0.0065,
+        lng: branchCoords.lng + distKm * 0.0055,
+      };
 
   const status = order?.status || 'placed';
   const isOutForDelivery = status === 'out_for_delivery';
   const isReady = status === 'ready';
 
-  // Rider assignment detection (Admin assigned personal rider OR Porter 3rd-party)
-  const riderName = order?.delivery_partner_name || order?.porter_rider_name || order?.assigned_rider_name;
+  const riderName =
+    order?.delivery_partner_name ||
+    order?.porter_rider_name ||
+    order?.assigned_rider_name;
   const hasAssignedRider = Boolean(
     order?.delivery_partner_name ||
-    order?.delivery_partner_id ||
-    order?.delivery_partner ||
-    order?.porter_order_id ||
-    order?.assigned_rider ||
-    isReady ||
-    isOutForDelivery
+      order?.delivery_partner_id ||
+      order?.delivery_partner ||
+      order?.porter_order_id ||
+      order?.assigned_rider ||
+      isReady ||
+      isOutForDelivery
   );
 
-  // Rider progress along the route (0 = restaurant, 1 = customer)
   let progress = 0.08;
   if (isReady) progress = 0.22;
   else if (isOutForDelivery) progress = 0.65;
 
-  // Live GPS from rider's phone (native HTML5/Capacitor GPS broadcast)
-  const liveLat = order?.rider_lat != null ? parseFloat(order.rider_lat) : null;
-  const liveLng = order?.rider_lng != null ? parseFloat(order.rider_lng) : null;
-  const hasLiveGps = liveLat !== null && liveLng !== null && !isNaN(liveLat) && !isNaN(liveLng);
+  const liveLat =
+    order?.rider_lat != null ? parseFloat(order.rider_lat) : null;
+  const liveLng =
+    order?.rider_lng != null ? parseFloat(order.rider_lng) : null;
+  const hasLiveGps =
+    liveLat !== null && liveLng !== null && !isNaN(liveLat) && !isNaN(liveLng);
 
-  const fallbackLat = branchCoords[0] + (customerCoords[0] - branchCoords[0]) * progress;
-  const fallbackLng = branchCoords[1] + (customerCoords[1] - branchCoords[1]) * progress;
+  const riderPos = hasLiveGps
+    ? { lat: liveLat, lng: liveLng }
+    : {
+        lat:
+          branchCoords.lat +
+          (customerCoords.lat - branchCoords.lat) * progress,
+        lng:
+          branchCoords.lng +
+          (customerCoords.lng - branchCoords.lng) * progress,
+      };
 
-  const riderLat = hasLiveGps ? liveLat : fallbackLat;
-  const riderLng = hasLiveGps ? liveLng : fallbackLng;
-
-  // Initialize Leaflet Map once
+  // Load Google Maps SDK once
   useEffect(() => {
-    const container = mapContainerRef.current;
-    if (!container) return;
+    loadGoogleMapsScript()
+      .then(() => setMapsReady(true))
+      .catch((err) => {
+        console.error('Google Maps load error:', err);
+        setMapsError(true);
+      });
+  }, []);
 
-    // Destroy prior map instance cleanly if exists
+  // Build SVG data URI for custom markers (avoids AdvancedMarkerElement compatibility issues)
+  const makeRestaurantIcon = () => ({
+    url:
+      'data:image/svg+xml;charset=UTF-8,' +
+      encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="44" height="56" viewBox="0 0 44 56">
+        <rect x="4" y="4" width="36" height="36" rx="10" fill="#E40000" stroke="white" stroke-width="2.5"/>
+        <path d="M14 24.87A4 4 0 0 1 15.41 17a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 24.59 17 4 4 0 0 1 26 24.87V32H14Z" stroke="white" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <line x1="14" y1="28" x2="26" y2="28" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+        <rect x="4" y="42" width="36" height="12" rx="5" fill="#111827"/>
+        <text x="22" y="52" font-family="Arial,sans-serif" font-size="7.5" font-weight="800" fill="white" text-anchor="middle">Persian Darbar</text>
+      </svg>`),
+    scaledSize: { width: 44, height: 56 },
+    anchor: { x: 22, y: 56 },
+  });
+
+  const makeCustomerIcon = () => ({
+    url:
+      'data:image/svg+xml;charset=UTF-8,' +
+      encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="42" height="54" viewBox="0 0 42 54">
+        <rect x="3" y="3" width="36" height="36" rx="10" fill="#111827" stroke="white" stroke-width="2.5"/>
+        <path d="M21 8l9 7v11a2 2 0 0 1-2 2H14a2 2 0 0 1-2-2V15Z" stroke="white" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="18,42 18,32 24,32 24,42" stroke="white" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="3" y="41" width="36" height="12" rx="5" fill="white" stroke="#E5E7EB" stroke-width="1"/>
+        <text x="21" y="51" font-family="Arial,sans-serif" font-size="7.5" font-weight="800" fill="#111827" text-anchor="middle">Your Doorstep</text>
+      </svg>`),
+    scaledSize: { width: 42, height: 54 },
+    anchor: { x: 21, y: 54 },
+  });
+
+  const makeRiderIcon = (live, name) => ({
+    url:
+      'data:image/svg+xml;charset=UTF-8,' +
+      encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+        <circle cx="24" cy="24" r="22" fill="${live ? '#10B981' : '#E40000'}" opacity="0.25"/>
+        <circle cx="24" cy="24" r="16" fill="white" stroke="${live ? '#10B981' : '#E40000'}" stroke-width="2.5"/>
+        <circle cx="34" cy="33" r="4" stroke="${live ? '#10B981' : '#E40000'}" stroke-width="2" fill="none"/>
+        <circle cx="13" cy="33" r="4" stroke="${live ? '#10B981' : '#E40000'}" stroke-width="2" fill="none"/>
+        <circle cx="29" cy="13" r="2" stroke="${live ? '#10B981' : '#E40000'}" stroke-width="1.5" fill="none"/>
+        <path d="M24 33V27l-4-4 5-4 3 4h3" stroke="${live ? '#10B981' : '#E40000'}" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>`),
+    scaledSize: { width: 48, height: 48 },
+    anchor: { x: 24, y: 24 },
+  });
+
+  // Initialize Google Map
+  useEffect(() => {
+    if (!mapsReady || !mapContainerRef.current) return;
+
+    const gm = window.google.maps;
+
+    // Destroy previous instance
     if (mapInstanceRef.current) {
-      try {
-        mapInstanceRef.current.stop();
-        mapInstanceRef.current.off();
-        mapInstanceRef.current.remove();
-      } catch (err) {
-        // safe ignore
-      }
+      // Google Maps does not need explicit destroy for simple cleanup
       mapInstanceRef.current = null;
-    }
-
-    if (container._leaflet_id) {
-      container._leaflet_id = null;
+      restaurantMarkerRef.current = null;
+      customerMarkerRef.current = null;
+      riderMarkerRef.current = null;
+      polylineRef.current = null;
     }
 
     try {
-      const map = L.map(container, {
+      // Google Maps styled — clean light style
+      const map = new gm.Map(mapContainerRef.current, {
         center: branchCoords,
-        zoom: 14,
+        zoom: 13,
+        disableDefaultUI: true,
         zoomControl: false,
-        attributionControl: false,
-        fadeAnimation: false,
-        zoomAnimation: false, // Prevents DomUtil _leaflet_pos transition race condition
-        markerZoomAnimation: false,
-      });
-
-      // 100% Free OpenStreetMap Tiles (Zero API key, zero watermark, 100% reliable)
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; OpenStreetMap contributors',
-      }).addTo(map);
-
-      // Custom Restaurant Pin
-      const restaurantIcon = L.divIcon({
-        className: 'custom-map-pin',
-        html: `
-          <div style="position:relative; display:flex; flex-direction:column; align-items:center;">
-            <div style="background:#E40000; color:white; width:36px; height:36px; border-radius:12px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(228,0,0,0.45); border:2.5px solid white;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"/>
-                <line x1="6" y1="17" x2="18" y2="17"/>
-              </svg>
-            </div>
-            <div style="background:#111827; color:white; font-size:9px; font-weight:800; padding:2px 6px; border-radius:6px; margin-top:2px; white-space:nowrap; box-shadow:0 2px 6px rgba(0,0,0,0.3);">
-              Persian Darbar
-            </div>
-          </div>
-        `,
-        iconSize: [36, 52],
-        iconAnchor: [18, 52],
-      });
-
-      restaurantMarkerRef.current = L.marker(branchCoords, { icon: restaurantIcon }).addTo(map);
-
-      // Custom Customer Home Pin
-      const customerIcon = L.divIcon({
-        className: 'custom-map-pin',
-        html: `
-          <div style="position:relative; display:flex; flex-direction:column; align-items:center;">
-            <div style="background:#111827; color:white; width:34px; height:34px; border-radius:12px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(0,0,0,0.35); border:2.5px solid white;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                <polyline points="9 22 9 12 15 12 15 22"/>
-              </svg>
-            </div>
-            <div style="background:white; color:#111827; font-size:9px; font-weight:800; padding:2px 6px; border-radius:6px; margin-top:2px; white-space:nowrap; border:1px solid #e5e7eb; box-shadow:0 2px 6px rgba(0,0,0,0.15);">
-              Your Doorstep
-            </div>
-          </div>
-        `,
-        iconSize: [34, 50],
-        iconAnchor: [17, 50],
-      });
-
-      customerMarkerRef.current = L.marker(customerCoords, { icon: customerIcon }).addTo(map);
-
-      // Route Path connecting restaurant to customer
-      const routePoints = [
-        branchCoords,
-        [branchCoords[0] - (customerCoords[0] - branchCoords[0]) * 0.35, branchCoords[1] + (customerCoords[1] - branchCoords[1]) * 0.15],
-        [branchCoords[0] + (customerCoords[0] - branchCoords[0]) * 0.65, branchCoords[1] + (customerCoords[1] - branchCoords[1]) * 0.85],
-        customerCoords,
-      ];
-
-      polylineRef.current = L.polyline(routePoints, {
-        color: '#E40000',
-        weight: 3.5,
-        opacity: 0.85,
-        dashArray: '7, 9',
-        lineCap: 'round',
-      }).addTo(map);
-
-      // Fit map cleanly when ready without transition animation
-      map.whenReady(() => {
-        if (mapContainerRef.current) {
-          const bounds = L.latLngBounds([branchCoords, customerCoords]);
-          map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15, animate: false });
-        }
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
+        clickableIcons: false,
+        gestureHandling: 'cooperative',
+        styles: [
+          { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+          {
+            featureType: 'transit',
+            elementType: 'labels',
+            stylers: [{ visibility: 'off' }],
+          },
+          {
+            featureType: 'road',
+            elementType: 'geometry',
+            stylers: [{ color: '#ffffff' }],
+          },
+          {
+            featureType: 'road.arterial',
+            elementType: 'geometry',
+            stylers: [{ color: '#ffd9d9' }],
+          },
+          {
+            featureType: 'road.highway',
+            elementType: 'geometry',
+            stylers: [{ color: '#ffb3b3' }],
+          },
+          {
+            featureType: 'landscape',
+            stylers: [{ color: '#f5f5f5' }],
+          },
+          {
+            featureType: 'water',
+            stylers: [{ color: '#c9e8ff' }],
+          },
+        ],
       });
 
       mapInstanceRef.current = map;
-    } catch (e) {
-      console.error('Error initializing Leaflet map:', e);
-    }
 
-    return () => {
-      if (resizeTimerRef.current) clearTimeout(resizeTimerRef.current);
-      if (mapInstanceRef.current) {
-        try {
-          mapInstanceRef.current.stop();
-          mapInstanceRef.current.off();
-          mapInstanceRef.current.remove();
-        } catch (err) {
-          // safe ignore
-        }
-        mapInstanceRef.current = null;
-      }
-      if (container) {
-        container._leaflet_id = null;
-      }
-    };
-  }, [branchCoords[0], branchCoords[1], customerCoords[0], customerCoords[1]]);
-
-  // Manage Rider Marker independently (shows upon Rider Assignment OR Out for Delivery)
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!map) return;
-
-    if (hasAssignedRider) {
-      const displayName = riderName || 'Delivery Fleet';
-      const riderHtml = `
-        <div style="position:relative; width:44px; height:44px; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-          <span style="position:absolute; width:100%; height:100%; border-radius:50%; background:${hasLiveGps ? 'rgba(16,185,129,0.35)' : 'rgba(228,0,0,0.35)'}; animation:ping 1.6s cubic-bezier(0,0,0.2,1) infinite;"></span>
-          <div style="background:white; color:${hasLiveGps ? '#059669' : '#E40000'}; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(0,0,0,0.28); border:2.5px solid ${hasLiveGps ? '#10B981' : '#E40000'};">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="18.5" cy="17.5" r="3.5"/>
-              <circle cx="5.5" cy="17.5" r="3.5"/>
-              <circle cx="15" cy="5" r="1"/>
-              <path d="M12 17.5V14l-3-3 4-3 2 3h2"/>
-            </svg>
-          </div>
-          <div style="background:#111827; color:white; font-size:8.5px; font-weight:800; padding:1.5px 6px; border-radius:6px; margin-top:2px; white-space:nowrap; box-shadow:0 2px 6px rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.15);">
-            ${displayName}
-          </div>
-        </div>
-      `;
-
-      const riderIcon = L.divIcon({
-        className: 'custom-rider-pin',
-        html: riderHtml,
-        iconSize: [44, 56],
-        iconAnchor: [22, 28],
+      // Restaurant marker
+      restaurantMarkerRef.current = new gm.Marker({
+        position: branchCoords,
+        map,
+        icon: makeRestaurantIcon(),
+        zIndex: 10,
       });
 
-      if (!riderMarkerRef.current) {
-        riderMarkerRef.current = L.marker([riderLat, riderLng], { icon: riderIcon }).addTo(map);
-      } else {
-        riderMarkerRef.current.setIcon(riderIcon);
-        riderMarkerRef.current.setLatLng([riderLat, riderLng]);
-      }
-    } else if (riderMarkerRef.current) {
-      map.removeLayer(riderMarkerRef.current);
-      riderMarkerRef.current = null;
-    }
-  }, [hasAssignedRider, riderLat, riderLng, riderName, hasLiveGps]);
+      // Customer marker
+      customerMarkerRef.current = new gm.Marker({
+        position: customerCoords,
+        map,
+        icon: makeCustomerIcon(),
+        zIndex: 10,
+      });
 
-  // Handle expand/collapse resize without destroying map
-  useEffect(() => {
-    if (mapInstanceRef.current) {
-      if (resizeTimerRef.current) clearTimeout(resizeTimerRef.current);
-      resizeTimerRef.current = setTimeout(() => {
-        if (mapInstanceRef.current && mapContainerRef.current) {
-          try {
-            mapInstanceRef.current.invalidateSize({ animate: false });
-          } catch (e) {}
-        }
-      }, 250);
+      // Dashed route polyline
+      polylineRef.current = new gm.Polyline({
+        path: [branchCoords, customerCoords],
+        geodesic: true,
+        strokeColor: '#E40000',
+        strokeOpacity: 0,
+        icons: [
+          {
+            icon: {
+              path: 'M 0,-1 0,1',
+              strokeOpacity: 0.85,
+              scale: 3.5,
+              strokeColor: '#E40000',
+            },
+            offset: '0',
+            repeat: '16px',
+          },
+        ],
+        map,
+      });
+
+      // Fit bounds
+      const bounds = new gm.LatLngBounds();
+      bounds.extend(branchCoords);
+      bounds.extend(customerCoords);
+      map.fitBounds(bounds, { top: 50, bottom: 50, left: 50, right: 50 });
+    } catch (err) {
+      console.error('Google Map init error:', err);
     }
-  }, [isExpanded]);
+  }, [
+    mapsReady,
+    branchCoords.lat,
+    branchCoords.lng,
+    customerCoords.lat,
+    customerCoords.lng,
+  ]);
+
+  // Manage rider marker
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !mapsReady) return;
+
+    const gm = window.google.maps;
+
+    if (hasAssignedRider) {
+      if (!riderMarkerRef.current) {
+        riderMarkerRef.current = new gm.Marker({
+          position: riderPos,
+          map,
+          icon: makeRiderIcon(hasLiveGps, riderName),
+          zIndex: 20,
+          title: riderName || 'Delivery Rider',
+        });
+      } else {
+        riderMarkerRef.current.setPosition(riderPos);
+        riderMarkerRef.current.setIcon(makeRiderIcon(hasLiveGps, riderName));
+      }
+    } else {
+      if (riderMarkerRef.current) {
+        riderMarkerRef.current.setMap(null);
+        riderMarkerRef.current = null;
+      }
+    }
+  }, [hasAssignedRider, riderPos.lat, riderPos.lng, riderName, hasLiveGps, mapsReady]);
+
+  // Handle expand/collapse resize
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !mapsReady) return;
+    const gm = window.google.maps;
+    setTimeout(() => {
+      gm.event.trigger(map, 'resize');
+      const bounds = new gm.LatLngBounds();
+      bounds.extend(branchCoords);
+      bounds.extend(customerCoords);
+      map.fitBounds(bounds, { top: 50, bottom: 50, left: 50, right: 50 });
+    }, 280);
+  }, [isExpanded, mapsReady]);
 
   return (
     <div
@@ -263,7 +341,25 @@ export const CustomerDeliveryMap = ({
       }`}
     >
       {/* Map DOM Container */}
-      <div ref={mapContainerRef} className="w-full h-full z-0 bg-[#F4F5F7]" />
+      <div
+        ref={mapContainerRef}
+        className="w-full h-full z-0 bg-[#F4F5F7]"
+      />
+
+      {/* Error fallback */}
+      {mapsError && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-100 z-20">
+          <span className="text-3xl mb-2">🗺️</span>
+          <p className="text-neutral-600 text-xs font-semibold text-center px-4">
+            Map unavailable. Check your internet connection.
+          </p>
+        </div>
+      )}
+
+      {/* Loading shimmer */}
+      {!mapsReady && !mapsError && (
+        <div className="absolute inset-0 bg-neutral-100 animate-pulse z-20" />
+      )}
 
       {/* GPS Status Indicator */}
       {hasLiveGps ? (

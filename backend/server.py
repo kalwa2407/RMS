@@ -5333,13 +5333,23 @@ async def delete_customer_account(
     email = (user.get("email") or "").lower().strip()
 
     customers = await manager._read("customers")
-    # Filter out customer records matching UID, phone, or email
-    customers = [
-        c for c in customers
-        if c.get("uid") != uid
-        and (not phone or c.get("phone") != phone)
-        and (not email or (c.get("email") or "").lower().strip() != email)
-    ]
+    # Delete ONLY the record matching this user's UID (unique Firebase Auth identifier).
+    # Never filter by phone alone -- same number could be linked to different UIDs
+    # after account deletion + re-registration, causing other users' data loss.
+    original_count = len(customers)
+    customers = [c for c in customers if c.get("uid") != uid and c.get("_id") != uid]
+
+    # Safety fallback: only delete by phone+email together if UID didn't match
+    if len(customers) == original_count and phone and email:
+        phone_last10 = phone[-10:] if len(phone) >= 10 else phone
+        customers = [
+            c for c in customers
+            if not (
+                (c.get("phone") or "").endswith(phone_last10)
+                and (c.get("email") or "").lower().strip() == email
+            )
+        ]
+
     await manager._write("customers", customers)
 
     # Clean active OTP records if phone exists
