@@ -783,8 +783,8 @@ async def create_order(
                 new_total    = net_subtotal + order_dict.get("delivery_fee", 0.0) + order_dict.get("taxes", 0.0)
                 new_total    = max(1.0, round(new_total, 2))  # Never go below â‚¹1
 
-                # Auto-award 10% on NET paid amount
-                coins_earned_back = max(1, int(net_subtotal * 0.05))
+                # Auto-award 5% PD Coins on Total Bill
+                coins_earned_back = max(1, round(new_total * 0.05))
 
                 redemption_txn = {
                     "type": "redeemed",
@@ -823,17 +823,18 @@ async def create_order(
                 order_dict["coins_earned"]   = coins_earned_back
                 order_dict["total"]          = new_total
             else:
-                # No coins redeemed, but award 10% cashback on order subtotal for registered customer
-                if order.subtotal >= 100:
-                    coins_earned_back = max(1, int(order.subtotal * 0.05))
+                # No coins redeemed, award 5% PD Coins on total bill
+                total_bill = float(order_dict.get("total") or order.subtotal)
+                if total_bill >= 100:
+                    coins_earned_back = max(1, round(total_bill * 0.05))
                     if coins_earned_back > 0:
                         earn_balance_after = new_coin_balance + coins_earned_back
                         earn_txn = {
                             "type": "earned",
                             "coins": coins_earned_back,
-                            "bill_amount": order.subtotal,
+                            "bill_amount": total_bill,
                             "balance_after": earn_balance_after,
-                            "note": f"5% cashback on online order #{order_id[-8:]}",
+                            "note": f"5% PD Coins earned on Total Bill #{order_id[-8:]} (₹{total_bill:.0f})",
                             "order_id": order_id,
                             "timestamp": now.isoformat(),
                         }
@@ -3903,7 +3904,7 @@ async def admin_close_session(session_id: str, payment_method: str = "cash", use
                         "coins": coins_earned,
                         "bill_amount": table_bill_total,
                         "balance_after": c["pd_coins"],
-                        "note": f"5% cashback on Table {session.get('table_number')} Bill #{session.get('bill_number') or session_id[-6:]}",
+                        "note": f"5% PD Coins earned on Table {session.get('table_number')} Total Bill #{session.get('bill_number') or session_id[-6:]} (₹{table_bill_total:.0f})",
                         "timestamp": now.isoformat()
                     })
                     await manager._write("customers", customers)

@@ -168,7 +168,22 @@ const DeliveryPanel = () => {
     finally { setUpdating(null); }
   };
 
-  const openMaps = (address) => window.open(`https://maps.google.com/?q=${encodeURIComponent(address)}`,"_blank");
+  const openMaps = (orderOrAddress) => {
+    let url = '';
+    if (orderOrAddress && typeof orderOrAddress === 'object') {
+      const lat = orderOrAddress.latitude || orderOrAddress.lat || orderOrAddress.coordinates?.lat;
+      const lng = orderOrAddress.longitude || orderOrAddress.lng || orderOrAddress.coordinates?.lng;
+      if (lat && lng) {
+        // Direct Turn-by-Turn GPS Navigation to exact pin
+        url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+      } else if (orderOrAddress.address) {
+        url = `https://maps.google.com/?q=${encodeURIComponent(orderOrAddress.address)}`;
+      }
+    } else if (orderOrAddress) {
+      url = `https://maps.google.com/?q=${encodeURIComponent(orderOrAddress)}`;
+    }
+    if (url) window.open(url, "_blank");
+  };
 
   const activeOrders    = orders.filter(o => o.status !== "delivered" && o.status !== "cancelled");
   const completedOrders = orders.filter(o => o.status === "delivered");
@@ -323,15 +338,25 @@ const DeliveryPanel = () => {
                       {order.phone && <p className="text-gray-500 text-xs">{order.phone}</p>}
                     </div>
                   </div>
-                  <button onClick={() => order.address && openMaps(order.address)}
-                    className="w-full flex items-start gap-3 rounded-2xl p-3 text-left active:scale-[0.98] transition-all"
+                  <button onClick={() => openMaps(order)}
+                    className="w-full flex items-start gap-3 rounded-2xl p-3 text-left active:scale-[0.98] transition-all cursor-pointer"
                     style={{ background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.06)" }}>
                     <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background:"rgba(22,163,74,0.15)" }}>
                       <MapPin className="h-4 w-4 text-green-400"/>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-gray-200 text-sm leading-snug">{order.address||"—"}</p>
-                      {order.address && <p className="text-green-500 text-xs mt-0.5 flex items-center gap-1"><Navigation className="h-2.5 w-2.5"/> Open in Maps</p>}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="text-gray-200 text-sm leading-snug">{order.address||"—"}</p>
+                        {(order.latitude || order.coordinates?.lat) && (
+                          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full shrink-0">
+                            📍 GPS Pin
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-green-500 text-xs mt-1 flex items-center gap-1 font-semibold">
+                        <Navigation className="h-3 w-3"/>
+                        {(order.latitude || order.coordinates?.lat) ? 'Start Turn-by-Turn GPS Navigation' : 'Open in Google Maps'}
+                      </p>
                     </div>
                     <ChevronRight className="h-4 w-4 text-gray-600 shrink-0 self-center"/>
                   </button>

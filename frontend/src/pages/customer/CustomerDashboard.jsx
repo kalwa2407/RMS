@@ -149,27 +149,44 @@ const CustomerDashboard = () => {
         const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setUserCoords(coords);
 
-        // Reverse Geocode using OpenStreetMap Nominatim
+        // Reverse Geocode: Try BigDataCloud first (fast, reliable CORS browser support), then OpenStreetMap Nominatim
         let detectedAddress = '';
         try {
-          const geoRes = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.lat}&lon=${coords.lng}&zoom=18&addressdetails=1`,
-            { headers: { 'Accept': 'application/json' } }
+          const bdcRes = await fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${coords.lat}&longitude=${coords.lng}&localityLanguage=en`
           );
-          if (geoRes.ok) {
-            const geoData = await geoRes.json();
-            const addr = geoData.address || {};
-            const road = addr.road || addr.street || addr.pedestrian || addr.suburb || '';
-            const locality = addr.neighbourhood || addr.suburb || addr.residential || addr.city_district || '';
-            const city = addr.city || addr.town || addr.state_district || 'Mumbai';
-            const postcode = addr.postcode ? ` - ${addr.postcode}` : '';
-            detectedAddress = [road, locality, city].filter(Boolean).join(', ') + postcode;
+          if (bdcRes.ok) {
+            const bdcData = await bdcRes.json();
+            const locality = bdcData.locality || bdcData.subLocality || '';
+            const city = bdcData.city || bdcData.principalSubdivision || '';
+            const postcode = bdcData.postcode ? ` - ${bdcData.postcode}` : '';
+            if (locality || city) {
+              detectedAddress = [locality, city, bdcData.countryName].filter(Boolean).join(', ') + postcode;
+            }
           }
-        } catch (e) {
-          console.warn('Reverse geocoding notice:', e);
+        } catch (e) {}
+
+        if (!detectedAddress) {
+          try {
+            const geoRes = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.lat}&lon=${coords.lng}&zoom=18&addressdetails=1`,
+              { headers: { 'Accept': 'application/json' } }
+            );
+            if (geoRes.ok) {
+              const geoData = await geoRes.json();
+              const addr = geoData.address || {};
+              const road = addr.road || addr.street || addr.pedestrian || addr.suburb || '';
+              const locality = addr.neighbourhood || addr.suburb || addr.residential || addr.city_district || '';
+              const city = addr.city || addr.town || addr.state_district || 'Mumbai';
+              const postcode = addr.postcode ? ` - ${addr.postcode}` : '';
+              detectedAddress = [road, locality, city].filter(Boolean).join(', ') + postcode;
+            }
+          } catch (e) {
+            console.warn('Reverse geocoding notice:', e);
+          }
         }
 
-        // If Nominatim failed, pick based on city proximity
+        // If both failed, pick based on city proximity
         if (!detectedAddress) {
           const distToPune = calculateHaversine(coords.lat, coords.lng, 18.5204, 73.8567);
           const distToMumbai = calculateHaversine(coords.lat, coords.lng, 19.0760, 72.8777);
@@ -179,6 +196,7 @@ const CustomerDashboard = () => {
         setDeliveryAddress(detectedAddress);
         try {
           localStorage.setItem('customer_delivery_address', detectedAddress);
+          localStorage.setItem('customer_user_coords', JSON.stringify(coords));
         } catch (e) { }
 
         // Find nearest Persian Darbar branch
@@ -700,6 +718,9 @@ const CustomerDashboard = () => {
       address: finalAddress.trim(),
       order_type: orderType,
       distance_km: distanceKm || 3.5,
+      coordinates: userCoords ? { lat: userCoords.lat, lng: userCoords.lng } : null,
+      latitude: userCoords?.lat || null,
+      longitude: userCoords?.lng || null,
       payment_method: payMethod,
       items: cart.map(i => ({
         item_id: String(i._id),
