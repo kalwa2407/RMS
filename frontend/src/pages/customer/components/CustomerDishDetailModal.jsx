@@ -58,7 +58,7 @@ const CustomerDishDetailModal = ({
 
   useEffect(() => {
     if (isOpen) {
-      setQuantity(1);
+      setQuantity(dish?.quantity ? Math.max(1, dish.quantity) : 1);
       setSelectedAddons([]);
       setIsBookmarked(false);
       setCopied(false);
@@ -101,16 +101,37 @@ const CustomerDishDetailModal = ({
   };
 
   const addonsTotal = selectedAddons.reduce((sum, a) => sum + (a.price * a.qty), 0);
-  const unitPrice = (dish.price || 0) + addonsTotal;
-  const totalPrice = unitPrice * quantity;
+  const dishPrice = dish.price || 0;
+  const totalPrice = (dishPrice * quantity) + addonsTotal;
 
   const handleAdd = () => {
+    // 1. Add/update the main dish item with its true price & explicit modal quantity
     onAddToCart({
       ...dish,
-      price: unitPrice,
-      addons: selectedAddons.map(a => ({ ...a, quantity: a.qty })),
-      quantity
+      price: dishPrice,
+      quantity,
+      fromModal: true,
+      hasAddons: selectedAddons.length > 0
     });
+
+    // 2. Add each accompaniment as an independent item in the cart
+    selectedAddons.forEach((addon) => {
+      if (addon.qty > 0) {
+        onAddToCart({
+          id: addon.id,
+          _id: addon.id,
+          name: addon.name,
+          price: addon.price,
+          quantity: addon.qty,
+          is_veg: addon.is_veg,
+          image: addon.image,
+          category: 'Beverages & Accompaniments',
+          fromModal: false,
+          silentToast: true
+        });
+      }
+    });
+
     onClose();
   };
 

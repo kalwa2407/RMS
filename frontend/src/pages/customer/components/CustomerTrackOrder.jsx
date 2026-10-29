@@ -3,7 +3,7 @@ import {
   ChevronDown, Share2, RefreshCw, Phone, MapPin, Bike, ChefHat,
   CheckCircle2, Clock, Package, Home, Zap, ExternalLink,
   MessageCircle, Star, Shield, Maximize2, Minimize2, Copy, AlertCircle,
-  AlertTriangle
+  AlertTriangle, X
 } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import API_BASE from '../../../lib/config';
@@ -12,7 +12,15 @@ import CustomerDeliveryMap from './CustomerDeliveryMap';
 // ── Calculation Constants (Internal only - never shown to user) ──────────
 const PREP_TIME_MINS = 15;
 const MINS_PER_KM = 3;
-const RESTAURANT_PHONE = '02026131976';
+const RESTAURANT_PHONE = '+919594287868';
+
+const CANCEL_REASONS = [
+  'Ordered by mistake',
+  'Want to change items or add drinks/naan',
+  'Incorrect delivery address',
+  'Estimated delivery time is too long',
+  'Other reason'
+];
 
 // Status to milestone mapping
 const STATUS_MILESTONE = {
@@ -193,6 +201,10 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
   const [copied, setCopied] = useState(false);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [showDelivered, setShowDelivered] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('Ordered by mistake');
+  const [customReason, setCustomReason] = useState('');
+  const [cancelling, setCancelling] = useState(false);
   const pollingRef = useRef(null);
   const autoCloseTimerRef = useRef(null);
 
@@ -252,6 +264,31 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
   const isCancelled = ['cancelled', 'rejected'].includes(order?.status);
   const isDelivery = order?.order_type === 'DELIVERY' || !order?.order_type;
   const isDelivered = order?.status === 'delivered';
+  const canCancel = !isCancelled && !isDelivered && ['placed', 'accepted'].includes(order?.status);
+
+  // Discreet cancel order handler
+  const handleConfirmCancel = async () => {
+    if (!order?.order_id) return;
+    setCancelling(true);
+    const finalReason = cancelReason === 'Other reason' && customReason.trim() ? customReason.trim() : cancelReason;
+    try {
+      const res = await fetch(`${API_BASE}/api/orders/${order.order_id}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: finalReason || 'Cancelled by customer' })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Could not cancel order');
+      }
+      setShowCancelModal(false);
+      fetchOrder(order.order_id, false);
+    } catch (err) {
+      alert(err.message || 'Failed to cancel order');
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   // Native share or clipboard
   const handleShare = () => {
@@ -409,6 +446,15 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
               <div className="bg-emerald-600/40 border border-emerald-400/30 text-emerald-200 px-4 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-300" />
                 <span>Delivered to your doorstep!</span>
+              </div>
+            </div>
+          )}
+
+          {isCancelled && (
+            <div className="mt-3 flex items-center justify-center">
+              <div className="bg-red-500/30 border border-red-400/30 text-red-200 px-4 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5">
+                <AlertTriangle className="w-4 h-4 text-red-300" />
+                <span>Order Cancelled</span>
               </div>
             </div>
           )}
@@ -767,6 +813,27 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
         </>
       )}
 
+          {/* Cancelled Banner Card */}
+          {isCancelled && (
+            <div className="mx-4 bg-red-50 border border-red-200 rounded-3xl p-5 shadow-xs text-center space-y-2">
+              <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto shadow-xs">
+                <AlertCircle className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-black text-red-950">This Order was Cancelled</h3>
+              <p className="text-xs text-red-800 leading-relaxed max-w-sm mx-auto">
+                {order?.cancellation_reason || order?.status_history?.find(s => s.status === 'cancelled')?.note || 'The order has been cancelled. If you made an online payment, refund has been processed back to your original payment method.'}
+              </p>
+              <div className="pt-2">
+                <button
+                  onClick={onGoHome || onClose}
+                  className="px-5 py-2.5 rounded-2xl bg-neutral-900 text-white font-bold text-xs shadow-sm hover:bg-black transition-all cursor-pointer"
+                >
+                  Back to Home
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* 7. Help / Call Restaurant */}
           <div className="px-4 pt-1">
             <a
@@ -774,13 +841,104 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
               className="w-full bg-white hover:bg-neutral-50 border border-neutral-200 text-neutral-700 py-3 rounded-2xl text-xs font-black flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer"
             >
               <Phone className="w-4 h-4 text-neutral-500" />
-              <span>Need Help? Call Persian Darbar (020-26131976)</span>
+              <span>Need Help? Call Persian Darbar (+91 95942 87868)</span>
             </a>
           </div>
+
+          {/* 8. Discreet Zomato/Swiggy Order Cancellation */}
+          {canCancel && (
+            <div className="px-4 pt-2 pb-4 text-center">
+              <button
+                type="button"
+                onClick={() => setShowCancelModal(true)}
+                className="text-xs text-neutral-400 hover:text-red-600 font-semibold underline underline-offset-4 transition-colors cursor-pointer"
+              >
+                Need to cancel order?
+              </button>
+            </div>
+          )}
 
         </div>
 
       </div>
+
+      {/* ═══ Discreet Cancellation Confirmation Modal (Zomato/Swiggy style) ═══ */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl flex flex-col gap-4 animate-in slide-in-from-bottom duration-300">
+            <div className="flex items-center justify-between pb-1 border-b border-neutral-100">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-red-500" />
+                <h3 className="text-base font-black text-neutral-900">Cancel Order</h3>
+              </div>
+              <button
+                onClick={() => setShowCancelModal(false)}
+                className="w-7 h-7 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-600 hover:bg-neutral-200 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-neutral-600 leading-relaxed">
+              Are you sure you want to cancel this order? Once cancelled, preparation will be halted immediately.
+            </p>
+
+            <div className="space-y-2">
+              <label className="text-[11px] font-extrabold text-neutral-500 uppercase tracking-wider">
+                Please select reason:
+              </label>
+              {CANCEL_REASONS.map((reason) => (
+                <label
+                  key={reason}
+                  onClick={() => setCancelReason(reason)}
+                  className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-xs font-semibold cursor-pointer transition-all ${
+                    cancelReason === reason
+                      ? 'border-red-500 bg-red-50/60 text-red-900'
+                      : 'border-neutral-200 hover:bg-neutral-50 text-neutral-700'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="cancelReason"
+                    checked={cancelReason === reason}
+                    onChange={() => setCancelReason(reason)}
+                    className="accent-red-600"
+                  />
+                  <span>{reason}</span>
+                </label>
+              ))}
+
+              {cancelReason === 'Other reason' && (
+                <textarea
+                  rows={2}
+                  value={customReason}
+                  onChange={(e) => setCustomReason(e.target.value)}
+                  placeholder="Explain reason for cancellation..."
+                  className="w-full mt-2 p-2.5 rounded-xl border border-neutral-200 text-xs focus:outline-none focus:ring-1 focus:ring-red-500"
+                />
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowCancelModal(false)}
+                className="py-3 px-4 rounded-xl border border-neutral-300 font-bold text-xs text-neutral-700 hover:bg-neutral-50 active:scale-95 transition-all cursor-pointer"
+              >
+                Keep Order
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmCancel}
+                disabled={cancelling}
+                className="py-3 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs shadow-md active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+              >
+                {cancelling ? 'Cancelling...' : 'Confirm Cancel'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

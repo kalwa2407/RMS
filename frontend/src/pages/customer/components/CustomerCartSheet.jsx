@@ -54,6 +54,8 @@ const CustomerCartSheet = ({
   const DELIVERY_OPTIONS = ['Leave at door', "Don't ring bell", 'Call upon arrival', 'Avoid calling'];
 
   const freeDeliveryDiff = Math.max(0, freeDeliveryThreshold - cartSubtotal);
+  const numDist = parseFloat(distanceKm || 0);
+  const isBeyondDeliveryRange = orderType === 'DELIVERY' && numDist > 20;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity p-0 md:p-6">
@@ -162,9 +164,20 @@ const CustomerCartSheet = ({
                     <MapPin className="w-3 h-3 text-[#E40000]" />
                     <span>Distance from <strong>{selectedBranch?.name || 'Persian Darbar'}</strong>:</span>
                   </span>
-                  <span className="font-black text-neutral-900 bg-neutral-200/60 px-2 py-0.5 rounded-md">
+                  <span className={`font-black px-2 py-0.5 rounded-md ${isBeyondDeliveryRange ? 'bg-red-100 text-red-700' : 'bg-neutral-200/60 text-neutral-900'}`}>
                     {distanceKm} km
                   </span>
+                </div>
+              )}
+              {isBeyondDeliveryRange && (
+                <div className="mt-2 bg-red-50 border border-red-200 rounded-xl p-2.5 flex items-start gap-2 text-red-700">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
+                  <div className="text-[11px]">
+                    <p className="font-extrabold text-red-800">Delivery Unavailable Beyond 20 km</p>
+                    <p className="text-red-700 mt-0.5 leading-snug">
+                      Detected distance is <strong>{numDist.toFixed(1)} km</strong>. We deliver within a 20 km radius to ensure food quality and piping hot Mughlai dishes. Please switch to <strong>Takeaway Pickup</strong>.
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
@@ -516,11 +529,17 @@ const CustomerCartSheet = ({
         >
           <button
             onClick={onPlaceOrder}
-            disabled={placingOrder}
-            className="w-full bg-gradient-to-r from-[#E40000] via-[#D31027] to-[#B91C1C] hover:brightness-105 text-white font-black text-sm py-4 rounded-2xl shadow-[0_8px_24px_-4px_rgba(228,0,0,0.45)] ios-press transition-all disabled:opacity-50 flex items-center justify-center space-x-2 border border-white/20 cursor-pointer"
+            disabled={placingOrder || isBeyondDeliveryRange}
+            className={`w-full text-white font-black text-sm py-4 rounded-2xl shadow-lg transition-all flex items-center justify-center space-x-2 border cursor-pointer ${
+              isBeyondDeliveryRange
+                ? 'bg-neutral-400 border-neutral-300 opacity-60 cursor-not-allowed shadow-none'
+                : 'bg-gradient-to-r from-[#E40000] via-[#D31027] to-[#B91C1C] hover:brightness-105 shadow-[0_8px_24px_-4px_rgba(228,0,0,0.45)] border-white/20 ios-press disabled:opacity-50'
+            }`}
           >
             <span>
-              {placingOrder
+              {isBeyondDeliveryRange
+                ? `Delivery Unavailable Beyond 20 km (${numDist.toFixed(1)} km)`
+                : placingOrder
                 ? 'Confirming Feast...'
                 : currentUser
                 ? `Confirm Royal Feast · ₹${cartTotal.toLocaleString()}`

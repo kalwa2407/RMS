@@ -87,6 +87,10 @@ export const CustomerDeliveryMap = ({
       mapInstanceRef.current = null;
     }
 
+    if (container._leaflet_id) {
+      container._leaflet_id = null;
+    }
+
     try {
       const map = L.map(container, {
         center: branchCoords,
@@ -95,12 +99,13 @@ export const CustomerDeliveryMap = ({
         attributionControl: false,
         fadeAnimation: false,
         zoomAnimation: false, // Prevents DomUtil _leaflet_pos transition race condition
+        markerZoomAnimation: false,
       });
 
-      // 100% Free World Street Map Tiles (Zero API key required, zero watermarks)
-      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+      // 100% Free OpenStreetMap Tiles (Zero API key, zero watermark, 100% reliable)
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
-        attribution: 'Tiles &copy; Esri',
+        attribution: '&copy; OpenStreetMap contributors',
       }).addTo(map);
 
       // Custom Restaurant Pin
@@ -163,9 +168,13 @@ export const CustomerDeliveryMap = ({
         lineCap: 'round',
       }).addTo(map);
 
-      // Fit map without animation to avoid transition error
-      const bounds = L.latLngBounds([branchCoords, customerCoords]);
-      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15, animate: false });
+      // Fit map cleanly when ready without transition animation
+      map.whenReady(() => {
+        if (mapContainerRef.current) {
+          const bounds = L.latLngBounds([branchCoords, customerCoords]);
+          map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15, animate: false });
+        }
+      });
 
       mapInstanceRef.current = map;
     } catch (e) {
@@ -183,6 +192,9 @@ export const CustomerDeliveryMap = ({
           // safe ignore
         }
         mapInstanceRef.current = null;
+      }
+      if (container) {
+        container._leaflet_id = null;
       }
     };
   }, [branchCoords[0], branchCoords[1], customerCoords[0], customerCoords[1]]);

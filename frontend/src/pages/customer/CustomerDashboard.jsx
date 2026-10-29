@@ -486,20 +486,28 @@ const CustomerDashboard = () => {
     setCart((prev) => {
       const idx = prev.findIndex((i) => getItemId(i) === itemId);
       if (idx > -1) {
-        // Item exists — increment by passed quantity (default 1)
+        // If coming from modal with an explicitly chosen quantity, set that quantity!
+        // Otherwise, standard ADD button increments by (item.quantity || 1)
+        const targetQty = item.fromModal
+          ? (item.quantity || 1)
+          : prev[idx].quantity + (item.quantity || 1);
         return prev.map((ci, i) =>
           i === idx
-            ? { ...ci, quantity: ci.quantity + (item.quantity || 1) }
+            ? { ...ci, ...item, quantity: targetQty }
             : ci
         );
       }
-      // New item — preserve passed quantity (from detail modal), default to 1
+      // New item — preserve passed quantity (from detail modal or quick add), default to 1
       return [...prev, { ...item, quantity: item.quantity || 1 }];
     });
-    toast({
-      title: 'Added to Cart',
-      description: `${item.name} added to your Persian feast.`,
-    });
+    if (!item.silentToast) {
+      toast({
+        title: 'Added to Cart',
+        description: item.hasAddons
+          ? `${item.name} & accompaniments added to your feast.`
+          : `${item.name} added to your Persian feast.`,
+      });
+    }
   };
 
   const updateCartQty = (idOrItem, delta) => {
@@ -605,6 +613,14 @@ const CustomerDashboard = () => {
     const finalAddress = (typeof arg?.address === 'string' ? arg.address : deliveryAddress) || customerProfile?.address || '';
     if (orderType === 'DELIVERY' && !finalAddress?.trim()) {
       alert('Please enter a delivery address');
+      return;
+    }
+    if (orderType === 'DELIVERY' && parseFloat(distanceKm || 0) > 20) {
+      toast({
+        title: 'Delivery Beyond 20 km',
+        description: `Persian Darbar delivers within 20 km. Your location is ${parseFloat(distanceKm).toFixed(1)} km away. Please choose Takeaway Pickup.`,
+        variant: 'destructive',
+      });
       return;
     }
     const finalPhone = (typeof arg?.phone === 'string' ? arg.phone : '') || customerProfile?.phone || currentUser?.phoneNumber || localStorage.getItem('customer_phone') || '';
