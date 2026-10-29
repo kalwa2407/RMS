@@ -149,22 +149,53 @@ const CustomerDashboard = () => {
         const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setUserCoords(coords);
 
-        // Reverse Geocode: Try BigDataCloud first (fast, reliable CORS browser support), then OpenStreetMap Nominatim
+        // ── 1. Google Maps Geocoding (Direct Doorstep Street Address) ──
         let detectedAddress = '';
-        try {
-          const bdcRes = await fetch(
-            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${coords.lat}&longitude=${coords.lng}&localityLanguage=en`
-          );
-          if (bdcRes.ok) {
-            const bdcData = await bdcRes.json();
-            const locality = bdcData.locality || bdcData.subLocality || '';
-            const city = bdcData.city || bdcData.principalSubdivision || '';
-            const postcode = bdcData.postcode ? ` - ${bdcData.postcode}` : '';
-            if (locality || city) {
-              detectedAddress = [locality, city, bdcData.countryName].filter(Boolean).join(', ') + postcode;
+        const GOOGLE_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || 'AIzaSyCX4YYM60Z0IXcdC3zNB7YamsoafDfmbxo';
+
+        if (window.google?.maps?.Geocoder) {
+          try {
+            const geocoder = new window.google.maps.Geocoder();
+            const response = await geocoder.geocode({ location: coords });
+            if (response?.results?.[0]?.formatted_address) {
+              detectedAddress = response.results[0].formatted_address;
             }
+          } catch (gErr) {
+            console.warn('Google client Geocoder notice:', gErr);
           }
-        } catch (e) {}
+        }
+
+        if (!detectedAddress && GOOGLE_KEY) {
+          try {
+            const gRes = await fetch(
+              `https://maps.googleapis.com/maps/api/geocode/json?latlng=${coords.lat},${coords.lng}&key=${GOOGLE_KEY}`
+            );
+            if (gRes.ok) {
+              const gData = await gRes.json();
+              if (gData.results && gData.results.length > 0) {
+                detectedAddress = gData.results[0].formatted_address;
+              }
+            }
+          } catch (e) {}
+        }
+
+        // ── 2. Fallback to BigDataCloud ──
+        if (!detectedAddress) {
+          try {
+            const bdcRes = await fetch(
+              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${coords.lat}&longitude=${coords.lng}&localityLanguage=en`
+            );
+            if (bdcRes.ok) {
+              const bdcData = await bdcRes.json();
+              const locality = bdcData.locality || bdcData.subLocality || '';
+              const city = bdcData.city || bdcData.principalSubdivision || '';
+              const postcode = bdcData.postcode ? ` - ${bdcData.postcode}` : '';
+              if (locality || city) {
+                detectedAddress = [locality, city, bdcData.countryName].filter(Boolean).join(', ') + postcode;
+              }
+            }
+          } catch (e) {}
+        }
 
         if (!detectedAddress) {
           try {
@@ -1117,9 +1148,16 @@ const CustomerDashboard = () => {
           onSelectBranch={handleSelectBranch}
           userCoords={userCoords}
           currentAddress={deliveryAddress}
-          onSelectAddress={(addr) => {
+          onSelectAddress={(addr, newCoords) => {
             setDeliveryAddress(addr);
-            updateDistanceForBranch(selectedBranch, userCoords, addr);
+            const activeCoords = newCoords || userCoords;
+            if (newCoords) {
+              setUserCoords(newCoords);
+              try {
+                localStorage.setItem('customer_user_coords', JSON.stringify(newCoords));
+              } catch (e) {}
+            }
+            updateDistanceForBranch(selectedBranch, activeCoords, addr);
           }}
           onDetectLocation={handleDetectGPS}
           detectingLocation={detectingLoc}

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, MapPin, Check, Navigation, Building2, Clock, Phone } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, MapPin, Check, Navigation, Building2, Clock, Phone, Search } from 'lucide-react';
 import { PERSIAN_DARBAR_BRANCHES, KNOWN_LOCALITIES } from '../customerAssets';
 
 const CustomerAddressModal = ({
@@ -14,6 +14,43 @@ const CustomerAddressModal = ({
   detectingLocation = false
 }) => {
   const [customInput, setCustomInput] = useState(currentAddress);
+  const inputRef = useRef(null);
+
+  // Sync input when modal opens or currentAddress changes
+  useEffect(() => {
+    if (currentAddress) setCustomInput(currentAddress);
+  }, [currentAddress, isOpen]);
+
+  // Google Places Autocomplete Integration
+  useEffect(() => {
+    if (!isOpen || !inputRef.current || !window.google?.maps?.places) return;
+    try {
+      const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
+        componentRestrictions: { country: 'in' },
+        fields: ['formatted_address', 'geometry', 'name']
+      });
+
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+        const fullAddr = place?.formatted_address || place?.name;
+        if (fullAddr) {
+          setCustomInput(fullAddr);
+          let newCoords = null;
+          if (place.geometry?.location) {
+            newCoords = {
+              lat: place.geometry.location.lat(),
+              lng: place.geometry.location.lng()
+            };
+          }
+          if (typeof onSelectAddress === 'function') {
+            onSelectAddress(fullAddr, newCoords);
+          }
+        }
+      });
+    } catch (e) {
+      console.warn('Google places autocomplete init notice:', e);
+    }
+  }, [isOpen, onSelectAddress]);
 
   // Haversine formula
   const calcDistance = (lat1, lon1, lat2, lon2) => {
@@ -201,19 +238,32 @@ const CustomerAddressModal = ({
           </div>
         </div>
 
-        {/* Custom Locality/Area Input for Doorstep Delivery */}
+        {/* Custom Locality/Area Input with Google Places Autocomplete */}
         <div className="pt-2 border-t border-neutral-100">
-          <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-wider mb-1.5">
-            Set Home Locality (e.g. Kondhwa, Bandra, Camp, Andheri)
+          <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+            <span>Search Doorstep Address or Landmark</span>
+            <span className="text-[#4285F4] font-semibold lowercase tracking-normal">powered by Google</span>
           </label>
           <div className="flex space-x-2">
-            <input
-              type="text"
-              value={customInput}
-              onChange={(e) => setCustomInput(e.target.value)}
-              placeholder="e.g. Kondhwa, Pune or Linking Road, Bandra"
-              className="flex-1 bg-neutral-50 border border-neutral-200/80 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-neutral-800 placeholder-neutral-400 outline-none focus:ring-2 focus:ring-red-100 focus:border-[#E40000]"
-            />
+            <div className="relative flex-1">
+              <input
+                ref={inputRef}
+                type="text"
+                value={customInput}
+                onChange={(e) => setCustomInput(e.target.value)}
+                placeholder="Search apartment, street, landmark, or area..."
+                className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl pl-3.5 pr-8 py-2.5 text-xs font-bold text-neutral-800 placeholder-neutral-400 outline-none focus:ring-2 focus:ring-red-100 focus:border-[#E40000]"
+              />
+              {customInput && (
+                <button
+                  type="button"
+                  onClick={() => setCustomInput('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 text-xs font-bold"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
             <button
               onClick={() => {
                 if (customInput.trim() && typeof onSelectAddress === 'function') {
@@ -222,7 +272,7 @@ const CustomerAddressModal = ({
                 }
               }}
               disabled={!customInput.trim()}
-              className="bg-[#1C1C1C] text-white text-xs font-black px-4 py-2.5 rounded-2xl disabled:opacity-40 active:scale-95 transition-transform"
+              className="bg-[#1C1C1C] hover:bg-neutral-800 text-white text-xs font-black px-4 py-2.5 rounded-2xl disabled:opacity-40 active:scale-95 transition-transform shrink-0 cursor-pointer"
             >
               Apply
             </button>
