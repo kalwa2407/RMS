@@ -8,12 +8,14 @@ import {
   TrendingUp,
 } from "lucide-react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 
 import API_BASE from "../../lib/config";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const outletContext = useOutletContext();
+  const isDark = outletContext?.isDark ?? (localStorage.getItem("admin_theme") !== "light");
 
   const [stats, setStats] = useState({
     totalOrders: 0,
@@ -150,52 +152,86 @@ const Dashboard = () => {
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-black text-neutral-900 tracking-tight">
+          <h2 className={`text-2xl sm:text-3xl font-black tracking-tight ${
+            isDark ? "text-white" : "text-neutral-900"
+          }`}>
             Executive Dashboard
           </h2>
-          <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mt-1">
+          <p className={`text-xs font-semibold uppercase tracking-wider mt-1 ${
+            isDark ? "text-neutral-400" : "text-neutral-500"
+          }`}>
             Persian Darbar · Camp Pune Live Telemetry
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="px-3.5 py-1.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 flex items-center gap-1.5 shadow-2xs">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span className={`px-3 py-1.5 rounded-full text-[11px] font-bold flex items-center gap-1.5 shadow-xs border ${
+            isDark
+              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+              : "bg-emerald-50 text-emerald-700 border-emerald-200/80"
+          }`}>
+            <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${
+              isDark ? "bg-emerald-400" : "bg-emerald-500"
+            }`} />
             <span>All Systems Live</span>
           </span>
         </div>
       </div>
 
-      {/* STAT CARDS (macOS Widget Grid) */}
+      {/* STAT CARDS (macOS Widget Grid - Exact dark theme when isDark) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {statCards.map((card, index) => {
           const Icon = card.icon;
           return (
             <div
               key={index}
-              className="bg-white hover:bg-neutral-50/60 border border-black/[0.06] hover:border-amber-400/50 rounded-3xl p-5 transition-all duration-200 ios-press group shadow-xs"
+              className={`rounded-3xl p-5 transition-all duration-200 ios-press group shadow-xs border ${
+                isDark
+                  ? "bg-white/[0.03] hover:bg-white/[0.05] border-white/[0.08] hover:border-amber-400/40"
+                  : "bg-white hover:bg-neutral-50/60 border-black/[0.06] hover:border-amber-400/50"
+              }`}
             >
               <div className="flex items-center justify-between mb-4">
-                <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 group-hover:scale-105 transition-transform shadow-xs">
-                  <Icon className="h-5 w-5 text-amber-600" />
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs border ${
+                  isDark
+                    ? "bg-white/[0.06] border-white/[0.08] text-amber-400"
+                    : "bg-amber-500/10 border-amber-500/20 text-amber-600"
+                }`}>
+                  <Icon className={`h-5 w-5 ${isDark ? "text-amber-300" : "text-amber-600"}`} />
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600 border border-neutral-200/60">
+                <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                  isDark
+                    ? "bg-white/[0.05] text-neutral-400 border-white/[0.06]"
+                    : "bg-neutral-100 text-neutral-600 border-neutral-200/60"
+                }`}>
                   {card.title}
                 </span>
               </div>
 
-              <h3 className="text-3xl font-black text-neutral-900 tracking-tight mb-1">
+              <h3 className={`text-3xl font-black tracking-tight mb-1 ${
+                isDark ? "text-white" : "text-neutral-900"
+              }`}>
                 {card.value}
               </h3>
-              <p className="text-xs font-medium text-neutral-500">{card.subtitle}</p>
+              <p className={`text-xs font-medium ${
+                isDark ? "text-neutral-400" : "text-neutral-500"
+              }`}>
+                {card.subtitle}
+              </p>
             </div>
           );
         })}
       </div>
 
-      {/* QUICK ACTIONS */}
-      <div className="bg-neutral-50/70 border border-black/[0.06] rounded-3xl p-6 sm:p-7 space-y-4 shadow-2xs">
+      {/* QUICK ACTIONS (Exact dark theme when isDark) */}
+      <div className={`rounded-3xl p-6 sm:p-7 space-y-4 shadow-sm border ${
+        isDark
+          ? "bg-white/[0.02] border-white/[0.08]"
+          : "bg-neutral-50/70 border-black/[0.06]"
+      }`}>
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-black text-neutral-900 tracking-tight">
+          <h3 className={`text-base font-black tracking-tight ${
+            isDark ? "text-white" : "text-neutral-900"
+          }`}>
             Quick Actions &amp; Operations
           </h3>
           <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
@@ -206,33 +242,57 @@ const Dashboard = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <button
             onClick={() => navigate("/admin/menu")}
-            className="bg-white border border-black/[0.06] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-transparent text-neutral-800 hover:text-white p-5 rounded-2xl transition-all ios-press cursor-pointer text-center group active:scale-95 shadow-xs"
+            className={`border p-5 rounded-2xl transition-all ios-press cursor-pointer text-center group active:scale-95 shadow-xs ${
+              isDark
+                ? "bg-white/[0.04] border-white/[0.08] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-white/20 text-neutral-300 hover:text-white"
+                : "bg-white border-black/[0.06] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-transparent text-neutral-800 hover:text-white"
+            }`}
           >
-            <MenuIcon className="h-5 w-5 mx-auto mb-2 group-hover:scale-110 transition-transform text-amber-600 group-hover:text-white" />
+            <MenuIcon className={`h-5 w-5 mx-auto mb-2 group-hover:scale-110 transition-transform group-hover:text-white ${
+              isDark ? "text-amber-300" : "text-amber-600"
+            }`} />
             <p className="text-xs font-black uppercase tracking-wider">Manage Menu</p>
           </button>
 
           <button
             onClick={() => navigate("/admin/gallery")}
-            className="bg-white border border-black/[0.06] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-transparent text-neutral-800 hover:text-white p-5 rounded-2xl transition-all ios-press cursor-pointer text-center group active:scale-95 shadow-xs"
+            className={`border p-5 rounded-2xl transition-all ios-press cursor-pointer text-center group active:scale-95 shadow-xs ${
+              isDark
+                ? "bg-white/[0.04] border-white/[0.08] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-white/20 text-neutral-300 hover:text-white"
+                : "bg-white border-black/[0.06] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-transparent text-neutral-800 hover:text-white"
+            }`}
           >
-            <Image className="h-5 w-5 mx-auto mb-2 group-hover:scale-110 transition-transform text-amber-600 group-hover:text-white" />
+            <Image className={`h-5 w-5 mx-auto mb-2 group-hover:scale-110 transition-transform group-hover:text-white ${
+              isDark ? "text-amber-300" : "text-amber-600"
+            }`} />
             <p className="text-xs font-black uppercase tracking-wider">Gallery</p>
           </button>
 
           <button
             onClick={() => navigate("/admin/orders")}
-            className="bg-white border border-black/[0.06] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-transparent text-neutral-800 hover:text-white p-5 rounded-2xl transition-all ios-press cursor-pointer text-center group active:scale-95 shadow-xs"
+            className={`border p-5 rounded-2xl transition-all ios-press cursor-pointer text-center group active:scale-95 shadow-xs ${
+              isDark
+                ? "bg-white/[0.04] border-white/[0.08] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-white/20 text-neutral-300 hover:text-white"
+                : "bg-white border-black/[0.06] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-transparent text-neutral-800 hover:text-white"
+            }`}
           >
-            <ShoppingBag className="h-5 w-5 mx-auto mb-2 group-hover:scale-110 transition-transform text-amber-600 group-hover:text-white" />
+            <ShoppingBag className={`h-5 w-5 mx-auto mb-2 group-hover:scale-110 transition-transform group-hover:text-white ${
+              isDark ? "text-amber-300" : "text-amber-600"
+            }`} />
             <p className="text-xs font-black uppercase tracking-wider">Live Orders</p>
           </button>
 
           <button
             onClick={() => navigate("/admin/reservations")}
-            className="bg-white border border-black/[0.06] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-transparent text-neutral-800 hover:text-white p-5 rounded-2xl transition-all ios-press cursor-pointer text-center group active:scale-95 shadow-xs"
+            className={`border p-5 rounded-2xl transition-all ios-press cursor-pointer text-center group active:scale-95 shadow-xs ${
+              isDark
+                ? "bg-white/[0.04] border-white/[0.08] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-white/20 text-neutral-300 hover:text-white"
+                : "bg-white border-black/[0.06] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-transparent text-neutral-800 hover:text-white"
+            }`}
           >
-            <Calendar className="h-5 w-5 mx-auto mb-2 group-hover:scale-110 transition-transform text-amber-600 group-hover:text-white" />
+            <Calendar className={`h-5 w-5 mx-auto mb-2 group-hover:scale-110 transition-transform group-hover:text-white ${
+              isDark ? "text-amber-300" : "text-amber-600"
+            }`} />
             <p className="text-xs font-black uppercase tracking-wider">Table Bookings</p>
           </button>
         </div>

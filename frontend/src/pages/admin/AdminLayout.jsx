@@ -86,7 +86,7 @@ const AdminLayout = () => {
   const location  = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem("admin_theme") || "light";
+    return localStorage.getItem("admin_theme") || "dark";
   });
 
   const toggleTheme = (newTheme) => {
@@ -370,7 +370,7 @@ const AdminLayout = () => {
               ? "bg-[#101721]/70 border-white/[0.08]"
               : "bg-white border-black/[0.06]"
           }`}>
-            <Outlet />
+            <Outlet context={{ theme, isDark }} />
           </main>
         </div>
       </div>
@@ -440,7 +440,7 @@ const AdminLayout = () => {
       ════════════════════════════════════ */}
       <div className="lg:hidden pt-[76px] pb-[84px]">
         <div className="px-3.5 py-3">
-          <Outlet />
+          <Outlet context={{ theme, isDark }} />
         </div>
       </div>
 
