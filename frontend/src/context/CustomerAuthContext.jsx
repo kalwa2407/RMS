@@ -75,6 +75,7 @@ export const CustomerAuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const nativeVerificationIdRef = useRef(null);
   const webConfirmationResultRef = useRef(null);
+  const isBackendOtpRef = useRef(false);
 
   // Sync / fetch customer profile from backend with auto-refresh on 401
   const fetchCustomerProfile = useCallback(async (token, user) => {
@@ -597,6 +598,28 @@ export const CustomerAuthProvider = ({ children }) => {
       } else if (error.code === 'auth/captcha-check-failed' || error?.message?.includes('reCAPTCHA') || error?.message?.includes('removed')) {
         errorMsg = 'Security verification check ready. Please tap Continue.';
       }
+
+      // 4. Reliable Backend WhatsApp / SMS Cloud OTP Fallback
+      try {
+        console.info('Attempting fallback verification code via backend API...');
+        const backendRes = await fetch(`${API_BASE}/api/customer/auth/send-otp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: cleanDigits })
+        });
+        const backendData = await backendRes.json();
+        if (backendRes.ok && backendData.success) {
+          isBackendOtpRef.current = true;
+          return {
+            success: true,
+            message: `Verification code sent to +91 ${cleanDigits}`,
+            resendCoolDown: backendData.resend_cooldown || 30
+          };
+        }
+      } catch (backendOtpErr) {
+        console.warn('Backend OTP fallback error:', backendOtpErr);
+      }
+
       return { success: false, error: errorMsg };
     }
   };
@@ -748,6 +771,43 @@ export const CustomerAuthProvider = ({ children }) => {
         }
         return { success: false, error: msg };
       }
+    }
+
+    // 4. Backend Verification Fallback
+    try {
+      const backendVerifyRes = await fetch(`${API_BASE}/api/customer/auth/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: cleanDigits, otp: otp.trim(), name: name || '' })
+      });
+      const backendVerifyData = await backendVerifyRes.json();
+      if (backendVerifyRes.ok && backendVerifyData.success && backendVerifyData.token) {
+        const userObj = {
+          uid: backendVerifyData.user?.uid || `cust_${cleanDigits}`,
+          displayName: backendVerifyData.user?.name || name || `Patron ${cleanDigits.slice(-4)}`,
+          name: backendVerifyData.user?.name || name || '',
+          phone: cleanDigits,
+          email: backendVerifyData.user?.email || '',
+          isWhatsAppUser: true,
+          getIdToken: async () => backendVerifyData.token
+        };
+        localStorage.setItem('customer_jwt', backendVerifyData.token);
+        localStorage.setItem('customer_login_provider', 'phone');
+        localStorage.setItem('customer_uid', userObj.uid);
+        localStorage.setItem('customer_phone', cleanDigits);
+        if (userObj.displayName) localStorage.setItem('customer_name', userObj.displayName);
+        if (backendVerifyData.customer) localStorage.setItem('customer_profile', JSON.stringify(backendVerifyData.customer));
+
+        setCurrentUser(userObj);
+        setIdToken(backendVerifyData.token);
+        if (backendVerifyData.customer) setCustomerProfile(backendVerifyData.customer);
+        sessionStorage.setItem('customer_guest_browse', 'true');
+        return { success: true, user: userObj, customer: backendVerifyData.customer || userObj };
+      } else if (backendVerifyData.detail && !nativeVerificationIdRef.current && !webConfirmationResultRef.current) {
+        return { success: false, error: backendVerifyData.detail };
+      }
+    } catch (backendVerifyErr) {
+      console.warn('Backend verify OTP notice:', backendVerifyErr);
     }
 
     return {
