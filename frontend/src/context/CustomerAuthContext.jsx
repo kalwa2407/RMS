@@ -1067,17 +1067,24 @@ export const CustomerAuthProvider = ({ children }) => {
     let res = await fetch(url, { ...options, headers });
 
     // If 401 Unauthorized, force-refresh token once and retry
-    if (res.status === 401 && auth.currentUser) {
-      try {
-        const freshToken = await auth.currentUser.getIdToken(true);
-        setIdToken(freshToken);
-        const retryHeaders = {
-          ...(options.headers || {}),
-          'Authorization': `Bearer ${freshToken}`
-        };
-        res = await fetch(url, { ...options, headers: retryHeaders });
-      } catch (refreshErr) {
-        console.warn('Token refresh retry failed:', refreshErr);
+    if (res.status === 401) {
+      if (auth.currentUser) {
+        try {
+          const freshToken = await auth.currentUser.getIdToken(true);
+          setIdToken(freshToken);
+          localStorage.setItem('customer_jwt', freshToken);
+          const retryHeaders = {
+            ...(options.headers || {}),
+            'Authorization': `Bearer ${freshToken}`
+          };
+          res = await fetch(url, { ...options, headers: retryHeaders });
+        } catch (refreshErr) {
+          console.warn('Token refresh retry failed:', refreshErr);
+        }
+      } else {
+        // Clean stale expired token
+        localStorage.removeItem('customer_jwt');
+        setIdToken(null);
       }
     }
 

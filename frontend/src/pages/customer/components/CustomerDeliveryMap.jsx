@@ -11,7 +11,7 @@ import { Maximize2, Minimize2 } from 'lucide-react';
  */
 
 const PERSIAN_DARBAR_COORDS = { lat: 18.5138, lng: 73.8785 };
-const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || '';
+const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || 'AIzaSyCX4YYM60Z0IXcdC3zNB7YamsoafDfmbxo';
 
 // Singleton loader — loads Google Maps script only once across the app
 let googleMapsLoadPromise = null;

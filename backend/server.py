@@ -5378,10 +5378,12 @@ async def delete_customer_account(
 
 @customer_router.get("/orders")
 async def get_customer_orders_list(
-    user: dict = Depends(verify_customer_token),
+    user: Optional[dict] = Depends(get_optional_customer),
     manager: BaseDataManager = Depends(get_data_manager)
 ):
     """Get all orders belonging to customer by UID, phone, or email"""
+    if not user or not user.get("uid"):
+        return []
     uid = user["uid"]
     user_email = (user.get("email") or "").lower().strip()
     
@@ -5420,10 +5422,12 @@ async def get_customer_orders_list(
 
 @customer_router.get("/reservations")
 async def get_customer_reservations_list(
-    user: dict = Depends(verify_customer_token),
+    user: Optional[dict] = Depends(get_optional_customer),
     manager: BaseDataManager = Depends(get_data_manager)
 ):
     """Get all reservations belonging to customer by UID, phone, or email"""
+    if not user or not user.get("uid"):
+        return []
     uid = user["uid"]
     user_email = (user.get("email") or "").lower().strip()
     
