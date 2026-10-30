@@ -5038,7 +5038,7 @@ async def customer_send_otp(payload: CustomerSendOtpRequest):
             raise HTTPException(status_code=429, detail=f"Please wait {remaining}s before requesting a new code")
 
     # ── Apple Review & QA Test Account Bypass (Guarantees instant review approval) ──
-    is_test_account = any(formatted.endswith(p) for p in ["9820144782", "9999999999"])
+    is_test_account = any(formatted.endswith(p) for p in ["9820144782", "9999999999", "7028033763"])
     if is_test_account:
         CUSTOMER_ACTIVE_OTPS[formatted] = {
             "otp": "123456",
@@ -5116,7 +5116,7 @@ async def customer_verify_otp(
         raise HTTPException(status_code=400, detail="Invalid phone number")
 
     # ── Apple Review / Demo Account Bypass ──
-    is_test_account = any(formatted.endswith(p) for p in ["9820144782", "9999999999"])
+    is_test_account = any(formatted.endswith(p) for p in ["9820144782", "9999999999", "7028033763"])
     if is_test_account and payload.otp.strip() == "123456":
         CUSTOMER_ACTIVE_OTPS.pop(formatted, None)
         # Proceed directly to authentication below
@@ -5588,3 +5588,4 @@ async def health_check():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=False)
+

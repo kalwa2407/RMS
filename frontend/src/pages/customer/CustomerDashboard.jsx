@@ -1105,7 +1105,7 @@ const CustomerDashboard = () => {
                 try { sessionStorage.clear(); } catch (e) { }
                 await signOutCustomer();
                 toast({ title: 'Signed Out', description: 'See you again at Persian Darbar!' });
-                window.location.replace('/customer/login');
+                navigate('/customer/login', { replace: true });
               }}
               onDeleteAccount={async () => {
                 try { sessionStorage.clear(); } catch (e) { }
@@ -1115,7 +1115,7 @@ const CustomerDashboard = () => {
                   description: 'Your account and personal data have been permanently removed.',
                   variant: 'destructive'
                 });
-                window.location.replace('/customer/login');
+                navigate('/customer/login', { replace: true });
               }}
               onGoToOrder={() => setActiveTab('order')}
               onGoToReserve={() => setActiveTab('reserve')}
@@ -1273,7 +1273,7 @@ const CustomerDashboard = () => {
             await signOutCustomer();
             setIsProfileOpen(false);
             toast({ title: 'Signed Out', description: 'See you again at Persian Darbar!' });
-            window.location.replace('/customer/login');
+            navigate('/customer/login', { replace: true });
           }}
           onDeleteAccount={async () => {
             try { sessionStorage.clear(); } catch (e) { }
@@ -1284,7 +1284,7 @@ const CustomerDashboard = () => {
               description: 'Your account and personal data have been permanently removed.',
               variant: 'destructive'
             });
-            window.location.replace('/customer/login');
+            navigate('/customer/login', { replace: true });
           }}
           pdCoins={availableCoins}
           initialTab={profileInitialTab}
@@ -1356,3 +1356,4 @@ const CustomerDashboard = () => {
 };
 
 export default CustomerDashboard;
+

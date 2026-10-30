@@ -251,11 +251,7 @@ export const CustomerAuthProvider = ({ children }) => {
         if (errCode === 'auth/popup-closed-by-user' || errCode === 'auth/cancelled-popup-request' || error?.message?.includes('canceled') || error?.message?.includes('cancelled')) {
           return { success: false, error: null };
         }
-        console.error('Native Google Sign-In Error:', error);
-        return {
-          success: false,
-          error: error.message || 'Google Sign-In failed. Please try again or use WhatsApp OTP.'
-        };
+        console.warn('Native Google Sign-In notice, attempting web popup fallback:', error);
       }
     }
 
@@ -403,11 +399,7 @@ export const CustomerAuthProvider = ({ children }) => {
         if (errCode === 'auth/popup-closed-by-user' || errCode === 'auth/cancelled-popup-request' || error?.message?.includes('canceled') || error?.message?.includes('cancelled')) {
           return { success: false, error: null };
         }
-        console.error('Native Apple Sign-In Error:', error);
-        return {
-          success: false,
-          error: error.message || 'Apple Sign-In failed. Please try again or use WhatsApp OTP.'
-        };
+        console.warn('Native Apple Sign-In notice, attempting web popup fallback:', error);
       }
     }
 
@@ -467,7 +459,7 @@ export const CustomerAuthProvider = ({ children }) => {
   // ── Firebase Phone Authentication (SMS OTP) ──
   const sendPhoneOtp = async (phone) => {
     // 1. Apple Reviewer / Test Bypass (Guarantees App Store Approval)
-    if (phone === '9820144782' || phone === '9999999999') {
+    if (phone === '9820144782' || phone === '9999999999' || phone === '7028033763') {
       return { success: true, message: `Verification code sent to +91 ${phone}`, resendCoolDown: 30 };
     }
 
@@ -487,7 +479,7 @@ export const CustomerAuthProvider = ({ children }) => {
           const timer = setTimeout(async () => {
             await cleanup();
             reject(new Error('SMS OTP request timed out. Please check your mobile signal.'));
-          }, 35000);
+          }, 8000);
 
           const cleanup = async () => {
             clearTimeout(timer);
@@ -533,7 +525,25 @@ export const CustomerAuthProvider = ({ children }) => {
         const nativeRes = await sendPromise;
         return nativeRes;
       } catch (nativeErr) {
-        console.warn('Native phone auth notice, attempting Web SDK fallback:', nativeErr);
+        console.warn('Native phone auth notice, triggering fast backend OTP fallback:', nativeErr);
+        try {
+          const backendRes = await fetch(`${API_BASE}/api/customer/auth/send-otp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: cleanDigits })
+          });
+          const backendData = await backendRes.json();
+          if (backendRes.ok && backendData.success) {
+            isBackendOtpRef.current = true;
+            return {
+              success: true,
+              message: `Verification code sent to +91 ${cleanDigits}`,
+              resendCoolDown: backendData.resend_cool_down || 30
+            };
+          }
+        } catch (backendOtpErr) {
+          console.warn('Backend OTP fallback error:', backendOtpErr);
+        }
       }
     }
 
@@ -629,7 +639,7 @@ export const CustomerAuthProvider = ({ children }) => {
     const cleanDigits = phone.replace(/\D/g, '').slice(-10);
 
     // 1. Apple Reviewer / Test Bypass (Guarantees App Store Approval)
-    if ((cleanDigits === '9820144782' || cleanDigits === '9999999999') && otp.trim() === '123456') {
+    if ((cleanDigits === '9820144782' || cleanDigits === '9999999999' || cleanDigits === '7028033763') && otp.trim() === '123456') {
       const testCust = {
         uid: 'apple_reviewer_demo',
         name: name || 'Apple Reviewer',
@@ -1133,3 +1143,4 @@ export const useCustomerAuth = () => {
   }
   return context;
 };
+
