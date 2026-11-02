@@ -5020,7 +5020,10 @@ customer_router = APIRouter(prefix="/api/customer", tags=["customer"])
 CUSTOMER_ACTIVE_OTPS: Dict[str, Dict[str, Any]] = {}
 
 @customer_router.post("/auth/send-otp")
-async def customer_send_otp(payload: CustomerSendOtpRequest):
+async def customer_send_otp(
+    payload: CustomerSendOtpRequest,
+    manager: BaseDataManager = Depends(get_data_manager)
+):
     """
     Generate and dispatch 6-digit verification code to customer via Meta WhatsApp Cloud API.
     """
@@ -5071,6 +5074,18 @@ async def customer_send_otp(payload: CustomerSendOtpRequest):
         "last_sent_at": now,
         "attempts": 0
     }
+
+    # Persist to Firestore so all Cloud Run instances share this state
+    try:
+        if hasattr(manager, "db") and manager.db:
+            manager.db.collection("active_customer_otps").document(formatted).set({
+                "otp": otp_code,
+                "expires_at": (now + timedelta(minutes=5)).isoformat(),
+                "last_sent_at": now.isoformat(),
+                "attempts": 0
+            })
+    except Exception as db_e:
+        logging.warning(f"[OTP] Firestore persist warning: {db_e}")
 
     logging.info(f"[OTP] Login OTP dispatched to ...{formatted[-4:]}")
     return {
@@ -5123,6 +5138,22 @@ async def customer_verify_otp(
     else:
         otp_record = CUSTOMER_ACTIVE_OTPS.get(formatted)
         if not otp_record:
+            # Check Firestore persistent storage across multi-instance Cloud Run
+            try:
+                if hasattr(manager, "db") and manager.db:
+                    doc = manager.db.collection("active_customer_otps").document(formatted).get()
+                    if doc.exists:
+                        doc_data = doc.to_dict()
+                        exp_str = doc_data.get("expires_at")
+                        exp_dt = datetime.fromisoformat(exp_str) if exp_str else now
+                        otp_record = {
+                            "otp": doc_data.get("otp"),
+                            "expires_at": exp_dt,
+                            "attempts": doc_data.get("attempts", 0)
+                        }
+            except Exception as db_e:
+                logging.warning(f"[OTP] Firestore read warning: {db_e}")
+        if not otp_record:
             raise HTTPException(status_code=400, detail="No active verification code found. Please request a new code.")
 
         now = datetime.utcnow()
@@ -5141,6 +5172,11 @@ async def customer_verify_otp(
 
         # OTP is valid! Clean up
         CUSTOMER_ACTIVE_OTPS.pop(formatted, None)
+        try:
+            if hasattr(manager, "db") and manager.db:
+                manager.db.collection("active_customer_otps").document(formatted).delete()
+        except Exception:
+            pass
 
     # Normalize standard 10-digit phone for storage
     standard_10_phone = formatted[2:] if (len(formatted) == 12 and formatted.startswith("91")) else formatted

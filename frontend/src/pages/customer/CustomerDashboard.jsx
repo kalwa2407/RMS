@@ -1101,15 +1101,15 @@ const CustomerDashboard = () => {
                 updateDistanceForBranch(selectedBranch, userCoords, address);
                 toast({ title: 'Address Saved', description: 'Default address updated.' });
               }}
-              onSignOut={async () => {
+              onSignOut={() => {
                 try { sessionStorage.clear(); } catch (e) { }
-                await signOutCustomer();
+                signOutCustomer();
                 toast({ title: 'Signed Out', description: 'See you again at Persian Darbar!' });
                 navigate('/customer/login', { replace: true });
               }}
-              onDeleteAccount={async () => {
+              onDeleteAccount={() => {
                 try { sessionStorage.clear(); } catch (e) { }
-                await deleteCustomerAccount();
+                deleteCustomerAccount();
                 toast({
                   title: 'Account Deleted',
                   description: 'Your account and personal data have been permanently removed.',
@@ -1268,17 +1268,17 @@ const CustomerDashboard = () => {
               toast({ title: 'Link Copied', description: 'Share link copied to clipboard.' });
             }
           }}
-          onSignOut={async () => {
+          onSignOut={() => {
             try { sessionStorage.clear(); } catch (e) { }
-            await signOutCustomer();
             setIsProfileOpen(false);
+            signOutCustomer();
             toast({ title: 'Signed Out', description: 'See you again at Persian Darbar!' });
             navigate('/customer/login', { replace: true });
           }}
-          onDeleteAccount={async () => {
+          onDeleteAccount={() => {
             try { sessionStorage.clear(); } catch (e) { }
             setIsProfileOpen(false);
-            await deleteCustomerAccount();
+            deleteCustomerAccount();
             toast({
               title: 'Account Deleted',
               description: 'Your account and personal data have been permanently removed.',

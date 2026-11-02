@@ -10,6 +10,7 @@ const destConfigFile = path.join(rootDir, 'android-customer', 'app', 'src', 'mai
 
 console.log('Building customer web app for Android...');
 process.env.REACT_APP_APP_MODE = 'customer';
+process.env.NODE_OPTIONS = '--max-old-space-size=4096';
 execSync('npx craco build', { stdio: 'inherit', cwd: rootDir, env: process.env });
 
 function copyRecursive(src, dest) {

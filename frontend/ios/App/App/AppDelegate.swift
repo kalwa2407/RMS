@@ -12,7 +12,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
-        // Handle Google Sign-In and other OAuth redirect URLs
+        // Forward Google Sign-In redirect URLs
+        if let gidClass = NSClassFromString("GIDSignIn") as? AnyObject.Type {
+            let sharedSel = NSSelectorFromString("sharedInstance")
+            if gidClass.responds(to: sharedSel),
+               let instance = gidClass.perform(sharedSel)?.takeUnretainedValue() as? AnyObject {
+                let handleSel = NSSelectorFromString("handleURL:")
+                if instance.responds(to: handleSel) {
+                    _ = instance.perform(handleSel, with: url)
+                }
+            }
+        }
         return ApplicationDelegateProxy.shared.application(app, open: url, options: options)
     }
 

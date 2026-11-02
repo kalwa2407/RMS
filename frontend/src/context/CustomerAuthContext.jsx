@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { 
+import {
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
-  signOut as firebaseSignOut, 
+  signOut as firebaseSignOut,
   onAuthStateChanged,
   setPersistence,
   browserLocalPersistence,
@@ -22,8 +22,8 @@ import API_BASE from '../lib/config';
 
 // Ensure Firebase Auth session is persisted across all app restarts
 try {
-  setPersistence(auth, browserLocalPersistence).catch(() => {});
-} catch (e) {}
+  setPersistence(auth, browserLocalPersistence).catch(() => { });
+} catch (e) { }
 
 const CustomerAuthContext = createContext(null);
 
@@ -52,7 +52,7 @@ export const CustomerAuthProvider = ({ children }) => {
           getIdToken: async () => token
         };
       }
-    } catch (e) {}
+    } catch (e) { }
     return null;
   });
 
@@ -68,7 +68,7 @@ export const CustomerAuthProvider = ({ children }) => {
     try {
       const saved = localStorage.getItem('customer_profile');
       if (saved) return JSON.parse(saved);
-    } catch (e) {}
+    } catch (e) { }
     return null;
   });
 
@@ -243,7 +243,7 @@ export const CustomerAuthProvider = ({ children }) => {
         setCurrentUser(user);
         setIdToken(token);
         sessionStorage.setItem('customer_guest_browse', 'true');
-        fetchCustomerProfile(token, user).catch(() => {});
+        fetchCustomerProfile(token, user).catch(() => { });
         return { success: true, user };
       } catch (error) {
         const errCode = error?.code || '';
@@ -251,7 +251,11 @@ export const CustomerAuthProvider = ({ children }) => {
         if (errCode === 'auth/popup-closed-by-user' || errCode === 'auth/cancelled-popup-request' || error?.message?.includes('canceled') || error?.message?.includes('cancelled')) {
           return { success: false, error: null };
         }
-        console.warn('Native Google Sign-In notice, attempting web popup fallback:', error);
+        console.warn('Native Google Sign-In notice:', error);
+        return {
+          success: false,
+          error: error?.message || 'Google Sign-In could not be completed on this device.'
+        };
       }
     }
 
@@ -272,7 +276,7 @@ export const CustomerAuthProvider = ({ children }) => {
       setIdToken(token);
       sessionStorage.setItem('customer_guest_browse', 'true');
       // Fire & forget remote profile sync so navigation is instantaneous
-      fetchCustomerProfile(token, user).catch(() => {});
+      fetchCustomerProfile(token, user).catch(() => { });
       return { success: true, user };
     } catch (error) {
       const errCode = error?.code || '';
@@ -391,7 +395,7 @@ export const CustomerAuthProvider = ({ children }) => {
         setCurrentUser(user);
         setIdToken(token);
         sessionStorage.setItem('customer_guest_browse', 'true');
-        fetchCustomerProfile(token, user).catch(() => {});
+        fetchCustomerProfile(token, user).catch(() => { });
         return { success: true, user };
       } catch (error) {
         const errCode = error?.code || '';
@@ -399,7 +403,11 @@ export const CustomerAuthProvider = ({ children }) => {
         if (errCode === 'auth/popup-closed-by-user' || errCode === 'auth/cancelled-popup-request' || error?.message?.includes('canceled') || error?.message?.includes('cancelled')) {
           return { success: false, error: null };
         }
-        console.warn('Native Apple Sign-In notice, attempting web popup fallback:', error);
+        console.warn('Native Apple Sign-In notice:', error);
+        return {
+          success: false,
+          error: error?.message || 'Apple Sign-In could not be completed.'
+        };
       }
     }
 
@@ -419,7 +427,7 @@ export const CustomerAuthProvider = ({ children }) => {
       setCurrentUser(user);
       setIdToken(token);
       sessionStorage.setItem('customer_guest_browse', 'true');
-      fetchCustomerProfile(token, user).catch(() => {});
+      fetchCustomerProfile(token, user).catch(() => { });
       return { success: true, user };
     } catch (error) {
       const errCode = error?.code || '';
@@ -479,7 +487,7 @@ export const CustomerAuthProvider = ({ children }) => {
           const timer = setTimeout(async () => {
             await cleanup();
             reject(new Error('SMS OTP request timed out. Please check your mobile signal.'));
-          }, 8000);
+          }, 60000);
 
           const cleanup = async () => {
             clearTimeout(timer);
@@ -487,7 +495,7 @@ export const CustomerAuthProvider = ({ children }) => {
               if (handleCodeSent) await handleCodeSent.remove();
               if (handleFailed) await handleFailed.remove();
               if (handleCompleted) await handleCompleted.remove();
-            } catch (e) {}
+            } catch (e) { }
           };
 
           handleCodeSent = await FirebaseAuthentication.addListener('phoneCodeSent', async (event) => {
@@ -544,6 +552,10 @@ export const CustomerAuthProvider = ({ children }) => {
         } catch (backendOtpErr) {
           console.warn('Backend OTP fallback error:', backendOtpErr);
         }
+        return {
+          success: false,
+          error: nativeErr?.message || 'Could not send verification code. Please try again.'
+        };
       }
     }
 
@@ -566,13 +578,13 @@ export const CustomerAuthProvider = ({ children }) => {
       if (!window.recaptchaVerifier) {
         window.recaptchaVerifier = new RecaptchaVerifier(auth, container, {
           size: 'invisible',
-          callback: () => {},
+          callback: () => { },
           'expired-callback': () => {
             try {
               if (window.recaptchaVerifier) {
                 window.recaptchaVerifier.clear();
               }
-            } catch (e) {}
+            } catch (e) { }
             window.recaptchaVerifier = null;
           }
         });
@@ -593,7 +605,7 @@ export const CustomerAuthProvider = ({ children }) => {
         if (window.recaptchaVerifier) {
           window.recaptchaVerifier.clear();
         }
-      } catch (e) {}
+      } catch (e) { }
       window.recaptchaVerifier = null;
       const c = document.getElementById('persian-darbar-recaptcha-root');
       if (c) c.innerHTML = '';
@@ -698,7 +710,7 @@ export const CustomerAuthProvider = ({ children }) => {
             try {
               const currentRes = await FirebaseAuthentication.getCurrentUser();
               user = currentRes.user;
-            } catch (e) {}
+            } catch (e) { }
           }
           try {
             const idTokenRes = await FirebaseAuthentication.getIdToken();
@@ -736,14 +748,7 @@ export const CustomerAuthProvider = ({ children }) => {
         }
         return { success: true, user, customer: profile };
       } catch (nativeVerifyErr) {
-        console.warn('Native verify code error:', nativeVerifyErr);
-        if (!webConfirmationResultRef.current) {
-          let msg = nativeVerifyErr.message || 'Invalid verification code.';
-          if (msg.includes('invalid') || msg.includes('code')) {
-            msg = 'Invalid 6-digit OTP code. Please check and retry.';
-          }
-          return { success: false, error: msg };
-        }
+        console.warn('Native verify code error, attempting backend verification fallback:', nativeVerifyErr);
       }
     }
 
@@ -772,14 +777,7 @@ export const CustomerAuthProvider = ({ children }) => {
         }
         return { success: true, user, customer: profile };
       } catch (verifyErr) {
-        console.error('Firebase phone confirm error:', verifyErr);
-        let msg = verifyErr.message;
-        if (verifyErr.code === 'auth/invalid-verification-code') {
-          msg = 'Invalid 6-digit OTP code. Please check and retry.';
-        } else if (verifyErr.code === 'auth/code-expired') {
-          msg = 'Verification code expired. Please request a new code.';
-        }
-        return { success: false, error: msg };
+        console.warn('Firebase web phone confirm error, attempting backend verification fallback:', verifyErr);
       }
     }
 
@@ -813,7 +811,7 @@ export const CustomerAuthProvider = ({ children }) => {
         if (backendVerifyData.customer) setCustomerProfile(backendVerifyData.customer);
         sessionStorage.setItem('customer_guest_browse', 'true');
         return { success: true, user: userObj, customer: backendVerifyData.customer || userObj };
-      } else if (backendVerifyData.detail && !nativeVerificationIdRef.current && !webConfirmationResultRef.current) {
+      } else if (backendVerifyData.detail) {
         return { success: false, error: backendVerifyData.detail };
       }
     } catch (backendVerifyErr) {
@@ -822,7 +820,7 @@ export const CustomerAuthProvider = ({ children }) => {
 
     return {
       success: false,
-      error: 'No active verification session found. Please enter your mobile number and request a new code.'
+      error: 'Invalid or expired 6-digit OTP code. Please check and retry.'
     };
   };
 
@@ -832,45 +830,50 @@ export const CustomerAuthProvider = ({ children }) => {
 
   // Sign Out — strictly clears all cached session data (handles Native iOS/Android + Web)
   const signOutCustomer = async () => {
+    // 1. Immediately clear all customer session and cache keys FIRST
+    const keysToRemove = [
+      'customer_jwt',
+      'customer_phone',
+      'customer_address',
+      'customer_email',
+      'customer_name',
+      'customer_photo',
+      'customer_uid',
+      'customer_login_provider',
+      'customer_profile',
+      'customer_saved_addresses',
+      'customer_guest_browse'
+    ];
+    keysToRemove.forEach(k => {
+      try { localStorage.removeItem(k); } catch (e) { }
+    });
+    try { sessionStorage.clear(); } catch (e) { }
+
+    // 2. Immediately reset React state so UI updates instantaneously
+    setCurrentUser(null);
+    setIdToken(null);
+    setCustomerProfile(null);
+
+    // 3. Clear native & web auth sessions in background with non-blocking 800ms timeout
     try {
-      // 1. Native Capacitor Sign-Out (clears native keychain credentials on iOS/Android)
-      if (Capacitor.isNativePlatform()) {
-        try {
-          const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
-          await FirebaseAuthentication.signOut();
-        } catch (nativeSignOutErr) {
-          console.warn('Native Firebase signOut notice:', nativeSignOutErr);
-        }
-      }
-
-      // 2. Clear all customer session and cache keys
-      const keysToRemove = [
-        'customer_jwt',
-        'customer_phone',
-        'customer_address',
-        'customer_email',
-        'customer_name',
-        'customer_photo',
-        'customer_uid',
-        'customer_login_provider',
-        'customer_profile',
-        'customer_saved_addresses',
-        'customer_guest_browse'
-      ];
-      keysToRemove.forEach(k => {
-        try { localStorage.removeItem(k); } catch (e) {}
-      });
-      try { sessionStorage.clear(); } catch (e) {}
-
-      // 3. Firebase Web SDK Sign-Out
-      await firebaseSignOut(auth).catch(() => {});
+      await Promise.race([
+        (async () => {
+          if (Capacitor.isNativePlatform()) {
+            try {
+              const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
+              await FirebaseAuthentication.signOut();
+            } catch (nativeSignOutErr) {
+              console.warn('Native Firebase signOut notice:', nativeSignOutErr);
+            }
+          }
+          await firebaseSignOut(auth).catch(() => { });
+        })(),
+        new Promise(resolve => setTimeout(resolve, 800))
+      ]);
     } catch (error) {
       console.warn('Sign Out Error:', error);
-    } finally {
-      setCurrentUser(null);
-      setIdToken(null);
-      setCustomerProfile(null);
     }
+
     return { success: true };
   };
 
@@ -901,12 +904,12 @@ export const CustomerAuthProvider = ({ children }) => {
           // Refresh token once to avoid token-expired error
           try {
             await firebaseUser.getIdToken(true);
-          } catch (e) {}
+          } catch (e) { }
 
           await deleteUser(firebaseUser);
         } catch (deleteErr) {
-          const isReauthNeeded = 
-            deleteErr?.code === 'auth/requires-recent-login' || 
+          const isReauthNeeded =
+            deleteErr?.code === 'auth/requires-recent-login' ||
             deleteErr?.code === 'auth/user-token-expired' ||
             deleteErr?.message?.includes('token-expired') ||
             deleteErr?.message?.includes('requires-recent-login');
@@ -1043,7 +1046,7 @@ export const CustomerAuthProvider = ({ children }) => {
                 localStorage.setItem('customer_profile', JSON.stringify(profile));
               }
             })
-            .catch(() => {});
+            .catch(() => { });
         } else if (!storedJwt) {
           // Truly logged out or fresh install
           setCurrentUser(null);

@@ -225,9 +225,9 @@ const CustomerProfile = () => {
           </div>
 
           <button
-            onClick={async () => {
-              await signOutCustomer();
-              navigate('/');
+            onClick={() => {
+              signOutCustomer();
+              navigate('/customer/login', { replace: true });
             }}
             className="flex items-center space-x-1 px-3 py-1.5 rounded-full text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer"
           >
