@@ -466,13 +466,13 @@ export const CustomerAuthProvider = ({ children }) => {
 
   // ── Firebase Phone Authentication (SMS OTP) ──
   const sendPhoneOtp = async (phone) => {
-    // 1. Apple Reviewer / Test Bypass (Guarantees App Store Approval)
-    if (phone === '9820144782' || phone === '9999999999' || phone === '7028033763') {
-      return { success: true, message: `Verification code sent to +91 ${phone}`, resendCoolDown: 30 };
-    }
-
-    const cleanDigits = phone.replace(/\D/g, '').slice(-10);
+    const cleanDigits = (phone || '').replace(/\D/g, '').slice(-10);
     const e164 = `+91${cleanDigits}`;
+
+    // 1. Apple Reviewer / Test Bypass (Guarantees App Store Approval & Instant Testing)
+    if (cleanDigits === '9820144782' || cleanDigits === '9999999999' || cleanDigits === '7028033763') {
+      return { success: true, message: `Verification code sent to +91 ${cleanDigits}`, resendCoolDown: 30 };
+    }
 
     // 2. Native Mobile (iOS & Android): Use Capacitor Firebase Authentication
     if (Capacitor.isNativePlatform()) {
@@ -666,6 +666,7 @@ export const CustomerAuthProvider = ({ children }) => {
       localStorage.setItem('customer_name', testCust.name);
       localStorage.setItem('customer_phone', testCust.phone);
       localStorage.setItem('customer_profile', JSON.stringify(testCust));
+      sessionStorage.setItem('customer_guest_browse', 'true');
       const userObj = {
         uid: testCust.uid,
         displayName: testCust.name,

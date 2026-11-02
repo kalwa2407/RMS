@@ -17,7 +17,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             let sharedSel = NSSelectorFromString("sharedInstance")
             if gidClass.responds(to: sharedSel),
                let instance = gidClass.perform(sharedSel)?.takeUnretainedValue() as? AnyObject {
-                let handleSel = NSSelectorFromString("handleURL:")
+                let handleURLSel = NSSelectorFromString("handleURL:")
+                if instance.responds(to: handleURLSel) {
+                    _ = instance.perform(handleURLSel, with: url)
+                }
+                let handleSel = NSSelectorFromString("handle:")
                 if instance.responds(to: handleSel) {
                     _ = instance.perform(handleSel, with: url)
                 }

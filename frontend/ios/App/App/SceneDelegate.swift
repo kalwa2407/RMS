@@ -26,7 +26,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let sharedSel = NSSelectorFromString("sharedInstance")
         guard gidClass.responds(to: sharedSel),
               let instance = gidClass.perform(sharedSel)?.takeUnretainedValue() as? AnyObject else { return false }
-        let handleSel = NSSelectorFromString("handleURL:")
+        let handleURLSel = NSSelectorFromString("handleURL:")
+        if instance.responds(to: handleURLSel) {
+            let res = instance.perform(handleURLSel, with: url)
+            return res != nil
+        }
+        let handleSel = NSSelectorFromString("handle:")
         if instance.responds(to: handleSel) {
             let res = instance.perform(handleSel, with: url)
             return res != nil
