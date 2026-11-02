@@ -394,6 +394,63 @@ const CustomerDashboard = () => {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(null);
 
+  // ── New Customer / Incomplete Profile State (Prompt for Phone & Delivery Address) ──
+  const [showCompleteProfile, setShowCompleteProfile] = useState(false);
+  const [completePhone, setCompletePhone] = useState('');
+  const [completeAddress, setCompleteAddress] = useState('');
+  const [savingProfileDetails, setSavingProfileDetails] = useState(false);
+
+  useEffect(() => {
+    // If user is logged in (e.g. via Google or new registration) but has no phone saved, prompt to complete details
+    if (!loading && currentUser) {
+      const p = customerProfile?.phone || localStorage.getItem('customer_phone') || '';
+      if (!p || p.trim().length < 10) {
+        setShowCompleteProfile(true);
+      } else {
+        setShowCompleteProfile(false);
+      }
+    } else {
+      setShowCompleteProfile(false);
+    }
+  }, [currentUser, customerProfile?.phone, loading]);
+
+  const handleSaveInitialProfile = async (e) => {
+    e?.preventDefault?.();
+    const cleanDigits = completePhone.replace(/\D/g, '').slice(-10);
+    if (cleanDigits.length < 10) {
+      toast({
+        title: 'Valid Mobile Number Required',
+        description: 'Please enter your 10-digit mobile number for order delivery.',
+        variant: 'destructive'
+      });
+      return;
+    }
+    setSavingProfileDetails(true);
+    try {
+      await updateProfile({
+        phone: cleanDigits,
+        address: completeAddress.trim()
+      });
+      if (completeAddress.trim()) {
+        setDeliveryAddress(completeAddress.trim());
+        updateDistanceForBranch(selectedBranch, userCoords, completeAddress.trim());
+      }
+      setShowCompleteProfile(false);
+      toast({
+        title: 'Profile Updated',
+        description: 'Your mobile number and delivery address have been saved.'
+      });
+    } catch (err) {
+      toast({
+        title: 'Could not save profile',
+        description: err?.message || 'Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setSavingProfileDetails(false);
+    }
+  };
+
   // Sync profile address & phone and update distance
   useEffect(() => {
     if (customerProfile?.address) {
@@ -1107,15 +1164,15 @@ const CustomerDashboard = () => {
                 updateDistanceForBranch(selectedBranch, userCoords, address);
                 toast({ title: 'Address Saved', description: 'Default address updated.' });
               }}
-              onSignOut={() => {
+              onSignOut={async () => {
                 try { sessionStorage.clear(); } catch (e) { }
-                signOutCustomer();
+                await signOutCustomer();
                 toast({ title: 'Signed Out', description: 'See you again at Persian Darbar!' });
                 navigate('/customer/login', { replace: true });
               }}
-              onDeleteAccount={() => {
+              onDeleteAccount={async () => {
                 try { sessionStorage.clear(); } catch (e) { }
-                deleteCustomerAccount();
+                await deleteCustomerAccount();
                 toast({
                   title: 'Account Deleted',
                   description: 'Your account and personal data have been permanently removed.',
@@ -1274,17 +1331,17 @@ const CustomerDashboard = () => {
               toast({ title: 'Link Copied', description: 'Share link copied to clipboard.' });
             }
           }}
-          onSignOut={() => {
+          onSignOut={async () => {
             try { sessionStorage.clear(); } catch (e) { }
             setIsProfileOpen(false);
-            signOutCustomer();
+            await signOutCustomer();
             toast({ title: 'Signed Out', description: 'See you again at Persian Darbar!' });
             navigate('/customer/login', { replace: true });
           }}
-          onDeleteAccount={() => {
+          onDeleteAccount={async () => {
             try { sessionStorage.clear(); } catch (e) { }
             setIsProfileOpen(false);
-            deleteCustomerAccount();
+            await deleteCustomerAccount();
             toast({
               title: 'Account Deleted',
               description: 'Your account and personal data have been permanently removed.',
@@ -1355,6 +1412,76 @@ const CustomerDashboard = () => {
 
         {/* ── PWA Install Banner ── */}
         <CustomerPwaInstallModal />
+
+        {/* ── Complete Profile Modal (New Patron or Post-Deletion) ── */}
+        {showCompleteProfile && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in">
+            <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-amber-200/60 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-400/10 rounded-full blur-xl pointer-events-none" />
+              
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/15 text-amber-800 flex items-center justify-center text-xl shrink-0">
+                  👑
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-neutral-900 tracking-tight">Complete Your Profile</h3>
+                  <p className="text-xs text-neutral-500 font-medium">Welcome to Persian Darbar! Enter your details to enable delivery tracking.</p>
+                </div>
+              </div>
+
+              <form onSubmit={handleSaveInitialProfile} className="space-y-4 pt-1">
+                <div>
+                  <label className="block text-xs font-black text-neutral-600 uppercase tracking-wider mb-1.5">
+                    10-Digit Mobile Number *
+                  </label>
+                  <div className="flex items-center rounded-2xl border-2 border-neutral-200 focus-within:border-amber-500 px-3 py-2.5 bg-neutral-50 focus-within:bg-white transition-all">
+                    <span className="text-sm font-bold text-neutral-500 mr-2">+91</span>
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={10}
+                      value={completePhone}
+                      onChange={(e) => setCompletePhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                      placeholder="9820144782"
+                      required
+                      className="w-full bg-transparent text-sm font-bold text-neutral-900 outline-none placeholder:text-neutral-400"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black text-neutral-600 uppercase tracking-wider mb-1.5">
+                    Delivery Address <span className="font-normal text-neutral-400 lowercase">(optional for now)</span>
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={completeAddress}
+                    onChange={(e) => setCompleteAddress(e.target.value)}
+                    placeholder="e.g. Flat 302, Diamond Towers, Camp, Pune"
+                    className="w-full rounded-2xl border-2 border-neutral-200 focus:border-amber-500 p-3 text-xs font-medium text-neutral-900 bg-neutral-50 focus:bg-white outline-none resize-none transition-all placeholder:text-neutral-400"
+                  />
+                </div>
+
+                <div className="pt-2 flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowCompleteProfile(false)}
+                    className="flex-1 py-3 px-4 rounded-xl text-xs font-bold text-neutral-500 hover:text-neutral-700 bg-neutral-100 hover:bg-neutral-200 transition-colors cursor-pointer"
+                  >
+                    I'll add later
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingProfileDetails}
+                    className="flex-1 py-3 px-4 rounded-xl text-xs font-black text-white bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 shadow-md transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {savingProfileDetails ? 'Saving...' : 'Save & Continue ›'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

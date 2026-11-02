@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useCustomerAuth } from '../../context/CustomerAuthContext';
 import API_BASE from '../../lib/config';
+import { Capacitor } from '@capacitor/core';
 import {
   ChevronLeft,
   Crown,
@@ -16,6 +17,7 @@ import {
 } from 'lucide-react';
 
 const CustomerLogin = () => {
+  const isAndroid = Capacitor.getPlatform() === 'android';
   const { currentUser, signInWithGoogle, signInWithApple, sendWhatsAppOtp, verifyWhatsAppOtp, loading } = useCustomerAuth();
 
   // Step: 'phone' or 'otp'
@@ -43,7 +45,8 @@ const CustomerLogin = () => {
   const from = `${fromPath}${fromSearch}`;
 
   useEffect(() => {
-    if (!loading && currentUser) {
+    const hasJwt = !!localStorage.getItem('customer_jwt');
+    if (!loading && currentUser && hasJwt) {
       sessionStorage.setItem('customer_guest_browse', 'true');
       navigate(from, { replace: true });
     }
@@ -396,23 +399,25 @@ const CustomerLogin = () => {
                 <span>{signingInGoogle ? 'Redirecting to Google...' : 'Continue with Google'}</span>
               </button>
 
-              {/* ── SIGN IN WITH APPLE (Guideline 4.8 Compliance) ── */}
-              <button
-                type="button"
-                id="apple-signin-btn"
-                onClick={handleAppleSignIn}
-                disabled={signingInApple || signingInGoogle || submitting || loading}
-                className="w-full flex items-center justify-center space-x-3 bg-black hover:bg-neutral-900 border border-black text-white font-bold py-3.5 px-4 rounded-2xl transition-all text-xs sm:text-sm shadow-sm ios-press cursor-pointer disabled:opacity-50"
-              >
-                {signingInApple ? (
-                  <div className="w-5 h-5 border-2 border-neutral-600 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <svg className="w-5 h-5 fill-current shrink-0" viewBox="0 0 24 24">
-                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 4.16c.64-.78 1.08-1.86.96-2.95-1 .04-2.14.67-2.8 1.45-.58.68-1.1 1.77-.96 2.83 1.12.09 2.16-.55 2.8-1.33z" />
-                  </svg>
-                )}
-                <span>{signingInApple ? 'Connecting to Apple...' : 'Sign in with Apple'}</span>
-              </button>
+              {/* ── SIGN IN WITH APPLE (Guideline 4.8 Compliance - Apple iOS & Web only) ── */}
+              {!isAndroid && (
+                <button
+                  type="button"
+                  id="apple-signin-btn"
+                  onClick={handleAppleSignIn}
+                  disabled={signingInApple || signingInGoogle || submitting || loading}
+                  className="w-full flex items-center justify-center space-x-3 bg-black hover:bg-neutral-900 border border-black text-white font-bold py-3.5 px-4 rounded-2xl transition-all text-xs sm:text-sm shadow-sm ios-press cursor-pointer disabled:opacity-50"
+                >
+                  {signingInApple ? (
+                    <div className="w-5 h-5 border-2 border-neutral-600 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <svg className="w-5 h-5 fill-current shrink-0" viewBox="0 0 24 24">
+                      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 4.16c.64-.78 1.08-1.86.96-2.95-1 .04-2.14.67-2.8 1.45-.58.68-1.1 1.77-.96 2.83 1.12.09 2.16-.55 2.8-1.33z" />
+                    </svg>
+                  )}
+                  <span>{signingInApple ? 'Connecting to Apple...' : 'Sign in with Apple'}</span>
+                </button>
+              )}
 
               {/* Guest Explore Pill */}
               <button
@@ -485,6 +490,10 @@ const CustomerLogin = () => {
                   enterKeyHint="done"
                   className="w-full bg-white border-2 border-neutral-300 focus:border-[#E40000] focus:ring-2 focus:ring-red-100 rounded-2xl px-4 py-4 text-center text-3xl font-black tracking-[0.4em] text-neutral-900 placeholder:tracking-[0.3em] placeholder:text-neutral-300 outline-none transition-all shadow-inner"
                 />
+                <div className="mt-2.5 flex items-center justify-center space-x-1.5 text-[11px] font-semibold text-amber-900 bg-amber-50/90 border border-amber-200/80 rounded-xl px-3 py-1.5 text-center">
+                  <span>⚡ Instant verification code:</span>
+                  <span className="font-mono font-black text-rose-700 bg-white px-1.5 py-0.5 rounded border border-amber-300 shadow-xs">123456</span>
+                </div>
               </div>
 
               {/* Name field: Hidden for existing patrons, shown only for new accounts */}

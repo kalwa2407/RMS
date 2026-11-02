@@ -85,7 +85,12 @@ class FirebaseManager(BaseDataManager):
     # Compatibility methods for server.py fast-built endpoints
     async def _read(self, collection: str) -> List[Dict[str, Any]]:
         docs = self.db.collection(collection).stream()
-        results = [doc.to_dict() for doc in docs]
+        results = []
+        for doc in docs:
+            d = doc.to_dict()
+            if "_id" not in d:
+                d["_id"] = doc.id
+            results.append(d)
         if not results and collection == "coupons":
             try:
                 mock_path = os.path.join(os.path.dirname(__file__), "db_mock", "coupons.json")
