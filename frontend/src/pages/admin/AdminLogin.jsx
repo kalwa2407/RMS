@@ -55,10 +55,23 @@ const AdminLogin = () => {
       if (!token) throw new Error("Invalid token from backend");
 
       localStorage.setItem("admin_token", token);
+      if (response.data.branch) {
+        localStorage.setItem("admin_branch", response.data.branch);
+      }
+      if (response.data.username) {
+        localStorage.setItem("admin_username", response.data.username);
+      }
+      if (response.data.name) {
+        localStorage.setItem("admin_name", response.data.name);
+      }
+
+      const branchTitle = response.data.branch && response.data.branch !== "all"
+        ? `${response.data.branch.toUpperCase()} Branch`
+        : "Master";
 
       toast({
         title: "Login successful!",
-        description: "Welcome to Persian Darbar Admin Panel",
+        description: `Welcome to Persian Darbar ${branchTitle} Admin Panel`,
       });
 
       navigate("/admin/dashboard", { replace: true });

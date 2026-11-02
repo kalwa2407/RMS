@@ -748,6 +748,9 @@ const CustomerDashboard = () => {
       phone: finalPhone || '9876543210',
       address: finalAddress.trim(),
       order_type: orderType,
+      branch: selectedBranch?.id || 'pune',
+      branch_id: selectedBranch?.id || 'pune',
+      branch_name: selectedBranch?.name || 'Camp, Pune',
       distance_km: distanceKm || 3.5,
       coordinates: userCoords ? { lat: userCoords.lat, lng: userCoords.lng } : null,
       latitude: userCoords?.lat || null,
@@ -872,7 +875,10 @@ const CustomerDashboard = () => {
         time,
         guests: parseInt(guests, 10),
         dining_mood: dining_mood || 'Royal Dastarkhwan',
-        special_requests: `${dining_mood ? `[Dining Mood: ${dining_mood}] ` : ''}${special_requests || 'Table reservation'} [Outlet: ${selectedBranch?.name || 'Bandra Flagship'}]`,
+        special_requests: `${dining_mood ? `[Dining Mood: ${dining_mood}] ` : ''}${special_requests || 'Table reservation'} [Outlet: ${selectedBranch?.name || 'Camp, Pune'}]`,
+        branch: selectedBranch?.id || 'pune',
+        branch_id: selectedBranch?.id || 'pune',
+        branch_name: selectedBranch?.name || 'Camp, Pune',
         status: 'confirmed'
       };
 

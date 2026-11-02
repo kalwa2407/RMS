@@ -58,6 +58,28 @@ def verify_admin_token(credentials: HTTPAuthorizationCredentials = Depends(secur
     return payload["sub"]
 
 
+def get_current_admin(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
+    """Verify admin token and return dict with sub, role, branch, name."""
+    payload = _decode_payload(credentials)
+    sub = (payload.get("sub") or "").strip()
+    sub_lower = sub.lower()
+    
+    branch = (payload.get("branch") or "").strip().lower()
+    if not branch or branch == "none":
+        if "pune" in sub_lower:
+            branch = "pune"
+        elif "kurla" in sub_lower:
+            branch = "kurla"
+        elif "bandra" in sub_lower:
+            branch = "bandra"
+        elif "andheri" in sub_lower:
+            branch = "andheri"
+        else:
+            branch = "all"
+    payload["branch"] = branch
+    return payload
+
+
 def verify_captain_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
     """Verify token has role=captain. Returns captain_id."""
     payload = _decode_payload(credentials)

@@ -1,14 +1,65 @@
 [
-    {
-        "_id": "9c921030-642c-47b4-9822-faab94aff7d7",
-        "username": "Vijay@Tasteofhindustan",
-        "password": "157df2bdf32b55cad34804f9fb938edfb15aa2a982390b0bc3c303c221687e56",
-        "created_at": "2026-04-13T18:43:32.056554"
-    },
-    {
-        "_id": "d1a8e8b2-5f6c-48a3-9b24-7f12e8c45612",
-        "username": "Vijay@persiandarbar",
-        "password": "157df2bdf32b55cad34804f9fb938edfb15aa2a982390b0bc3c303c221687e56",
-        "created_at": "2026-09-06T11:48:00.000000"
-    }
+  {
+    "_id": "d1a8e8b2-5f6c-48a3-9b24-7f12e8c45612",
+    "username": "Vijay@persiandarbar",
+    "name": "Vijay (Super Admin)",
+    "branch": "all",
+    "role": "admin",
+    "password": "5f1a1d92cc6593185029c83e63d39229ac89d1f3b402741ec65be31c7d294ac4",
+    "created_at": "2026-09-06T11:48:00.000000"
+  },
+  {
+    "_id": "e2b9f9c3-7a1d-48e5-8c35-123456789001",
+    "username": "vijay@persiandarbar.in",
+    "name": "Vijay (Super Admin)",
+    "branch": "all",
+    "role": "admin",
+    "password": "5f1a1d92cc6593185029c83e63d39229ac89d1f3b402741ec65be31c7d294ac4",
+    "created_at": "2026-11-02T19:00:00.000000"
+  },
+  {
+    "_id": "e2b9f9c3-7a1d-48e5-8c35-123456789002",
+    "username": "pune@persiandarbar.in",
+    "name": "Pune Branch Admin",
+    "branch": "pune",
+    "role": "admin",
+    "password": "5f1a1d92cc6593185029c83e63d39229ac89d1f3b402741ec65be31c7d294ac4",
+    "created_at": "2026-11-02T19:00:00.000000"
+  },
+  {
+    "_id": "e2b9f9c3-7a1d-48e5-8c35-123456789003",
+    "username": "kurla@persiandarbar.in",
+    "name": "Kurla Branch Admin",
+    "branch": "kurla",
+    "role": "admin",
+    "password": "5f1a1d92cc6593185029c83e63d39229ac89d1f3b402741ec65be31c7d294ac4",
+    "created_at": "2026-11-02T19:00:00.000000"
+  },
+  {
+    "_id": "e2b9f9c3-7a1d-48e5-8c35-123456789004",
+    "username": "bandra@persiandarbar.in",
+    "name": "Bandra Branch Admin",
+    "branch": "bandra",
+    "role": "admin",
+    "password": "5f1a1d92cc6593185029c83e63d39229ac89d1f3b402741ec65be31c7d294ac4",
+    "created_at": "2026-11-02T19:00:00.000000"
+  },
+  {
+    "_id": "e2b9f9c3-7a1d-48e5-8c35-123456789005",
+    "username": "andheri@persiandarbar.in",
+    "name": "Andheri Branch Admin",
+    "branch": "andheri",
+    "role": "admin",
+    "password": "5f1a1d92cc6593185029c83e63d39229ac89d1f3b402741ec65be31c7d294ac4",
+    "created_at": "2026-11-02T19:00:00.000000"
+  },
+  {
+    "_id": "9c921030-642c-47b4-9822-faab94aff7d7",
+    "username": "Vijay@Tasteofhindustan",
+    "name": "Super Admin",
+    "branch": "all",
+    "role": "admin",
+    "password": "5f1a1d92cc6593185029c83e63d39229ac89d1f3b402741ec65be31c7d294ac4",
+    "created_at": "2026-04-13T18:43:32.056554"
+  }
 ]

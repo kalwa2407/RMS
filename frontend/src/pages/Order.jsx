@@ -337,6 +337,9 @@ const Order = () => {
       phone: finalInfo.phone,
       address: finalInfo.address,
       distance_km: distance || 0,
+      branch: "pune",
+      branch_id: "pune",
+      branch_name: "Camp, Pune",
       payment_method: finalInfo.paymentMethod || "cod",
       items: cart.map((i) => ({
         item_id: String(i._id), name: i.name, price: i.price, quantity: i.quantity,

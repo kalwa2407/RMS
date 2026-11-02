@@ -201,6 +201,9 @@ const CustomerReservations = () => {
       time: bookTime,
       guests: parseInt(bookGuests, 10) || 2,
       special_requests: combinedNotes,
+      branch: selectedBranch?.id || 'pune',
+      branch_id: selectedBranch?.id || 'pune',
+      branch_name: selectedBranch?.name || 'Camp, Pune',
       status: 'confirmed'
     };
 

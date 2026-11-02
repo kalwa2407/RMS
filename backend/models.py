@@ -158,6 +158,10 @@ class Order(BaseModel):
     cooking_instructions: Optional[str] = None
     delivery_instructions: Optional[str] = None
     status_history: List[dict] = []  # Track status changes with timestamp
+    # Branch Routing
+    branch: Optional[str] = "pune"  # 'pune', 'kurla', 'bandra', 'andheri'
+    branch_id: Optional[str] = "pune"
+    branch_name: Optional[str] = "Camp, Pune"
     # Dine-in / Table ordering fields
     order_type: str = "DELIVERY"  # 'DELIVERY', 'TAKEAWAY', 'DINE_IN'
     table_number: Optional[int] = None  # Table number for dine-in
@@ -205,6 +209,10 @@ class OrderCreate(BaseModel):
     total: float
     coupon_code: Optional[str] = None
     payment_method: str = "pay_at_counter"
+    # Branch Routing
+    branch: Optional[str] = "pune"  # 'pune', 'kurla', 'bandra', 'andheri'
+    branch_id: Optional[str] = "pune"
+    branch_name: Optional[str] = "Camp, Pune"
     # Dine-in fields
     order_type: str = "DELIVERY"  # 'DELIVERY', 'TAKEAWAY', 'DINE_IN'
     table_number: Optional[int] = None  # Table number for dine-in
@@ -225,6 +233,9 @@ class TableOrderCreate(BaseModel):
     taxes: float = 0.0
     total: float
     special_instructions: Optional[str] = None
+    branch: Optional[str] = "pune"
+    branch_id: Optional[str] = "pune"
+    branch_name: Optional[str] = "Camp, Pune"
 
 # Table Management Model
 class Table(BaseModel):
@@ -283,6 +294,9 @@ class Reservation(BaseModel):
     guests: int
     table_number: Optional[int] = None
     special_requests: Optional[str] = None
+    branch: Optional[str] = "pune"  # 'pune', 'kurla', 'bandra', 'andheri'
+    branch_id: Optional[str] = "pune"
+    branch_name: Optional[str] = "Camp, Pune"
     status: str = "pending"  # 'pending', 'confirmed', 'rejected', 'seated', 'completed'
     whatsapp_sent: bool = False
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -304,6 +318,9 @@ class ReservationCreate(BaseModel):
     dining_mood: Optional[str] = "Royal Dastarkhwan"
     table_number: Optional[int] = None
     special_requests: Optional[str] = None
+    branch: Optional[str] = "pune"
+    branch_id: Optional[str] = "pune"
+    branch_name: Optional[str] = "Camp, Pune"
     status: Optional[str] = "confirmed"
 
 
@@ -388,6 +405,9 @@ class AdminPasswordChange(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    branch: Optional[str] = "all"
+    username: Optional[str] = None
+    name: Optional[str] = None
 
 # Settings Models
 class Setting(BaseModel):
@@ -578,6 +598,9 @@ class TableSessionOrderCreate(BaseModel):
     session_id: str
     items: List[OrderItem]
     special_instructions: Optional[str] = None
+    branch: Optional[str] = "pune"
+    branch_id: Optional[str] = "pune"
+    branch_name: Optional[str] = "Camp, Pune"
 
 class TableSessionBillGenerate(BaseModel):
     """Generate final bill for session"""
@@ -592,6 +615,9 @@ class DineInOrderCreate(BaseModel):
     items: List[OrderItem]
     session_id: Optional[str] = None  # If provided, adds to existing session
     special_instructions: Optional[str] = None
+    branch: Optional[str] = "pune"
+    branch_id: Optional[str] = "pune"
+    branch_name: Optional[str] = "Camp, Pune"
 
 # =============================================================================
 # CAPTAIN MODELS
@@ -634,4 +660,7 @@ class CaptainOrderCreate(BaseModel):
     customer_name: str = "Guest"
     session_id: Optional[str] = None
     special_instructions: Optional[str] = None
+    branch: Optional[str] = "pune"
+    branch_id: Optional[str] = "pune"
+    branch_name: Optional[str] = "Camp, Pune"
 

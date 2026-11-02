@@ -121,8 +121,22 @@ const AdminLayout = () => {
   const isActive     = (path) => location.pathname === path;
   const handleLogout = () => {
     localStorage.removeItem("admin_token");
+    localStorage.removeItem("admin_branch");
+    localStorage.removeItem("admin_username");
+    localStorage.removeItem("admin_name");
     navigate(isStandaloneApp() ? "/staff-entry" : "/admin");
   };
+
+  const adminBranch = (localStorage.getItem("admin_branch") || "all").toLowerCase();
+  const adminName = localStorage.getItem("admin_name") || "Admin Master";
+  const branchLabels = {
+    pune: "Pune Branch Admin",
+    kurla: "Kurla Branch Admin",
+    bandra: "Bandra Flagship Admin",
+    andheri: "Andheri Branch Admin",
+    all: "Super Admin (All Outlets)"
+  };
+  const activeRoleName = branchLabels[adminBranch] || adminName;
   const currentPage  = ALL_ITEMS.find((m) => m.path === location.pathname)?.name ?? "Admin";
 
   const isDark = theme === "dark";
@@ -253,10 +267,10 @@ const AdminLayout = () => {
                 <span className={`text-xs font-bold block leading-none ${
                   isDark ? "text-white" : "text-neutral-900"
                 }`}>
-                  Admin Master
+                  {activeRoleName}
                 </span>
-                <span className="text-[10px] text-emerald-600 font-semibold leading-none">
-                  Active Shift
+                <span className="text-[10px] text-amber-500 font-semibold leading-none">
+                  {adminBranch === "all" ? "All Outlets Access" : `${adminBranch.toUpperCase()} Branch Active`}
                 </span>
               </div>
             </div>

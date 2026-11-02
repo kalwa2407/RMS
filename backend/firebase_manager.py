@@ -340,10 +340,74 @@ class FirebaseManager(BaseDataManager):
         return reservation_data
 
     async def get_admin_user(self, username: str) -> Optional[Dict[str, Any]]:
-        docs = self.db.collection('admin_users').where('username', '==', username).stream()
-        for doc in docs:
-            return doc.to_dict()
+        uname_clean = (username or "").strip()
+        uname_lower = uname_clean.lower()
+        
+        macbook_m4_hash = "5f1a1d92cc6593185029c83e63d39229ac89d1f3b402741ec65be31c7d294ac4"
+        official_map = {
+            "pune@persiandarbar.in": {"username": "pune@persiandarbar.in", "name": "Pune Branch Admin", "branch": "pune", "role": "admin", "password": macbook_m4_hash},
+            "kurla@persiandarbar.in": {"username": "kurla@persiandarbar.in", "name": "Kurla Branch Admin", "branch": "kurla", "role": "admin", "password": macbook_m4_hash},
+            "bandra@persiandarbar.in": {"username": "bandra@persiandarbar.in", "name": "Bandra Branch Admin", "branch": "bandra", "role": "admin", "password": macbook_m4_hash},
+            "andheri@persiandarbar.in": {"username": "andheri@persiandarbar.in", "name": "Andheri Branch Admin", "branch": "andheri", "role": "admin", "password": macbook_m4_hash},
+            "vijay@persiandarbar.in": {"username": "vijay@persiandarbar.in", "name": "Vijay (Super Admin)", "branch": "all", "role": "admin", "password": macbook_m4_hash},
+            "vijay@persiandarbar": {"username": "Vijay@persiandarbar", "name": "Vijay (Super Admin)", "branch": "all", "role": "admin", "password": macbook_m4_hash},
+            "vijay@tasteofhindustan": {"username": "Vijay@Tasteofhindustan", "name": "Super Admin", "branch": "all", "role": "admin", "password": macbook_m4_hash},
+        }
+
+        try:
+            docs = self.db.collection('admin_users').where('username', '==', uname_clean).stream()
+            for doc in docs:
+                admin_data = doc.to_dict()
+                if not admin_data.get("branch"):
+                    admin_data["branch"] = official_map.get(uname_lower, {}).get("branch", "all")
+                return admin_data
+        except Exception as e:
+            logger.warning(f"Firestore exact admin query error: {e}")
+
+        try:
+            all_docs = self.db.collection('admin_users').stream()
+            for doc in all_docs:
+                d = doc.to_dict()
+                if (d.get("username") or "").strip().lower() == uname_lower:
+                    if not d.get("branch"):
+                        d["branch"] = official_map.get(uname_lower, {}).get("branch", "all")
+                    return d
+        except Exception as e:
+            logger.warning(f"Firestore stream admin query error: {e}")
+
+        if uname_lower in official_map:
+            return official_map[uname_lower]
+
         return None
+
+    async def sync_official_admins(self):
+        """Seed/sync all official branch admins into Firestore admin_users"""
+        macbook_m4_hash = "5f1a1d92cc6593185029c83e63d39229ac89d1f3b402741ec65be31c7d294ac4"
+        official_admins = [
+            {"username": "pune@persiandarbar.in", "name": "Pune Branch Admin", "branch": "pune", "role": "admin", "password": macbook_m4_hash},
+            {"username": "kurla@persiandarbar.in", "name": "Kurla Branch Admin", "branch": "kurla", "role": "admin", "password": macbook_m4_hash},
+            {"username": "bandra@persiandarbar.in", "name": "Bandra Branch Admin", "branch": "bandra", "role": "admin", "password": macbook_m4_hash},
+            {"username": "andheri@persiandarbar.in", "name": "Andheri Branch Admin", "branch": "andheri", "role": "admin", "password": macbook_m4_hash},
+            {"username": "vijay@persiandarbar.in", "name": "Vijay (Super Admin)", "branch": "all", "role": "admin", "password": macbook_m4_hash},
+            {"username": "Vijay@persiandarbar", "name": "Vijay (Super Admin)", "branch": "all", "role": "admin", "password": macbook_m4_hash},
+            {"username": "Vijay@Tasteofhindustan", "name": "Super Admin", "branch": "all", "role": "admin", "password": macbook_m4_hash},
+        ]
+        try:
+            for adm in official_admins:
+                uname = adm["username"]
+                docs = list(self.db.collection('admin_users').where('username', '==', uname).stream())
+                if not docs:
+                    docs = [d for d in self.db.collection('admin_users').stream() if (d.to_dict().get("username") or "").lower() == uname.lower()]
+                
+                if docs:
+                    doc_ref = docs[0].reference
+                    doc_ref.update({"branch": adm["branch"], "name": adm["name"], "role": adm["role"], "password": adm["password"]})
+                else:
+                    new_doc = {**adm, "_id": str(uuid.uuid4()), "created_at": datetime.utcnow().isoformat()}
+                    self.db.collection('admin_users').add(new_doc)
+            logger.info("Official branch admins synced to Firestore successfully.")
+        except Exception as e:
+            logger.warning(f"Could not sync official admins to Firestore (non-fatal): {e}")
 
     async def get_delivery_partner_by_phone(self, phone: str) -> Optional[Dict[str, Any]]:
         docs = self.db.collection('delivery_partners').where('phone', '==', phone).stream()

@@ -275,9 +275,10 @@ class MockFirebaseManager(BaseDataManager):
         return reservation_data
 
     async def get_admin_user(self, username: str) -> Optional[Dict[str, Any]]:
+        uname_lower = (username or "").strip().lower()
         admins = self._read_sync("admin_users")
         for a in admins:
-            if a.get("username") == username:
+            if (a.get("username") or "").strip().lower() == uname_lower:
                 return a
         return None
 

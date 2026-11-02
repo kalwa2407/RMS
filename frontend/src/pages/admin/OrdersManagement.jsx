@@ -40,6 +40,8 @@ const OrdersManagement = () => {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
   const [orderTypeTab, setOrderTypeTab] = useState("all"); // all | online | dinein
+  const adminBranch = (localStorage.getItem("admin_branch") || "all").toLowerCase();
+  const [selectedBranchFilter, setSelectedBranchFilter] = useState("all");
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [lastPlacedCount, setLastPlacedCount] = useState(0);
   const [deliveryPartners, setDeliveryPartners] = useState([]);
@@ -258,7 +260,7 @@ const OrdersManagement = () => {
     fetchPartners();
     const interval = setInterval(() => fetchOrders(true), 10000);
     return () => clearInterval(interval);
-  }, [statusFilter]);
+  }, [statusFilter, selectedBranchFilter]);
 
   const fetchPartners = async () => {
     try {
@@ -273,9 +275,11 @@ const OrdersManagement = () => {
   const fetchOrders = async (silent = false) => {
     try {
       const token = localStorage.getItem("admin_token");
-      const url = statusFilter === "all"
-        ? `${API_BASE}/api/admin/orders`
-        : `${API_BASE}/api/admin/orders?status_filter=${statusFilter}`;
+      const params = new URLSearchParams();
+      if (statusFilter !== "all") params.append("status_filter", statusFilter);
+      if (adminBranch === "all" && selectedBranchFilter !== "all") params.append("branch", selectedBranchFilter);
+      const queryString = params.toString() ? `?${params.toString()}` : "";
+      const url = `${API_BASE}/api/admin/orders${queryString}`;
       const response = await axios.get(url, { headers: { Authorization: `Bearer ${token}` } });
       const newOrders = Array.isArray(response.data) ? response.data : [];
       const newPlacedCount = newOrders.filter(o => o.status === "placed").length;
@@ -825,6 +829,34 @@ const OrdersManagement = () => {
         </div>
       )}
 
+      {/* Super Admin Outlet Filter Tabs */}
+      {adminBranch === "all" && (
+        <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <span className="text-xs font-bold text-neutral-500 dark:text-neutral-400 shrink-0 uppercase tracking-wider text-[10px]">
+            OUTLET:
+          </span>
+          {[
+            { id: "all", name: "All Outlets" },
+            { id: "pune", name: "Pune" },
+            { id: "kurla", name: "Kurla" },
+            { id: "bandra", name: "Bandra" },
+            { id: "andheri", name: "Andheri" },
+          ].map(b => (
+            <button
+              key={b.id}
+              onClick={() => setSelectedBranchFilter(b.id)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                selectedBranchFilter === b.id
+                  ? "bg-amber-500 text-neutral-950 border-amber-500 shadow-xs"
+                  : "bg-white text-neutral-700 border-neutral-200/90 hover:bg-neutral-50 dark:bg-[#141B26] dark:text-gray-300 dark:border-white/10 dark:hover:bg-white/5"
+              }`}
+            >
+              {b.name}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Status Filter Tabs */}
       <div className="mb-5 flex gap-2 overflow-x-auto pb-2 scrollbar-none">
         {statusTabs.map(tab => (
@@ -872,6 +904,9 @@ const OrdersManagement = () => {
                   {order.order_type === "DINE_IN" ? <UtensilsCrossed className="w-3.5 h-3.5" /> :
                    order.order_type === "DELIVERY" ? <Bike className="w-3.5 h-3.5" /> : <ShoppingBag className="w-3.5 h-3.5" />}
                   <span>{order.order_type?.replace("_", "-")}</span>
+                  <span className="bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/30 px-2 py-0.5 rounded-md font-bold text-[10px] tracking-normal">
+                    {order.branch_name || (order.branch ? `${order.branch.toUpperCase()} OUTLET` : "PUNE OUTLET")}
+                  </span>
                   {order.order_type === "DINE_IN" && order.table_number && (
                     <span className="ml-auto bg-neutral-900 text-white dark:bg-primary dark:text-black px-2.5 py-0.5 rounded-md font-black text-xs">Table {order.table_number}</span>
                   )}
