@@ -12,21 +12,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
-        // Forward Google Sign-In redirect URLs
-        if let gidClass = NSClassFromString("GIDSignIn") as? AnyObject.Type {
-            let sharedSel = NSSelectorFromString("sharedInstance")
-            if gidClass.responds(to: sharedSel),
-               let instance = gidClass.perform(sharedSel)?.takeUnretainedValue() as? AnyObject {
-                let handleURLSel = NSSelectorFromString("handleURL:")
-                if instance.responds(to: handleURLSel) {
-                    _ = instance.perform(handleURLSel, with: url)
-                }
-                let handleSel = NSSelectorFromString("handle:")
-                if instance.responds(to: handleSel) {
-                    _ = instance.perform(handleSel, with: url)
-                }
-            }
-        }
+        // Forward Google Sign-In redirect URLs using safe ObjC bridging (Swift 6 compatible)
+        GIDSignInURLHandler.handle(url)
         return ApplicationDelegateProxy.shared.application(app, open: url, options: options)
     }
 
