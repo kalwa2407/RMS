@@ -477,21 +477,10 @@ export const CustomerAuthProvider = ({ children }) => {
       return { success: true, message: `Verification code sent to +91 ${cleanDigits}`, resendCoolDown: 30 };
     }
 
-    // 2. Native Mobile (iOS & Android): Use Capacitor Firebase Authentication
+    // 2. Native Mobile (iOS & Android): Use Capacitor Firebase Authentication (Pure Firebase SMS)
     if (Capacitor.isNativePlatform()) {
       try {
         const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
-
-        // Fire backend OTP immediately in parallel as reliable backup.
-        // This guarantees OTP delivery even if Firebase SMS quota is exhausted.
-        // isBackendOtpRef is set so verifyPhoneOtp knows to use backend path.
-        fetch(`${API_BASE}/api/customer/auth/send-otp`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone: cleanDigits })
-        }).then(r => r.json()).then(d => {
-          if (d.success) isBackendOtpRef.current = true;
-        }).catch(() => {});
 
         const sendPromise = new Promise(async (resolve, reject) => {
           let handleCodeSent;
@@ -508,12 +497,11 @@ export const CustomerAuthProvider = ({ children }) => {
             } catch (e) { }
           };
 
-          // 10s timeout — backend OTP already fired in parallel, so when this times out
-          // isBackendOtpRef.current is already true and user enters the backend code
+          // 40s timeout for Firebase SMS delivery & silent APNs / reCAPTCHA verification on iOS & Android
           timerRef = setTimeout(async () => {
             await cleanup();
-            reject(new Error('SMS OTP timed out, using backup code.'));
-          }, 10000);
+            reject(new Error('Firebase SMS request timed out. Please check your network and try again.'));
+          }, 40000);
 
           handleCodeSent = await FirebaseAuthentication.addListener('phoneCodeSent', async (event) => {
             await cleanup();
@@ -527,7 +515,7 @@ export const CustomerAuthProvider = ({ children }) => {
 
           handleFailed = await FirebaseAuthentication.addListener('phoneVerificationFailed', async (event) => {
             await cleanup();
-            reject(new Error(event.message || 'Phone verification failed on device.'));
+            reject(new Error(event.message || 'Firebase phone verification failed on device.'));
           });
 
           handleCompleted = await FirebaseAuthentication.addListener('phoneVerificationCompleted', async (event) => {
@@ -550,46 +538,10 @@ export const CustomerAuthProvider = ({ children }) => {
         const nativeRes = await sendPromise;
         return nativeRes;
       } catch (nativeErr) {
-        // Backend OTP was already fired in parallel at the start — isBackendOtpRef may already be true.
-        // If it is, the user can enter the backend OTP code directly. Return success.
-        if (isBackendOtpRef.current) {
-          return {
-            success: true,
-            message: `Verification code sent to +91 ${cleanDigits}`,
-            resendCoolDown: 30
-          };
-        }
-        // If parallel call hasn't resolved yet (e.g. network slow), try one more time
-        try {
-          const backendRes = await fetch(`${API_BASE}/api/customer/auth/send-otp`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone: cleanDigits })
-          });
-          const backendData = await backendRes.json();
-          if (backendRes.ok && backendData.success) {
-            isBackendOtpRef.current = true;
-            return {
-              success: true,
-              message: `Verification code sent to +91 ${cleanDigits}`,
-              resendCoolDown: backendData.resend_cool_down || 30
-            };
-          }
-          // If 429 (rate limited), backend OTP was already sent — tell user to use code
-          if (backendRes.status === 429) {
-            isBackendOtpRef.current = true;
-            return {
-              success: true,
-              message: `Verification code sent to +91 ${cleanDigits}`,
-              resendCoolDown: 30
-            };
-          }
-        } catch (backendOtpErr) {
-          // ignore
-        }
+        console.warn('Native Firebase SMS error:', nativeErr);
         return {
           success: false,
-          error: 'Could not send verification code. Please check your number and try again.'
+          error: nativeErr?.message || 'Firebase SMS verification could not be started. Please try again.'
         };
       }
     }
@@ -654,27 +606,6 @@ export const CustomerAuthProvider = ({ children }) => {
         errorMsg = 'Daily SMS quota reached. Please sign in with Google or Apple.';
       } else if (error.code === 'auth/captcha-check-failed' || error?.message?.includes('reCAPTCHA') || error?.message?.includes('removed')) {
         errorMsg = 'Security verification check ready. Please tap Continue.';
-      }
-
-      // 4. Reliable Backend WhatsApp / SMS Cloud OTP Fallback
-      try {
-        console.info('Attempting fallback verification code via backend API...');
-        const backendRes = await fetch(`${API_BASE}/api/customer/auth/send-otp`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone: cleanDigits })
-        });
-        const backendData = await backendRes.json();
-        if (backendRes.ok && backendData.success) {
-          isBackendOtpRef.current = true;
-          return {
-            success: true,
-            message: `Verification code sent to +91 ${cleanDigits}`,
-            resendCoolDown: backendData.resend_cool_down || 30
-          };
-        }
-      } catch (backendOtpErr) {
-        console.warn('Backend OTP fallback error:', backendOtpErr);
       }
 
       return { success: false, error: errorMsg };

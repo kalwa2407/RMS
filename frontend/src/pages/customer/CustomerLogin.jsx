@@ -48,6 +48,8 @@ const CustomerLogin = () => {
     const hasJwt = !!localStorage.getItem('customer_jwt');
     if (!loading && currentUser && hasJwt) {
       sessionStorage.setItem('customer_guest_browse', 'true');
+      setSigningInGoogle(false);
+      setSigningInApple(false);
       navigate(from, { replace: true });
     }
   }, [currentUser, loading, navigate, from]);
@@ -169,17 +171,16 @@ const CustomerLogin = () => {
     try {
       const res = await signInWithGoogle();
       if (res.redirecting) {
-        // Page will navigate away during redirect, or timeout if blocked by webview
         setTimeout(() => {
           setSigningInGoogle(false);
-        }, 4000);
+        }, 5000);
         return;
       }
       if (res.success) {
         sessionStorage.setItem('customer_guest_browse', 'true');
+        setSigningInGoogle(false);
         navigate(from, { replace: true });
       } else {
-        // null error = user closed popup intentionally — no error message needed
         if (res.error) {
           setError(res.error);
         }
@@ -396,7 +397,7 @@ const CustomerLogin = () => {
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                   </svg>
                 )}
-                <span>{signingInGoogle ? 'Redirecting to Google...' : 'Continue with Google'}</span>
+                <span>{signingInGoogle ? 'Signing in...' : 'Continue with Google'}</span>
               </button>
 
               {/* ── SIGN IN WITH APPLE (Guideline 4.8 Compliance - Apple iOS & Web only) ── */}
