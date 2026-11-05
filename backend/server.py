@@ -35,7 +35,6 @@ from whatsapp_service import (
     send_order_delivered_bill,
     send_whatsapp_text_message,
     send_whatsapp_template_message,
-    send_customer_otp,
     format_whatsapp_number
 )
 
@@ -5239,16 +5238,6 @@ async def customer_send_otp(
             })
     except Exception as db_e:
         logging.warning(f"[OTP] Firestore persist warning: {db_e}")
-
-    # Send via WhatsApp (best effort)
-    try:
-        wa_res = await send_customer_otp(to_phone=formatted, otp=otp_code)
-        if wa_res.get("success"):
-            logging.info(f"[WhatsApp OTP] Delivered to ...{formatted[-4:]}")
-        else:
-            logging.warning(f"[WhatsApp OTP] Notice for ...{formatted[-4:]}: {wa_res.get('error')}")
-    except Exception as wa_e:
-        logging.warning(f"[WhatsApp OTP] Dispatch warning: {wa_e}")
 
     logging.info(f"[OTP] Login OTP generated and ready for ...{formatted[-4:]}")
     return {
