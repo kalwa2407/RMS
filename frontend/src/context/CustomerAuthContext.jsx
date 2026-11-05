@@ -196,7 +196,6 @@ export const CustomerAuthProvider = ({ children }) => {
     // ── NATIVE (iOS / Android): Use @capacitor-firebase/authentication for in-app Google Sign-In ──
     if (isNative) {
       try {
-        // Dynamically import so it doesn't break web builds if plugin isn't installed
         const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
 
         const result = await FirebaseAuthentication.signInWithGoogle();
@@ -254,7 +253,7 @@ export const CustomerAuthProvider = ({ children }) => {
         console.warn('Native Google Sign-In notice:', error);
         return {
           success: false,
-          error: error?.message || 'Google Sign-In could not be completed on this device.'
+          error: error?.message || 'Google Sign-In could not be completed. Please try again.'
         };
       }
     }
@@ -275,7 +274,6 @@ export const CustomerAuthProvider = ({ children }) => {
       setCurrentUser(user);
       setIdToken(token);
       sessionStorage.setItem('customer_guest_browse', 'true');
-      // Fire & forget remote profile sync so navigation is instantaneous
       fetchCustomerProfile(token, user).catch(() => { });
       return { success: true, user };
     } catch (error) {
@@ -308,20 +306,20 @@ export const CustomerAuthProvider = ({ children }) => {
         return { success: true, user: demoCust };
       }
 
-      // If popup was blocked by browser or COOP error occurs, try redirect fallback
+      // If popup was blocked by browser — ONLY on web, NOT native
       if (
-        errCode === 'auth/popup-blocked' ||
-        errMsg.includes('Cross-Origin-Opener-Policy') ||
-        errMsg.includes('cross-origin')
+        !Capacitor.isNativePlatform() &&
+        (errCode === 'auth/popup-blocked' ||
+          errMsg.includes('Cross-Origin-Opener-Policy') ||
+          errMsg.includes('cross-origin'))
       ) {
         try {
           await signInWithRedirect(auth, googleProvider);
           return { success: true, redirecting: true };
         } catch (redirectError) {
-          console.error('Redirect Sign-In Error:', redirectError);
           return {
             success: false,
-            error: redirectError.message || 'Google Sign-In redirect failed. Please try WhatsApp OTP.'
+            error: redirectError.message || 'Google Sign-In redirect failed. Please try Mobile OTP.'
           };
         }
       }
@@ -331,10 +329,9 @@ export const CustomerAuthProvider = ({ children }) => {
         return { success: false, error: null };
       }
 
-      console.error('Google Sign-In Error:', error);
       return {
         success: false,
-        error: error.message || 'Google Sign-In was interrupted. Please try again or use WhatsApp OTP.'
+        error: error.message || 'Google Sign-In was interrupted. Please try again or use Mobile OTP.'
       };
     }
   };
@@ -485,15 +482,29 @@ export const CustomerAuthProvider = ({ children }) => {
       try {
         const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
 
+        // Fire backend OTP immediately in parallel as backup (don't wait for it)
+        let backendOtpFired = false;
+        fetch(`${API_BASE}/api/customer/auth/send-otp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: cleanDigits })
+        }).then(r => r.json()).then(d => {
+          if (d.success) {
+            isBackendOtpRef.current = true;
+            backendOtpFired = true;
+          }
+        }).catch(() => {});
+
         const sendPromise = new Promise(async (resolve, reject) => {
           let handleCodeSent;
           let handleFailed;
           let handleCompleted;
 
+          // 25s timeout — Firebase SMS takes 5-15s, give it plenty of room
           const timer = setTimeout(async () => {
             await cleanup();
             reject(new Error('SMS OTP timed out, falling back to instant code.'));
-          }, 4000);
+          }, 25000);
 
           const cleanup = async () => {
             clearTimeout(timer);
@@ -539,8 +550,8 @@ export const CustomerAuthProvider = ({ children }) => {
         const nativeRes = await sendPromise;
         return nativeRes;
       } catch (nativeErr) {
-        console.warn('Native phone auth notice, triggering fast backend OTP fallback:', nativeErr);
-        nativeVerificationIdRef.current = null;
+        // Don't null out nativeVerificationIdRef — SMS may still arrive late and we want to use it
+        // isBackendOtpRef was already set true in parallel fetch above
         try {
           const backendRes = await fetch(`${API_BASE}/api/customer/auth/send-otp`, {
             method: 'POST',
@@ -557,7 +568,7 @@ export const CustomerAuthProvider = ({ children }) => {
             };
           }
         } catch (backendOtpErr) {
-          console.warn('Backend OTP fallback error:', backendOtpErr);
+          // ignore
         }
         return {
           success: false,
@@ -951,9 +962,27 @@ export const CustomerAuthProvider = ({ children }) => {
       if (firebaseUser) {
         try {
           try { await firebaseUser.getIdToken(true); } catch (e) { }
-          await deleteUser(firebaseUser);
+          // Strict 5s timeout — iOS deleteUser can hang indefinitely
+          await Promise.race([
+            deleteUser(firebaseUser),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('deleteUser timeout')), 5000))
+          ]);
         } catch (deleteErr) {
-          console.warn('Firebase deleteUser notice:', deleteErr);
+          const code = deleteErr?.code || '';
+          if (code !== 'auth/requires-recent-login') {
+            // Also try native Firebase plugin delete on mobile
+            if (Capacitor.isNativePlatform()) {
+              try {
+                const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
+                await Promise.race([
+                  FirebaseAuthentication.deleteUser(),
+                  new Promise((_, reject) => setTimeout(() => reject(new Error('native deleteUser timeout')), 4000))
+                ]);
+              } catch (nativeDelErr) {
+                // ignore — backend already deleted the record
+              }
+            }
+          }
         }
       }
     } catch (e) {
@@ -965,8 +994,11 @@ export const CustomerAuthProvider = ({ children }) => {
     return { success: true };
   };
 
-  // Handle redirect result (for signInWithRedirect fallback)
+  // Handle redirect result (for signInWithRedirect fallback — web only)
   useEffect(() => {
+    // Skip on native — getRedirectResult is a web-only API and causes errors on Capacitor
+    if (Capacitor.isNativePlatform()) return;
+
     getRedirectResult(auth)
       .then(async (result) => {
         if (result?.user) {
@@ -1040,6 +1072,38 @@ export const CustomerAuthProvider = ({ children }) => {
           setIdToken(storedJwt);
 
           // Background revalidate
+          fetch(`${API_BASE}/api/customer/profile`, {
+            headers: { 'Authorization': `Bearer ${storedJwt}` }
+          })
+            .then(res => res.ok ? res.json() : null)
+            .then(profile => {
+              if (profile) {
+                setCustomerProfile(profile);
+                localStorage.setItem('customer_profile', JSON.stringify(profile));
+              }
+            })
+            .catch(() => { });
+        } else if (storedJwt && (storedProvider === 'google' || storedProvider === 'apple')) {
+          // Restore Google / Apple session from localStorage (iOS recents kill recovery)
+          const storedName = localStorage.getItem('customer_name') || 'Valued Patron';
+          const storedEmail = localStorage.getItem('customer_email') || '';
+          const storedUid = localStorage.getItem('customer_uid') || '';
+          const storedPhoto = localStorage.getItem('customer_photo') || null;
+
+          const userObj = {
+            uid: storedUid,
+            displayName: storedName,
+            name: storedName,
+            email: storedEmail,
+            photoURL: storedPhoto,
+            isWhatsAppUser: false,
+            getIdToken: async () => storedJwt
+          };
+
+          setCurrentUser(userObj);
+          setIdToken(storedJwt);
+
+          // Background revalidate token with backend
           fetch(`${API_BASE}/api/customer/profile`, {
             headers: { 'Authorization': `Bearer ${storedJwt}` }
           })

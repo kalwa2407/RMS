@@ -5176,6 +5176,10 @@ customer_router = APIRouter(prefix="/api/customer", tags=["customer"])
 # { formatted_phone: { "otp": "123456", "expires_at": datetime, "attempts": 0, "last_sent_at": datetime } }
 CUSTOMER_ACTIVE_OTPS: Dict[str, Dict[str, Any]] = {}
 
+# In-memory set of permanently deleted customer UIDs and emails (prevents resurrection after deletion)
+DELETED_CUSTOMER_UIDS: set = set()
+DELETED_CUSTOMER_EMAILS: set = set()
+
 @customer_router.post("/auth/send-otp")
 async def customer_send_otp(
     payload: CustomerSendOtpRequest,
@@ -5429,9 +5433,11 @@ async def get_customer_profile(
         if c.get("uid") == uid:
             idx = i
             break
+        # Only match by email if this UID and email haven't been deleted
         if email and (c.get("email") or "").lower().strip() == email:
-            idx = i
-            break
+            if uid not in DELETED_CUSTOMER_UIDS and email not in DELETED_CUSTOMER_EMAILS:
+                idx = i
+                break
 
     if idx is None:
         now = get_ist_now().isoformat()
@@ -5574,8 +5580,19 @@ async def delete_customer_account(
 
         if match_uid or match_email or match_phone:
             logger.info(f"[Account Deletion] Removing customer: uid={c.get('uid')}, email={c.get('email')}, phone={c.get('phone')}")
+            # Track deleted identifiers to prevent resurrection on re-login
+            if c.get("uid"):
+                DELETED_CUSTOMER_UIDS.add(str(c["uid"]))
+            if c_email:
+                DELETED_CUSTOMER_EMAILS.add(c_email)
         else:
             remaining_customers.append(c)
+
+    # Also track the requested identifiers directly
+    if uid:
+        DELETED_CUSTOMER_UIDS.add(str(uid))
+    if email:
+        DELETED_CUSTOMER_EMAILS.add(email)
 
     await manager._write("customers", remaining_customers)
 

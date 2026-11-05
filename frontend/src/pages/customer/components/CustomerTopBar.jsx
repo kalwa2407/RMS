@@ -27,7 +27,7 @@ const CustomerTopBar = ({
       className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs active:scale-95 transition-transform overflow-hidden shrink-0 bg-white text-[#E40000] border border-amber-300/70"
     >
       {userPhoto ? (
-        <img src={userPhoto} alt="" className="w-full h-full object-cover" />
+        <img src={userPhoto} alt="" className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
       ) : userInitial ? (
         <span className="font-black text-[#E40000]">{userInitial}</span>
       ) : (

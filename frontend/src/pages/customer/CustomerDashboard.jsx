@@ -1040,7 +1040,7 @@ const CustomerDashboard = () => {
           notificationCount={unreadCount}
           searchQuery={searchQuery}
           userInitial={currentUser?.displayName ? currentUser.displayName[0].toUpperCase() : null}
-          userPhoto={currentUser?.photoURL}
+          userPhoto={currentUser?.photoURL || customerProfile?.picture || localStorage.getItem('customer_photo') || null}
         />
 
         {/* ── Live Activity Pill (auto-detects iOS Dynamic Island vs Android Material) ── */}
@@ -1172,13 +1172,14 @@ const CustomerDashboard = () => {
               }}
               onDeleteAccount={async () => {
                 try { sessionStorage.clear(); } catch (e) { }
-                await deleteCustomerAccount();
                 toast({
                   title: 'Account Deleted',
                   description: 'Your account and personal data have been permanently removed.',
                   variant: 'destructive'
                 });
                 navigate('/customer/login', { replace: true });
+                // Fire deletion in background — don't block navigation (iOS hangs on await)
+                deleteCustomerAccount().catch(() => { });
               }}
               onGoToOrder={() => setActiveTab('order')}
               onGoToReserve={() => setActiveTab('reserve')}
@@ -1341,13 +1342,14 @@ const CustomerDashboard = () => {
           onDeleteAccount={async () => {
             try { sessionStorage.clear(); } catch (e) { }
             setIsProfileOpen(false);
-            await deleteCustomerAccount();
             toast({
               title: 'Account Deleted',
               description: 'Your account and personal data have been permanently removed.',
               variant: 'destructive'
             });
             navigate('/customer/login', { replace: true });
+            // Fire deletion in background — don't block navigation (iOS hangs on await)
+            deleteCustomerAccount().catch(() => { });
           }}
           pdCoins={availableCoins}
           initialTab={profileInitialTab}
@@ -1418,7 +1420,7 @@ const CustomerDashboard = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in">
             <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-amber-200/60 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-amber-400/10 rounded-full blur-xl pointer-events-none" />
-              
+
               <div className="flex items-center space-x-3 mb-4">
                 <div className="w-10 h-10 rounded-2xl bg-amber-500/15 text-amber-800 flex items-center justify-center text-xl shrink-0">
                   👑
