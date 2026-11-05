@@ -467,7 +467,7 @@ export const CustomerAuthProvider = ({ children }) => {
     }
   };
 
-  // ── Firebase Phone Authentication (SMS OTP) ──
+  // ── Phone Authentication (Fast2SMS Direct Indian Carrier SMS + Firebase Fallback) ──
   const sendPhoneOtp = async (phone) => {
     const cleanDigits = (phone || '').replace(/\D/g, '').slice(-10);
     const e164 = `+91${cleanDigits}`;
@@ -477,7 +477,26 @@ export const CustomerAuthProvider = ({ children }) => {
       return { success: true, message: `Verification code sent to +91 ${cleanDigits}`, resendCoolDown: 30 };
     }
 
-    // 2. Native Mobile (iOS & Android): Use Capacitor Firebase Authentication (Pure Firebase SMS)
+    // 2. Primary Route: Fast2SMS Direct Indian Mobile Carrier SMS (Instant delivery via Airtel/Jio/Vi/BSNL)
+    try {
+      const backendRes = await fetch(`${API_BASE}/api/customer/auth/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: cleanDigits })
+      });
+      const backendData = await backendRes.json();
+      if (backendRes.ok && backendData.success) {
+        return {
+          success: true,
+          message: `Verification code sent via SMS to +91 ${cleanDigits}`,
+          resendCoolDown: backendData.resend_cool_down || 30
+        };
+      }
+    } catch (fast2smsErr) {
+      console.warn('Fast2SMS dispatch notice:', fast2smsErr);
+    }
+
+    // 3. Native Mobile (iOS & Android): Capacitor Firebase Authentication Fallback
     if (Capacitor.isNativePlatform()) {
       try {
         const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
