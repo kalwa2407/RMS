@@ -472,12 +472,7 @@ export const CustomerAuthProvider = ({ children }) => {
     const cleanDigits = (phone || '').replace(/\D/g, '').slice(-10);
     const e164 = `+91${cleanDigits}`;
 
-    // 1. Apple Reviewer / Test Bypass (Guarantees App Store Approval & Instant Testing)
-    if (cleanDigits === '9820144782' || cleanDigits === '9999999999' || cleanDigits === '7028033763') {
-      return { success: true, message: `Verification code sent to +91 ${cleanDigits}`, resendCoolDown: 30 };
-    }
-
-    // 2. Native Mobile (iOS & Android): Capacitor Firebase Authentication (SMS Only)
+    // 1. Native Mobile (iOS & Android): Capacitor Firebase Authentication (SMS Only)
     if (Capacitor.isNativePlatform()) {
       try {
         const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
@@ -616,71 +611,7 @@ export const CustomerAuthProvider = ({ children }) => {
   const verifyPhoneOtp = async (phone, otp, name = '') => {
     const cleanDigits = phone.replace(/\D/g, '').slice(-10);
 
-    // 1. Master Emergency / Bypass / Universal Test Code (Guarantees Instant Login for All Patrons)
-    if (otp.trim() === '123456') {
-      try {
-        const backendVerifyRes = await fetch(`${API_BASE}/api/customer/auth/verify-otp`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone: cleanDigits, otp: '123456', name: name || '' })
-        });
-        const backendVerifyData = await backendVerifyRes.json();
-        if (backendVerifyRes.ok && backendVerifyData.success && backendVerifyData.token) {
-          const userObj = {
-            uid: backendVerifyData.user?.uid || `cust_${cleanDigits}`,
-            displayName: backendVerifyData.user?.name || name || `Patron ${cleanDigits.slice(-4)}`,
-            name: backendVerifyData.user?.name || name || '',
-            phone: cleanDigits,
-            email: backendVerifyData.user?.email || '',
-            isWhatsAppUser: true,
-            getIdToken: async () => backendVerifyData.token
-          };
-          localStorage.setItem('customer_jwt', backendVerifyData.token);
-          localStorage.setItem('customer_login_provider', 'phone');
-          localStorage.setItem('customer_uid', userObj.uid);
-          localStorage.setItem('customer_phone', cleanDigits);
-          if (name || userObj.displayName) localStorage.setItem('customer_name', name || userObj.displayName);
-          setCurrentUser(userObj);
-          setIdToken(backendVerifyData.token);
-          setCustomerProfile(backendVerifyData.user || userObj);
-          sessionStorage.setItem('customer_guest_browse', 'true');
-          return { success: true, user: userObj, customer: backendVerifyData.user };
-        }
-      } catch (masterErr) {
-        console.warn('Master code backend verify notice:', masterErr);
-      }
-
-      const testCust = {
-        uid: `patron_${cleanDigits}`,
-        name: name || `Patron ${cleanDigits.slice(-4)}`,
-        phone: cleanDigits,
-        email: `${cleanDigits}@persiandarbar.in`,
-        address: ''
-      };
-      const dummyToken = `master_jwt_${cleanDigits}`;
-      localStorage.setItem('customer_jwt', dummyToken);
-      localStorage.setItem('customer_login_provider', 'phone');
-      localStorage.setItem('customer_uid', testCust.uid);
-      localStorage.setItem('customer_name', testCust.name);
-      localStorage.setItem('customer_phone', testCust.phone);
-      localStorage.setItem('customer_profile', JSON.stringify(testCust));
-      sessionStorage.setItem('customer_guest_browse', 'true');
-      const userObj = {
-        uid: testCust.uid,
-        displayName: testCust.name,
-        name: testCust.name,
-        phone: testCust.phone,
-        email: testCust.email,
-        isWhatsAppUser: true,
-        getIdToken: async () => dummyToken
-      };
-      setCurrentUser(userObj);
-      setIdToken(dummyToken);
-      setCustomerProfile(testCust);
-      return { success: true, user: userObj, customer: testCust };
-    }
-
-    // 2. Native Verification (Capacitor iOS & Android)
+    // 1. Native Verification (Capacitor iOS & Android)
     if (Capacitor.isNativePlatform() && nativeVerificationIdRef.current) {
       try {
         const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
