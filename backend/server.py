@@ -5427,17 +5427,36 @@ async def get_customer_profile(
     """Fetch logged in customer profile, auto-creating if first time. Auto-expires stale coins."""
     uid = user["uid"]
     email = (user.get("email") or "").lower().strip()
+
+    # Check if this uid/email was permanently deleted (in-memory cache + Firestore fallback)
+    is_deleted = uid in DELETED_CUSTOMER_UIDS or email in DELETED_CUSTOMER_EMAILS
+    if not is_deleted and hasattr(manager, "db") and manager.db:
+        try:
+            del_doc = manager.db.collection("deleted_customers").document(uid).get()
+            if del_doc.exists:
+                DELETED_CUSTOMER_UIDS.add(uid)
+                if email:
+                    DELETED_CUSTOMER_EMAILS.add(email)
+                is_deleted = True
+            elif email:
+                for doc in manager.db.collection("deleted_customers").where("email", "==", email).limit(1).stream():
+                    DELETED_CUSTOMER_UIDS.add(uid)
+                    DELETED_CUSTOMER_EMAILS.add(email)
+                    is_deleted = True
+                    break
+        except Exception:
+            pass
+
     customers = await manager._read("customers")
     idx = None
     for i, c in enumerate(customers):
         if c.get("uid") == uid:
             idx = i
             break
-        # Only match by email if this UID and email haven't been deleted
-        if email and (c.get("email") or "").lower().strip() == email:
-            if uid not in DELETED_CUSTOMER_UIDS and email not in DELETED_CUSTOMER_EMAILS:
-                idx = i
-                break
+        # Only match by email if neither the uid nor email has been permanently deleted
+        if not is_deleted and email and (c.get("email") or "").lower().strip() == email:
+            idx = i
+            break
 
     if idx is None:
         now = get_ist_now().isoformat()
@@ -5595,6 +5614,23 @@ async def delete_customer_account(
         DELETED_CUSTOMER_EMAILS.add(email)
 
     await manager._write("customers", remaining_customers)
+
+    # Persist deletion record to Firestore so it survives server restarts
+    # This prevents account resurrection after Cloud Run cold starts
+    now_del = datetime.utcnow().isoformat()
+    try:
+        if hasattr(manager, "db") and manager.db:
+            del_doc_data = {
+                "uid": uid or "",
+                "email": email or "",
+                "deleted_at": now_del
+            }
+            if uid:
+                manager.db.collection("deleted_customers").document(str(uid)).set(del_doc_data)
+            if email and email != uid:
+                manager.db.collection("deleted_customers").document(email).set(del_doc_data)
+    except Exception as del_persist_e:
+        logger.warning(f"[Account Deletion] Firestore deleted_customers persist warning: {del_persist_e}")
 
     # Clean active OTP records
     if clean_phone:

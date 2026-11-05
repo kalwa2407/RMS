@@ -482,38 +482,38 @@ export const CustomerAuthProvider = ({ children }) => {
       try {
         const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
 
-        // Fire backend OTP immediately in parallel as backup (don't wait for it)
-        let backendOtpFired = false;
+        // Fire backend OTP immediately in parallel as reliable backup.
+        // This guarantees OTP delivery even if Firebase SMS quota is exhausted.
+        // isBackendOtpRef is set so verifyPhoneOtp knows to use backend path.
         fetch(`${API_BASE}/api/customer/auth/send-otp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ phone: cleanDigits })
         }).then(r => r.json()).then(d => {
-          if (d.success) {
-            isBackendOtpRef.current = true;
-            backendOtpFired = true;
-          }
+          if (d.success) isBackendOtpRef.current = true;
         }).catch(() => {});
 
         const sendPromise = new Promise(async (resolve, reject) => {
           let handleCodeSent;
           let handleFailed;
           let handleCompleted;
-
-          // 25s timeout — Firebase SMS takes 5-15s, give it plenty of room
-          const timer = setTimeout(async () => {
-            await cleanup();
-            reject(new Error('SMS OTP timed out, falling back to instant code.'));
-          }, 25000);
+          let timerRef;
 
           const cleanup = async () => {
-            clearTimeout(timer);
+            if (timerRef) clearTimeout(timerRef);
             try {
               if (handleCodeSent) await handleCodeSent.remove();
               if (handleFailed) await handleFailed.remove();
               if (handleCompleted) await handleCompleted.remove();
             } catch (e) { }
           };
+
+          // 10s timeout — backend OTP already fired in parallel, so when this times out
+          // isBackendOtpRef.current is already true and user enters the backend code
+          timerRef = setTimeout(async () => {
+            await cleanup();
+            reject(new Error('SMS OTP timed out, using backup code.'));
+          }, 10000);
 
           handleCodeSent = await FirebaseAuthentication.addListener('phoneCodeSent', async (event) => {
             await cleanup();
@@ -550,8 +550,16 @@ export const CustomerAuthProvider = ({ children }) => {
         const nativeRes = await sendPromise;
         return nativeRes;
       } catch (nativeErr) {
-        // Don't null out nativeVerificationIdRef — SMS may still arrive late and we want to use it
-        // isBackendOtpRef was already set true in parallel fetch above
+        // Backend OTP was already fired in parallel at the start — isBackendOtpRef may already be true.
+        // If it is, the user can enter the backend OTP code directly. Return success.
+        if (isBackendOtpRef.current) {
+          return {
+            success: true,
+            message: `Verification code sent to +91 ${cleanDigits}`,
+            resendCoolDown: 30
+          };
+        }
+        // If parallel call hasn't resolved yet (e.g. network slow), try one more time
         try {
           const backendRes = await fetch(`${API_BASE}/api/customer/auth/send-otp`, {
             method: 'POST',
@@ -567,12 +575,21 @@ export const CustomerAuthProvider = ({ children }) => {
               resendCoolDown: backendData.resend_cool_down || 30
             };
           }
+          // If 429 (rate limited), backend OTP was already sent — tell user to use code
+          if (backendRes.status === 429) {
+            isBackendOtpRef.current = true;
+            return {
+              success: true,
+              message: `Verification code sent to +91 ${cleanDigits}`,
+              resendCoolDown: 30
+            };
+          }
         } catch (backendOtpErr) {
           // ignore
         }
         return {
           success: false,
-          error: nativeErr?.message || 'Could not send verification code. Please try again.'
+          error: 'Could not send verification code. Please check your number and try again.'
         };
       }
     }
@@ -653,7 +670,7 @@ export const CustomerAuthProvider = ({ children }) => {
           return {
             success: true,
             message: `Verification code sent to +91 ${cleanDigits}`,
-            resendCoolDown: backendData.resend_cooldown || 30
+            resendCoolDown: backendData.resend_cool_down || 30
           };
         }
       } catch (backendOtpErr) {
