@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ChevronDown, Mic, Search, User, Bell } from 'lucide-react';
 
 const CustomerTopBar = ({
@@ -19,6 +19,9 @@ const CustomerTopBar = ({
   const branchName = selectedBranch?.name || 'Camp, Pune';
   const branchAddress = selectedBranch?.shortAddress || 'Renaissance Centre, Wellesley Rd';
 
+  // Track whether the photo URL failed to load — fall back to initial / icon reactively
+  const [photoError, setPhotoError] = useState(false);
+
   // ── Profile avatar helper — clean red & white brand aesthetic ──
   const ProfileAvatar = () => (
     <button
@@ -26,8 +29,13 @@ const CustomerTopBar = ({
       aria-label="Customer Profile"
       className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs active:scale-95 transition-transform overflow-hidden shrink-0 bg-white text-[#E40000] border border-amber-300/70"
     >
-      {userPhoto ? (
-        <img src={userPhoto} alt="" className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+      {userPhoto && !photoError ? (
+        <img
+          src={userPhoto}
+          alt=""
+          className="w-full h-full object-cover"
+          onError={() => setPhotoError(true)}
+        />
       ) : userInitial ? (
         <span className="font-black text-[#E40000]">{userInitial}</span>
       ) : (

@@ -40,7 +40,8 @@ const CustomerDashboard = () => {
     deleteCustomerAccount,
     idToken,
     fetchWithAuth,
-    refreshProfile
+    refreshProfile,
+    loading
   } = useCustomerAuth();
 
   const { toast } = useToast();
@@ -1183,7 +1184,6 @@ const CustomerDashboard = () => {
               }}
               onGoToOrder={() => setActiveTab('order')}
               onGoToReserve={() => setActiveTab('reserve')}
-              pdCoins={availableCoins}
               initialSection={profileInitialTab === 'orders' ? 'orders' : 'overview'}
             />
           )}
