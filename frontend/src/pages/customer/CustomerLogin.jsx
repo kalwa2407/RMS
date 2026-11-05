@@ -491,10 +491,6 @@ const CustomerLogin = () => {
                   enterKeyHint="done"
                   className="w-full bg-white border-2 border-neutral-300 focus:border-[#E40000] focus:ring-2 focus:ring-red-100 rounded-2xl px-4 py-4 text-center text-3xl font-black tracking-[0.4em] text-neutral-900 placeholder:tracking-[0.3em] placeholder:text-neutral-300 outline-none transition-all shadow-inner"
                 />
-                <div className="mt-2.5 flex items-center justify-center space-x-1.5 text-[11px] font-semibold text-amber-900 bg-amber-50/90 border border-amber-200/80 rounded-xl px-3 py-1.5 text-center">
-                  <span>⚡ Instant verification code:</span>
-                  <span className="font-mono font-black text-rose-700 bg-white px-1.5 py-0.5 rounded border border-amber-300 shadow-xs">123456</span>
-                </div>
               </div>
 
               {/* Name field: Hidden for existing patrons, shown only for new accounts */}
