@@ -68,6 +68,8 @@ TAKE_UI_INSPR/
 # Keystores and sensitive signing credentials
 *.keystore
 *.jks
+*.p8
+AuthKey_*.p8
 KEYSTORE_INFO.txt
 
 # Temp automation scripts & screenshots
