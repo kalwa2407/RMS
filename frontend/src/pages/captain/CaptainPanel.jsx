@@ -111,6 +111,7 @@ const CaptainPanel = () => {
   };
 
   const fetchTables = useCallback(async () => {
+    if (!token) return; // Guard: don't fetch without valid token
     try {
       const { data } = await axios.get(`${API_BASE}/api/captain/tables`, {
         headers: { Authorization: `Bearer ${token}` },

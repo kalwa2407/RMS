@@ -5677,6 +5677,63 @@ async def delete_customer_account(
     except Exception as fb_err:
         logger.warning(f"[Account Deletion] Firebase Auth notice: {fb_err}")
 
+    # ── Purge Orders and Reservations linked to this customer ──
+    # Required for App Store / Play Store complete account deletion compliance
+    try:
+        if hasattr(manager, "db") and manager.db:
+            # Delete orders by customer_uid, phone, or email
+            deleted_orders = 0
+            if uid:
+                for doc in manager.db.collection("orders").where("customer_uid", "==", uid).stream():
+                    doc.reference.delete()
+                    deleted_orders += 1
+            if clean_phone:
+                for doc in manager.db.collection("orders").stream():
+                    d = doc.to_dict()
+                    dp = "".join(ch for ch in str(d.get("phone") or "") if ch.isdigit())
+                    if dp and (dp == clean_phone or dp.endswith(clean_phone[-10:])):
+                        # skip if already deleted by uid
+                        try:
+                            doc.reference.delete()
+                            deleted_orders += 1
+                        except Exception:
+                            pass
+            if email:
+                for doc in manager.db.collection("orders").where("email", "==", email).stream():
+                    try:
+                        doc.reference.delete()
+                        deleted_orders += 1
+                    except Exception:
+                        pass
+            logger.info(f"[Account Deletion] Purged {deleted_orders} orders for uid={uid}")
+
+            # Delete reservations by customer_uid, phone, or email
+            deleted_reservations = 0
+            if uid:
+                for doc in manager.db.collection("reservations").where("customer_uid", "==", uid).stream():
+                    doc.reference.delete()
+                    deleted_reservations += 1
+            if clean_phone:
+                for doc in manager.db.collection("reservations").stream():
+                    d = doc.to_dict()
+                    dp = "".join(ch for ch in str(d.get("phone") or "") if ch.isdigit())
+                    if dp and (dp == clean_phone or dp.endswith(clean_phone[-10:])):
+                        try:
+                            doc.reference.delete()
+                            deleted_reservations += 1
+                        except Exception:
+                            pass
+            if email:
+                for doc in manager.db.collection("reservations").where("email", "==", email).stream():
+                    try:
+                        doc.reference.delete()
+                        deleted_reservations += 1
+                    except Exception:
+                        pass
+            logger.info(f"[Account Deletion] Purged {deleted_reservations} reservations for uid={uid}")
+    except Exception as purge_err:
+        logger.warning(f"[Account Deletion] Orders/Reservations purge notice: {purge_err}")
+
     logger.info(f"[Account Deletion Complete] Customer permanently deleted: uid={uid}, email={email}")
     return {
         "success": True,

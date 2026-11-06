@@ -242,12 +242,21 @@ export const CustomerAuthProvider = ({ children }) => {
         setCurrentUser(user);
         setIdToken(token);
         sessionStorage.setItem('customer_guest_browse', 'true');
+        // Fire profile fetch in background — do NOT await, don't block navigation
         fetchCustomerProfile(token, user).catch(() => { });
-        return { success: true, user };
+        // navigateNow: true tells CustomerLogin to navigate immediately without
+        // waiting for onAuthStateChanged (which can lag on native iOS / Android)
+        return { success: true, user, navigateNow: true };
       } catch (error) {
         const errCode = error?.code || '';
-        // User cancelled
-        if (errCode === 'auth/popup-closed-by-user' || errCode === 'auth/cancelled-popup-request' || error?.message?.includes('canceled') || error?.message?.includes('cancelled')) {
+        // User cancelled — don't show error
+        if (
+          errCode === 'auth/popup-closed-by-user' ||
+          errCode === 'auth/cancelled-popup-request' ||
+          error?.message?.includes('canceled') ||
+          error?.message?.includes('cancelled') ||
+          error?.message?.includes('The user canceled the sign-in flow')
+        ) {
           return { success: false, error: null };
         }
         console.warn('Native Google Sign-In notice:', error);

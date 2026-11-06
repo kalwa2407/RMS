@@ -93,6 +93,7 @@ const KitchenPanel = () => {
   };
 
   const fetchOrders = useCallback(async (silent = false) => {
+    if (!token) return; // Guard: don't fetch without valid token
     try {
       const { data } = await axios.get(`${API_BASE}/api/kitchen/orders`, { headers: { Authorization: `Bearer ${token}` } });
       const fresh = Array.isArray(data) ? data : [];

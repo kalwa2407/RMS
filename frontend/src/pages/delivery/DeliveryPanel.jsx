@@ -126,6 +126,7 @@ const DeliveryPanel = () => {
   }, [orders, token]);
 
   const fetchProfile = useCallback(async () => {
+    if (!token) return; // Guard: don't attempt fetch without a valid token
     try {
       const { data } = await axios.get(`${API_BASE}/api/delivery/profile`, { headers:{ Authorization:`Bearer ${token}` } });
       setProfile(data);
@@ -140,6 +141,7 @@ const DeliveryPanel = () => {
   }, [token, navigate]);
 
   const fetchOrders = useCallback(async () => {
+    if (!token) return; // Guard: don't attempt fetch without a valid token
     try {
       const { data } = await axios.get(`${API_BASE}/api/delivery/orders`, { headers:{ Authorization:`Bearer ${token}` } });
       const ordersData = Array.isArray(data) ? data : [];

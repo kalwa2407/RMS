@@ -168,12 +168,17 @@ const CustomerLogin = () => {
   const handleGoogleSignIn = async () => {
     setSigningInGoogle(true);
     setError(null);
+
+    // Safety net — if something silently hangs on native, clear spinner after 15s
+    const safetyTimer = setTimeout(() => setSigningInGoogle(false), 15000);
+
     try {
       const res = await signInWithGoogle();
+      clearTimeout(safetyTimer);
+
       if (res.redirecting) {
-        setTimeout(() => {
-          setSigningInGoogle(false);
-        }, 5000);
+        // Web-only redirect fallback — wait for redirect to complete, clear after 5s
+        setTimeout(() => setSigningInGoogle(false), 5000);
         return;
       }
       if (res.success) {
@@ -181,12 +186,14 @@ const CustomerLogin = () => {
         setSigningInGoogle(false);
         navigate(from, { replace: true });
       } else {
+        clearTimeout(safetyTimer);
         if (res.error) {
           setError(res.error);
         }
         setSigningInGoogle(false);
       }
     } catch (err) {
+      clearTimeout(safetyTimer);
       setError(err?.message || 'Google sign-in could not be completed.');
       setSigningInGoogle(false);
     }
