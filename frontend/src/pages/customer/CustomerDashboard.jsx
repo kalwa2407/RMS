@@ -1172,15 +1172,18 @@ const CustomerDashboard = () => {
                 navigate('/customer/login', { replace: true });
               }}
               onDeleteAccount={async () => {
+                // 1. Immediately nuke ALL cached state so re-login sees nothing
+                try { localStorage.clear(); } catch (e) { }
                 try { sessionStorage.clear(); } catch (e) { }
+                // 2. Fire actual deletion — await it so Firebase tombstone is written BEFORE user can re-login
+                try { await deleteCustomerAccount(); } catch (e) { /* best-effort */ }
+                // 3. Navigate only after deletion is done (or timed out)
+                navigate('/customer/login', { replace: true });
                 toast({
                   title: 'Account Deleted',
                   description: 'Your account and personal data have been permanently removed.',
                   variant: 'destructive'
                 });
-                navigate('/customer/login', { replace: true });
-                // Fire deletion in background — don't block navigation (iOS hangs on await)
-                deleteCustomerAccount().catch(() => { });
               }}
               onGoToOrder={() => setActiveTab('order')}
               onGoToReserve={() => setActiveTab('reserve')}
@@ -1340,16 +1343,19 @@ const CustomerDashboard = () => {
             navigate('/customer/login', { replace: true });
           }}
           onDeleteAccount={async () => {
+            // 1. Immediately nuke ALL cached state so re-login sees nothing
+            try { localStorage.clear(); } catch (e) { }
             try { sessionStorage.clear(); } catch (e) { }
             setIsProfileOpen(false);
+            // 2. Fire actual deletion — await it so Firebase tombstone is written BEFORE user can re-login
+            try { await deleteCustomerAccount(); } catch (e) { /* best-effort */ }
+            // 3. Navigate only after deletion is done (or timed out)
+            navigate('/customer/login', { replace: true });
             toast({
               title: 'Account Deleted',
               description: 'Your account and personal data have been permanently removed.',
               variant: 'destructive'
             });
-            navigate('/customer/login', { replace: true });
-            // Fire deletion in background — don't block navigation (iOS hangs on await)
-            deleteCustomerAccount().catch(() => { });
           }}
           pdCoins={availableCoins}
           initialTab={profileInitialTab}

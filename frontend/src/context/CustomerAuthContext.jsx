@@ -122,9 +122,29 @@ export const CustomerAuthProvider = ({ children }) => {
         if (data.email) localStorage.setItem('customer_email', data.email);
         return data;
       }
+
+      // 403 account_deleted — this user was permanently deleted, force sign out immediately
+      if (res.status === 403) {
+        try {
+          const errData = await res.json();
+          if (errData?.detail === 'account_deleted') {
+            console.warn('[Auth] Deleted account tried to access profile — forcing sign out');
+            setCurrentUser(null);
+            setIdToken(null);
+            setCustomerProfile(null);
+            try { localStorage.clear(); } catch (e) { }
+            try { sessionStorage.clear(); } catch (e) { }
+            return null;
+          }
+        } catch (e) { /* ignore parse errors */ }
+      }
     } catch (err) {
       console.warn('Could not fetch remote customer profile:', err);
     }
+
+    // Fallback profile if backend route unavailable — but NEVER if localStorage is already cleared (deletion in progress)
+    const hasToken = localStorage.getItem('customer_jwt');
+    if (!hasToken) return null; // deletion just happened, don't create a fallback
 
     // Fallback profile if backend route unavailable
     const fallbackProfile = {
@@ -823,6 +843,14 @@ export const CustomerAuthProvider = ({ children }) => {
     const uid = firebaseUser?.uid || currentUser?.uid || localStorage.getItem('customer_uid') || '';
     const email = firebaseUser?.email || currentUser?.email || localStorage.getItem('customer_email') || '';
     const phone = customerProfile?.phone || localStorage.getItem('customer_phone') || '';
+
+    // ── IMMEDIATE cache nuke: clear React state + ALL localStorage BEFORE any async op ──
+    // This ensures that even if network is slow, re-login won't see stale cached data
+    setCurrentUser(null);
+    setIdToken(null);
+    setCustomerProfile(null);
+    try { localStorage.clear(); } catch (e) { }
+    try { sessionStorage.clear(); } catch (e) { }
 
     try {
       // 1. Delete backend database record (by UID, Email, and Phone)

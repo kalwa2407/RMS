@@ -5416,8 +5416,13 @@ async def get_customer_profile(
     """Fetch logged in customer profile, auto-creating if first time. Auto-expires stale coins."""
     uid = user["uid"]
     email = (user.get("email") or "").lower().strip()
+    # Extract phone from token if available
+    raw_phone = user.get("phone") or user.get("phone_number") or ""
+    clean_token_phone = "".join(ch for ch in raw_phone if ch.isdigit())
+    if clean_token_phone.startswith("91") and len(clean_token_phone) == 12:
+        clean_token_phone = clean_token_phone[2:]
 
-    # Check if this uid/email was permanently deleted (in-memory cache + Firestore fallback)
+    # Check if this uid/email/phone was permanently deleted (in-memory cache + Firestore fallback)
     is_deleted = uid in DELETED_CUSTOMER_UIDS or email in DELETED_CUSTOMER_EMAILS
     if not is_deleted and hasattr(manager, "db") and manager.db:
         try:
@@ -5433,8 +5438,19 @@ async def get_customer_profile(
                     DELETED_CUSTOMER_EMAILS.add(email)
                     is_deleted = True
                     break
+            # Also check by phone — covers phone-based re-login with new UID after deletion
+            if not is_deleted and clean_token_phone:
+                phone_del_doc = manager.db.collection("deleted_customers").document(clean_token_phone).get()
+                if phone_del_doc.exists:
+                    DELETED_CUSTOMER_UIDS.add(uid)
+                    is_deleted = True
         except Exception:
             pass
+
+    # ── Block deleted users from getting/creating a profile ──
+    if is_deleted:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="account_deleted")
 
     customers = await manager._read("customers")
     idx = None
@@ -5612,12 +5628,16 @@ async def delete_customer_account(
             del_doc_data = {
                 "uid": uid or "",
                 "email": email or "",
+                "phone": phone or "",
                 "deleted_at": now_del
             }
             if uid:
                 manager.db.collection("deleted_customers").document(str(uid)).set(del_doc_data)
             if email and email != uid:
                 manager.db.collection("deleted_customers").document(email).set(del_doc_data)
+            # Also store by phone so phone-based re-login is blocked too
+            if clean_phone:
+                manager.db.collection("deleted_customers").document(clean_phone).set(del_doc_data)
     except Exception as del_persist_e:
         logger.warning(f"[Account Deletion] Firestore deleted_customers persist warning: {del_persist_e}")
 
