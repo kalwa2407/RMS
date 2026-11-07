@@ -125,7 +125,7 @@ const CustomerProfileTab = ({
   };
 
   return (
-    <div className="flex-1 pb-32 pt-2 px-4 space-y-4">
+    <div className="flex-1 w-full max-w-full overflow-x-hidden pb-44 pt-2 px-4 space-y-4">
       {/* ── 1. APPLE HIG PATRON HEADER CARD OR GUEST STATE ── */}
       {!isLoggedIn ? (
         <section className="bg-white/95 backdrop-blur-md rounded-3xl p-6 border border-black/[0.06] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.05)] relative overflow-hidden text-center space-y-4">

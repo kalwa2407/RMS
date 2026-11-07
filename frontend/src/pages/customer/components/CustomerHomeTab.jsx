@@ -55,7 +55,7 @@ const CustomerHomeTab = ({
   const trendingDelicacies = menu.slice(6, 12).length > 0 ? menu.slice(6, 12) : menu.slice(0, 5);
 
   return (
-    <div className="flex-1 pb-32 space-y-5">
+    <div className="flex-1 w-full max-w-full overflow-x-hidden pb-44 space-y-5">
       {/* ── 1. GRAND ROYAL OFFER HERO SECTION (Matching Screenshot 4) ── */}
       <section className="bg-gradient-to-b from-[#FFF5D6] via-[#FFF8E7] to-[#F8F9FA] px-4 pt-2 pb-2">
         {currentOffer && (

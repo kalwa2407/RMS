@@ -169,34 +169,38 @@ const CustomerTopBar = ({
                 )}
               </button>
             )}
-            <button
-              onClick={onOpenWallet}
-              aria-label="Royalty Membership"
-              className="px-2.5 py-1 rounded-full bg-gradient-to-r from-[#E40000] to-[#CC0000] text-white text-xs font-black flex items-center space-x-1 shadow-sm ios-press shrink-0"
-            >
-              <img src="/app-icon.png" alt="" className="w-3.5 h-3.5 rounded-sm object-contain" />
-              <span className="text-[9.5px] font-extrabold tracking-wider uppercase">Royalty</span>
-            </button>
+            {activeTab !== 'rewards' && activeTab !== 'profile' && (
+              <button
+                onClick={onOpenWallet}
+                aria-label="Royalty Membership"
+                className="px-2.5 py-1 rounded-full bg-gradient-to-r from-[#E40000] to-[#CC0000] text-white text-xs font-black flex items-center space-x-1 shadow-sm ios-press shrink-0"
+              >
+                <img src="/app-icon.png" alt="" className="w-3.5 h-3.5 rounded-sm object-contain" />
+                <span className="text-[9.5px] font-extrabold tracking-wider uppercase">Royalty</span>
+              </button>
+            )}
             <ProfileAvatar />
           </div>
         </div>
 
-        {/* ── Search Bar: Apple Spotlight Style ── */}
-        <div className="mt-2.5">
-          <div
-            id="top-search-bar"
-            onClick={onOpenSearch}
-            className="relative cursor-pointer ios-press"
-          >
-            <div className="w-full bg-neutral-100/80 hover:bg-neutral-100 rounded-2xl py-2.5 pl-9 pr-9 text-xs font-medium text-neutral-800 border border-neutral-200/60 shadow-2xs flex items-center transition-colors">
-              <span className={searchQuery ? 'text-neutral-900 font-semibold' : 'text-neutral-400'}>
-                {searchQuery || searchPlaceholder}
-              </span>
+        {/* ── Search Bar: Apple Spotlight Style (Only on Home & Order tabs) ── */}
+        {activeTab !== 'rewards' && activeTab !== 'profile' && (
+          <div className="mt-2.5">
+            <div
+              id="top-search-bar"
+              onClick={onOpenSearch}
+              className="relative cursor-pointer ios-press"
+            >
+              <div className="w-full bg-neutral-100/80 hover:bg-neutral-100 rounded-2xl py-2.5 pl-9 pr-9 text-xs font-medium text-neutral-800 border border-neutral-200/60 shadow-2xs flex items-center transition-colors">
+                <span className={searchQuery ? 'text-neutral-900 font-semibold' : 'text-neutral-400'}>
+                  {searchQuery || searchPlaceholder}
+                </span>
+              </div>
+              <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-3" />
+              <Mic className="w-4 h-4 text-[#E40000] absolute right-3 top-3" />
             </div>
-            <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-3" />
-            <Mic className="w-4 h-4 text-[#E40000] absolute right-3 top-3" />
           </div>
-        </div>
+        )}
       </section>
     </header>
   );

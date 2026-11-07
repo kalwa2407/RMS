@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
-  ChevronDown, Share2, RefreshCw, Phone, MapPin, Bike, ChefHat,
-  CheckCircle2, Clock, Package, Home, Zap, ExternalLink,
-  MessageCircle, Star, Shield, Maximize2, Minimize2, Copy, AlertCircle,
-  AlertTriangle, X
+  ChevronDown, Share2, RefreshCw, Phone, Bike, ChefHat,
+  CheckCircle2, Clock, Package, Zap, ExternalLink,
+  MessageCircle, Star, Shield, Copy, AlertCircle,
+  AlertTriangle, X, ChevronUp
 } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import API_BASE from '../../../lib/config';
@@ -377,492 +377,404 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
   }
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex flex-col items-center select-none overflow-hidden animate-in fade-in duration-200">
-      <div className="w-full max-w-[430px] md:max-w-3xl lg:max-w-4xl h-full flex flex-col bg-[#F8F9FA] shadow-2xl md:shadow-md relative overflow-hidden md:border-x md:border-neutral-200/50">
+    <div className="fixed inset-0 z-[100] flex flex-col items-center select-none overflow-hidden animate-in fade-in duration-200 bg-black">
+      <div className="w-full max-w-[430px] md:max-w-3xl lg:max-w-4xl h-full flex flex-col relative overflow-hidden md:border-x md:border-neutral-800/50 shadow-2xl">
 
-        {/* ═══ HEADER ═══ */}
-        <header
-          className="shrink-0 px-4 pb-4 text-white relative shadow-md"
-          style={{
-            backgroundColor: '#151E33',
-            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)'
-          }}
-        >
-          {/* Row 1: Back - Restaurant Name - Share */}
-          <div className="flex items-center justify-between">
+        {/* ═══ FULL-SCREEN MAP (Swiggy-style top 60%) ═══ */}
+        <div className="relative flex-1 min-h-0">
+
+          {/* Map takes full top area */}
+          {isDelivery && !isCancelled ? (
+            <CustomerDeliveryMap
+              order={order}
+              eta={eta}
+              isExpanded={isMapExpanded}
+              onToggleExpand={() => setIsMapExpanded(prev => !prev)}
+            />
+          ) : (
+            <div className="w-full h-full bg-[#F2EDE4] flex items-center justify-center">
+              <Package className="w-10 h-10 text-neutral-300" />
+            </div>
+          )}
+
+          {/* Top glassmorphism bar — overlaid on map */}
+          <div
+            className="absolute top-0 left-0 right-0 z-30 px-4 flex items-center justify-between"
+            style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 10px)', paddingBottom: '10px', background: 'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 100%)' }}
+          >
             <button
               onClick={onClose}
-              className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center active:scale-90 transition-all cursor-pointer border border-white/10"
-              aria-label="Dismiss tracking"
+              className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center active:scale-90 transition-all cursor-pointer border border-white/20"
+              aria-label="Close"
             >
               <ChevronDown className="w-5 h-5 text-white" />
             </button>
+
             <div className="text-center">
-              <h2 className="text-sm font-bold text-white tracking-wide">
-                Persian Darbar
-              </h2>
-              <p className="text-[10px] text-white/60">Camp, Pune Flagship</p>
+              <p className="text-[11px] font-semibold text-white/70 tracking-widest uppercase">Order from</p>
+              <h2 className="text-sm font-black text-white tracking-wide leading-tight">Persian Darbar</h2>
             </div>
+
             <button
               onClick={handleShare}
-              className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center active:scale-90 transition-all cursor-pointer border border-white/10"
-              aria-label="Share tracking"
+              className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center active:scale-90 transition-all cursor-pointer border border-white/20"
+              aria-label="Share"
             >
               <Share2 className="w-4 h-4 text-white" />
             </button>
           </div>
 
-          {/* Row 2: Status Title */}
-          <div className="mt-4 text-center">
-            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight">
-              {getStatusHeadline()}
-            </h1>
-          </div>
-
-          {/* Row 3: Arriving Pill + Refresh */}
-          {eta && !isCancelled && !isDelivered && (
-            <div className="mt-3 flex items-center justify-center gap-2">
-              <div className={`${eta.isDelayed ? 'bg-amber-600/30 border-amber-400/30' : 'bg-[#242F48] border-white/10'} border text-white px-4 py-1.5 rounded-xl text-xs font-bold shadow-inner flex items-center gap-2`}>
-                {eta.isDelayed ? (
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-300" />
-                ) : (
-                  <Clock className="w-3.5 h-3.5 text-amber-300" />
-                )}
-                <span>{eta.etaPillText}</span>
-              </div>
-              <button
-                onClick={() => fetchOrder(propOrderId, true)}
-                disabled={refreshing}
-                className="w-8 h-8 rounded-xl bg-[#242F48] hover:bg-[#2C3955] border border-white/10 flex items-center justify-center text-white/80 active:scale-90 transition-all cursor-pointer"
-                title="Refresh live status"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-amber-300' : ''}`} />
-              </button>
-            </div>
-          )}
-
-          {isDelivered && (
-            <div className="mt-3 flex items-center justify-center">
-              <div className="bg-emerald-600/40 border border-emerald-400/30 text-emerald-200 px-4 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-300" />
-                <span>Delivered to your doorstep!</span>
-              </div>
-            </div>
-          )}
-
-          {isCancelled && (
-            <div className="mt-3 flex items-center justify-center">
-              <div className="bg-red-500/30 border border-red-400/30 text-red-200 px-4 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5">
-                <AlertTriangle className="w-4 h-4 text-red-300" />
-                <span>Order Cancelled</span>
-              </div>
-            </div>
-          )}
-        </header>
-
-        {/* ═══ SCROLLABLE CONTENT ═══ */}
-        <div className="flex-1 overflow-y-auto no-scrollbar pb-8 space-y-3">
-
-          {/* Delivered Celebration View (Hides active map/rider transit when delivered) */}
-          {(isDelivered || showDelivered) ? (
-            <DeliveredScreen order={order} onGoHome={onGoHome || onClose} />
-          ) : (
-            <>
-              {/* 1. Real Leaflet Delivery Map */}
-              {isDelivery && !isCancelled && (
-                <CustomerDeliveryMap
-                  order={order}
-                  eta={eta}
-                  isExpanded={isMapExpanded}
-                  onToggleExpand={() => setIsMapExpanded(prev => !prev)}
-                />
-              )}
-
-              {/* 2. Platform-native Live Status (Auto-detected iOS Dynamic Island / Android Material) */}
-              {platform === 'ios' && !isCancelled && !isDelivered && (
-                <div className="mx-4 p-3.5 rounded-3xl bg-neutral-950 text-white shadow-2xl border border-neutral-800/90 animate-in slide-in-from-top-2 duration-300 space-y-2.5">
-                  {/* Apple Dynamic Island Capsule Pill (Identical to iOS Live Activities) */}
-                  <div className="w-full h-10 px-4 rounded-full bg-black border border-white/10 flex items-center justify-between shadow-inner">
-                    {/* Brand Name on Left (matches screenshot with royal styling) */}
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="font-black italic text-white text-[13px] tracking-tight lowercase">
-                        persian darbar
-                      </span>
-                    </div>
-
-                    {/* Compact Trailing: Countdown ring & minutes remaining */}
-                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#18181B] border border-white/10">
-                      <svg className="w-4 h-4 -rotate-90 shrink-0" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.2)" strokeWidth="3" fill="none" />
-                        <circle
-                          cx="12"
-                          cy="12"
-                          r="9"
-                          stroke="white"
-                          strokeWidth="3"
-                          fill="none"
-                          strokeDasharray={56.5}
-                          strokeDashoffset={
-                            56.5 * (1 - Math.min(1, Math.max(0.15, (eta?.minsRemaining || 12) / (eta?.totalFormulaMins || 25))))
-                          }
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                      <span className="text-[11px] font-black text-white font-mono tracking-tight">
-                        {eta?.isDelayed ? 'Late' : `${eta?.minsRemaining || 12}m`}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Dynamic Island Expanded Status Details */}
-                  <div className="px-1 flex items-center justify-between text-xs text-neutral-300">
-                    <span className="font-medium truncate">{getStatusHeadline()}</span>
-                    <span className="text-[11px] text-amber-400 font-bold shrink-0 ml-2">
-                      {eta?.distKm ? `${eta.distKm} km away` : 'On Route'}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {platform === 'android' && !isCancelled && !isDelivered && (
-                <div className="mx-4 p-3.5 rounded-3xl bg-[#1F2937] text-white shadow-lg border border-neutral-700 animate-in slide-in-from-top-2 duration-300">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-xl bg-[#E40000] flex items-center justify-center text-white text-xs">
-                        <ChefHat className="w-4 h-4 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="text-xs font-bold text-white">Persian Darbar</h3>
-                        <p className="text-[11px] text-emerald-400 font-medium">
-                          {getStatusHeadline()}
-                          {eta && !eta.isDelayed ? ` . ${eta.minsRemaining} mins` : ''}
-                        </p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-bold text-amber-300 bg-white/10 px-2.5 py-1 rounded-xl">
-                      {eta?.isDelayed ? 'Late' : `~${eta?.minsRemaining || '--'}m`}
-                    </span>
-                  </div>
-                  <div className="w-full bg-neutral-700 h-1.5 rounded-full mt-2.5 overflow-hidden">
-                    <div
-                      className="bg-emerald-500 h-full rounded-full transition-all duration-500"
-                      style={{ width: `${Math.round(((milestoneIdx + 1) / 4) * 100)}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* 3. Delay Apology Card (when ETA expired) */}
-              {eta?.isDelayed && !isCancelled && !isDelivered && (
-                <DelayApologyCard order={order} />
-              )}
-
-          {/* 4. Delivery Partner / Rider Card */}
-          {isDelivery && !isCancelled && (
-            <div className="mx-4 bg-white rounded-3xl border border-neutral-200/80 shadow-xs overflow-hidden">
-              <div className="px-4 py-3 border-b border-neutral-100 flex items-center justify-between">
-                <p className="text-[10px] font-black uppercase tracking-wider text-neutral-400">
-                  Delivery Partner Details
-                </p>
-                <span className="text-[10px] font-bold text-neutral-500">
-                  {order?.porter_order_id ? 'Third-Party Partner' : 'In-House Fleet'}
-                </span>
-              </div>
-
-              {/* Porter Third-Party */}
-              {order?.porter_order_id ? (
-                <div className="p-4 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-md shrink-0">
-                      <Zap className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <h3 className="text-sm font-black text-neutral-900 truncate">
-                          {order.porter_rider_name || 'Porter Express Driver'}
-                        </h3>
-                        <span className="text-[9px] bg-orange-100 text-orange-700 font-black px-1.5 py-0.5 rounded uppercase shrink-0">
-                          Porter
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-neutral-500">
-                        {order.porter_rider_vehicle || 'Two-Wheeler Partner'}
-                      </p>
-                      <p className="text-[10px] font-mono text-orange-600 font-bold">
-                        Porter Ref: {order.porter_order_id?.slice(-8).toUpperCase()}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 pt-1">
-                    {order.porter_rider_phone ? (
-                      <a
-                        href={`tel:${order.porter_rider_phone}`}
-                        className="flex-1 py-2.5 rounded-2xl bg-neutral-900 hover:bg-black text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-98 transition-transform"
-                      >
-                        <Phone className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>Call Driver</span>
-                      </a>
-                    ) : (
-                      <a
-                        href={`tel:${RESTAURANT_PHONE}`}
-                        className="flex-1 py-2.5 rounded-2xl bg-neutral-100 text-neutral-800 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
-                      >
-                        <Phone className="w-3.5 h-3.5" />
-                        <span>Contact Support</span>
-                      </a>
-                    )}
-                    {order.porter_tracking_url && (
-                      <a
-                        href={order.porter_tracking_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex-1 py-2.5 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-98 transition-transform"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        <span>Porter Live Map</span>
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ) : order?.delivery_partner_name ? (
-                /* In-House Personal Rider (from Admin Panel) */
-                <div className="p-4 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md text-white font-black text-lg shrink-0">
-                      <Bike className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <h3 className="text-sm font-black text-neutral-900 truncate">
-                          {order.delivery_partner_name}
-                        </h3>
-                        <span className="text-[9px] bg-emerald-100 text-emerald-700 font-black px-1.5 py-0.5 rounded uppercase shrink-0">
-                          Official Rider
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-neutral-500">
-                        {order.delivery_partner_vehicle || 'Two-Wheeler Partner'}
-                      </p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[10px] text-amber-500 font-bold flex items-center gap-0.5">
-                          <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                          4.9 Rating
-                        </span>
-                        <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-0.5">
-                          <Shield className="w-3 h-3" /> Sanitized Bag
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 pt-1">
-                    {order.delivery_partner_phone && (
-                      <a
-                        href={`tel:${order.delivery_partner_phone}`}
-                        className="flex-1 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-98 transition-transform cursor-pointer"
-                      >
-                        <Phone className="w-3.5 h-3.5" />
-                        <span>Call Rider</span>
-                      </a>
-                    )}
-                    {order.delivery_partner_phone && (
-                      <a
-                        href={`https://wa.me/91${order.delivery_partner_phone.replace(/\D/g, '')}?text=Hi!%20I%20am%20tracking%20my%20Persian%20Darbar%20order.`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex-1 py-2.5 rounded-2xl bg-[#25D366] hover:bg-[#20ba59] text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-98 transition-transform cursor-pointer"
-                      >
-                        <MessageCircle className="w-3.5 h-3.5 fill-current" />
-                        <span>WhatsApp</span>
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                /* Allocating Nearest Rider */
-                <div className="p-4 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-md text-white font-black text-lg shrink-0">
-                      <ChefHat className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <h3 className="text-sm font-black text-neutral-900 truncate">
-                          Allocating Delivery Partner
-                        </h3>
-                        <span className="text-[9px] bg-amber-100 text-amber-700 font-black px-1.5 py-0.5 rounded uppercase shrink-0">
-                          In Kitchen
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-neutral-500 mt-0.5 leading-relaxed">
-                        Master chefs are currently preparing your royal feast. Our nearest fleet rider will be assigned upon kitchen dispatch.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* 5. Milestone Timeline */}
-          {!isCancelled && (
-            <div className="mx-4 bg-white rounded-3xl p-4 border border-neutral-200/80 shadow-xs">
-              <p className="text-[10px] font-black uppercase tracking-wider text-neutral-400 mb-3">
-                Live Order Journey
-              </p>
-              <div className="space-y-4">
-                {MILESTONES.map((step, idx) => {
-                  const isDone = milestoneIdx > idx;
-                  const isCurrent = milestoneIdx === idx;
-                  const isFuture = milestoneIdx < idx;
-                  const StepIcon = step.icon;
-
-                  return (
-                    <div key={step.key} className="flex gap-3 relative">
-                      {idx < MILESTONES.length - 1 && (
-                        <div
-                          className={`absolute left-[17px] top-9 w-0.5 h-6 ${
-                            isDone ? 'bg-[#E40000]' : 'bg-neutral-200'
-                          }`}
-                        />
-                      )}
-                      <div
-                        className={`w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 z-10 transition-all ${
-                          isCurrent
-                            ? 'bg-[#E40000] text-white shadow-md shadow-red-200 scale-105'
-                            : isDone
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : 'bg-neutral-100 text-neutral-400'
-                        }`}
-                      >
-                        {isDone ? (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                        ) : (
-                          <StepIcon className={`w-4 h-4 ${isCurrent ? 'text-white' : 'text-neutral-500'}`} />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0 pt-0.5">
-                        <div className="flex items-center gap-2">
-                          <h4
-                            className={`text-xs font-black ${
-                              isCurrent ? 'text-neutral-900' : isFuture ? 'text-neutral-400' : 'text-neutral-700'
-                            }`}
-                          >
-                            {step.label}
-                          </h4>
-                          {isCurrent && (
-                            <span className="text-[8px] font-black bg-red-50 text-[#E40000] border border-red-200 px-1.5 py-0.5 rounded-full uppercase animate-pulse">
-                              LIVE
-                            </span>
-                          )}
-                        </div>
-                        <p className={`text-[11px] ${isFuture ? 'text-neutral-300' : 'text-neutral-500'}`}>
-                          {step.sublabel}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* 6. Order Items & Total Summary */}
-          {order && (
-            <div className="mx-4 bg-white rounded-3xl p-4 border border-neutral-200/80 shadow-xs space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-neutral-100">
-                <div>
-                  <span className="text-[10px] font-black uppercase text-neutral-400 block">
-                    Order Summary
-                  </span>
-                  <span className="text-xs font-mono font-bold text-neutral-700">
-                    #{String(order.order_id || propOrderId).slice(-10)}
-                  </span>
-                </div>
-                <button
-                  onClick={copyOrderId}
-                  className="text-xs text-[#E40000] font-bold flex items-center gap-1 hover:underline cursor-pointer"
-                >
-                  <Copy className="w-3 h-3" />
-                  <span>{copied ? 'Copied!' : 'Copy ID'}</span>
-                </button>
-              </div>
-
-              {/* Items preview */}
-              <div className="space-y-1.5 text-xs text-neutral-700">
-                {order.items?.map((it, idx) => (
-                  <div key={idx} className="flex justify-between items-center">
-                    <span className="font-medium">
-                      {it.quantity}x {it.name}
-                    </span>
-                    <span className="font-bold">&#8377;{it.price * it.quantity}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="pt-2 border-t border-neutral-100 flex items-center justify-between">
-                <span className="text-xs font-black text-neutral-900">Total Bill</span>
-                <span className="text-sm font-black text-[#E40000]">
-                  &#8377;{order.total || order.subtotal || 0}
-                </span>
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
-          {/* Cancelled Banner Card */}
-          {isCancelled && (
-            <div className="mx-4 bg-red-50 border border-red-200 rounded-3xl p-5 shadow-xs text-center space-y-2">
-              <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto shadow-xs">
-                <AlertCircle className="w-6 h-6" />
-              </div>
-              <h3 className="text-base font-black text-red-950">This Order was Cancelled</h3>
-              <p className="text-xs text-red-800 leading-relaxed max-w-sm mx-auto">
-                {order?.cancellation_reason || order?.status_history?.find(s => s.status === 'cancelled')?.note || 'The order has been cancelled. If you made an online payment, refund has been processed back to your original payment method.'}
-              </p>
-              <div className="pt-2">
-                <button
-                  onClick={onGoHome || onClose}
-                  className="px-5 py-2.5 rounded-2xl bg-neutral-900 text-white font-bold text-xs shadow-sm hover:bg-black transition-all cursor-pointer"
-                >
-                  Back to Home
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* 7. Help / Call Restaurant */}
-          <div className="px-4 pt-1">
-            <a
-              href={`tel:${RESTAURANT_PHONE}`}
-              className="w-full bg-white hover:bg-neutral-50 border border-neutral-200 text-neutral-700 py-3 rounded-2xl text-xs font-black flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer"
+          {/* iOS Dynamic Island live pill */}
+          {platform === 'ios' && !isCancelled && !isDelivered && (
+            <div
+              className="absolute left-1/2 -translate-x-1/2 z-30 px-5 py-2 rounded-full bg-black flex items-center gap-3 shadow-2xl"
+              style={{ top: 'calc(env(safe-area-inset-top, 0px) + 10px)' }}
             >
-              <Phone className="w-4 h-4 text-neutral-500" />
-              <span>Need Help? Call Persian Darbar (+91 95942 87868)</span>
-            </a>
-          </div>
-
-          {/* 8. Discreet Zomato/Swiggy Order Cancellation */}
-          {canCancel && (
-            <div className="px-4 pt-2 pb-4 text-center">
-              <button
-                type="button"
-                onClick={() => setShowCancelModal(true)}
-                className="text-xs text-neutral-400 hover:text-red-600 font-semibold underline underline-offset-4 transition-colors cursor-pointer"
-              >
-                Need to cancel order?
-              </button>
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="font-black text-white text-[12px] tracking-tight lowercase italic">persian darbar</span>
+              <span className="text-[11px] font-black text-amber-300">
+                {eta?.isDelayed ? 'Late' : `${eta?.minsRemaining || '--'}m`}
+              </span>
             </div>
           )}
-
         </div>
 
+        {/* ═══ BOTTOM SHEET (Swiggy-style slide-up panel) ═══ */}
+        <div
+          className="relative bg-white z-20 flex flex-col"
+          style={{
+            borderRadius: '24px 24px 0 0',
+            marginTop: isMapExpanded ? '-32px' : '-24px',
+            boxShadow: '0 -4px 32px rgba(0,0,0,0.12)',
+            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+            maxHeight: isMapExpanded ? '44vh' : '52vh',
+            overflowY: 'auto',
+          }}
+        >
+          {/* Drag handle */}
+          <div className="flex justify-center pt-3 pb-1 shrink-0">
+            <div className="w-9 h-1 rounded-full bg-neutral-200" />
+          </div>
+
+          {/* ── Delivery status hero row ── */}
+          {!isCancelled && !isDelivered && (
+            <div className="px-5 pt-2 pb-4 flex items-start justify-between gap-3 shrink-0">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-[22px] font-black text-neutral-900 leading-tight tracking-tight">
+                  {getStatusHeadline()}
+                </h1>
+                {(order?.delivery_partner_name || order?.porter_rider_name) && (
+                  <p className="text-sm text-neutral-500 mt-0.5 font-medium">
+                    {order.delivery_partner_name || order.porter_rider_name} is on the way
+                  </p>
+                )}
+                {eta && !eta.isDelayed && (
+                  <p className="text-xs text-neutral-400 mt-1 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-neutral-400" />
+                    {eta.etaPillText}
+                    {eta.distKm ? ` · ${eta.distKm} km` : ''}
+                  </p>
+                )}
+                {eta?.isDelayed && (
+                  <p className="text-xs text-amber-600 mt-1 flex items-center gap-1.5 font-medium">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    Running a little behind schedule
+                  </p>
+                )}
+              </div>
+
+              {/* ETA badge — Swiggy-style green badge */}
+              {eta && !eta.isDelayed && (
+                <div className="shrink-0 w-16 h-16 rounded-2xl bg-emerald-600 flex flex-col items-center justify-center shadow-md">
+                  <span className="text-2xl font-black text-white leading-none">{eta.minsRemaining || '--'}</span>
+                  <span className="text-[9px] font-bold text-emerald-100 uppercase tracking-wider mt-0.5">mins</span>
+                </div>
+              )}
+              {eta?.isDelayed && (
+                <div className="shrink-0 w-16 h-16 rounded-2xl bg-amber-500 flex flex-col items-center justify-center shadow-md">
+                  <Clock className="w-6 h-6 text-white" />
+                  <span className="text-[9px] font-bold text-amber-100 uppercase tracking-wider mt-1">Late</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Delivered hero */}
+          {isDelivered && (
+            <div className="px-5 pt-3 pb-4 flex items-center gap-3 shrink-0">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-7 h-7 text-emerald-600" />
+              </div>
+              <div>
+                <h1 className="text-xl font-black text-neutral-900">Order Delivered</h1>
+                <p className="text-xs text-neutral-500 mt-0.5">Your feast has arrived. Enjoy!</p>
+              </div>
+            </div>
+          )}
+
+          {/* Cancelled hero */}
+          {isCancelled && (
+            <div className="px-5 pt-3 pb-4 flex items-center gap-3 shrink-0">
+              <div className="w-14 h-14 rounded-2xl bg-red-100 flex items-center justify-center shrink-0">
+                <AlertCircle className="w-7 h-7 text-red-500" />
+              </div>
+              <div>
+                <h1 className="text-xl font-black text-neutral-900">Order Cancelled</h1>
+                <p className="text-xs text-neutral-500 mt-0.5">
+                  {order?.cancellation_reason || 'This order has been cancelled.'}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ── Thin divider ── */}
+          <div className="h-px bg-neutral-100 mx-5 shrink-0" />
+
+          {/* ── Scrollable content ── */}
+          <div className="flex-1 overflow-y-auto no-scrollbar">
+
+            {/* Delay apology block */}
+            {eta?.isDelayed && !isCancelled && !isDelivered && (
+              <div className="mx-5 mt-4 p-4 rounded-2xl bg-amber-50 border border-amber-200">
+                <p className="text-xs font-semibold text-amber-900 leading-relaxed">
+                  We sincerely apologize for the delay. Your feast is being prepared with care and your rider is on the way.
+                </p>
+                <a
+                  href={`tel:${RESTAURANT_PHONE}`}
+                  className="mt-3 w-full py-2.5 rounded-xl bg-amber-700 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Phone className="w-3.5 h-3.5" />
+                  Contact Restaurant Support
+                </a>
+              </div>
+            )}
+
+            {/* Delivery partner card */}
+            {isDelivery && !isCancelled && (
+              <div className="px-5 mt-4">
+                {order?.porter_order_id ? (
+                  /* Porter partner */
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-2xl bg-orange-100 flex items-center justify-center">
+                        <Zap className="w-5 h-5 text-orange-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-neutral-900">
+                          {order.porter_rider_name || 'Porter Express Driver'}
+                        </p>
+                        <p className="text-[11px] text-neutral-500">{order.porter_rider_vehicle || 'Two-Wheeler Partner'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {order.porter_rider_phone && (
+                        <a href={`tel:${order.porter_rider_phone}`} className="w-10 h-10 rounded-full bg-neutral-900 flex items-center justify-center cursor-pointer active:scale-90 transition-all">
+                          <Phone className="w-4 h-4 text-white" />
+                        </a>
+                      )}
+                      {order.porter_tracking_url && (
+                        <a href={order.porter_tracking_url} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center cursor-pointer active:scale-90 transition-all">
+                          <ExternalLink className="w-4 h-4 text-white" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ) : order?.delivery_partner_name ? (
+                  /* In-house rider */
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-2xl bg-emerald-100 flex items-center justify-center font-black text-lg text-emerald-700">
+                        {order.delivery_partner_name[0].toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm font-black text-neutral-900">{order.delivery_partner_name}</p>
+                          <span className="text-[8px] bg-emerald-100 text-emerald-700 font-black px-1.5 py-0.5 rounded uppercase">Official</span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[10px] text-amber-500 font-bold flex items-center gap-0.5">
+                            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                            4.9
+                          </span>
+                          <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-0.5">
+                            <Shield className="w-3 h-3" /> Sanitized
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {order.delivery_partner_phone && (
+                        <>
+                          <a href={`tel:${order.delivery_partner_phone}`} className="w-10 h-10 rounded-full bg-neutral-900 flex items-center justify-center cursor-pointer active:scale-90 transition-all">
+                            <Phone className="w-4 h-4 text-white" />
+                          </a>
+                          <a
+                            href={`https://wa.me/91${order.delivery_partner_phone.replace(/\D/g, '')}?text=Hi!%20I%20am%20tracking%20my%20Persian%20Darbar%20order.`}
+                            target="_blank" rel="noreferrer"
+                            className="w-10 h-10 rounded-full bg-[#25D366] flex items-center justify-center cursor-pointer active:scale-90 transition-all"
+                          >
+                            <MessageCircle className="w-4 h-4 text-white fill-current" />
+                          </a>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  /* Allocating rider */
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-2xl bg-amber-100 flex items-center justify-center">
+                      <ChefHat className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-black text-neutral-900">Allocating Delivery Partner</p>
+                      <p className="text-[11px] text-neutral-500">Master chefs are preparing your feast</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Add delivery instructions row */}
+            {!isCancelled && !isDelivered && (
+              <div className="mx-5 mt-4 py-3 border-t border-b border-neutral-100 flex items-center gap-3 cursor-pointer">
+                <div className="w-8 h-8 rounded-full border border-neutral-300 flex items-center justify-center shrink-0">
+                  <span className="text-neutral-500 text-sm font-bold leading-none">+</span>
+                </div>
+                <p className="text-xs font-semibold text-neutral-600">Add delivery instructions</p>
+              </div>
+            )}
+
+            {/* Milestone progress bar — horizontal Swiggy-style */}
+            {!isCancelled && (
+              <div className="px-5 mt-5">
+                <div className="relative">
+                  {/* Track line */}
+                  <div className="absolute top-4 left-4 right-4 h-0.5 bg-neutral-100" />
+                  <div
+                    className="absolute top-4 left-4 h-0.5 bg-[#E40000] transition-all duration-700"
+                    style={{ width: `${Math.max(0, (milestoneIdx / (MILESTONES.length - 1)) * 100)}%`, right: 'auto' }}
+                  />
+                  {/* Steps */}
+                  <div className="relative flex justify-between">
+                    {MILESTONES.map((step, idx) => {
+                      const isDone = milestoneIdx > idx;
+                      const isCurrent = milestoneIdx === idx;
+                      const isFuture = milestoneIdx < idx;
+                      const StepIcon = step.icon;
+                      return (
+                        <div key={step.key} className="flex flex-col items-center gap-1.5" style={{ width: `${100 / MILESTONES.length}%` }}>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
+                            isCurrent ? 'bg-[#E40000] shadow-md shadow-red-200 scale-110'
+                            : isDone ? 'bg-emerald-500'
+                            : 'bg-neutral-100'
+                          }`}>
+                            {isDone ? (
+                              <CheckCircle2 className="w-4 h-4 text-white" />
+                            ) : (
+                              <StepIcon className={`w-3.5 h-3.5 ${isCurrent ? 'text-white' : 'text-neutral-400'}`} />
+                            )}
+                          </div>
+                          <p className={`text-[9px] font-bold text-center leading-tight ${isFuture ? 'text-neutral-300' : isCurrent ? 'text-[#E40000]' : 'text-neutral-600'}`}>
+                            {step.label}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Android status pill */}
+            {platform === 'android' && !isCancelled && !isDelivered && (
+              <div className="mx-5 mt-4 p-3.5 rounded-2xl bg-[#1F2937] flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-xl bg-[#E40000] flex items-center justify-center">
+                    <ChefHat className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-white">{getStatusHeadline()}</p>
+                    <p className="text-[11px] text-emerald-400">
+                      {eta && !eta.isDelayed ? `Arriving in ${eta.minsRemaining} mins` : 'Arriving soon'}
+                    </p>
+                  </div>
+                </div>
+                <div className="w-24 h-1.5 bg-neutral-700 rounded-full overflow-hidden">
+                  <div
+                    className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+                    style={{ width: `${Math.round(((milestoneIdx + 1) / 4) * 100)}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Order summary */}
+            {order && (
+              <div className="mx-5 mt-4 p-4 rounded-2xl bg-neutral-50 border border-neutral-100">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-wider text-neutral-400">Order Summary</p>
+                    <p className="text-xs font-mono font-bold text-neutral-700 mt-0.5">
+                      #{String(order.order_id || propOrderId).slice(-10)}
+                    </p>
+                  </div>
+                  <button onClick={copyOrderId} className="text-xs text-[#E40000] font-bold flex items-center gap-1 cursor-pointer">
+                    <Copy className="w-3 h-3" />
+                    {copied ? 'Copied!' : 'Copy ID'}
+                  </button>
+                </div>
+                <div className="space-y-1.5 text-xs text-neutral-700">
+                  {order.items?.map((it, idx) => (
+                    <div key={idx} className="flex justify-between items-center">
+                      <span className="font-medium">{it.quantity}x {it.name}</span>
+                      <span className="font-bold">&#8377;{it.price * it.quantity}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="pt-2.5 mt-2.5 border-t border-neutral-200 flex items-center justify-between">
+                  <span className="text-xs font-black text-neutral-900">Total Bill</span>
+                  <span className="text-sm font-black text-[#E40000]">&#8377;{order.total || order.subtotal || 0}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Delivered celebration */}
+            {(isDelivered || showDelivered) && !isCancelled && (
+              <div className="mx-5 mt-4">
+                <DeliveredScreen order={order} onGoHome={onGoHome || onClose} />
+              </div>
+            )}
+
+            {/* Call restaurant */}
+            <div className="px-5 mt-4">
+              <a
+                href={`tel:${RESTAURANT_PHONE}`}
+                className="w-full bg-white hover:bg-neutral-50 border border-neutral-200 text-neutral-700 py-3 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer"
+              >
+                <Phone className="w-4 h-4 text-neutral-500" />
+                Need Help? Call Persian Darbar
+              </a>
+            </div>
+
+            {/* Cancel link */}
+            {canCancel && (
+              <div className="px-5 py-4 text-center">
+                <button
+                  type="button"
+                  onClick={() => setShowCancelModal(true)}
+                  className="text-xs text-neutral-400 hover:text-red-600 font-semibold underline underline-offset-4 transition-colors cursor-pointer"
+                >
+                  Need to cancel order?
+                </button>
+              </div>
+            )}
+
+            <div className="h-6" />
+          </div>
+        </div>
       </div>
 
-      {/* ═══ Discreet Cancellation Confirmation Modal (Zomato/Swiggy style) ═══ */}
+      {/* ═══ Cancellation Modal ═══ */}
       {showCancelModal && (
         <div className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
           <div className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl flex flex-col gap-4 animate-in slide-in-from-bottom duration-300">
@@ -871,68 +783,36 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
                 <AlertCircle className="w-5 h-5 text-red-500" />
                 <h3 className="text-base font-black text-neutral-900">Cancel Order</h3>
               </div>
-              <button
-                onClick={() => setShowCancelModal(false)}
-                className="w-7 h-7 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-600 hover:bg-neutral-200 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
+              <button onClick={() => setShowCancelModal(false)} className="w-7 h-7 rounded-full bg-neutral-100 flex items-center justify-center cursor-pointer">
+                <X className="w-4 h-4 text-neutral-600" />
               </button>
             </div>
-
             <p className="text-xs text-neutral-600 leading-relaxed">
               Are you sure you want to cancel this order? Once cancelled, preparation will be halted immediately.
             </p>
-
             <div className="space-y-2">
-              <label className="text-[11px] font-extrabold text-neutral-500 uppercase tracking-wider">
-                Please select reason:
-              </label>
+              <label className="text-[11px] font-extrabold text-neutral-500 uppercase tracking-wider">Please select reason:</label>
               {CANCEL_REASONS.map((reason) => (
                 <label
                   key={reason}
                   onClick={() => setCancelReason(reason)}
                   className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-xs font-semibold cursor-pointer transition-all ${
-                    cancelReason === reason
-                      ? 'border-red-500 bg-red-50/60 text-red-900'
-                      : 'border-neutral-200 hover:bg-neutral-50 text-neutral-700'
+                    cancelReason === reason ? 'border-red-500 bg-red-50/60 text-red-900' : 'border-neutral-200 hover:bg-neutral-50 text-neutral-700'
                   }`}
                 >
-                  <input
-                    type="radio"
-                    name="cancelReason"
-                    checked={cancelReason === reason}
-                    onChange={() => setCancelReason(reason)}
-                    className="accent-red-600"
-                  />
+                  <input type="radio" name="cancelReason" checked={cancelReason === reason} onChange={() => setCancelReason(reason)} className="accent-red-600" />
                   <span>{reason}</span>
                 </label>
               ))}
-
               {cancelReason === 'Other reason' && (
-                <textarea
-                  rows={2}
-                  value={customReason}
-                  onChange={(e) => setCustomReason(e.target.value)}
-                  placeholder="Explain reason for cancellation..."
-                  className="w-full mt-2 p-2.5 rounded-xl border border-neutral-200 text-xs focus:outline-none focus:ring-1 focus:ring-red-500"
-                />
+                <textarea rows={2} value={customReason} onChange={(e) => setCustomReason(e.target.value)} placeholder="Explain reason for cancellation..." className="w-full mt-2 p-2.5 rounded-xl border border-neutral-200 text-xs focus:outline-none focus:ring-1 focus:ring-red-500" />
               )}
             </div>
-
             <div className="grid grid-cols-2 gap-2.5 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowCancelModal(false)}
-                className="py-3 px-4 rounded-xl border border-neutral-300 font-bold text-xs text-neutral-700 hover:bg-neutral-50 active:scale-95 transition-all cursor-pointer"
-              >
+              <button type="button" onClick={() => setShowCancelModal(false)} className="py-3 px-4 rounded-xl border border-neutral-300 font-bold text-xs text-neutral-700 hover:bg-neutral-50 active:scale-95 transition-all cursor-pointer">
                 Keep Order
               </button>
-              <button
-                type="button"
-                onClick={handleConfirmCancel}
-                disabled={cancelling}
-                className="py-3 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs shadow-md active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
-              >
+              <button type="button" onClick={handleConfirmCancel} disabled={cancelling} className="py-3 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs shadow-md active:scale-95 transition-all disabled:opacity-50 cursor-pointer">
                 {cancelling ? 'Cancelling...' : 'Confirm Cancel'}
               </button>
             </div>

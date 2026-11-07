@@ -172,7 +172,7 @@ const CustomerRewardsTab = ({
   };
 
   return (
-    <div className="flex-1 pb-32 pt-2 px-4 space-y-4">
+    <div className="flex-1 w-full max-w-full overflow-x-hidden pb-44 pt-2 px-4 space-y-4">
       {/* ── 1. APPLE WALLET STYLE SOVEREIGN VIP PASS ── */}
       <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#0B131B] via-[#141F2D] to-[#0A1017] border border-amber-400/35 shadow-[0_14px_44px_-10px_rgba(245,158,11,0.22)] p-6 text-white">
         {/* Subtle Gold Foil Radial Sheen & Crown Watermark */}
@@ -294,26 +294,27 @@ const CustomerRewardsTab = ({
       </section>
 
       {/* ── 3. SEGMENTED VIEWS: Perks | Vouchers | Passbook (Apple iOS Segmented Control) ── */}
-      <div className="bg-[#E5E5EA] p-1 rounded-2xl flex items-center justify-between gap-1 border border-black/[0.04]">
+      <div className="w-full bg-[#E5E5EA] p-1 rounded-2xl flex items-center gap-1 border border-black/[0.04]">
         {[
-          { id: 'perks', label: 'VIP Privileges', icon: Crown },
-          { id: 'vouchers', label: 'Redeem Vouchers', icon: Tag },
-          { id: 'passbook', label: 'Coins Passbook', icon: Clock }
+          { id: 'perks', label: 'Privileges', icon: Crown },
+          { id: 'vouchers', label: 'Vouchers', icon: Tag },
+          { id: 'passbook', label: 'Passbook', icon: Clock }
         ].map((tab) => {
           const isActive = activeTab === tab.id;
           const TabIcon = tab.icon;
           return (
             <button
               key={tab.id}
+              type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-2.5 px-1.5 rounded-xl text-[11px] sm:text-xs font-black transition-all ios-press flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer select-none ${
+              className={`flex-1 min-w-0 py-2.5 px-1 rounded-xl text-[11px] font-black transition-all ios-press flex items-center justify-center gap-1.5 cursor-pointer select-none ${
                 isActive
                   ? 'bg-white text-neutral-900 shadow-sm'
                   : 'text-neutral-500 hover:text-neutral-900'
               }`}
             >
               <TabIcon className="w-3.5 h-3.5 shrink-0" />
-              <span>{tab.label}</span>
+              <span className="truncate">{tab.label}</span>
             </button>
           );
         })}

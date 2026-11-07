@@ -54,7 +54,7 @@ const CustomerDiningTab = ({
 
 
   return (
-    <div className="flex-1 pb-32 pt-2 px-4 space-y-4">
+    <div className="flex-1 w-full max-w-full overflow-x-hidden pb-44 pt-2 px-4 space-y-4">
       {/* ── 1. SELECTED OUTLET HEADER (Apple Glassmorphism Card) ── */}
       <section className="bg-white/95 backdrop-blur-md rounded-3xl p-4 border border-black/[0.06] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.04)]">
         <div className="flex items-center justify-between mb-2.5">

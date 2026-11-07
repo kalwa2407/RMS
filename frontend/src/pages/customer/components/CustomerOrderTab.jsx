@@ -128,7 +128,7 @@ const CustomerOrderTab = ({
   });
 
   return (
-    <div className="flex-1 pb-28">
+    <div className="flex-1 w-full max-w-full overflow-x-hidden pb-44">
       {/* ── Top Offer Bar: Only shown when active offers exist ── */}
       {(() => {
         const activeOffers = (offers || []).filter(
@@ -150,13 +150,13 @@ const CustomerOrderTab = ({
                   onApplyCoupon && onApplyCoupon(couponCode);
                 }
               }}
-              className="flex items-center justify-between bg-white/95 hover:bg-white border border-amber-300/80 rounded-2xl px-3.5 py-2 shadow-xs cursor-pointer active:scale-98 transition-all"
+              className="flex items-center justify-between bg-white/95 hover:bg-white border border-amber-300/80 rounded-2xl px-3.5 py-2 shadow-xs cursor-pointer active:scale-98 transition-all overflow-hidden"
             >
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 min-w-0 flex-1 mr-2">
                 <span className="w-5 h-5 rounded-full bg-[#E40000] text-white flex items-center justify-center text-[10px] font-black shrink-0">
                   %
                 </span>
-                <span className="text-xs font-black text-neutral-900 truncate">
+                <span className="text-xs font-black text-neutral-900 truncate min-w-0">
                   {isApplied
                     ? `Coupon ${couponCode} Applied!`
                     : (currentOffer.title

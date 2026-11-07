@@ -1011,7 +1011,7 @@ const CustomerDashboard = () => {
       <CustomerAppSplash isReady={!offersLoading} minDurationMs={600} />
 
       {/* ── Main Responsive Shell Container (Mobile 430px, iPad/Tablet 4xl) ── */}
-      <div className="w-full max-w-[430px] md:max-w-4xl min-h-screen bg-[#F8F9FA] flex flex-col shadow-2xl md:shadow-xl relative pb-28 md:border-x md:border-black/[0.06]">
+      <div className="w-full max-w-[430px] md:max-w-4xl min-h-screen bg-[#F8F9FA] flex flex-col shadow-2xl md:shadow-xl relative overflow-x-hidden md:border-x md:border-black/[0.06]">
 
         {/* ── Heads-Up Floating Alert (Zomato-style dropdown with chime) ── */}
         <HeadsUpNotificationBanner
@@ -1058,7 +1058,7 @@ const CustomerDashboard = () => {
 
 
         {/* ── Scrollable Body with smooth tab fade transition ── */}
-        <main ref={mainScrollRef} key={activeTab} className="flex-1 overflow-y-auto no-scrollbar animate-in fade-in duration-300 ios-spring">
+        <main ref={mainScrollRef} key={activeTab} className="flex-1 overflow-y-auto overflow-x-hidden w-full max-w-full no-scrollbar animate-in fade-in duration-300 ios-spring">
 
           {/* Tab 1: Home (Royal Discovery & Showcase) */}
           {activeTab === 'home' && (
