@@ -107,7 +107,7 @@ function detectPlatform() {
     const cap = Capacitor.getPlatform();
     if (cap === 'ios') return 'ios';
     if (cap === 'android') return 'android';
-  } catch (e) {}
+  } catch (e) { }
   const ua = navigator.userAgent || '';
   if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
     return 'ios';
@@ -298,7 +298,7 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
         title: 'Track Persian Darbar Order',
         text: `Track my Persian Darbar order #${String(order?.order_id || propOrderId).slice(-6)} live!`,
         url,
-      }).catch(() => {});
+      }).catch(() => { });
     } else {
       navigator.clipboard?.writeText(url);
       setCopied(true);
@@ -682,11 +682,10 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
                       const StepIcon = step.icon;
                       return (
                         <div key={step.key} className="flex flex-col items-center gap-1.5" style={{ width: `${100 / MILESTONES.length}%` }}>
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
-                            isCurrent ? 'bg-[#E40000] shadow-md shadow-red-200 scale-110'
-                            : isDone ? 'bg-emerald-500'
-                            : 'bg-neutral-100'
-                          }`}>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${isCurrent ? 'bg-[#E40000] shadow-md shadow-red-200 scale-110'
+                              : isDone ? 'bg-emerald-500'
+                                : 'bg-neutral-100'
+                            }`}>
                             {isDone ? (
                               <CheckCircle2 className="w-4 h-4 text-white" />
                             ) : (
@@ -815,9 +814,8 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
                 <label
                   key={reason}
                   onClick={() => setCancelReason(reason)}
-                  className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-xs font-semibold cursor-pointer transition-all ${
-                    cancelReason === reason ? 'border-red-500 bg-red-50/60 text-red-900' : 'border-neutral-200 hover:bg-neutral-50 text-neutral-700'
-                  }`}
+                  className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-xs font-semibold cursor-pointer transition-all ${cancelReason === reason ? 'border-red-500 bg-red-50/60 text-red-900' : 'border-neutral-200 hover:bg-neutral-50 text-neutral-700'
+                    }`}
                 >
                   <input type="radio" name="cancelReason" checked={cancelReason === reason} onChange={() => setCancelReason(reason)} className="accent-red-600" />
                   <span>{reason}</span>
