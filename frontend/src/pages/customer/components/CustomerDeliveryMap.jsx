@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Minimize2, Maximize2, Navigation } from 'lucide-react';
+import { Navigation } from 'lucide-react';
 
 /**
  * CustomerDeliveryMap — Premium Swiggy/Zomato-style full-screen delivery map.
@@ -306,6 +306,18 @@ export const CustomerDeliveryMap = ({ order, eta, isExpanded, onToggleExpand }) 
     }
   }, [hasAssignedRider, riderPos.lat, riderPos.lng, riderName, hasLiveGps, mapsReady]);
 
+  // Recenter map bounds
+  const handleRecenter = () => {
+    const map = mapInstanceRef.current;
+    if (!map || !window.google?.maps) return;
+    const gm = window.google.maps;
+    const bounds = new gm.LatLngBounds();
+    bounds.extend(branchCoords);
+    bounds.extend(customerCoords);
+    if (hasAssignedRider) bounds.extend(riderPos);
+    map.fitBounds(bounds, { top: 80, bottom: 40, left: 40, right: 40 });
+  };
+
   // Resize on expand/collapse
   useEffect(() => {
     const map = mapInstanceRef.current;
@@ -317,15 +329,12 @@ export const CustomerDeliveryMap = ({ order, eta, isExpanded, onToggleExpand }) 
       bounds.extend(branchCoords);
       bounds.extend(customerCoords);
       if (hasAssignedRider) bounds.extend(riderPos);
-      map.fitBounds(bounds, { top: 60, bottom: 60, left: 40, right: 40 });
+      map.fitBounds(bounds, { top: 80, bottom: 40, left: 40, right: 40 });
     }, 300);
   }, [isExpanded, mapsReady]);
 
   return (
-    <div
-      className="relative overflow-hidden transition-all duration-500 ease-out"
-      style={{ height: isExpanded ? '72vh' : '56vw', maxHeight: isExpanded ? '520px' : '260px' }}
-    >
+    <div className="relative w-full h-full min-h-[280px] overflow-hidden">
       {/* Map Container */}
       <div ref={mapContainerRef} className="w-full h-full bg-[#F2EDE4]" />
 
@@ -344,44 +353,24 @@ export const CustomerDeliveryMap = ({ order, eta, isExpanded, onToggleExpand }) 
         </div>
       )}
 
-      {/* Top-left: GPS status pill */}
-      <div className="absolute top-3 left-3 z-10">
-        {hasLiveGps ? (
-          <div className="bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg flex items-center gap-2">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-            </span>
-            <span className="text-white text-[10px] font-bold tracking-wide">
-              Live GPS {riderName ? `· ${riderName.split(' ')[0]}` : ''}
-            </span>
-          </div>
-        ) : hasAssignedRider ? (
-          <div className="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-md flex items-center gap-2 border border-neutral-200/80">
-            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-            <span className="text-neutral-800 text-[10px] font-bold tracking-wide">
-              Rider Assigned{riderName ? ` · ${riderName.split(' ')[0]}` : ''}
-            </span>
-          </div>
-        ) : null}
-      </div>
-
-      {/* Top-right: expand/collapse button */}
-      <button
-        onClick={onToggleExpand}
-        className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-white/90 backdrop-blur-md text-neutral-700 shadow-md flex items-center justify-center transition-all active:scale-90 cursor-pointer border border-neutral-200/80"
-        title={isExpanded ? 'Collapse map' : 'Expand map'}
-      >
-        {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-      </button>
-
-      {/* Bottom-right: distance pill */}
+      {/* Bottom-left: Distance pill */}
       {eta && !eta.isDelayed && (
-        <div className="absolute bottom-3 right-3 z-10 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-md border border-neutral-200/80 flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#E84318]" />
-          <span className="text-[10px] font-bold text-neutral-800">{distKm} km away</span>
+        <div className="absolute bottom-4 left-4 z-20 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full shadow-md border border-neutral-200/80 flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-[#E84318]" />
+          <span className="text-[11px] font-bold text-neutral-800">{distKm} km from you</span>
         </div>
       )}
+
+      {/* Bottom-right: Swiggy/Zomato style target re-center button */}
+      <button
+        type="button"
+        onClick={handleRecenter}
+        className="absolute bottom-4 right-4 z-20 w-10 h-10 rounded-full bg-white shadow-lg border border-black/10 flex items-center justify-center text-neutral-800 active:scale-90 transition-transform cursor-pointer"
+        title="Re-center map"
+        aria-label="Re-center map"
+      >
+        <Navigation className="w-4 h-4 text-[#E40000] rotate-45" />
+      </button>
     </div>
   );
 };

@@ -5175,9 +5175,10 @@ customer_router = APIRouter(prefix="/api/customer", tags=["customer"])
 # { formatted_phone: { "otp": "123456", "expires_at": datetime, "attempts": 0, "last_sent_at": datetime } }
 CUSTOMER_ACTIVE_OTPS: Dict[str, Dict[str, Any]] = {}
 
-# In-memory set of permanently deleted customer UIDs and emails (prevents resurrection after deletion)
+# In-memory set of permanently deleted customer UIDs, emails, and phones (prevents resurrection after deletion)
 DELETED_CUSTOMER_UIDS: set = set()
 DELETED_CUSTOMER_EMAILS: set = set()
+DELETED_CUSTOMER_PHONES: set = set()
 
 @customer_router.post("/auth/send-otp")
 async def customer_send_otp(
@@ -5423,7 +5424,11 @@ async def get_customer_profile(
         clean_token_phone = clean_token_phone[2:]
 
     # Check if this uid/email/phone was permanently deleted (in-memory cache + Firestore fallback)
-    is_deleted = uid in DELETED_CUSTOMER_UIDS or email in DELETED_CUSTOMER_EMAILS
+    is_deleted = (
+        uid in DELETED_CUSTOMER_UIDS
+        or email in DELETED_CUSTOMER_EMAILS
+        or (clean_token_phone and clean_token_phone in DELETED_CUSTOMER_PHONES)
+    )
     if not is_deleted and hasattr(manager, "db") and manager.db:
         try:
             del_doc = manager.db.collection("deleted_customers").document(uid).get()
@@ -5431,11 +5436,15 @@ async def get_customer_profile(
                 DELETED_CUSTOMER_UIDS.add(uid)
                 if email:
                     DELETED_CUSTOMER_EMAILS.add(email)
+                if clean_token_phone:
+                    DELETED_CUSTOMER_PHONES.add(clean_token_phone)
                 is_deleted = True
             elif email:
                 for doc in manager.db.collection("deleted_customers").where("email", "==", email).limit(1).stream():
                     DELETED_CUSTOMER_UIDS.add(uid)
                     DELETED_CUSTOMER_EMAILS.add(email)
+                    if clean_token_phone:
+                        DELETED_CUSTOMER_PHONES.add(clean_token_phone)
                     is_deleted = True
                     break
             # Also check by phone — covers phone-based re-login with new UID after deletion
@@ -5443,6 +5452,7 @@ async def get_customer_profile(
                 phone_del_doc = manager.db.collection("deleted_customers").document(clean_token_phone).get()
                 if phone_del_doc.exists:
                     DELETED_CUSTOMER_UIDS.add(uid)
+                    DELETED_CUSTOMER_PHONES.add(clean_token_phone)
                     is_deleted = True
         except Exception:
             pass
@@ -5609,6 +5619,10 @@ async def delete_customer_account(
                 DELETED_CUSTOMER_UIDS.add(str(c["uid"]))
             if c_email:
                 DELETED_CUSTOMER_EMAILS.add(c_email)
+            if c_phone:
+                DELETED_CUSTOMER_PHONES.add(c_phone)
+                if len(c_phone) >= 10:
+                    DELETED_CUSTOMER_PHONES.add(c_phone[-10:])
         else:
             remaining_customers.append(c)
 
@@ -5617,6 +5631,10 @@ async def delete_customer_account(
         DELETED_CUSTOMER_UIDS.add(str(uid))
     if email:
         DELETED_CUSTOMER_EMAILS.add(email)
+    if clean_phone:
+        DELETED_CUSTOMER_PHONES.add(clean_phone)
+        if len(clean_phone) >= 10:
+            DELETED_CUSTOMER_PHONES.add(clean_phone[-10:])
 
     await manager._write("customers", remaining_customers)
 
@@ -5628,7 +5646,7 @@ async def delete_customer_account(
             del_doc_data = {
                 "uid": uid or "",
                 "email": email or "",
-                "phone": phone or "",
+                "phone": clean_phone or raw_phone or "",
                 "deleted_at": now_del
             }
             if uid:

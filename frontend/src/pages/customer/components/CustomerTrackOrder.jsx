@@ -441,32 +441,51 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
 
         {/* ═══ BOTTOM SHEET (Swiggy-style slide-up panel) ═══ */}
         <div
-          className="relative bg-white z-20 flex flex-col"
+          className="relative bg-white z-20 flex flex-col transition-all duration-300 ease-in-out"
           style={{
             borderRadius: '24px 24px 0 0',
-            marginTop: isMapExpanded ? '-32px' : '-24px',
-            boxShadow: '0 -4px 32px rgba(0,0,0,0.12)',
+            marginTop: '-24px',
+            boxShadow: '0 -6px 28px rgba(0,0,0,0.12)',
             paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-            maxHeight: isMapExpanded ? '44vh' : '52vh',
-            overflowY: 'auto',
+            maxHeight: isMapExpanded ? '150px' : '52vh',
+            minHeight: isMapExpanded ? '140px' : '280px',
+            overflowY: isMapExpanded ? 'hidden' : 'auto',
           }}
         >
-          {/* Drag handle */}
-          <div className="flex justify-center pt-3 pb-1 shrink-0">
-            <div className="w-9 h-1 rounded-full bg-neutral-200" />
-          </div>
+          {/* Interactive Drag handle / Map toggle */}
+          <button
+            type="button"
+            onClick={() => setIsMapExpanded(prev => !prev)}
+            className="w-full flex flex-col items-center justify-center pt-2.5 pb-1 shrink-0 cursor-pointer group"
+            aria-label={isMapExpanded ? 'Show order details' : 'Expand map view'}
+          >
+            <div className="w-10 h-1 rounded-full bg-neutral-300 group-hover:bg-neutral-400 transition-colors" />
+            <span className="text-[10px] font-semibold text-neutral-400 mt-1 flex items-center gap-1">
+              {isMapExpanded ? (
+                <><span>Show Order Details</span><ChevronUp className="w-3 h-3" /></>
+              ) : (
+                <><span>Tap for Full Map</span><ChevronDown className="w-3 h-3" /></>
+              )}
+            </span>
+          </button>
 
           {/* ── Delivery status hero row ── */}
           {!isCancelled && !isDelivered && (
-            <div className="px-5 pt-2 pb-4 flex items-start justify-between gap-3 shrink-0">
+            <div className="px-5 pt-1 pb-3 flex items-start justify-between gap-3 shrink-0">
               <div className="flex-1 min-w-0">
-                <h1 className="text-[22px] font-black text-neutral-900 leading-tight tracking-tight">
+                <h1 className="text-[20px] font-black text-neutral-900 leading-tight tracking-tight">
                   {getStatusHeadline()}
                 </h1>
-                {(order?.delivery_partner_name || order?.porter_rider_name) && (
-                  <p className="text-sm text-neutral-500 mt-0.5 font-medium">
-                    {order.delivery_partner_name || order.porter_rider_name} is on the way
+                {(order?.delivery_partner_name || order?.porter_rider_name) ? (
+                  <p className="text-xs text-neutral-600 mt-0.5 font-medium flex items-center gap-1.5 flex-wrap">
+                    <span>{order.delivery_partner_name || order.porter_rider_name} is on the way</span>
+                    <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping inline-block" />
+                      Live GPS
+                    </span>
                   </p>
+                ) : (
+                  <p className="text-xs text-neutral-500 mt-0.5">Kitchen preparing your feast</p>
                 )}
                 {eta && !eta.isDelayed && (
                   <p className="text-xs text-neutral-400 mt-1 flex items-center gap-1.5">
