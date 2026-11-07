@@ -1172,12 +1172,18 @@ const CustomerDashboard = () => {
                 navigate('/customer/login', { replace: true });
               }}
               onDeleteAccount={async () => {
-                // 1. Immediately nuke ALL cached state so re-login sees nothing
-                try { localStorage.clear(); } catch (e) { }
-                try { sessionStorage.clear(); } catch (e) { }
-                // 2. Fire actual deletion — await it so Firebase tombstone is written BEFORE user can re-login
-                try { await deleteCustomerAccount(); } catch (e) { /* best-effort */ }
-                // 3. Navigate only after deletion is done (or timed out)
+                // Await server-side purge and credential revocation
+                try {
+                  await deleteCustomerAccount({
+                    uid: currentUser?.uid || customerProfile?.uid,
+                    phone: customerProfile?.phone || currentUser?.phone,
+                    email: currentUser?.email || customerProfile?.email,
+                    token: idToken
+                  });
+                } catch (e) {
+                  console.warn('Delete account error:', e);
+                }
+                // Navigate only after backend deletion is done
                 navigate('/customer/login', { replace: true });
                 toast({
                   title: 'Account Deleted',
@@ -1343,13 +1349,19 @@ const CustomerDashboard = () => {
             navigate('/customer/login', { replace: true });
           }}
           onDeleteAccount={async () => {
-            // 1. Immediately nuke ALL cached state so re-login sees nothing
-            try { localStorage.clear(); } catch (e) { }
-            try { sessionStorage.clear(); } catch (e) { }
             setIsProfileOpen(false);
-            // 2. Fire actual deletion — await it so Firebase tombstone is written BEFORE user can re-login
-            try { await deleteCustomerAccount(); } catch (e) { /* best-effort */ }
-            // 3. Navigate only after deletion is done (or timed out)
+            // Await server-side purge and credential revocation
+            try {
+              await deleteCustomerAccount({
+                uid: currentUser?.uid || customerProfile?.uid,
+                phone: customerProfile?.phone || currentUser?.phone,
+                email: currentUser?.email || customerProfile?.email,
+                token: idToken
+              });
+            } catch (e) {
+              console.warn('Delete account error:', e);
+            }
+            // Navigate only after backend deletion is done
             navigate('/customer/login', { replace: true });
             toast({
               title: 'Account Deleted',

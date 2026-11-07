@@ -838,28 +838,23 @@ export const CustomerAuthProvider = ({ children }) => {
 
   // ── Delete Customer Account (App Store Guideline 5.1.1(v) Compliance) ──
   // This ACTUALLY deletes the Firebase Auth user account + backend data permanently.
-  const deleteCustomerAccount = async () => {
+  const deleteCustomerAccount = async (overrideData = {}) => {
+    // 1. Capture ALL credentials FIRST before touching any state or storage
     const firebaseUser = auth.currentUser;
-    const uid = firebaseUser?.uid || currentUser?.uid || localStorage.getItem('customer_uid') || '';
-    const email = firebaseUser?.email || currentUser?.email || localStorage.getItem('customer_email') || '';
-    const phone = customerProfile?.phone || localStorage.getItem('customer_phone') || '';
-
-    // ── IMMEDIATE cache nuke: clear React state + ALL localStorage BEFORE any async op ──
-    // This ensures that even if network is slow, re-login won't see stale cached data
-    setCurrentUser(null);
-    setIdToken(null);
-    setCustomerProfile(null);
-    try { localStorage.clear(); } catch (e) { }
-    try { sessionStorage.clear(); } catch (e) { }
+    const uid = overrideData.uid || firebaseUser?.uid || currentUser?.uid || localStorage.getItem('customer_uid') || '';
+    const email = (overrideData.email || firebaseUser?.email || currentUser?.email || localStorage.getItem('customer_email') || '').toLowerCase().trim();
+    let rawPhone = overrideData.phone || customerProfile?.phone || currentUser?.phone || localStorage.getItem('customer_phone') || '';
+    let phone = rawPhone ? String(rawPhone).replace(/\D/g, '') : '';
+    if (phone.startsWith('91') && phone.length === 12) phone = phone.slice(2);
+    const activeToken = overrideData.token || idToken || localStorage.getItem('customer_jwt') || '';
 
     try {
-      // 1. Delete backend database record (by UID, Email, and Phone)
-      let activeToken = idToken || localStorage.getItem('customer_jwt');
+      // 2. Delete backend database record (by UID, Email, and Phone)
       const deleteUrl = `${API_BASE}/api/customer/account?uid=${encodeURIComponent(uid)}&email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`;
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
       try {
-        await fetch(deleteUrl, {
+        const res = await fetch(deleteUrl, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
@@ -868,35 +863,34 @@ export const CustomerAuthProvider = ({ children }) => {
           body: JSON.stringify({ uid, email, phone }),
           signal: controller.signal
         });
+        if (!res.ok) {
+          console.warn('Account deletion server response status:', res.status);
+        }
       } catch (err) {
         console.warn('Account deletion network notice:', err);
       } finally {
         clearTimeout(timeoutId);
       }
 
-      // 2. Delete the Firebase Auth account
+      // 3. Delete Firebase Auth account if linked
       if (firebaseUser) {
         try {
           try { await firebaseUser.getIdToken(true); } catch (e) { }
-          // Strict 5s timeout — iOS deleteUser can hang indefinitely
           await Promise.race([
             deleteUser(firebaseUser),
             new Promise((_, reject) => setTimeout(() => reject(new Error('deleteUser timeout')), 5000))
           ]);
         } catch (deleteErr) {
           const code = deleteErr?.code || '';
-          if (code !== 'auth/requires-recent-login') {
-            // Also try native Firebase plugin delete on mobile
-            if (Capacitor.isNativePlatform()) {
-              try {
-                const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
-                await Promise.race([
-                  FirebaseAuthentication.deleteUser(),
-                  new Promise((_, reject) => setTimeout(() => reject(new Error('native deleteUser timeout')), 4000))
-                ]);
-              } catch (nativeDelErr) {
-                // ignore — backend already deleted the record
-              }
+          if (code !== 'auth/requires-recent-login' && Capacitor.isNativePlatform()) {
+            try {
+              const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
+              await Promise.race([
+                FirebaseAuthentication.deleteUser(),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('native deleteUser timeout')), 4000))
+              ]);
+            } catch (nativeDelErr) {
+              // ignore — backend already purged the record
             }
           }
         }
@@ -904,7 +898,12 @@ export const CustomerAuthProvider = ({ children }) => {
     } catch (e) {
       console.warn('Account deletion exception:', e);
     } finally {
-      // 3. Purge ALL client-side authentication, stored profiles, addresses, and session data
+      // 4. NOW, and only now, permanently purge ALL client state, caches and storage
+      setCurrentUser(null);
+      setIdToken(null);
+      setCustomerProfile(null);
+      try { localStorage.clear(); } catch (e) { }
+      try { sessionStorage.clear(); } catch (e) { }
       await signOutCustomer();
     }
     return { success: true };

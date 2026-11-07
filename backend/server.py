@@ -1,4 +1,5 @@
 from fastapi import FastAPI, APIRouter, Depends, HTTPException, status, UploadFile, File, Response, Request, Body, Query
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from datetime import datetime, timezone, timedelta
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
@@ -5340,17 +5341,41 @@ async def customer_verify_otp(
     # Normalize standard 10-digit phone for storage
     standard_10_phone = formatted[2:] if (len(formatted) == 12 and formatted.startswith("91")) else formatted
 
+    # Check if this phone/uid was previously deleted — if so, clear tombstone and create a 100% fresh profile
+    was_deleted = False
+    if standard_10_phone in DELETED_CUSTOMER_PHONES or f"wa_{standard_10_phone}" in DELETED_CUSTOMER_UIDS:
+        was_deleted = True
+    elif hasattr(manager, "db") and manager.db:
+        try:
+            del_doc = manager.db.collection("deleted_customers").document(standard_10_phone).get()
+            if del_doc.exists:
+                was_deleted = True
+        except Exception:
+            pass
+
+    if was_deleted:
+        # User is signing back up after account deletion: unblock them & give a completely fresh account
+        DELETED_CUSTOMER_PHONES.discard(standard_10_phone)
+        DELETED_CUSTOMER_UIDS.discard(f"wa_{standard_10_phone}")
+        if hasattr(manager, "db") and manager.db:
+            try:
+                manager.db.collection("deleted_customers").document(standard_10_phone).delete()
+                manager.db.collection("deleted_customers").document(f"wa_{standard_10_phone}").delete()
+            except Exception:
+                pass
+
     # Find or create customer
     customers = await manager._read("customers")
     matched_idx = None
-    for i, c in enumerate(customers):
-        c_phone = "".join(ch for ch in str(c.get("phone", "")) if ch.isdigit())
-        if c_phone and (c_phone == standard_10_phone or c_phone == formatted or c_phone.endswith(standard_10_phone)):
-            matched_idx = i
-            break
-        elif c.get("uid") == f"wa_{standard_10_phone}":
-            matched_idx = i
-            break
+    if not was_deleted:
+        for i, c in enumerate(customers):
+            c_phone = "".join(ch for ch in str(c.get("phone", "")) if ch.isdigit())
+            if c_phone and (c_phone == standard_10_phone or c_phone == formatted or c_phone.endswith(standard_10_phone)):
+                matched_idx = i
+                break
+            elif c.get("uid") == f"wa_{standard_10_phone}":
+                matched_idx = i
+                break
 
     now_ist = get_ist_now().isoformat()
     if matched_idx is not None:

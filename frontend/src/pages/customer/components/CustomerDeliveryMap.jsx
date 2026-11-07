@@ -79,37 +79,50 @@ function animateMarkerTo(marker, newPos, durationMs = 900) {
   requestAnimationFrame(tick);
 }
 
-// Premium restaurant marker SVG — white pill card, left red accent bar
+// Sleek teardrop restaurant marker SVG (No bulky cards)
 const makeRestaurantIcon = () => ({
   url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-    <svg xmlns="http://www.w3.org/2000/svg" width="130" height="44" viewBox="0 0 130 44">
-      <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#00000028"/>
-      </filter>
-      <rect x="2" y="2" width="126" height="40" rx="10" fill="white" filter="url(#shadow)"/>
-      <rect x="2" y="2" width="5" height="40" rx="3" fill="#E40000"/>
-      <text x="18" y="16" font-family="'SF Pro Display',-apple-system,BlinkMacSystemFont,sans-serif" font-size="11" font-weight="700" fill="#111827">Persian Darbar</text>
-      <text x="18" y="30" font-family="'SF Pro Display',-apple-system,BlinkMacSystemFont,sans-serif" font-size="9" font-weight="500" fill="#6B7280">Restaurant</text>
-      <circle cx="110" cy="22" r="10" fill="#FEE2E2"/>
-      <path d="M110 16a2.5 2.5 0 0 1 0 5 2.5 2.5 0 0 1 0-5zm0 7c-2.67 0-8 1.34-8 4v1h16v-1c0-2.66-5.33-4-8-4z" fill="#E40000" transform="scale(0.7) translate(72,8)"/>
+    <svg xmlns="http://www.w3.org/2000/svg" width="80" height="66" viewBox="0 0 80 66">
+      <defs>
+        <filter id="shadow-r" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="2.5" stdDeviation="2.5" flood-color="#00000035"/>
+        </filter>
+      </defs>
+      <!-- Teardrop Pin Body -->
+      <path d="M40 2 C28 2 18 12 18 24 C18 37 37 49 40 51 C43 49 62 37 62 24 C62 12 52 2 40 2 Z" fill="#E40000" filter="url(#shadow-r)"/>
+      <!-- Inner white disc -->
+      <circle cx="40" cy="23" r="12" fill="white"/>
+      <!-- Cutlery icon -->
+      <path d="M36 17 v5 a2 2 0 0 0 2 2 v5 h1.5 v-5 a2 2 0 0 0 2 -2 v-5 h-1 v3 h-1 v-3 h-1 v3 h-1 v-3 z M43 17 c0 2.5 -0.8 4 -0.8 6 v6 h1.5 v-6 c0 -2 1 -3.5 1 -6 z" fill="#E40000"/>
+      <!-- Compact text label underneath -->
+      <rect x="5" y="52" width="70" height="13" rx="6.5" fill="#111827" opacity="0.95"/>
+      <text x="40" y="61.5" font-family="'SF Pro Display',-apple-system,BlinkMacSystemFont,sans-serif" font-size="7.5" font-weight="700" fill="white" text-anchor="middle">Persian Darbar</text>
     </svg>`),
-  scaledSize: { width: 130, height: 44 },
-  anchor: { x: 10, y: 44 },
+  scaledSize: { width: 80, height: 66 },
+  anchor: { x: 40, y: 51 },
 });
 
-// Premium home marker SVG — dark charcoal pill
+// Sleek teardrop home marker SVG (No bulky cards)
 const makeHomeIcon = () => ({
   url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-    <svg xmlns="http://www.w3.org/2000/svg" width="90" height="40" viewBox="0 0 90 40">
-      <filter id="shadow2" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#00000040"/>
-      </filter>
-      <rect x="2" y="2" width="86" height="36" rx="10" fill="#111827" filter="url(#shadow2)"/>
-      <text x="45" y="15" font-family="'SF Pro Display',-apple-system,BlinkMacSystemFont,sans-serif" font-size="9" font-weight="600" fill="#9CA3AF" text-anchor="middle">YOUR LOCATION</text>
-      <text x="45" y="29" font-family="'SF Pro Display',-apple-system,BlinkMacSystemFont,sans-serif" font-size="11" font-weight="700" fill="white" text-anchor="middle">Home</text>
+    <svg xmlns="http://www.w3.org/2000/svg" width="60" height="64" viewBox="0 0 60 64">
+      <defs>
+        <filter id="shadow-h" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="2.5" stdDeviation="2.5" flood-color="#00000040"/>
+        </filter>
+      </defs>
+      <!-- Teardrop Pin Body -->
+      <path d="M30 2 C19 2 10 11 10 22 C10 34 27 45 30 47 C33 45 50 34 50 22 C50 11 41 2 30 2 Z" fill="#111827" filter="url(#shadow-h)"/>
+      <!-- Inner white disc -->
+      <circle cx="30" cy="21" r="11" fill="white"/>
+      <!-- House icon -->
+      <path d="M30 14 L22 20.5 v7.5 a1 1 0 0 0 1 1 h4 v-5 h6 v5 h4 a1 1 0 0 0 1 -1 v-7.5 Z" fill="#111827"/>
+      <!-- Compact text label underneath -->
+      <rect x="12" y="48" width="36" height="13" rx="6.5" fill="#111827" opacity="0.95"/>
+      <text x="30" y="57.5" font-family="'SF Pro Display',-apple-system,BlinkMacSystemFont,sans-serif" font-size="7.5" font-weight="700" fill="white" text-anchor="middle">Home</text>
     </svg>`),
-  scaledSize: { width: 90, height: 40 },
-  anchor: { x: 45, y: 40 },
+  scaledSize: { width: 60, height: 64 },
+  anchor: { x: 30, y: 47 },
 });
 
 // Rider marker SVG — white circle with pulsing ring, name label
@@ -152,6 +165,7 @@ export const CustomerDeliveryMap = ({ order, eta, isExpanded, onToggleExpand }) 
   const customerMarkerRef = useRef(null);
   const routePolylineRef = useRef(null);
   const travelledPolylineRef = useRef(null);
+  const cachedRoadPathRef = useRef([]);
   const [mapsError, setMapsError] = useState(false);
   const [mapsReady, setMapsReady] = useState(!!window.google?.maps?.Map);
   const prevRiderPosRef = useRef(null);
@@ -196,7 +210,7 @@ export const CustomerDeliveryMap = ({ order, eta, isExpanded, onToggleExpand }) 
       .catch(() => setMapsError(true));
   }, []);
 
-  // Initialize map
+  // Initialize map & fetch real driving road route via DirectionsService
   useEffect(() => {
     if (!mapsReady || !mapContainerRef.current) return;
     const gm = window.google.maps;
@@ -208,9 +222,11 @@ export const CustomerDeliveryMap = ({ order, eta, isExpanded, onToggleExpand }) 
       riderMarkerRef.current = null;
       routePolylineRef.current = null;
       travelledPolylineRef.current = null;
+      cachedRoadPathRef.current = [];
     }
 
     try {
+      // greedy gestureHandling enables 1-finger smooth scrolling & panning
       const map = new gm.Map(mapContainerRef.current, {
         center: branchCoords,
         zoom: 13,
@@ -220,38 +236,40 @@ export const CustomerDeliveryMap = ({ order, eta, isExpanded, onToggleExpand }) 
         streetViewControl: false,
         fullscreenControl: false,
         clickableIcons: false,
-        gestureHandling: 'cooperative',
+        gestureHandling: 'greedy',
         styles: PREMIUM_MAP_STYLES,
       });
       mapInstanceRef.current = map;
 
-      // Restaurant marker
+      // Sleek restaurant teardrop pin
       restaurantMarkerRef.current = new gm.Marker({
         position: branchCoords,
         map,
         icon: makeRestaurantIcon(),
-        zIndex: 10,
+        zIndex: 15,
+        title: 'Persian Darbar',
       });
 
-      // Customer/home marker
+      // Sleek customer/home teardrop pin
       customerMarkerRef.current = new gm.Marker({
         position: customerCoords,
         map,
         icon: makeHomeIcon(),
-        zIndex: 10,
+        zIndex: 15,
+        title: 'Delivery Address',
       });
 
-      // Full route — light grey background line (Swiggy style shows full path in grey)
+      // Full road route — light grey background path along actual city streets
       routePolylineRef.current = new gm.Polyline({
         path: [branchCoords, customerCoords],
         geodesic: true,
         strokeColor: '#D1C4A8',
-        strokeOpacity: 0.7,
+        strokeOpacity: 0.75,
         strokeWeight: 4,
         map,
       });
 
-      // "Travelled" portion — orange/red solid line from restaurant toward rider
+      // "Travelled" portion — solid vibrant delivery orange/red line
       travelledPolylineRef.current = new gm.Polyline({
         path: [branchCoords, riderPos],
         geodesic: true,
@@ -261,42 +279,94 @@ export const CustomerDeliveryMap = ({ order, eta, isExpanded, onToggleExpand }) 
         map,
       });
 
-      // Fit all 3 points
+      // Fetch true driving directions along Pune streets (Zomato/Swiggy style)
+      try {
+        const directionsService = new gm.DirectionsService();
+        directionsService.route(
+          {
+            origin: branchCoords,
+            destination: customerCoords,
+            travelMode: gm.TravelMode.DRIVING,
+          },
+          (result, status) => {
+            if (status === gm.DirectionsStatus.OK && result?.routes?.[0]?.overview_path) {
+              const roadPath = result.routes[0].overview_path;
+              cachedRoadPathRef.current = roadPath;
+              routePolylineRef.current?.setPath(roadPath);
+
+              // Calculate travelled segment on the real road
+              const targetIndex = Math.min(
+                roadPath.length - 1,
+                Math.max(1, Math.floor(roadPath.length * progress))
+              );
+              const travelled = roadPath.slice(0, targetIndex + 1);
+              travelledPolylineRef.current?.setPath(travelled);
+
+              // Snap rider marker position directly onto the street
+              if (hasAssignedRider && riderMarkerRef.current) {
+                const snapped = hasLiveGps ? riderPos : roadPath[targetIndex];
+                riderMarkerRef.current.setPosition(snapped);
+              }
+
+              // Fit bounds to the road route
+              const bounds = new gm.LatLngBounds();
+              roadPath.forEach(pt => bounds.extend(pt));
+              map.fitBounds(bounds, { top: 80, bottom: 40, left: 40, right: 40 });
+            }
+          }
+        );
+      } catch (dirErr) {
+        console.warn('DirectionsService route warning:', dirErr);
+      }
+
+      // Initial bounds fit
       const bounds = new gm.LatLngBounds();
       bounds.extend(branchCoords);
       bounds.extend(customerCoords);
-      map.fitBounds(bounds, { top: 60, bottom: 60, left: 40, right: 40 });
+      map.fitBounds(bounds, { top: 80, bottom: 40, left: 40, right: 40 });
     } catch (err) {
       console.error('Map init error:', err);
     }
   }, [mapsReady, branchCoords.lat, branchCoords.lng, customerCoords.lat, customerCoords.lng]);
 
-  // Update rider marker + travelled line on GPS change
+  // Update rider marker + travelled line on GPS / progress change
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !mapsReady) return;
     const gm = window.google.maps;
 
+    // Determine best position along actual road route if GPS not available
+    let effectivePos = riderPos;
+    if (!hasLiveGps && cachedRoadPathRef.current.length > 0) {
+      const roadPath = cachedRoadPathRef.current;
+      const targetIndex = Math.min(
+        roadPath.length - 1,
+        Math.max(1, Math.floor(roadPath.length * progress))
+      );
+      effectivePos = roadPath[targetIndex];
+
+      // Update travelled polyline along the road
+      if (travelledPolylineRef.current) {
+        travelledPolylineRef.current.setPath(roadPath.slice(0, targetIndex + 1));
+      }
+    } else if (travelledPolylineRef.current) {
+      travelledPolylineRef.current.setPath([branchCoords, riderPos]);
+    }
+
     if (hasAssignedRider) {
       if (!riderMarkerRef.current) {
         riderMarkerRef.current = new gm.Marker({
-          position: riderPos,
+          position: effectivePos,
           map,
           icon: makeRiderIcon(hasLiveGps, riderName),
-          zIndex: 20,
+          zIndex: 25,
           title: riderName || 'Delivery Rider',
         });
-        prevRiderPosRef.current = riderPos;
+        prevRiderPosRef.current = effectivePos;
       } else {
-        // Smooth animated transition for rider
-        animateMarkerTo(riderMarkerRef.current, riderPos, 1000);
+        animateMarkerTo(riderMarkerRef.current, effectivePos, 1000);
         riderMarkerRef.current.setIcon(makeRiderIcon(hasLiveGps, riderName));
-        prevRiderPosRef.current = riderPos;
-      }
-
-      // Update travelled line (orange segment from restaurant to current rider pos)
-      if (travelledPolylineRef.current) {
-        travelledPolylineRef.current.setPath([branchCoords, riderPos]);
+        prevRiderPosRef.current = effectivePos;
       }
     } else {
       if (riderMarkerRef.current) {
@@ -304,7 +374,7 @@ export const CustomerDeliveryMap = ({ order, eta, isExpanded, onToggleExpand }) 
         riderMarkerRef.current = null;
       }
     }
-  }, [hasAssignedRider, riderPos.lat, riderPos.lng, riderName, hasLiveGps, mapsReady]);
+  }, [hasAssignedRider, riderPos.lat, riderPos.lng, riderName, hasLiveGps, mapsReady, progress]);
 
   // Recenter map bounds
   const handleRecenter = () => {
@@ -312,8 +382,12 @@ export const CustomerDeliveryMap = ({ order, eta, isExpanded, onToggleExpand }) 
     if (!map || !window.google?.maps) return;
     const gm = window.google.maps;
     const bounds = new gm.LatLngBounds();
-    bounds.extend(branchCoords);
-    bounds.extend(customerCoords);
+    if (cachedRoadPathRef.current && cachedRoadPathRef.current.length > 0) {
+      cachedRoadPathRef.current.forEach(pt => bounds.extend(pt));
+    } else {
+      bounds.extend(branchCoords);
+      bounds.extend(customerCoords);
+    }
     if (hasAssignedRider) bounds.extend(riderPos);
     map.fitBounds(bounds, { top: 80, bottom: 40, left: 40, right: 40 });
   };
@@ -326,15 +400,22 @@ export const CustomerDeliveryMap = ({ order, eta, isExpanded, onToggleExpand }) 
     setTimeout(() => {
       gm.event.trigger(map, 'resize');
       const bounds = new gm.LatLngBounds();
-      bounds.extend(branchCoords);
-      bounds.extend(customerCoords);
+      if (cachedRoadPathRef.current && cachedRoadPathRef.current.length > 0) {
+        cachedRoadPathRef.current.forEach(pt => bounds.extend(pt));
+      } else {
+        bounds.extend(branchCoords);
+        bounds.extend(customerCoords);
+      }
       if (hasAssignedRider) bounds.extend(riderPos);
       map.fitBounds(bounds, { top: 80, bottom: 40, left: 40, right: 40 });
     }, 300);
   }, [isExpanded, mapsReady]);
 
   return (
-    <div className="relative w-full h-full min-h-[280px] overflow-hidden">
+    <div
+      className="relative w-full h-full min-h-[280px] overflow-hidden select-none"
+      style={{ touchAction: 'pan-x pan-y' }}
+    >
       {/* Map Container */}
       <div ref={mapContainerRef} className="w-full h-full bg-[#F2EDE4]" />
 
