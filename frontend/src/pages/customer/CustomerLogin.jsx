@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { useCustomerAuth } from '../../context/CustomerAuthContext';
+import { useCustomerAuth, mapAppleSignInError } from '../../context/CustomerAuthContext';
 import API_BASE from '../../lib/config';
 import { Capacitor } from '@capacitor/core';
 import {
@@ -215,7 +215,8 @@ const CustomerLogin = () => {
         setSigningInApple(false);
       }
     } catch (err) {
-      setError(err?.message || 'Apple sign-in could not be completed.');
+      const mapped = mapAppleSignInError(err);
+      if (!mapped.cancelled) setError(mapped.message);
       setSigningInApple(false);
     }
   };

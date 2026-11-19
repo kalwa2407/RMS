@@ -27,6 +27,41 @@ try {
 
 const CustomerAuthContext = createContext(null);
 
+// ── Sign in with Apple error mapping ──
+// The native plugin forwards ASAuthorizationError with no `code` and a raw localizedDescription such as
+// "The operation couldn't be completed. (com.apple.AuthenticationServices.AuthorizationError error 1001.)".
+// Showing that text verbatim was the App Review 2.1(a) "error" — map it to a user-facing result instead.
+const APPLE_GENERIC_ERROR =
+  "Sign in with Apple couldn't be completed. Please make sure you're signed in to your Apple Account in Settings and try again, or continue with Google or your mobile number.";
+
+const FIREBASE_APPLE_ERRORS = {
+  'auth/network-request-failed': 'No internet connection. Please check your network and try again.',
+  'auth/too-many-requests': 'Too many attempts. Please wait a moment and try again.',
+  'auth/user-disabled': 'This account has been disabled. Please contact Persian Darbar support.',
+  'auth/account-exists-with-different-credential':
+    'An account already exists with this email. Please sign in with Google or your mobile number.',
+};
+
+// Returns { cancelled: boolean, message: string|null, appleCode: number|null }
+export const mapAppleSignInError = (error) => {
+  const code = String(error?.code || '');
+  const message = String(error?.message || '');
+  const match = message.match(/AuthorizationError(?:\s+error)?\s+(\d{4})/i);
+  const appleCode = match ? Number(match[1]) : null;
+
+  // 1001 = ASAuthorizationError.canceled (user closed the sheet, or no Apple Account and user dismissed the prompt)
+  const cancelled =
+    appleCode === 1001 ||
+    code === 'auth/popup-closed-by-user' ||
+    code === 'auth/cancelled-popup-request' ||
+    code === 'auth/user-cancelled' ||
+    /\b(canceled|cancelled)\b/i.test(message);
+  if (cancelled) return { cancelled: true, message: null, appleCode };
+
+  if (FIREBASE_APPLE_ERRORS[code]) return { cancelled: false, message: FIREBASE_APPLE_ERRORS[code], appleCode };
+  return { cancelled: false, message: APPLE_GENERIC_ERROR, appleCode };
+};
+
 export const CustomerAuthProvider = ({ children }) => {
   // Initialize auth state directly from localStorage so user stays logged in across app restarts
   const [currentUser, setCurrentUser] = useState(() => {
@@ -430,16 +465,17 @@ export const CustomerAuthProvider = ({ children }) => {
         fetchCustomerProfile(token, user).catch(() => { });
         return { success: true, user };
       } catch (error) {
-        const errCode = error?.code || '';
-        // User cancelled
-        if (errCode === 'auth/popup-closed-by-user' || errCode === 'auth/cancelled-popup-request' || error?.message?.includes('canceled') || error?.message?.includes('cancelled')) {
+        const mapped = mapAppleSignInError(error);
+        console.warn('[AppleSignIn] native failure', {
+          appleCode: mapped.appleCode,
+          code: error?.code || null,
+          message: error?.message || null,
+        });
+        // User cancelled — return quietly, no error banner
+        if (mapped.cancelled) {
           return { success: false, error: null };
         }
-        console.warn('Native Apple Sign-In notice:', error);
-        return {
-          success: false,
-          error: error?.message || 'Apple Sign-In could not be completed.'
-        };
+        return { success: false, error: mapped.message };
       }
     }
 
@@ -489,10 +525,11 @@ export const CustomerAuthProvider = ({ children }) => {
       }
 
       console.error('Apple Sign-In Error:', error);
-      return {
-        success: false,
-        error: error.message || 'Apple Sign-In could not be completed.'
-      };
+      const mapped = mapAppleSignInError(error);
+      if (mapped.cancelled) {
+        return { success: false, error: null };
+      }
+      return { success: false, error: mapped.message };
     }
   };
 
