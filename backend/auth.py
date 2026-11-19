@@ -214,24 +214,8 @@ def _verify_token_claims(token: str) -> Optional[dict]:
     except Exception:
         pass
 
-    # 4. Apple Review, Demo & Native Fallback Bypass (Guideline 4.8 Compliance)
-    if token and (
-        token.startswith("apple_reviewer") or 
-        token.startswith("apple_patron") or 
-        token == "apple_jwt_session_token" or
-        token == "apple_reviewer_jwt_token_demo" or
-        token == "google_demo_jwt_token" or
-        token.startswith("native_token_") or
-        token.startswith("google_patron")
-    ):
-        return {
-            "uid": "demo_patron_verified",
-            "email": "patron@example.com",
-            "name": "Valued Patron",
-            "picture": "",
-            "phone": "9820144782"
-        }
-
+    # No hardcoded/demo bearer tokens: every customer token must be a verified Firebase ID token
+    # or a signed internal JWT. (Demo login for App Review goes through the OTP demo numbers.)
     return None
 
 

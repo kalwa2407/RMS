@@ -5181,6 +5181,18 @@ DELETED_CUSTOMER_UIDS: set = set()
 DELETED_CUSTOMER_EMAILS: set = set()
 DELETED_CUSTOMER_PHONES: set = set()
 
+# App Review / QA demo numbers. ONLY these numbers may log in with the fixed demo code.
+# Override with REVIEW_DEMO_PHONES="9820144782,9999999999" (10-digit, comma separated); empty string disables.
+REVIEW_DEMO_OTP = "123456"
+REVIEW_DEMO_PHONES = [
+    p.strip() for p in os.environ.get("REVIEW_DEMO_PHONES", "9820144782,9999999999,7028033763").split(",")
+    if p.strip()
+]
+
+
+def is_review_demo_phone(formatted_phone: str) -> bool:
+    return bool(formatted_phone) and any(formatted_phone.endswith(p) for p in REVIEW_DEMO_PHONES)
+
 @customer_router.post("/auth/send-otp")
 async def customer_send_otp(
     payload: CustomerSendOtpRequest,
@@ -5203,10 +5215,10 @@ async def customer_send_otp(
             raise HTTPException(status_code=429, detail=f"Please wait {remaining}s before requesting a new code")
 
     # ── Apple Review & QA Test Account Bypass (Guarantees instant review approval) ──
-    is_test_account = any(formatted.endswith(p) for p in ["9820144782", "9999999999", "7028033763"])
+    is_test_account = is_review_demo_phone(formatted)
     if is_test_account:
         CUSTOMER_ACTIVE_OTPS[formatted] = {
-            "otp": "123456",
+            "otp": REVIEW_DEMO_OTP,
             "expires_at": now + timedelta(days=365),
             "last_sent_at": now,
             "attempts": 0
@@ -5242,11 +5254,11 @@ async def customer_send_otp(
         logging.warning(f"[OTP] Firestore persist warning: {db_e}")
 
     logging.info(f"[OTP] Login OTP generated and ready for ...{formatted[-4:]}")
+    # Never return the OTP to the caller — that would let anyone log in as any phone number.
     return {
         "success": True,
         "message": f"Verification code sent to +91 {formatted[-10:]}",
-        "resend_cool_down": 30,
-        "code": otp_code
+        "resend_cool_down": 30
     }
 
 @customer_router.get("/auth/check-phone")
@@ -5285,8 +5297,9 @@ async def customer_verify_otp(
     if not formatted:
         raise HTTPException(status_code=400, detail="Invalid phone number")
 
-    # ── Master Code (123456) or Generated OTP Verification ──
-    is_master_code = payload.otp.strip() == "123456"
+    # ── Demo code (App Review numbers ONLY) or generated OTP verification ──
+    # Previously "123456" was accepted for ANY phone number (account takeover). Restrict to demo numbers.
+    is_master_code = is_review_demo_phone(formatted) and payload.otp.strip() == REVIEW_DEMO_OTP
     if is_master_code:
         CUSTOMER_ACTIVE_OTPS.pop(formatted, None)
         try:
