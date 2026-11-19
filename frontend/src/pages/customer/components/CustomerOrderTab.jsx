@@ -1,7 +1,24 @@
-import React, { useState } from 'react';
-import { Plus, Minus, Star, Crown, UtensilsCrossed, Bookmark, Share2 } from 'lucide-react';
-import { PERSIAN_DARBAR_CATEGORIES, getDishMetrics, getDishId, findCartItem } from '../customerAssets';
+import React, { useEffect, useState } from 'react';
+import { Star, UtensilsCrossed, Bookmark, Share2, BadgePercent, Check } from 'lucide-react';
+import { PERSIAN_DARBAR_CATEGORIES, getDishMetrics, findCartItem, isVegDish } from '../customerAssets';
 import CustomerDishDetailModal from './CustomerDishDetailModal';
+import { AddStepper, Chip, EmptyState, VegMark, Price, cx } from '../ui';
+
+// Height of the sticky top bar, so the menu filters can stick right below it.
+const useTopBarHeight = () => {
+  const [height, setHeight] = useState(0);
+  useEffect(() => {
+    const el = document.querySelector('[data-pd-topbar]');
+    if (!el) return undefined;
+    const update = () => setHeight(el.getBoundingClientRect().height);
+    update();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return height;
+};
 
 const CustomerOrderTab = ({
   menu = [],
@@ -22,6 +39,9 @@ const CustomerOrderTab = ({
   const [filterType, setFilterType] = useState('all'); // 'all' | 'veg' | 'nonveg' | 'bestseller'
   const [selectedDishDetail, setSelectedDishDetail] = useState(null);
   const [bookmarkedDishes, setBookmarkedDishes] = useState({});
+  const topBarHeight = useTopBarHeight();
+
+  const openDish = (dish) => (onSelectDishDetail || setSelectedDishDetail)(dish);
 
   const toggleBookmark = (dishId, e) => {
     e?.stopPropagation();
@@ -113,11 +133,7 @@ const CustomerOrderTab = ({
   // Filtered dishes
   const filteredDishes = menu.filter((item) => {
     const matchesCat = matchCategory(item, selectedCat);
-    const isVeg = item.is_veg === true ||
-      item.veg === true ||
-      (item.category || '').toLowerCase().includes('veg') ||
-      (item.name || '').toLowerCase().includes('paneer') ||
-      (item.name || '').toLowerCase().includes('dal');
+    const isVeg = isVegDish(item);
 
     let matchesType = true;
     if (filterType === 'veg') matchesType = isVeg;
@@ -127,351 +143,258 @@ const CustomerOrderTab = ({
     return matchesCat && matchesType && item.available !== false;
   });
 
+  const activeCategory = PERSIAN_DARBAR_CATEGORIES.find(
+    (c) => c.id.toLowerCase() === (selectedCat || 'All').toLowerCase()
+  );
+
+  // ── Offer strip (only when an active offer exists) ──
+  const renderOfferStrip = () => {
+    const activeOffers = (offers || []).filter(
+      (o) => o.active !== false && o.is_active !== false && (o.coupon_code || o.code || o.title)
+    );
+    if (activeOffers.length === 0) return null;
+
+    const currentOffer = activeOffers[0];
+    const couponCode = currentOffer.coupon_code || currentOffer.code || 'DARBAR30';
+    const isApplied = appliedCoupon?.code?.toUpperCase() === couponCode.toUpperCase();
+
+    return (
+      <div className="px-4 pt-3">
+        <button
+          type="button"
+          onClick={() => {
+            if (isApplied) {
+              onRemoveCoupon && onRemoveCoupon();
+            } else {
+              onApplyCoupon && onApplyCoupon(couponCode);
+            }
+          }}
+          className="w-full flex items-center gap-3 rounded-[14px] bg-pd-gold-tint border border-pd-gold/20 px-3.5 py-3 text-left pd-press"
+        >
+          <span className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 text-pd-gold">
+            <BadgePercent className="w-[18px] h-[18px]" strokeWidth={2} />
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-[14px] font-semibold text-pd-ink truncate">
+              {isApplied
+                ? `${couponCode} applied`
+                : (currentOffer.title || `Save with ${couponCode}`)}
+            </span>
+            <span className="block text-[12px] text-pd-ink-2 truncate">
+              {isApplied ? 'Tap to remove' : `Use code ${couponCode}`}
+            </span>
+          </span>
+          <span
+            className={cx(
+              'shrink-0 h-8 px-3 rounded-full text-[13px] font-semibold inline-flex items-center gap-1',
+              isApplied ? 'bg-white text-pd-success' : 'bg-pd-ink text-white'
+            )}
+          >
+            {isApplied ? (<><Check className="w-3.5 h-3.5" strokeWidth={2.5} /> Applied</>) : 'Apply'}
+          </span>
+        </button>
+      </div>
+    );
+  };
+
   return (
-    <div className="flex-1 w-full max-w-full overflow-x-hidden pb-44">
-      {/* ── Top Offer Bar: Only shown when active offers exist ── */}
-      {(() => {
-        const activeOffers = (offers || []).filter(
-          (o) => o.active !== false && o.is_active !== false && (o.coupon_code || o.code || o.title)
-        );
-        if (activeOffers.length === 0) return null;
+    <div className="flex-1 w-full max-w-full overflow-x-clip pb-44 bg-white min-h-screen">
+      {renderOfferStrip()}
 
-        const currentOffer = activeOffers[0];
-        const couponCode = currentOffer.coupon_code || currentOffer.code || 'DARBAR30';
-        const isApplied = appliedCoupon?.code?.toUpperCase() === couponCode.toUpperCase();
-
-        return (
-          <section className="bg-gradient-to-b from-[#FFF5D6] via-[#FFF8E7] to-white px-4 pt-2 pb-3 border-b border-amber-200/50">
-            <div
-              onClick={() => {
-                if (isApplied) {
-                  onRemoveCoupon && onRemoveCoupon();
-                } else {
-                  onApplyCoupon && onApplyCoupon(couponCode);
-                }
-              }}
-              className="flex items-center justify-between bg-white/95 hover:bg-white border border-amber-300/80 rounded-2xl px-3.5 py-2 shadow-xs cursor-pointer active:scale-98 transition-all overflow-hidden"
-            >
-              <div className="flex items-center space-x-2 min-w-0 flex-1 mr-2">
-                <span className="w-5 h-5 rounded-full bg-[#E40000] text-white flex items-center justify-center text-[10px] font-black shrink-0">
-                  %
-                </span>
-                <span className="text-xs font-black text-neutral-900 truncate min-w-0">
-                  {isApplied
-                    ? `Coupon ${couponCode} Applied!`
-                    : (currentOffer.title
-                        ? `${currentOffer.title} with code ${couponCode}`
-                        : `Save with code ${couponCode}`)}
-                </span>
-              </div>
+      {/* ── Category rail ── */}
+      <section className="pt-4 pb-1" aria-label="Menu categories">
+        <div className="flex gap-4 overflow-x-auto no-scrollbar px-4 py-1">
+          {PERSIAN_DARBAR_CATEGORIES.map((item) => {
+            const isActive = (selectedCat || 'All').toLowerCase() === item.id.toLowerCase();
+            return (
               <button
                 type="button"
-                className={`text-[10px] font-black px-2.5 py-1 rounded-md shrink-0 transition-colors ${
-                  isApplied
-                    ? 'text-emerald-700 bg-emerald-50 border border-emerald-300'
-                    : 'text-[#E40000] bg-red-50 border border-red-200 hover:bg-[#E40000] hover:text-white'
-                }`}
-              >
-                {isApplied ? 'Applied ✓' : 'Save on Bill'}
-              </button>
-            </div>
-          </section>
-        );
-      })()}
-
-      {/* ── Category Roundels Scroll Bar ── */}
-      <section className="bg-white border-b border-neutral-100 py-2.5">
-        <div className="flex items-center space-x-3 overflow-x-auto no-scrollbar px-4">
-          {/* Best Offers Applied Card */}
-          <div
-            onClick={() => onSelectCat('All')}
-            className="flex flex-col items-center shrink-0 cursor-pointer active:scale-95 transition-transform"
-          >
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#E40000] to-[#B91C1C] text-white p-1.5 flex flex-col items-center justify-between shadow-xs">
-              <span className="text-[7.5px] font-black uppercase leading-tight text-center">
-                BEST OFFERS<br />APPLIED
-              </span>
-              <span className="text-[8px] bg-white/20 font-bold px-1 rounded-xs">
-                Explore ›
-              </span>
-            </div>
-            <span className="text-[10px] font-extrabold text-neutral-800 mt-1 text-center">
-              Offers
-            </span>
-          </div>
-
-          {/* Food Roundels */}
-          {PERSIAN_DARBAR_CATEGORIES.map((item) => {
-            const isActive = selectedCat.toLowerCase() === item.id.toLowerCase();
-            return (
-              <div
                 key={item.id}
                 onClick={() => onSelectCat(item.id)}
-                className="flex flex-col items-center shrink-0 cursor-pointer active:scale-95 transition-transform"
+                aria-pressed={isActive}
+                className="flex flex-col items-center shrink-0 w-[68px] pd-press"
               >
-                <div
-                  className={`w-14 h-14 rounded-full overflow-hidden p-[2px] transition-all bg-white ${
-                    isActive
-                      ? 'border-2 border-[#E40000] shadow-sm scale-105'
-                      : 'border border-neutral-200/80 shadow-xs'
-                  }`}
-                >
-                  <img
-                    src={item.image}
-                    alt={item.title}
-                    className="w-full h-full rounded-full object-cover"
-                  />
-                </div>
                 <span
-                  className={`text-[10px] mt-1 text-center whitespace-nowrap transition-colors ${
-                    isActive
-                      ? 'font-black text-[#E40000]'
-                      : 'font-semibold text-neutral-700'
-                  }`}
+                  className={cx(
+                    'w-16 h-16 rounded-full overflow-hidden bg-pd-surface transition-shadow',
+                    isActive ? 'ring-2 ring-pd-action ring-offset-2' : ''
+                  )}
+                >
+                  <img src={item.image} alt="" loading="lazy" className="w-full h-full object-cover" />
+                </span>
+                <span
+                  className={cx(
+                    'text-[12px] leading-4 mt-2 text-center line-clamp-2',
+                    isActive ? 'font-semibold text-pd-ink' : 'font-medium text-pd-ink-2'
+                  )}
                 >
                   {item.title}
                 </span>
-                {isActive && (
-                  <span className="w-4 h-0.5 bg-[#E40000] rounded-full mt-0.5" />
-                )}
-              </div>
+              </button>
             );
           })}
         </div>
       </section>
 
-      {/* ── Filter Chips (Veg / Non-veg / Bestsellers - Apple Pill Style) ── */}
-      <section className="px-4 pt-3 pb-1 flex items-center space-x-2 overflow-x-auto no-scrollbar">
-        <button
-          onClick={() => setFilterType('all')}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-bold shrink-0 border transition-all ios-press cursor-pointer ${
-            filterType === 'all'
-              ? 'bg-neutral-900 text-white border-neutral-900 shadow-sm'
-              : 'bg-white/90 text-neutral-600 border-neutral-200/80 hover:bg-neutral-50 shadow-2xs'
-          }`}
-        >
-          All ({filteredDishes.length})
-        </button>
-
-        <button
-          onClick={() => setFilterType(filterType === 'veg' ? 'all' : 'veg')}
-          className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold shrink-0 border transition-all ios-press cursor-pointer ${
-            filterType === 'veg'
-              ? 'bg-emerald-50 text-emerald-800 border-emerald-500 shadow-sm font-black'
-              : 'bg-white/90 text-neutral-700 border-neutral-200/80 hover:bg-neutral-50 shadow-2xs'
-          }`}
-        >
-          <div className="w-3.5 h-3.5 rounded-[4px] border border-emerald-600 flex items-center justify-center p-[1px]">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-          </div>
-          <span>Veg</span>
-        </button>
-
-        <button
-          onClick={() => setFilterType(filterType === 'nonveg' ? 'all' : 'nonveg')}
-          className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold shrink-0 border transition-all ios-press cursor-pointer ${
-            filterType === 'nonveg'
-              ? 'bg-red-50 text-red-800 border-[#8B2500] shadow-sm font-black'
-              : 'bg-white/90 text-neutral-700 border-neutral-200/80 hover:bg-neutral-50 shadow-2xs'
-          }`}
-        >
-          <div className="w-3.5 h-3.5 rounded-[4px] border border-[#8B2500] flex items-center justify-center p-[1px]">
-            <div className="w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-b-[5px] border-b-[#8B2500]" />
-          </div>
-          <span>Non-veg</span>
-        </button>
-
-        <button
-          onClick={() => setFilterType(filterType === 'bestseller' ? 'all' : 'bestseller')}
-          className={`flex items-center space-x-1 px-3.5 py-1.5 rounded-full text-xs font-bold shrink-0 border transition-all ios-press cursor-pointer ${
-            filterType === 'bestseller'
-              ? 'bg-amber-50 text-amber-900 border-amber-400 shadow-sm font-black'
-              : 'bg-white/90 text-neutral-700 border-neutral-200/80 hover:bg-neutral-50 shadow-2xs'
-          }`}
-        >
-          <Crown className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-          <span>Bestseller</span>
-        </button>
-      </section>
-
-      {/* ── Dishes List (Responsive Grid: 1 col mobile, 2 col iPad/tablet) ── */}
-      <section className="px-4 py-2 grid grid-cols-1 md:grid-cols-2 gap-3 space-y-0">
-        {filteredDishes.length === 0 ? (
-          <div className="md:col-span-2 bg-white rounded-3xl p-8 text-center border border-neutral-200/80 shadow-xs space-y-3">
-            <div className="w-12 h-12 rounded-full bg-red-50 text-[#E40000] flex items-center justify-center mx-auto">
-              <UtensilsCrossed className="w-6 h-6" />
-            </div>
-            <h4 className="font-extrabold text-sm text-neutral-900">
-              No dishes found under "{selectedCat}"
-            </h4>
+      {/* ── Sticky filters ── */}
+      <div
+        className="sticky z-30 bg-white/95 backdrop-blur-xl border-b border-[color:var(--pd-line)]"
+        style={{ top: topBarHeight }}
+      >
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar px-4 py-2.5">
+          <Chip active={filterType === 'veg'} onClick={() => setFilterType(filterType === 'veg' ? 'all' : 'veg')}>
+            <VegMark veg size={13} />
+            Veg
+          </Chip>
+          <Chip active={filterType === 'nonveg'} onClick={() => setFilterType(filterType === 'nonveg' ? 'all' : 'nonveg')}>
+            <VegMark veg={false} size={13} />
+            Non-veg
+          </Chip>
+          <Chip active={filterType === 'bestseller'} onClick={() => setFilterType(filterType === 'bestseller' ? 'all' : 'bestseller')}>
+            Bestseller
+          </Chip>
+          {filterType !== 'all' && (
             <button
-              onClick={() => {
-                onSelectCat('All');
-                setFilterType('all');
-              }}
-              className="bg-[#E40000] hover:bg-[#CC0000] text-white text-xs font-black px-4 py-2 rounded-xl shadow-xs"
+              type="button"
+              onClick={() => setFilterType('all')}
+              className="shrink-0 h-9 px-2 text-[14px] font-medium text-pd-action pd-press"
             >
-              Show All Dishes
+              Clear
             </button>
-          </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Section title ── */}
+      <div className="px-4 pt-5 pb-1 flex items-baseline justify-between">
+        <h2 className="text-[19px] font-bold text-pd-ink tracking-[-0.01em]">
+          {activeCategory?.title || selectedCat || 'All dishes'}
+        </h2>
+        <span className="text-[13px] text-pd-ink-3 pd-tabular">
+          {filteredDishes.length} {filteredDishes.length === 1 ? 'item' : 'items'}
+        </span>
+      </div>
+
+      {/* ── Dish list (1 col phone, 2 col iPad) ── */}
+      <section className="grid grid-cols-1 md:grid-cols-2 md:gap-x-8 md:px-4">
+        {filteredDishes.length === 0 ? (
+          <EmptyState
+            className="md:col-span-2"
+            icon={UtensilsCrossed}
+            title="No dishes here yet"
+            message={`Nothing matches “${activeCategory?.title || selectedCat}” with these filters.`}
+            actionLabel="Show all dishes"
+            onAction={() => {
+              onSelectCat('All');
+              setFilterType('all');
+            }}
+          />
         ) : (
           filteredDishes.map((dish, idx) => {
             const inCart = findCartItem(cart, dish);
-            const { rating, orderCount } = getDishMetrics(dish);
-            const isVeg = dish.is_veg === true ||
-              dish.veg === true ||
-              (dish.category || '').toLowerCase().includes('veg') ||
-              (dish.name || '').toLowerCase().includes('paneer') ||
-              (dish.name || '').toLowerCase().includes('dal');
+            const { rating } = getDishMetrics(dish);
+            const isVeg = isVegDish(dish);
+            const dishId = dish._id || dish.id;
 
             const fallbackImg = `/dynamic_images/img${((idx % 9) + 1)}.jpeg`;
             const dishImg = dish.image && !dish.image.includes('no-image.png') && !dish.image.includes('photo-1701579231305-d7d8af9a3fd')
               ? dish.image
               : fallbackImg;
 
-            const isSaved = bookmarkedDishes[dish._id || dish.id];
+            const isSaved = bookmarkedDishes[dishId];
 
             return (
-              <div
-                key={dish._id || dish.id || idx}
-                onClick={() => (onSelectDishDetail || setSelectedDishDetail)(dish)}
-                className="ios-card p-4 flex items-start justify-between gap-3 transition-all hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] ios-press-subtle cursor-pointer border border-black/[0.06]"
+              <article
+                key={dishId || idx}
+                onClick={() => openDish(dish)}
+                className="flex items-start gap-4 px-4 md:px-0 py-5 border-b border-[color:var(--pd-line)] cursor-pointer active:bg-pd-surface/60 transition-colors"
               >
-                {/* Left Side: Dish Info (Screenshot 2 & 3) */}
-                <div className="flex-1 min-w-0 pr-1 space-y-1">
-                  {/* Veg / Non-veg indicator & Category */}
-                  <div className="flex items-center space-x-2">
-                    <div className={`w-3.5 h-3.5 rounded-[3px] border ${isVeg ? 'border-emerald-600' : 'border-[#8B2500]'} flex items-center justify-center p-[1px]`}>
-                      {isVeg ? (
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-                      ) : (
-                        <div className="w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-b-[5px] border-b-[#8B2500]" />
-                      )}
-                    </div>
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <VegMark veg={isVeg} />
                     {dish.popular && (
-                      <span className="text-[9px] font-black text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200/60 uppercase">
+                      <span className="text-[11px] font-semibold text-pd-gold uppercase tracking-[0.04em]">
                         Bestseller
                       </span>
                     )}
                   </div>
 
-                  {/* Dish Name */}
-                  <h3 className="font-bold text-[15px] text-neutral-900 leading-snug">
+                  <h3 className="mt-1.5 text-[16px] leading-[21px] font-semibold text-pd-ink">
                     {dish.name}
                   </h3>
 
-                  {/* Price */}
-                  <div className="text-sm font-black text-neutral-900 pt-0.5">
-                    ₹{dish.price}
+                  <div className="mt-1 flex items-center gap-2">
+                    <Price value={dish.price} className="text-[15px] font-semibold text-pd-ink" />
+                    {rating && (
+                      <span className="inline-flex items-center gap-0.5 text-[13px] font-medium text-pd-ink-2">
+                        <Star className="w-3.5 h-3.5 fill-pd-gold text-pd-gold" />
+                        {rating}
+                      </span>
+                    )}
                   </div>
 
-                  {/* Social Proof: Highly Reordered Progress Pill (Screenshot 2 & 3) */}
-                  <div className="flex items-center space-x-1.5 pt-0.5">
-                    <div className="w-10 h-1.5 rounded-full bg-emerald-100 overflow-hidden flex">
-                      <div className="w-3/4 h-full bg-emerald-600 rounded-full" />
-                    </div>
-                    <span className="text-[11px] font-semibold text-neutral-600">
-                      Highly reordered · {dish.order_count || orderCount}
-                    </span>
-                  </div>
-
-                  {/* Description with 'more' */}
                   {dish.description && (
-                    <p className="text-[11px] text-neutral-500 line-clamp-2 pt-0.5 leading-relaxed">
+                    <p className="mt-2 text-[13px] leading-[18px] text-pd-ink-2 line-clamp-2">
                       {dish.description}
                     </p>
                   )}
 
-                  {/* Action Icons: Bookmark & Share (Screenshot 3) */}
-                  <div className="flex items-center space-x-3 pt-2">
+                  <div className="mt-2 -ml-2 flex items-center">
                     <button
                       type="button"
-                      onClick={(e) => toggleBookmark(dish._id || dish.id, e)}
-                      aria-label="Save dish"
-                      className="p-1 rounded-full text-neutral-400 hover:text-neutral-700 active:scale-90 transition-transform cursor-pointer"
+                      onClick={(e) => toggleBookmark(dishId, e)}
+                      aria-label={isSaved ? 'Remove from saved' : 'Save dish'}
+                      aria-pressed={Boolean(isSaved)}
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-pd-ink-3 pd-press"
                     >
-                      <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-amber-400 text-amber-500' : ''}`} />
+                      <Bookmark className={cx('w-[18px] h-[18px]', isSaved && 'fill-pd-gold text-pd-gold')} strokeWidth={1.75} />
                     </button>
-
                     <button
                       type="button"
                       onClick={(e) => handleShareDish(dish, e)}
                       aria-label="Share dish"
-                      className="p-1 rounded-full text-neutral-400 hover:text-neutral-700 active:scale-90 transition-transform cursor-pointer"
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-pd-ink-3 pd-press"
                     >
-                      <Share2 className="w-4 h-4" />
+                      <Share2 className="w-[18px] h-[18px]" strokeWidth={1.75} />
                     </button>
                   </div>
                 </div>
 
-                {/* Right Side: Dish Image & ADD Button (Screenshot 2 & 3) */}
-                <div className="flex flex-col items-center shrink-0">
-                  <div className="relative w-32 h-26 rounded-2xl overflow-hidden bg-neutral-100 border border-neutral-100 shadow-xs">
+                {/* Image + ADD */}
+                <div className="relative shrink-0 w-[124px] pb-4">
+                  <div className="w-[124px] h-[124px] rounded-[14px] overflow-hidden bg-pd-surface">
                     <img
                       src={dishImg}
                       alt={dish.name}
+                      loading="lazy"
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         e.target.onerror = null;
                         e.target.src = fallbackImg;
                       }}
                     />
-
-                    {/* Star Rating Badge */}
-                    <div className="absolute top-1.5 right-1.5 bg-black/60 backdrop-blur-xs text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md flex items-center space-x-0.5">
-                      <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
-                      <span>{dish.rating ? Number(dish.rating).toFixed(1) : rating}</span>
-                    </div>
                   </div>
-
-                  {/* ADD + / Stepper Button (Centered Below Image - Screenshot 2 & 3) */}
-                  <div className="mt-[-16px] z-10 w-28" onClick={(e) => e.stopPropagation()}>
-                    {inCart ? (
-                      <div className="flex items-center justify-between bg-neutral-950 text-white rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.18)] px-2.5 py-1.5 text-xs font-bold border border-white/10">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onUpdateCartQty(dish._id || dish.id, -1);
-                          }}
-                          className="p-0.5 ios-press cursor-pointer text-amber-400 hover:text-white active:scale-90"
-                        >
-                          <Minus className="w-3.5 h-3.5 stroke-[3]" />
-                        </button>
-                        <span className="font-black text-sm text-white px-1">{inCart.quantity}</span>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onUpdateCartQty(dish._id || dish.id, 1);
-                          }}
-                          className="p-0.5 ios-press cursor-pointer text-amber-400 hover:text-white active:scale-90"
-                        >
-                          <Plus className="w-3.5 h-3.5 stroke-[3]" />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onAddToCart(dish);
-                        }}
-                        className="w-full bg-gradient-to-r from-[#E40000] to-[#CC0000] hover:from-[#CC0000] hover:to-[#B30000] text-white rounded-2xl shadow-[0_4px_14px_rgba(228,0,0,0.32)] py-1.5 text-xs font-black uppercase tracking-wider ios-press transition-all text-center cursor-pointer flex flex-col items-center justify-center border border-white/20 active:scale-95"
-                      >
-                        <span>ADD +</span>
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => (onSelectDishDetail || setSelectedDishDetail)(dish)}
-                      className="block w-full text-center text-[9px] text-neutral-400 hover:text-[#E40000] font-medium mt-0.5 cursor-pointer"
-                    >
-                      customisable
-                    </button>
+                  <div className="absolute left-1/2 -translate-x-1/2 bottom-0">
+                    <AddStepper
+                      quantity={inCart?.quantity || 0}
+                      onAdd={() => onAddToCart(dish)}
+                      onIncrement={() => onUpdateCartQty(dishId, 1)}
+                      onDecrement={() => onUpdateCartQty(dishId, -1)}
+                    />
                   </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openDish(dish);
+                    }}
+                    className="absolute left-0 right-0 -bottom-5 text-center text-[11px] text-pd-ink-3"
+                  >
+                    Customisable
+                  </button>
                 </div>
-              </div>
+              </article>
             );
           })
         )}

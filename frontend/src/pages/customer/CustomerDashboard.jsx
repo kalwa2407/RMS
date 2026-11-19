@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } from 'react';
+import { useBackHandler } from '../../lib/backStack';
 import { useNavigate } from 'react-router-dom';
 import { useCustomerAuth } from '../../context/CustomerAuthContext';
 import { useToast } from '../../hooks/use-toast';
@@ -65,7 +66,7 @@ const CustomerDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [profileInitialTab, setProfileInitialTab] = useState('orders');
+  const [profileInitialTab, setProfileInitialTab] = useState('overview');
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [selectedDishDetail, setSelectedDishDetail] = useState(null);
   // ── Order Tracking State ──
@@ -665,14 +666,8 @@ const CustomerDashboard = () => {
       // New item — preserve passed quantity (from detail modal or quick add), default to 1
       return [...prev, { ...item, quantity: item.quantity || 1 }];
     });
-    if (!item.silentToast) {
-      toast({
-        title: 'Added to Cart',
-        description: item.hasAddons
-          ? `${item.name} & accompaniments added to your feast.`
-          : `${item.name} added to your Persian feast.`,
-      });
-    }
+    // No toast here: the sticky cart bar and the ADD stepper already show
+    // the change, and a toast would cover the top bar on every tap.
   };
 
   const updateCartQty = (idOrItem, delta) => {
@@ -893,7 +888,7 @@ const CustomerDashboard = () => {
       }
 
       setProfileInitialTab('orders');
-      setActiveTab('profile');
+      goToTab('profile');
     } catch (err) {
 
       alert(err.message || 'Order failed. Please try again.');
@@ -975,7 +970,7 @@ const CustomerDashboard = () => {
   // Offer click handler
   const handleOfferClick = (offer) => {
     if (offer.action === 'reserve') {
-      setActiveTab('reserve');
+      goToTab('reserve');
     } else if (offer.coupon_code) {
       navigator.clipboard?.writeText(offer.coupon_code);
       toast({
@@ -985,22 +980,55 @@ const CustomerDashboard = () => {
       applyCouponCode(offer.coupon_code);
       setIsCartOpen(true);
     } else {
-      setActiveTab('order');
+      goToTab('order');
     }
   };
 
-  // Bottom dock tab selector
+  // ── Tab navigation with per-tab scroll memory ──
+  // The page (window) is the scroller, so remember each tab's offset and
+  // restore it when the user comes back, like native tab bars do.
+  const tabScrollRef = useRef({});
+  const pendingScrollRef = useRef(null);
+  const goToTab = useCallback((tabId) => {
+    setActiveTab((current) => {
+      if (current === tabId) return current;
+      tabScrollRef.current[current] = window.scrollY;
+      pendingScrollRef.current = tabScrollRef.current[tabId] || 0;
+      return tabId;
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (pendingScrollRef.current === null) return;
+    window.scrollTo(0, pendingScrollRef.current);
+    pendingScrollRef.current = null;
+  }, [activeTab]);
+
+  // Bottom dock tab selector: tapping the active tab scrolls it to the top.
   const handleDockSelect = (tabId) => {
-    setActiveTab(tabId);
-    mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    if (tabId === activeTab) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    goToTab(tabId);
   };
+
+  // ── Android hardware back: close the top-most overlay first ──
+  useBackHandler(activeTab !== 'home', () => goToTab('home'));
+  useBackHandler(isLocationModalOpen, () => setIsLocationModalOpen(false));
+  useBackHandler(isProfileOpen, () => setIsProfileOpen(false));
+  useBackHandler(isSearchOpen, () => setIsSearchOpen(false));
+  useBackHandler(isCartOpen, () => setIsCartOpen(false));
+  useBackHandler(isNotifOpen, () => closeNotifications());
+  useBackHandler(Boolean(trackingOrderId), () => setTrackingOrderId(null));
+  useBackHandler(Boolean(selectedDishDetail), () => setSelectedDishDetail(null));
 
   // If unauthenticated, render minimal clean container while navigating to /customer/login
   const isGuestBrowse = sessionStorage.getItem('customer_guest_browse') === 'true';
   if (!localStorage.getItem('customer_jwt') && !currentUser && !isGuestBrowse) {
     return (
       <div className="fixed inset-0 bg-[#F8F9FA] flex items-center justify-center">
-        <div className="w-8 h-8 border-3 border-[#E40000] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-3 border-pd-action border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -1011,7 +1039,7 @@ const CustomerDashboard = () => {
       <CustomerAppSplash isReady={!offersLoading} minDurationMs={600} />
 
       {/* ── Main Responsive Shell Container (Mobile 430px, iPad/Tablet 4xl) ── */}
-      <div className="w-full max-w-[430px] md:max-w-4xl min-h-screen bg-[#F8F9FA] flex flex-col shadow-2xl md:shadow-xl relative overflow-x-hidden md:border-x md:border-black/[0.06]">
+      <div className="w-full max-w-[430px] md:max-w-4xl min-h-screen bg-[#F8F9FA] flex flex-col shadow-2xl md:shadow-xl relative overflow-x-clip md:border-x md:border-black/[0.06]">
 
         {/* ── Heads-Up Floating Alert (Zomato-style dropdown with chime) ── */}
         <HeadsUpNotificationBanner
@@ -1032,10 +1060,10 @@ const CustomerDashboard = () => {
           distanceKm={distanceKm}
           onOpenLocationModal={() => setIsLocationModalOpen(true)}
           onOpenProfile={() => {
-            setActiveTab('profile');
+            goToTab('profile');
             mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
           }}
-          onOpenWallet={() => setActiveTab('rewards')}
+          onOpenWallet={() => goToTab('rewards')}
           onOpenSearch={() => setIsSearchOpen(true)}
           onOpenNotifications={openNotifications}
           notificationCount={unreadCount}
@@ -1058,7 +1086,7 @@ const CustomerDashboard = () => {
 
 
         {/* ── Scrollable Body with smooth tab fade transition ── */}
-        <main ref={mainScrollRef} key={activeTab} className="flex-1 overflow-y-auto overflow-x-hidden w-full max-w-full no-scrollbar animate-in fade-in duration-300 ios-spring">
+        <main ref={mainScrollRef} className="flex-1 overflow-x-clip w-full max-w-full">
 
           {/* Tab 1: Home (Royal Discovery & Showcase) */}
           {activeTab === 'home' && (
@@ -1070,12 +1098,12 @@ const CustomerDashboard = () => {
               onAddToCart={addToCart}
               onUpdateCartQty={updateCartQty}
               onOpenCart={() => setIsCartOpen(true)}
-              onOpenWallet={() => setActiveTab('rewards')}
+              onOpenWallet={() => goToTab('rewards')}
               onOpenSearch={() => setIsSearchOpen(true)}
               offers={offers}
               onOfferClick={handleOfferClick}
-              onGoToOrder={() => setActiveTab('order')}
-              onGoToReserve={() => setActiveTab('reserve')}
+              onGoToOrder={() => goToTab('order')}
+              onGoToReserve={() => goToTab('reserve')}
               onSelectDishDetail={setSelectedDishDetail}
             />
           )}
@@ -1124,8 +1152,8 @@ const CustomerDashboard = () => {
               currentUser={currentUser}
               customerProfile={customerProfile}
               pdCoins={availableCoins}
-              onGoToOrder={() => setActiveTab('order')}
-              onGoToReserve={() => setActiveTab('reserve')}
+              onGoToOrder={() => goToTab('order')}
+              onGoToReserve={() => goToTab('reserve')}
               onApplyVoucher={(code) => {
                 applyCouponCode(code);
                 setIsCartOpen(true);
@@ -1191,8 +1219,8 @@ const CustomerDashboard = () => {
                   variant: 'destructive'
                 });
               }}
-              onGoToOrder={() => setActiveTab('order')}
-              onGoToReserve={() => setActiveTab('reserve')}
+              onGoToOrder={() => goToTab('order')}
+              onGoToReserve={() => goToTab('reserve')}
               initialSection={profileInitialTab === 'orders' ? 'orders' : 'overview'}
             />
           )}
@@ -1289,7 +1317,7 @@ const CustomerDashboard = () => {
           onClearCart={() => setCart([])}
           onOrderMore={() => {
             setIsCartOpen(false);
-            setActiveTab('order');
+            goToTab('order');
           }}
         />
 
@@ -1408,7 +1436,7 @@ const CustomerDashboard = () => {
             onClose={() => setTrackingOrderId(null)}
             onGoHome={() => {
               setTrackingOrderId(null);
-              setActiveTab('home');
+              goToTab('home');
             }}
           />
         )}
@@ -1425,7 +1453,7 @@ const CustomerDashboard = () => {
             if (notif.orderId && notif.type?.startsWith('order_')) {
               setTrackingOrderId(notif.orderId);
             } else if (notif.type === 'reservation') {
-              setActiveTab('reserve');
+              goToTab('reserve');
             }
           }}
         />
@@ -1444,14 +1472,14 @@ const CustomerDashboard = () => {
                   👑
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-neutral-900 tracking-tight">Complete Your Profile</h3>
+                  <h3 className="text-lg font-bold text-neutral-900 tracking-tight">Complete Your Profile</h3>
                   <p className="text-xs text-neutral-500 font-medium">Welcome to Persian Darbar! Enter your details to enable delivery tracking.</p>
                 </div>
               </div>
 
               <form onSubmit={handleSaveInitialProfile} className="space-y-4 pt-1">
                 <div>
-                  <label className="block text-xs font-black text-neutral-600 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-bold text-neutral-600 uppercase tracking-wide mb-1.5">
                     10-Digit Mobile Number *
                   </label>
                   <div className="flex items-center rounded-2xl border-2 border-neutral-200 focus-within:border-amber-500 px-3 py-2.5 bg-neutral-50 focus-within:bg-white transition-all">
@@ -1470,7 +1498,7 @@ const CustomerDashboard = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-black text-neutral-600 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-bold text-neutral-600 uppercase tracking-wide mb-1.5">
                     Delivery Address <span className="font-normal text-neutral-400 lowercase">(optional for now)</span>
                   </label>
                   <textarea
@@ -1493,7 +1521,7 @@ const CustomerDashboard = () => {
                   <button
                     type="submit"
                     disabled={savingProfileDetails}
-                    className="flex-1 py-3 px-4 rounded-xl text-xs font-black text-white bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 shadow-md transition-all cursor-pointer disabled:opacity-50"
+                    className="flex-1 py-3 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 shadow-md transition-all cursor-pointer disabled:opacity-50"
                   >
                     {savingProfileDetails ? 'Saving...' : 'Save & Continue ›'}
                   </button>

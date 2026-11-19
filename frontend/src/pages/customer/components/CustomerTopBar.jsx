@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, Mic, Search, User, Bell } from 'lucide-react';
+import { ChevronDown, Mic, Search, User, Bell, MapPin, Crown } from 'lucide-react';
 
 const CustomerTopBar = ({
   activeTab = 'home',
@@ -12,194 +12,109 @@ const CustomerTopBar = ({
   onOpenNotifications,
   notificationCount = 0,
   searchQuery = '',
-  searchPlaceholder = 'Search "biryani, tandoori, curries..."',
+  searchPlaceholder = 'Search for biryani, kebabs, curries…',
   userInitial = null,
   userPhoto = null
 }) => {
   const branchName = selectedBranch?.name || 'Camp, Pune';
   const branchAddress = selectedBranch?.shortAddress || 'Renaissance Centre, Wellesley Rd';
+  const isReserve = activeTab === 'reserve';
+  const showSearch = activeTab === 'home' || activeTab === 'order';
+  const showRoyalty = activeTab !== 'rewards' && activeTab !== 'profile';
 
-  // Track whether the photo URL failed to load — fall back to initial / icon reactively
+  // Fall back to the initial / icon if the photo URL fails
   const [photoError, setPhotoError] = useState(false);
 
-  // ── Profile avatar helper — clean red & white brand aesthetic ──
-  const ProfileAvatar = () => (
-    <button
-      onClick={onOpenProfile}
-      aria-label="Customer Profile"
-      className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs active:scale-95 transition-transform overflow-hidden shrink-0 bg-white text-[#E40000] border border-amber-300/70"
-    >
-      {userPhoto && !photoError ? (
-        <img
-          src={userPhoto}
-          alt=""
-          className="w-full h-full object-cover"
-          onError={() => setPhotoError(true)}
-        />
-      ) : userInitial ? (
-        <span className="font-black text-[#E40000]">{userInitial}</span>
-      ) : (
-        <User className="w-4 h-4 text-[#E40000]" />
-      )}
-    </button>
-  );
-
-  // ── Reserve Tab Header — clean red & white, matches app aesthetic ──
-  if (activeTab === 'reserve') {
-    return (
-      <header
-        className="sticky top-0 z-40 bg-white/85 backdrop-blur-2xl border-b border-neutral-200/60 shadow-[0_2px_16px_rgba(0,0,0,0.03)]"
-        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
-      >
-        <section className="px-4 md:px-8 pt-1.5 pb-3">
-          <div className="flex items-center justify-between gap-2">
-            {/* Branch selector */}
-            <div
-              onClick={onOpenLocationModal}
-              className="flex items-center space-x-2.5 cursor-pointer ios-press flex-1 min-w-0"
-            >
-              <img
-                src="/app-icon.png"
-                alt="Persian Darbar"
-                className="w-8 h-8 rounded-xl object-contain shrink-0 shadow-xs border border-amber-400/40"
-              />
-              <div className="leading-tight min-w-0 flex-1 truncate">
-                <div className="flex items-center space-x-1">
-                  <span className="text-xs sm:text-sm font-black text-neutral-900 truncate tracking-tight">
-                    Persian Darbar · {branchName}
-                  </span>
-                  <ChevronDown className="w-3.5 h-3.5 text-neutral-700 stroke-[3] shrink-0" />
-                </div>
-                <p className="text-[10px] font-semibold text-neutral-500 truncate mt-0.5">
-                  Fine Dining &amp; Royal Table Reservations
-                </p>
-              </div>
-            </div>
-
-            {/* Right: notification bell + red VIP pill + profile */}
-            <div className="flex items-center space-x-1.5 shrink-0">
-              {/* Notification Bell */}
-              {onOpenNotifications && (
-                <button
-                  onClick={onOpenNotifications}
-                  className="relative w-8 h-8 rounded-full bg-neutral-100/90 border border-neutral-200/60 flex items-center justify-center ios-press cursor-pointer shadow-xs shrink-0"
-                  aria-label="Notifications"
-                >
-                  <Bell className="w-4 h-4 text-neutral-700" />
-                  {notificationCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 min-w-[15px] h-[15px] bg-[#E40000] text-white text-[8px] font-black rounded-full flex items-center justify-center px-0.5 border border-white">
-                      {notificationCount > 9 ? '9+' : notificationCount}
-                    </span>
-                  )}
-                </button>
-              )}
-              <button
-                onClick={onOpenWallet}
-                aria-label="Royalty Membership"
-                className="px-2.5 py-1 rounded-full bg-gradient-to-r from-[#E40000] to-[#CC0000] text-white text-xs font-black flex items-center space-x-1 shadow-sm ios-press shrink-0"
-              >
-                <img src="/app-icon.png" alt="" className="w-3.5 h-3.5 rounded-sm object-contain" />
-                <span className="text-[9.5px] font-extrabold tracking-wider uppercase">VIP Table</span>
-              </button>
-              <ProfileAvatar />
-            </div>
-          </div>
-
-          {/* Status strip */}
-          <div className="mt-2 flex items-center justify-between bg-neutral-50/90 border border-neutral-200/70 rounded-xl px-3 py-1.5 text-[10px] font-semibold text-neutral-600 shadow-2xs">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Instant Confirmation · Live Table Booking</span>
-            </span>
-            <span className="text-[#E40000] font-black uppercase tracking-wider text-[9px]">
-              Since 1978
-            </span>
-          </div>
-        </section>
-      </header>
-    );
-  }
-
-  // ── Default Header (Home / Order / Rewards / Profile tabs) ──
   return (
     <header
-      className="sticky top-0 z-40 bg-white/85 backdrop-blur-2xl border-b border-neutral-200/60 shadow-[0_2px_16px_rgba(0,0,0,0.03)]"
+      data-pd-topbar
+      className="sticky top-0 z-40 bg-white/[0.92] backdrop-blur-xl border-b border-[color:var(--pd-line)]"
       style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
     >
-      <section className="px-4 md:px-8 pt-1.5 pb-3">
-        {/* Top row */}
-        <div className="flex items-center justify-between gap-2">
-          {/* Branch selector with crown logo */}
-          <div
+      <section className="px-4 md:px-8 pt-2 pb-3">
+        <div className="flex items-center gap-3">
+          {/* Location / outlet */}
+          <button
+            type="button"
             onClick={onOpenLocationModal}
-            className="flex items-center space-x-2 cursor-pointer ios-press flex-1 min-w-0"
+            className="flex items-start gap-2 flex-1 min-w-0 text-left pd-press"
+            aria-label={`Change outlet, current ${branchName}`}
           >
-            <img
-              src="/app-icon.png"
-              alt="Persian Darbar"
-              className="w-8 h-8 rounded-xl object-contain shrink-0 shadow-xs border border-amber-400/40"
-            />
-            <div className="leading-tight min-w-0 flex-1 truncate">
-              <div className="flex items-center space-x-1">
-                <span className="text-xs sm:text-sm font-black text-neutral-900 truncate">
+            <MapPin className="w-5 h-5 text-pd-action shrink-0 mt-0.5" strokeWidth={2.25} />
+            <span className="min-w-0">
+              <span className="flex items-center gap-1">
+                <span className="text-[17px] leading-[22px] font-bold text-pd-ink truncate tracking-[-0.01em]">
                   {branchName}
                 </span>
-                <ChevronDown className="w-3.5 h-3.5 text-neutral-800 stroke-[3] shrink-0" />
-              </div>
-              <p className="text-[10px] sm:text-[11px] font-bold text-neutral-500 truncate mt-0.5">
-                {distanceKm ? `${distanceKm} km · ` : ''}{branchAddress}
-              </p>
-            </div>
-          </div>
+                <ChevronDown className="w-4 h-4 text-pd-ink shrink-0" strokeWidth={2.5} />
+              </span>
+              <span className="block text-[13px] leading-[18px] text-pd-ink-2 truncate">
+                {isReserve
+                  ? 'Persian Darbar · table reservations'
+                  : `${distanceKm ? `${distanceKm} km · ` : ''}${branchAddress}`}
+              </span>
+            </span>
+          </button>
 
-          {/* Right: notification bell + Royalty pill + Profile */}
-          <div className="flex items-center space-x-1.5 shrink-0">
-            {/* Notification Bell */}
+          {/* Actions */}
+          <div className="flex items-center gap-1 shrink-0">
+            {showRoyalty && (
+              <button
+                type="button"
+                onClick={onOpenWallet}
+                aria-label="Royalty rewards"
+                className="h-8 px-2.5 rounded-full bg-pd-gold-tint text-pd-gold flex items-center gap-1 pd-press"
+              >
+                <Crown className="w-4 h-4" strokeWidth={2} />
+                <span className="text-[13px] font-semibold">{isReserve ? 'VIP' : 'Royalty'}</span>
+              </button>
+            )}
             {onOpenNotifications && (
               <button
+                type="button"
                 onClick={onOpenNotifications}
-                className="relative w-8 h-8 rounded-full bg-neutral-100/90 border border-neutral-200/60 flex items-center justify-center ios-press cursor-pointer shadow-xs shrink-0"
+                className="relative w-10 h-10 rounded-full flex items-center justify-center text-pd-ink pd-press"
                 aria-label="Notifications"
               >
-                <Bell className="w-4 h-4 text-neutral-700" />
+                <Bell className="w-[22px] h-[22px]" strokeWidth={1.75} />
                 {notificationCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[15px] h-[15px] bg-[#E40000] text-white text-[8px] font-black rounded-full flex items-center justify-center px-0.5 border border-white">
+                  <span className="absolute top-1 right-1 min-w-[17px] h-[17px] px-1 rounded-full bg-pd-action text-white text-[11px] font-semibold leading-[17px] text-center border-2 border-white box-content">
                     {notificationCount > 9 ? '9+' : notificationCount}
                   </span>
                 )}
               </button>
             )}
-            {activeTab !== 'rewards' && activeTab !== 'profile' && (
-              <button
-                onClick={onOpenWallet}
-                aria-label="Royalty Membership"
-                className="px-2.5 py-1 rounded-full bg-gradient-to-r from-[#E40000] to-[#CC0000] text-white text-xs font-black flex items-center space-x-1 shadow-sm ios-press shrink-0"
-              >
-                <img src="/app-icon.png" alt="" className="w-3.5 h-3.5 rounded-sm object-contain" />
-                <span className="text-[9.5px] font-extrabold tracking-wider uppercase">Royalty</span>
-              </button>
-            )}
-            <ProfileAvatar />
+            <button
+              type="button"
+              onClick={onOpenProfile}
+              aria-label="Profile"
+              className="w-9 h-9 rounded-full overflow-hidden bg-pd-surface flex items-center justify-center pd-press"
+            >
+              {userPhoto && !photoError ? (
+                <img src={userPhoto} alt="" className="w-full h-full object-cover" onError={() => setPhotoError(true)} />
+              ) : userInitial ? (
+                <span className="text-[15px] font-semibold text-pd-ink">{userInitial}</span>
+              ) : (
+                <User className="w-5 h-5 text-pd-ink-2" strokeWidth={1.75} />
+              )}
+            </button>
           </div>
         </div>
 
-        {/* ── Search Bar: Apple Spotlight Style (Only on Home & Order tabs) ── */}
-        {activeTab !== 'rewards' && activeTab !== 'profile' && (
-          <div className="mt-2.5">
-            <div
-              id="top-search-bar"
-              onClick={onOpenSearch}
-              className="relative cursor-pointer ios-press"
-            >
-              <div className="w-full bg-neutral-100/80 hover:bg-neutral-100 rounded-2xl py-2.5 pl-9 pr-9 text-xs font-medium text-neutral-800 border border-neutral-200/60 shadow-2xs flex items-center transition-colors">
-                <span className={searchQuery ? 'text-neutral-900 font-semibold' : 'text-neutral-400'}>
-                  {searchQuery || searchPlaceholder}
-                </span>
-              </div>
-              <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-3" />
-              <Mic className="w-4 h-4 text-[#E40000] absolute right-3 top-3" />
-            </div>
-          </div>
+        {showSearch && (
+          <button
+            id="top-search-bar"
+            type="button"
+            onClick={onOpenSearch}
+            className="mt-3 w-full h-11 rounded-[12px] bg-pd-surface flex items-center gap-2.5 px-3.5 text-left pd-press"
+          >
+            <Search className="w-[18px] h-[18px] text-pd-ink-2 shrink-0" strokeWidth={2} />
+            <span className={`flex-1 truncate text-[15px] ${searchQuery ? 'text-pd-ink font-medium' : 'text-pd-ink-3'}`}>
+              {searchQuery || searchPlaceholder}
+            </span>
+            <span className="w-px h-5 bg-black/10" />
+            <Mic className="w-[18px] h-[18px] text-pd-action shrink-0" strokeWidth={2} />
+          </button>
         )}
       </section>
     </header>

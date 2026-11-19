@@ -78,12 +78,12 @@ const CustomerProfileSheet = ({
         {/* ── Top Header Profile Bar ── */}
         <div className="px-5 py-3.5 bg-white border-b border-neutral-100 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 rounded-full bg-[#1C1917] text-amber-300 flex items-center justify-center font-black text-base shadow-sm border-2 border-amber-400/60">
+            <div className="w-12 h-12 rounded-full bg-[#1C1917] text-amber-300 flex items-center justify-center font-bold text-base shadow-sm border-2 border-amber-400/60">
               {patronInitial}
             </div>
             <div>
               <div className="flex items-center space-x-1.5">
-                <h2 className="text-base font-black text-neutral-900 leading-tight">
+                <h2 className="text-base font-bold text-neutral-900 leading-tight">
                   {patronName}
                 </h2>
                 <Crown className="w-4 h-4 text-amber-500 fill-amber-400" />
@@ -112,7 +112,7 @@ const CustomerProfileSheet = ({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`py-2 px-3 rounded-xl text-xs font-black transition-all shrink-0 ${
+              className={`py-2 px-3 rounded-xl text-xs font-bold transition-all shrink-0 ${
                 activeTab === tab.id
                   ? 'bg-neutral-900 text-amber-300 shadow-xs'
                   : 'text-neutral-500 hover:text-neutral-800'
@@ -141,11 +141,11 @@ const CustomerProfileSheet = ({
                       <div className="w-7 h-7 rounded-lg bg-amber-400/20 border border-amber-400/50 flex items-center justify-center">
                         <Crown className="w-4 h-4 text-amber-300 fill-amber-400" />
                       </div>
-                      <span className="text-xs font-black tracking-widest uppercase text-amber-300">
+                      <span className="text-xs font-bold tracking-wide uppercase text-amber-300">
                         PERSIAN DARBAR ROYALTY
                       </span>
                     </div>
-                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-400 text-black">
+                    <span className="text-[11px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-400 text-black">
                       VIP ELITE
                     </span>
                   </div>
@@ -153,17 +153,17 @@ const CustomerProfileSheet = ({
                   {/* Coins Counter */}
                   <div className="bg-black/40 backdrop-blur-md rounded-2xl p-4 border border-amber-400/30 flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] font-black uppercase tracking-wider text-amber-200/80 block">
+                      <span className="text-[11px] font-bold uppercase tracking-wide text-amber-200/80 block">
                         Your Royalty Balance
                       </span>
-                      <h3 className="text-3xl font-black text-amber-300 leading-none mt-1">
+                      <h3 className="text-3xl font-bold text-amber-300 leading-none mt-1">
                         {pdCoins.toLocaleString()} <span className="text-base text-amber-100">PD Coins</span>
                       </h3>
                       <p className="text-[11px] text-neutral-300 font-medium mt-1">
                         Worth <strong className="text-amber-300">₹{pdCoins}</strong> direct discount on your next order
                       </p>
                     </div>
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-300 text-black flex items-center justify-center text-xl font-black shadow-lg">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-300 text-black flex items-center justify-center text-xl font-bold shadow-lg">
                       <Crown className="w-6 h-6 text-black fill-black" />
                     </div>
                   </div>
@@ -183,7 +183,7 @@ const CustomerProfileSheet = ({
 
               {/* VIP Membership Privileges */}
               <div className="bg-white rounded-3xl p-4 border border-neutral-200/80 shadow-xs space-y-3">
-                <h3 className="text-xs font-black uppercase tracking-wider text-neutral-400">
+                <h3 className="text-xs font-bold uppercase tracking-wide text-neutral-400">
                   YOUR ROYAL PRIVILEGES
                 </h3>
 
@@ -194,7 +194,7 @@ const CustomerProfileSheet = ({
                         <Sparkles className="w-4 h-4 fill-amber-400 text-amber-500" />
                       </div>
                       <div>
-                        <h4 className="text-xs font-black text-neutral-900 leading-tight">
+                        <h4 className="text-xs font-bold text-neutral-900 leading-tight">
                           {priv.title}
                         </h4>
                         <p className="text-[11px] text-neutral-500 mt-0.5">
@@ -211,7 +211,7 @@ const CustomerProfileSheet = ({
                 href="https://wa.me/919594287868?text=Hello%20Persian%20Darbar!%20I%20have%20an%20inquiry%20regarding%20my%20Royalty%20Coins%20and%20Membership."
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full bg-[#24963F] hover:bg-[#1E7E34] text-white p-3.5 rounded-2xl text-xs font-black flex items-center justify-center space-x-2 shadow-xs transition-colors"
+                className="w-full bg-[#24963F] hover:bg-[#1E7E34] text-white p-3.5 rounded-2xl text-xs font-bold flex items-center justify-center space-x-2 shadow-xs transition-colors"
               >
                 <MessageSquare className="w-4 h-4 fill-current" />
                 <span>Contact Royalty Concierge on WhatsApp</span>
@@ -225,7 +225,7 @@ const CustomerProfileSheet = ({
               {orders.length === 0 ? (
                 <div className="bg-white rounded-3xl p-8 text-center border border-neutral-200/80 shadow-xs space-y-3">
                   <ShoppingBag className="w-12 h-12 text-neutral-300 mx-auto" />
-                  <h4 className="font-extrabold text-sm text-neutral-900">
+                  <h4 className="font-bold text-sm text-neutral-900">
                     No Orders Placed Yet
                   </h4>
                   <p className="text-xs text-neutral-500">
@@ -243,15 +243,15 @@ const CustomerProfileSheet = ({
                     >
                       <div className="flex items-center justify-between border-b border-neutral-100 pb-2.5">
                         <div>
-                          <span className="text-[10px] font-black uppercase tracking-wider text-neutral-400">
+                          <span className="text-[11px] font-bold uppercase tracking-wide text-neutral-400">
                             Order #{orderNum}
                           </span>
-                          <h4 className="text-sm font-black text-neutral-900">
+                          <h4 className="text-sm font-bold text-neutral-900">
                             ₹{order.total || order.subtotal || 0} · {order.items?.length || 1} items
                           </h4>
                         </div>
                         <span
-                          className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
+                          className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase ${
                             isDone
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                               : 'bg-amber-50 text-amber-700 border border-amber-200 animate-pulse'
@@ -273,14 +273,14 @@ const CustomerProfileSheet = ({
 
                       {/* Card Action */}
                       <div className="flex items-center justify-between pt-2 border-t border-neutral-100">
-                        <span className="text-[10px] text-neutral-400 font-medium">
+                        <span className="text-[11px] text-neutral-400 font-medium">
                           {order.created_at ? new Date(order.created_at).toLocaleDateString() : 'Recent Order'}
                         </span>
                         <div className="flex items-center gap-2">
                           {!isDone && order.status !== 'cancelled' && onTrackOrder && (
                             <button
                               onClick={() => onTrackOrder(order)}
-                              className="bg-[#E40000] hover:bg-[#c00000] text-white px-3 py-1.5 rounded-xl text-xs font-black transition-transform active:scale-95 flex items-center gap-1.5 shadow-xs cursor-pointer"
+                              className="bg-pd-action hover:bg-[#c00000] text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-transform active:scale-95 flex items-center gap-1.5 shadow-xs cursor-pointer"
                             >
                               <Bike className="w-3.5 h-3.5" />
                               <span>Track Live</span>
@@ -307,7 +307,7 @@ const CustomerProfileSheet = ({
               {reservations.length === 0 ? (
                 <div className="bg-white rounded-3xl p-8 text-center border border-neutral-200/80 shadow-xs space-y-3">
                   <Calendar className="w-12 h-12 text-neutral-300 mx-auto" />
-                  <h4 className="font-extrabold text-sm text-neutral-900">
+                  <h4 className="font-bold text-sm text-neutral-900">
                     No Table Reservations Yet
                   </h4>
                   <p className="text-xs text-neutral-500">
@@ -322,15 +322,15 @@ const CustomerProfileSheet = ({
                   >
                     <div className="flex items-center justify-between border-b border-neutral-100 pb-2">
                       <div>
-                        <span className="text-[10px] font-black text-neutral-400 uppercase">
+                        <span className="text-[11px] font-bold text-neutral-400 uppercase">
                           Table for {res.guests} Guests
                         </span>
-                        <h4 className="font-black text-sm text-neutral-900">
+                        <h4 className="font-bold text-sm text-neutral-900">
                           {res.date} at {res.time}
                         </h4>
                       </div>
                       <span
-                        className={`px-2.5 py-1 rounded-full text-[10px] font-black ${
+                        className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
                           res.status === 'confirmed'
                             ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                             : 'bg-amber-50 text-amber-700 border border-amber-200 animate-pulse'
@@ -358,13 +358,13 @@ const CustomerProfileSheet = ({
               {/* Phone card */}
               <div className="bg-white rounded-3xl p-4 border border-neutral-200/80 shadow-xs space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2 text-xs font-black text-neutral-900">
-                    <Phone className="w-4 h-4 text-[#E40000]" />
+                  <div className="flex items-center space-x-2 text-xs font-bold text-neutral-900">
+                    <Phone className="w-4 h-4 text-pd-action" />
                     <span>Mobile Number</span>
                   </div>
                   <button
                     onClick={() => setEditPhone(!editPhone)}
-                    className="text-xs font-bold text-[#E40000] hover:underline"
+                    className="text-xs font-bold text-pd-action hover:underline"
                   >
                     {editPhone ? 'Cancel' : 'Edit'}
                   </button>
@@ -388,7 +388,7 @@ const CustomerProfileSheet = ({
                     </button>
                   </div>
                 ) : (
-                  <p className="text-sm font-extrabold text-neutral-800">
+                  <p className="text-sm font-bold text-neutral-800">
                     +91 {phoneVal}
                   </p>
                 )}
@@ -397,13 +397,13 @@ const CustomerProfileSheet = ({
               {/* Address card */}
               <div className="bg-white rounded-3xl p-4 border border-neutral-200/80 shadow-xs space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2 text-xs font-black text-neutral-900">
-                    <MapPin className="w-4 h-4 text-[#E40000]" />
+                  <div className="flex items-center space-x-2 text-xs font-bold text-neutral-900">
+                    <MapPin className="w-4 h-4 text-pd-action" />
                     <span>Default Delivery Address</span>
                   </div>
                   <button
                     onClick={() => setEditAddr(!editAddr)}
-                    className="text-xs font-bold text-[#E40000] hover:underline"
+                    className="text-xs font-bold text-pd-action hover:underline"
                   >
                     {editAddr ? 'Cancel' : 'Edit'}
                   </button>
@@ -427,7 +427,7 @@ const CustomerProfileSheet = ({
                     </button>
                   </div>
                 ) : (
-                  <p className="text-sm font-extrabold text-neutral-800">
+                  <p className="text-sm font-bold text-neutral-800">
                     {addrVal}
                   </p>
                 )}
@@ -478,9 +478,9 @@ const CustomerProfileSheet = ({
               <Trash2 className="w-7 h-7 text-red-600" />
             </div>
             <div>
-              <h3 className="font-black text-base text-neutral-900">Delete Account Permanently?</h3>
+              <h3 className="font-bold text-base text-neutral-900">Delete Account Permanently?</h3>
               <p className="text-xs text-neutral-600 mt-1.5 leading-relaxed">
-                This will immediately remove your Persian Darbar profile, delete saved delivery addresses, and forfeit your <strong className="text-red-600 font-black">{pdCoins} PD Coins</strong>.
+                This will immediately remove your Persian Darbar profile, delete saved delivery addresses, and forfeit your <strong className="text-red-600 font-bold">{pdCoins} PD Coins</strong>.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-2.5 pt-2">
@@ -505,7 +505,7 @@ const CustomerProfileSheet = ({
                     setIsDeleting(false);
                   }
                 }}
-                className="py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black text-xs shadow-md active:scale-98 transition-all cursor-pointer flex items-center justify-center space-x-1.5 disabled:opacity-50"
+                className="py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md active:scale-98 transition-all cursor-pointer flex items-center justify-center space-x-1.5 disabled:opacity-50"
               >
                 {isDeleting ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

@@ -1,8 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400;1,600&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400;1,600&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 /* Hide scrollbars for slick mobile horizontal scrolling */
 html, body {
     overflow-x: hidden;
+    /* clip (not hidden) so position: sticky keeps working inside the page */
+    overflow-x: clip;
     max-width: 100vw;
     width: 100%;
 }
@@ -29,9 +31,6 @@ html, body {
     box-shadow: 0 4px 15px rgba(226, 55, 68, 0.45);
 }
 
-.font-script {
-    font-family: 'Caveat', cursive;
-}
 
 /* Ribbon folded ends effect */
 .ribbon-banner {
@@ -60,7 +59,7 @@ html, body {
 
 body {
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Plus Jakarta Sans", sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Roboto", "Inter", "Segoe UI", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     /* iOS: prevent elastic overscroll on the body itself */
@@ -75,20 +74,65 @@ body {
 }
 
 .ios-press {
-    transition: transform 0.16s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.16s ease;
+    transition: transform 0.12s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.12s ease;
     user-select: none;
     -webkit-user-select: none;
 }
 .ios-press:active {
-    transform: scale(0.96);
-    opacity: 0.9;
+    transform: scale(0.97);
 }
 
 .ios-press-subtle {
-    transition: transform 0.16s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: transform 0.12s cubic-bezier(0.23, 1, 0.32, 1);
 }
 .ios-press-subtle:active {
-    transform: scale(0.98);
+    transform: scale(0.985);
+}
+
+/* ── Darbar UI (customer app design tokens) ─────────────────── */
+:root {
+    --pd-ink: #0E1A20;
+    --pd-ink-2: #4A5560;
+    --pd-ink-3: #8A949C;
+    --pd-canvas: #FFFFFF;
+    --pd-surface: #F6F5F2;
+    --pd-line: rgba(14, 26, 32, 0.08);
+    --pd-action: #B4232F;
+    --pd-action-press: #951B26;
+    --pd-action-tint: #FBEDEE;
+    --pd-gold: #B8862B;
+    --pd-gold-tint: #FBF4E4;
+    --pd-teal: #1A3D47;
+    --pd-veg: #1E8E3E;
+    --pd-nonveg: #A1341E;
+    --pd-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Press feedback for tappable cards and buttons */
+.pd-press {
+    transition: transform 0.12s var(--pd-ease-out), background-color 0.15s ease, opacity 0.15s ease;
+    -webkit-user-select: none;
+    user-select: none;
+}
+.pd-press:active {
+    transform: scale(0.97);
+}
+.pd-tabular {
+    font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pd-press,
+    .ios-press,
+    .ios-press-subtle {
+        transition: opacity 0.12s ease;
+    }
+    .pd-press:active,
+    .ios-press:active,
+    .ios-press-subtle:active {
+        transform: none;
+        opacity: 0.85;
+    }
 }
 
 /* Apple Squircle Card Materials */

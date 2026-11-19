@@ -113,7 +113,7 @@ const CustomerPwaInstallModal = () => {
           </div>
 
           <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#EAB308]/10 border border-[#EAB308]/30 text-[#EAB308] text-[10px] font-black uppercase tracking-wider mb-1">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#EAB308]/10 border border-[#EAB308]/30 text-[#EAB308] text-[11px] font-bold uppercase tracking-wide mb-1">
               <Sparkles className="w-2.5 h-2.5" />
               <span>Official Customer App</span>
             </div>
@@ -135,7 +135,7 @@ const CustomerPwaInstallModal = () => {
             <div className="w-6 h-6 rounded-lg bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 flex-shrink-0">
               <Zap className="w-3.5 h-3.5" />
             </div>
-            <span><strong>2x Faster Performance:</strong> 1-Tap live order tracking & instant checkout.</span>
+            <span><strong>Quick access:</strong> Open your orders and tracking in one tap.</span>
           </div>
 
           <div className="flex items-center gap-3 text-xs text-gray-300">
@@ -149,7 +149,7 @@ const CustomerPwaInstallModal = () => {
             <div className="w-6 h-6 rounded-lg bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center text-cyan-400 flex-shrink-0">
               <Smartphone className="w-3.5 h-3.5" />
             </div>
-            <span><strong>Zero Storage Used:</strong> Launches instantly like a native mobile app.</span>
+            <span><strong>Lightweight:</strong> Opens from your home screen like an app.</span>
           </div>
         </div>
 
@@ -169,7 +169,7 @@ const CustomerPwaInstallModal = () => {
             </div>
             <button
               onClick={handleDismiss}
-              className="w-full py-3 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
+              className="w-full py-3 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold uppercase tracking-wide transition-colors cursor-pointer"
             >
               Got It, Thanks
             </button>
@@ -188,7 +188,7 @@ const CustomerPwaInstallModal = () => {
             </div>
             <button
               onClick={handleDismiss}
-              className="w-full py-3 rounded-xl bg-[#EAB308] hover:bg-[#CA8A04] text-black font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+              className="w-full py-3 rounded-xl bg-[#EAB308] hover:bg-[#CA8A04] text-black font-bold text-xs uppercase tracking-wide transition-colors cursor-pointer"
             >
               Done, Continue to App
             </button>
@@ -199,7 +199,7 @@ const CustomerPwaInstallModal = () => {
             <button
               onClick={handleInstallClick}
               disabled={installing}
-              className="w-full group relative overflow-hidden flex items-center justify-center gap-2 bg-gradient-to-r from-[#EAB308] to-[#CA8A04] hover:from-[#FACC15] hover:to-[#EAB308] text-black font-extrabold py-3.5 px-5 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-[#EAB308]/20 active:scale-[0.98] cursor-pointer text-sm"
+              className="w-full group relative overflow-hidden flex items-center justify-center gap-2 bg-gradient-to-r from-[#EAB308] to-[#CA8A04] hover:from-[#FACC15] hover:to-[#EAB308] text-black font-bold py-3.5 px-5 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-[#EAB308]/20 active:scale-[0.98] cursor-pointer text-sm"
             >
               <Download className="w-4 h-4 text-black group-hover:translate-y-0.5 transition-transform" />
               <span>{installing ? 'Installing App...' : 'Install App Now'}</span>

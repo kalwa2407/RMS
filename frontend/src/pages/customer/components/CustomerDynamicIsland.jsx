@@ -76,7 +76,7 @@ export const CustomerDynamicIsland = ({
             {/* Left: Brand name */}
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[12px] font-black lowercase tracking-tight font-sans text-white group-hover:text-amber-300 transition-colors">
+              <span className="text-[12px] font-bold lowercase tracking-tight font-sans text-white group-hover:text-amber-300 transition-colors">
                 persian darbar
               </span>
             </div>
@@ -106,7 +106,7 @@ export const CustomerDynamicIsland = ({
                     className="transition-all duration-500"
                   />
                 </svg>
-                <span className="absolute inset-0 flex items-center justify-center text-[8.5px] font-black text-white tracking-tighter">
+                <span className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-white tracking-tighter">
                   {minsLeft}m
                 </span>
               </div>
@@ -118,8 +118,8 @@ export const CustomerDynamicIsland = ({
             <div className="flex items-center justify-between pb-2 border-b border-white/10">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-xs font-black lowercase text-amber-300">persian darbar</span>
-                <span className="text-[10px] text-white/50">. Live Activity</span>
+                <span className="text-xs font-bold lowercase text-amber-300">persian darbar</span>
+                <span className="text-[11px] text-white/50">. Live Activity</span>
               </div>
               <button
                 onClick={(e) => {
@@ -134,7 +134,7 @@ export const CustomerDynamicIsland = ({
 
             <div className="py-2.5 flex items-center justify-between">
               <div>
-                <p className="text-sm font-black text-white capitalize">
+                <p className="text-sm font-bold text-white capitalize">
                   {statusText}
                 </p>
                 <p className="text-[11px] text-white/60">
@@ -142,14 +142,14 @@ export const CustomerDynamicIsland = ({
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-[10px] text-white/50 font-medium">ETA</p>
-                <p className="text-lg font-black text-white">{minsLeft} mins</p>
+                <p className="text-[11px] text-white/50 font-medium">ETA</p>
+                <p className="text-lg font-bold text-white">{minsLeft} mins</p>
               </div>
             </div>
 
             <button
               onClick={onOpenTrackOrder}
-              className="w-full mt-1 py-2 bg-gradient-to-r from-red-600 to-[#E40000] text-white font-black text-xs rounded-xl flex items-center justify-center gap-1.5 active:scale-98 transition-transform shadow-md"
+              className="w-full mt-1 py-2 bg-gradient-to-r from-red-600 to-pd-action text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 active:scale-98 transition-transform shadow-md"
             >
               <span>View Full Live Map & Rider Details</span>
               <ChevronRight className="w-3.5 h-3.5" />
@@ -169,13 +169,13 @@ export const CustomerDynamicIsland = ({
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-[#E40000] flex items-center justify-center text-white text-[10px]">
+            <div className="w-6 h-6 rounded-lg bg-pd-action flex items-center justify-center text-white text-[11px]">
               <ChefHat className="w-3.5 h-3.5 text-white" />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-black text-white">Persian Darbar</span>
-                <span className="text-[9px] bg-neutral-700 text-neutral-300 px-1 rounded">Live Order</span>
+                <span className="text-xs font-bold text-white">Persian Darbar</span>
+                <span className="text-[11px] bg-neutral-700 text-neutral-300 px-1 rounded">Live Order</span>
               </div>
               <p className="text-[11px] text-emerald-400 font-bold">
                 {statusText} . {minsLeft} min

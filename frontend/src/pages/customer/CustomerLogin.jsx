@@ -265,23 +265,23 @@ const CustomerLogin = () => {
               alt="Persian Darbar"
               className="w-20 h-20 rounded-3xl shadow-lg border border-amber-400/50 object-cover mx-auto"
             />
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[9px] font-black border border-white shadow-xs">
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[11px] font-bold border border-white shadow-xs">
               ✓
             </div>
           </div>
 
           <h1
-            className="text-xl font-black text-neutral-900 tracking-tight"
+            className="text-xl font-bold text-neutral-900 tracking-tight"
             style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
           >
             Persian Darbar
           </h1>
           <p className="text-[11px] font-semibold text-neutral-500 mt-0.5">
-            India's #1 Royal Mughlai & Dum Biryani App
+            Authentic Mughlai &amp; dum biryani
           </p>
 
           <div className="mt-2.5 pt-2 border-t border-neutral-100">
-            <h2 className="text-sm font-black text-neutral-900">
+            <h2 className="text-sm font-bold text-neutral-900">
               {step === 'phone' ? 'Log in or sign up' : 'Enter Verification Code'}
             </h2>
             <p className="text-[11px] text-neutral-500 mt-0.5">
@@ -295,7 +295,7 @@ const CustomerLogin = () => {
         {/* ── Error & Notice Alerts ── */}
         <div className="px-6 shrink-0">
           {error && (
-            <div className="mb-3 p-2.5 rounded-2xl bg-red-50 border border-red-200 text-[#E40000] text-xs font-medium flex items-start gap-2 animate-in fade-in">
+            <div className="mb-3 p-2.5 rounded-2xl bg-red-50 border border-red-200 text-pd-action text-xs font-medium flex items-start gap-2 animate-in fade-in">
               <span className="text-sm leading-none mt-0.5">⚠️</span>
               <span className="leading-relaxed flex-1">{error}</span>
             </div>
@@ -315,10 +315,10 @@ const CustomerLogin = () => {
             <form onSubmit={handleSendOtp} className="space-y-3">
               {/* Phone Input Box */}
               <div>
-                <label className="block text-[11px] font-black text-neutral-400 uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-neutral-400 uppercase tracking-wide mb-1">
                   Mobile Number
                 </label>
-                <div className="flex items-center rounded-2xl border-2 border-neutral-200 focus-within:border-[#E40000] focus-within:ring-2 focus-within:ring-red-100 transition-all bg-white overflow-hidden shadow-xs">
+                <div className="flex items-center rounded-2xl border-2 border-neutral-200 focus-within:border-pd-action focus-within:ring-2 focus-within:ring-red-100 transition-all bg-white overflow-hidden shadow-xs">
                   {/* Country Flag Pill */}
                   <div className="px-3 py-3 bg-neutral-50 border-r border-neutral-200 flex items-center space-x-1.5 shrink-0">
                     <svg className="w-5 h-3.5 rounded-xs shadow-xs" viewBox="0 0 900 600" aria-label="India">
@@ -328,7 +328,7 @@ const CustomerLogin = () => {
                       <circle cx="450" cy="300" r="80" fill="none" stroke="#000080" strokeWidth="10"/>
                       <circle cx="450" cy="300" r="16" fill="#000080"/>
                     </svg>
-                    <span className="text-xs font-black text-neutral-800">+91</span>
+                    <span className="text-xs font-bold text-neutral-800">+91</span>
                   </div>
 
                   {/* Input */}
@@ -344,7 +344,7 @@ const CustomerLogin = () => {
                     autoCapitalize="off"
                     spellCheck={false}
                     enterKeyHint="done"
-                    className="w-full bg-transparent px-3 py-3 text-neutral-900 font-bold text-base tracking-wider placeholder:tracking-normal placeholder:font-normal placeholder:text-neutral-400 placeholder:text-xs outline-none"
+                    className="w-full bg-transparent px-3 py-3 text-neutral-900 font-bold text-base tracking-wide placeholder:tracking-normal placeholder:font-normal placeholder:text-neutral-400 placeholder:text-xs outline-none"
                   />
 
                   {phone.length > 0 && (
@@ -363,7 +363,7 @@ const CustomerLogin = () => {
               <button
                 type="submit"
                 disabled={submitting || phone.length !== 10}
-                className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-[#E40000] via-[#D31027] to-[#B91C1C] hover:brightness-105 text-white font-black text-sm uppercase tracking-wider shadow-[0_6px_20px_-2px_rgba(228,0,0,0.38)] ios-press transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center space-x-2 border border-white/20"
+                className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-pd-action via-pd-action-press to-pd-action-press hover:brightness-105 text-white font-bold text-sm uppercase tracking-wide shadow-[0_6px_20px_-2px_rgba(180,35,47,0.38)] ios-press transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center space-x-2 border border-white/20"
               >
                 {submitting ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -381,7 +381,7 @@ const CustomerLogin = () => {
               {/* Or Divider */}
               <div className="flex items-center gap-3">
                 <div className="h-px bg-neutral-200 flex-1" />
-                <span className="text-[11px] uppercase font-bold tracking-widest text-neutral-400">
+                <span className="text-[11px] uppercase font-bold tracking-wide text-neutral-400">
                   or
                 </span>
                 <div className="h-px bg-neutral-200 flex-1" />
@@ -459,10 +459,10 @@ const CustomerLogin = () => {
               {/* Phone display with Edit */}
               <div className="bg-neutral-50 rounded-2xl p-3 border border-neutral-200 flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                  <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wide block">
                     Verification code sent to
                   </span>
-                  <span className="text-sm font-black text-neutral-900">
+                  <span className="text-sm font-bold text-neutral-900">
                     +91 {phone}
                   </span>
                 </div>
@@ -473,7 +473,7 @@ const CustomerLogin = () => {
                     setOtp('');
                     setError(null);
                   }}
-                  className="px-3 py-1.5 rounded-xl bg-white border border-neutral-200 text-xs font-bold text-[#E40000] hover:bg-red-50 flex items-center gap-1 cursor-pointer"
+                  className="px-3 py-1.5 rounded-xl bg-white border border-neutral-200 text-xs font-bold text-pd-action hover:bg-red-50 flex items-center gap-1 cursor-pointer"
                 >
                   <Edit2 className="w-3 h-3" />
                   <span>Edit</span>
@@ -482,7 +482,7 @@ const CustomerLogin = () => {
 
               {/* OTP Digits Input */}
               <div>
-                <label className="block text-[11px] font-black text-neutral-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-[11px] font-bold text-neutral-400 uppercase tracking-wide mb-1.5">
                   6-Digit Verification Code
                 </label>
                 <input
@@ -497,23 +497,23 @@ const CustomerLogin = () => {
                   autoCapitalize="off"
                   spellCheck={false}
                   enterKeyHint="done"
-                  className="w-full bg-white border-2 border-neutral-300 focus:border-[#E40000] focus:ring-2 focus:ring-red-100 rounded-2xl px-4 py-4 text-center text-3xl font-black tracking-[0.4em] text-neutral-900 placeholder:tracking-[0.3em] placeholder:text-neutral-300 outline-none transition-all shadow-inner"
+                  className="w-full bg-white border-2 border-neutral-300 focus:border-pd-action focus:ring-2 focus:ring-red-100 rounded-2xl px-4 py-4 text-center text-3xl font-bold tracking-[0.4em] text-neutral-900 placeholder:tracking-[0.3em] placeholder:text-neutral-300 outline-none transition-all shadow-inner"
                 />
               </div>
 
               {/* Name field: Hidden for existing patrons, shown only for new accounts */}
               {isExistingUser ? (
                 <div className="bg-amber-50/80 border border-amber-200/80 rounded-2xl px-3.5 py-2.5 flex items-center space-x-2">
-                  <div className="w-5 h-5 rounded-full bg-amber-400 flex items-center justify-center text-neutral-900 text-[10px] font-black shrink-0">
+                  <div className="w-5 h-5 rounded-full bg-amber-400 flex items-center justify-center text-neutral-900 text-[11px] font-bold shrink-0">
                     👑
                   </div>
                   <span className="text-xs font-bold text-neutral-900">
-                    Welcome back, <strong className="text-amber-950 font-black">{fullName || 'Valued Patron'}</strong>
+                    Welcome back, <strong className="text-amber-950 font-bold">{fullName || 'Valued Patron'}</strong>
                   </span>
                 </div>
               ) : (
                 <div>
-                  <label className="block text-[11px] font-black text-neutral-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-[11px] font-bold text-neutral-400 uppercase tracking-wide mb-1.5">
                     Your Name <span className="text-neutral-400 lowercase font-normal">(optional)</span>
                   </label>
                   <input
@@ -526,7 +526,7 @@ const CustomerLogin = () => {
                     autoCapitalize="words"
                     spellCheck={false}
                     enterKeyHint="done"
-                    className="w-full bg-white border border-neutral-300 focus:border-[#E40000] focus:ring-2 focus:ring-red-100 rounded-2xl px-4 py-3 text-sm font-bold text-neutral-900 placeholder:text-neutral-400 outline-none transition-all"
+                    className="w-full bg-white border border-neutral-300 focus:border-pd-action focus:ring-2 focus:ring-red-100 rounded-2xl px-4 py-3 text-sm font-bold text-neutral-900 placeholder:text-neutral-400 outline-none transition-all"
                   />
                 </div>
               )}
@@ -543,7 +543,7 @@ const CustomerLogin = () => {
                     type="button"
                     onClick={handleSendOtp}
                     disabled={submitting}
-                    className="text-[#E40000] hover:underline font-black flex items-center gap-1 cursor-pointer"
+                    className="text-pd-action hover:underline font-bold flex items-center gap-1 cursor-pointer"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                     <span>Resend Code</span>
@@ -555,7 +555,7 @@ const CustomerLogin = () => {
               <button
                 type="submit"
                 disabled={submitting || otp.length !== 6}
-                className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-[#E40000] via-[#D31027] to-[#B91C1C] hover:brightness-105 text-white font-black text-sm uppercase tracking-wider shadow-[0_6px_20px_-2px_rgba(228,0,0,0.38)] ios-press transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center space-x-2 border border-white/20"
+                className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-pd-action via-pd-action-press to-pd-action-press hover:brightness-105 text-white font-bold text-sm uppercase tracking-wide shadow-[0_6px_20px_-2px_rgba(180,35,47,0.38)] ios-press transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center space-x-2 border border-white/20"
               >
                 {submitting ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

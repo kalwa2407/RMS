@@ -1,6 +1,33 @@
 import React, { useState } from 'react';
-import { X, Trash2, Plus, Minus, Tag, MapPin, Check, Sparkles, AlertCircle, Navigation, Banknote, CreditCard, Coins, Bike, ShoppingBag } from 'lucide-react';
+import { Drawer } from 'vaul';
+import { X, Plus, Tag, MapPin, Check, AlertCircle, Navigation, Banknote, CreditCard, Coins, Bike, ShoppingBag, ChevronDown, Store } from 'lucide-react';
+import { isVegDish } from '../customerAssets';
+import { AddStepper, VegMark, cx, formatINR } from '../ui';
 
+const COOKING_OPTIONS = ['Less spicy', 'Extra gravy', 'Well cooked', 'No onion/garlic'];
+const DELIVERY_OPTIONS = ['Leave at door', "Don't ring bell", 'Call upon arrival', 'Avoid calling'];
+
+/* White card on the warm-grey sheet background. */
+const Card = ({ children, className = '' }) => (
+  <section className={cx('bg-white rounded-[18px] shadow-pd-1', className)}>{children}</section>
+);
+
+const CardTitle = ({ icon: Icon, children, action }) => (
+  <div className="flex items-center justify-between gap-2 mb-3">
+    <h3 className="flex items-center gap-2 text-[15px] font-semibold text-pd-ink">
+      {Icon && <Icon className="w-[18px] h-[18px] text-pd-ink-2" strokeWidth={1.75} />}
+      {children}
+    </h3>
+    {action}
+  </div>
+);
+
+const BillRow = ({ label, value, className = '' }) => (
+  <div className={cx('flex items-center justify-between text-[14px]', className)}>
+    <span>{label}</span>
+    <span className="pd-tabular">{value}</span>
+  </div>
+);
 
 const CustomerCartSheet = ({
   isOpen = false,
@@ -47,508 +74,463 @@ const CustomerCartSheet = ({
 }) => {
   const [couponInput, setCouponInput] = useState('');
   const [showCouponsList, setShowCouponsList] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
 
-  if (!isOpen) return null;
-
-  const COOKING_OPTIONS = ['Less spicy', 'Extra gravy', 'Well cooked', 'No onion/garlic'];
-  const DELIVERY_OPTIONS = ['Leave at door', "Don't ring bell", 'Call upon arrival', 'Avoid calling'];
-
+  const itemCount = cart.reduce((s, i) => s + i.quantity, 0);
   const freeDeliveryDiff = Math.max(0, freeDeliveryThreshold - cartSubtotal);
+  const freeDeliveryUnlocked = cartDeliveryFee === 0 || freeDeliveryDiff === 0;
   const numDist = parseFloat(distanceKm || 0);
   const isBeyondDeliveryRange = orderType === 'DELIVERY' && numDist > 20;
+  const totalSavings = (couponDiscount || 0) + (coinsDiscount || 0);
+  const instructionCount = cookingTags.length + deliveryTags.length + (cookingNote ? 1 : 0);
+
+  const ctaLabel = isBeyondDeliveryRange
+    ? 'Delivery unavailable beyond 20 km'
+    : placingOrder
+    ? 'Placing order…'
+    : currentUser
+    ? 'Place order'
+    : 'Log in to place order';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity p-0 md:p-6">
-      <div
-        className="w-full max-w-[430px] md:max-w-xl max-h-[90vh] bg-white rounded-t-[28px] md:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300"
-      >
-        {/* Grab Handle */}
-        <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-2.5 mb-1" />
-
-        {/* ── Sheet Header ── */}
-        <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <h2 className="text-base font-extrabold text-neutral-900">
-              Your Food Cart
-            </h2>
-            <span className="text-xs font-bold text-gray-500">
-              ({cart.reduce((s, i) => s + i.quantity, 0)} items)
-            </span>
-          </div>
-
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* ── Scrollable Body ── */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5 no-scrollbar">
-          {/* Order Type Tabs: Delivery vs Takeaway */}
-          <div className="flex bg-neutral-100 p-1 rounded-xl">
-            <button
-              onClick={() => onSetOrderType('DELIVERY')}
-              className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
-                orderType === 'DELIVERY'
-                  ? 'bg-white text-neutral-900 shadow-xs'
-                  : 'text-neutral-500'
-              }`}
-            >
-              <span className="flex items-center justify-center gap-1.5">
-                <Bike className="w-3.5 h-3.5" />
-                <span>Home Delivery</span>
-              </span>
-            </button>
-            <button
-              onClick={() => onSetOrderType('TAKEAWAY')}
-              className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
-                orderType === 'TAKEAWAY'
-                  ? 'bg-white text-neutral-900 shadow-xs'
-                  : 'text-neutral-500'
-              }`}
-            >
-              <span className="flex items-center justify-center gap-1.5">
-                <ShoppingBag className="w-3.5 h-3.5" />
-                <span>Takeaway Pickup</span>
-              </span>
-            </button>
-          </div>
-
-
-          {/* Takeaway Info (if Takeaway) */}
-          {orderType === 'TAKEAWAY' && (
-            <div className="bg-neutral-50 p-3 rounded-2xl border border-neutral-200/70 space-y-1">
-              <div className="flex items-center space-x-1.5 text-xs font-bold text-neutral-800">
-                <MapPin className="w-3.5 h-3.5 text-[#E40000]" />
-                <span>Pickup Outlet: Persian Darbar ({selectedBranch?.name || 'Bandra Flagship'})</span>
+    <Drawer.Root open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <Drawer.Portal>
+        <Drawer.Overlay className="fixed inset-0 z-50 bg-black/50" />
+        <Drawer.Content
+          aria-describedby={undefined}
+          className="fixed z-[51] bottom-0 left-0 right-0 mx-auto w-full max-w-[430px] md:max-w-xl h-[92vh] bg-pd-surface rounded-t-[24px] flex flex-col outline-none"
+        >
+          {/* Header */}
+          <div className="bg-white rounded-t-[24px] border-b border-[color:var(--pd-line)]">
+            <div className="w-10 h-1.5 rounded-full bg-black/15 mx-auto mt-2" />
+            <div className="px-4 pt-2 pb-3 flex items-center justify-between">
+              <div>
+                <Drawer.Title className="text-[20px] font-bold text-pd-ink tracking-[-0.01em]">Your cart</Drawer.Title>
+                <p className="text-[13px] text-pd-ink-2 pd-tabular">
+                  {itemCount} {itemCount === 1 ? 'item' : 'items'} · Persian Darbar{selectedBranch?.name ? `, ${selectedBranch.name}` : ''}
+                </p>
               </div>
-              <p className="text-[11px] text-neutral-600 font-medium">
-                {selectedBranch?.fullAddress || 'Moray Mahal, Linking Road, Bandra West, Mumbai'}
-              </p>
-              <p className="text-[10px] text-emerald-700 font-bold pt-0.5">
-                ✓ Ready for pickup in ~25 mins • Zero delivery fees
-              </p>
-            </div>
-          )}
-
-          {/* Delivery Address (if Delivery) */}
-          {orderType === 'DELIVERY' && (
-            <div className="bg-neutral-50 p-3 rounded-2xl border border-neutral-200/70 space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-1.5 text-xs font-bold text-neutral-800">
-                  <MapPin className="w-3.5 h-3.5 text-[#E40000]" />
-                  <span>Delivery Address</span>
-                </div>
-                <button
-                  onClick={onDetectLocation}
-                  disabled={detectingLocation}
-                  className="text-[11px] font-bold text-[#E40000] hover:underline flex items-center space-x-1"
-                >
-                  <Navigation className={`w-3 h-3 ${detectingLocation ? 'animate-spin' : ''}`} />
-                  <span>{detectingLocation ? 'Detecting GPS...' : 'GPS Auto-detect'}</span>
-                </button>
-              </div>
-              <input
-                type="text"
-                value={deliveryAddress}
-                onChange={(e) => onSetDeliveryAddress(e.target.value)}
-                placeholder="Enter complete flat, street, landmark address..."
-                className="w-full bg-white border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-[#E40000]"
-              />
-              {distanceKm && (
-                <div className="flex items-center justify-between text-[11px] text-neutral-600 font-medium pt-0.5">
-                  <span className="flex items-center space-x-1">
-                    <MapPin className="w-3 h-3 text-[#E40000]" />
-                    <span>Distance from <strong>{selectedBranch?.name || 'Persian Darbar'}</strong>:</span>
-                  </span>
-                  <span className={`font-black px-2 py-0.5 rounded-md ${isBeyondDeliveryRange ? 'bg-red-100 text-red-700' : 'bg-neutral-200/60 text-neutral-900'}`}>
-                    {distanceKm} km
-                  </span>
-                </div>
-              )}
-              {isBeyondDeliveryRange && (
-                <div className="mt-2 bg-red-50 border border-red-200 rounded-xl p-2.5 flex items-start gap-2 text-red-700">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
-                  <div className="text-[11px]">
-                    <p className="font-extrabold text-red-800">Delivery Unavailable Beyond 20 km</p>
-                    <p className="text-red-700 mt-0.5 leading-snug">
-                      Detected distance is <strong>{numDist.toFixed(1)} km</strong>. We deliver within a 20 km radius to ensure food quality and piping hot Mughlai dishes. Please switch to <strong>Takeaway Pickup</strong>.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Free Delivery Bar */}
-          {orderType === 'DELIVERY' && (
-            <div className="bg-amber-50 border border-amber-200/80 rounded-xl p-2.5 flex items-center justify-between">
-              <div className="flex items-center space-x-1.5 text-xs text-amber-900 font-bold">
-                <Bike className="w-4 h-4 text-amber-700 shrink-0" />
-                <span>
-                  {freeDeliveryDiff === 0
-                    ? 'FREE Delivery Unlocked on this order!'
-                    : `Add ₹${freeDeliveryDiff} more for FREE Delivery`}
-                </span>
-              </div>
-              <span className="text-[10px] font-bold text-amber-800">
-                Above ₹{freeDeliveryThreshold}
-              </span>
-            </div>
-          )}
-
-          {/* Cart Items List */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-extrabold text-neutral-400 uppercase tracking-wider">
-                ITEMS IN CART
-              </h3>
               <button
-                onClick={onClearCart}
-                className="text-[11px] font-bold text-red-500 hover:text-red-700"
+                type="button"
+                onClick={onClose}
+                aria-label="Close"
+                className="w-9 h-9 rounded-full bg-pd-surface flex items-center justify-center text-pd-ink-2 pd-press"
               >
-                Clear Cart
+                <X className="w-[18px] h-[18px]" strokeWidth={2} />
               </button>
             </div>
 
-            {cart.map((item) => {
-              const isVeg = item.is_veg !== false && !item.category?.toLowerCase().includes('non') && item.veg !== false;
-              return (
-                <div
-                  key={item._id}
-                  className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0"
-                >
-                  <div className="flex items-start space-x-2 flex-1 pr-2">
-                    <span
-                      className={`w-3.5 h-3.5 border flex items-center justify-center p-[2px] rounded-xs mt-0.5 shrink-0 ${
-                        isVeg ? 'border-green-600' : 'border-red-600'
-                      }`}
-                    >
-                      {isVeg ? (
-                        <span className="w-1.5 h-1.5 bg-green-600 rounded-full" />
-                      ) : (
-                        <span className="w-1.5 h-1.5 bg-red-600 rounded-xs" />
+            {/* Delivery / Pickup segmented control */}
+            <div className="px-4 pb-3">
+              <div className="flex bg-pd-surface p-1 rounded-[12px]" role="tablist">
+                {[
+                  { id: 'DELIVERY', label: 'Delivery', icon: Bike },
+                  { id: 'TAKEAWAY', label: 'Pickup', icon: ShoppingBag },
+                ].map(({ id, label, icon: Icon }) => {
+                  const active = orderType === id;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => onSetOrderType(id)}
+                      className={cx(
+                        'flex-1 h-9 rounded-[9px] text-[14px] font-semibold flex items-center justify-center gap-1.5 transition-colors',
+                        active ? 'bg-white text-pd-ink shadow-pd-1' : 'text-pd-ink-2'
                       )}
-                    </span>
-                    <div>
-                      <h4 className="text-xs font-bold text-neutral-900 leading-tight">
-                        {item.name}
-                      </h4>
-                      <p className="text-xs font-extrabold text-neutral-800 mt-0.5">
-                        ₹{(item.price * item.quantity).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Quantity Stepper */}
-                  <div className="flex items-center space-x-2 bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-1 text-xs font-black">
-                    <button
-                      type="button"
-                      onClick={() => onUpdateCartQty(item._id || item.id, -1)}
-                      className="text-neutral-600 hover:text-[#E40000] p-0.5 active:scale-90"
                     >
-                      <Minus className="w-3.5 h-3.5" />
+                      <Icon className="w-4 h-4" strokeWidth={2} />
+                      {label}
                     </button>
-                    <span className="w-4 text-center">{item.quantity}</span>
-                    <button
-                      type="button"
-                      onClick={() => onUpdateCartQty(item._id || item.id, 1)}
-                      className="text-neutral-600 hover:text-[#E40000] p-0.5 active:scale-90"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
-          {/* Order More Button */}
-          {onOrderMore && (
-            <button
-              type="button"
-              onClick={onOrderMore}
-              className="w-full flex items-center justify-center space-x-2 py-2.5 rounded-xl border-2 border-dashed border-[#E40000]/40 text-[#E40000] bg-red-50/40 hover:bg-red-50 text-xs font-black transition-all active:scale-98"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Order More Items</span>
-            </button>
-          )}
-
-          {/* ── Coupons & Promos ── */}
-          <div className="bg-neutral-50 p-3 rounded-2xl border border-neutral-200/70 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-1.5 text-xs font-bold text-neutral-800">
-                <Tag className="w-3.5 h-3.5 text-[#E40000]" />
-                <span>Offers &amp; Coupons</span>
-              </div>
-              {coupons.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setShowCouponsList(!showCouponsList)}
-                  className="text-[11px] font-bold text-[#E40000]"
-                >
-                  {showCouponsList ? 'Hide' : `View ${coupons.length} Offers`}
-                </button>
-              )}
-            </div>
-
-            {appliedCoupon ? (
-              <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 p-2 rounded-xl text-xs font-bold text-emerald-800">
-                <div className="flex items-center space-x-1.5">
-                  <Check className="w-4 h-4 text-emerald-600" />
-                  <span>Applied "{appliedCoupon.code}" (Saved ₹{couponDiscount})</span>
-                </div>
-                <button
-                  onClick={onRemoveCoupon}
-                  className="text-[11px] font-extrabold text-red-600 hover:underline"
-                >
-                  Remove
-                </button>
-              </div>
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto no-scrollbar px-3 py-3 space-y-3">
+            {/* Address / pickup */}
+            {orderType === 'TAKEAWAY' ? (
+              <Card className="p-4">
+                <CardTitle icon={Store}>Pickup from</CardTitle>
+                <p className="text-[15px] font-medium text-pd-ink">
+                  Persian Darbar ({selectedBranch?.name || 'Bandra Flagship'})
+                </p>
+                <p className="text-[13px] text-pd-ink-2 mt-0.5">
+                  {selectedBranch?.fullAddress || 'Moray Mahal, Linking Road, Bandra West, Mumbai'}
+                </p>
+                <p className="text-[13px] text-pd-success font-medium mt-2">
+                  Ready in about 25 min · No delivery fee
+                </p>
+              </Card>
             ) : (
-              <div className="flex items-center space-x-2">
+              <Card className="p-4">
+                <CardTitle
+                  icon={MapPin}
+                  action={
+                    <button
+                      type="button"
+                      onClick={onDetectLocation}
+                      disabled={detectingLocation}
+                      className="flex items-center gap-1 text-[13px] font-semibold text-pd-action pd-press disabled:opacity-60"
+                    >
+                      <Navigation className={cx('w-3.5 h-3.5', detectingLocation && 'animate-spin')} />
+                      {detectingLocation ? 'Detecting…' : 'Use my location'}
+                    </button>
+                  }
+                >
+                  Deliver to
+                </CardTitle>
                 <input
                   type="text"
-                  value={couponInput}
-                  onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                  placeholder="Enter coupon code (e.g. ROYAL50)"
-                  className="flex-1 bg-white border border-neutral-200 rounded-xl px-3 py-1.5 text-xs font-bold uppercase text-neutral-800 placeholder-neutral-400 focus:outline-none"
+                  value={deliveryAddress}
+                  onChange={(e) => onSetDeliveryAddress(e.target.value)}
+                  placeholder="Flat, street, landmark"
+                  autoComplete="street-address"
+                  className="w-full h-12 bg-pd-surface rounded-[12px] px-3.5 text-[16px] text-pd-ink placeholder:text-pd-ink-3 focus:outline-none focus:ring-2 focus:ring-pd-action/30"
                 />
-                <button
-                  onClick={() => {
-                    if (couponInput.trim()) onApplyCoupon(couponInput.trim());
-                  }}
-                  disabled={validatingCoupon || !couponInput.trim()}
-                  className="bg-[#1C1C1C] text-white text-xs font-bold px-4 py-1.5 rounded-xl disabled:opacity-40 active:scale-95 transition-transform"
-                >
-                  {validatingCoupon ? 'Checking...' : 'Apply'}
-                </button>
-              </div>
-            )}
-
-            {/* Public Coupons Suggestions */}
-            {showCouponsList && coupons.length > 0 && !appliedCoupon && (
-              <div className="space-y-1.5 pt-1 border-t border-neutral-200">
-                {coupons.map((c) => (
-                  <div
-                    key={c.code}
-                    onClick={() => {
-                      setCouponInput(c.code);
-                      onApplyCoupon(c.code);
-                    }}
-                    className="flex items-center justify-between p-2 rounded-lg bg-white border border-dashed border-red-300 cursor-pointer hover:bg-red-50 transition-colors"
-                  >
-                    <div>
-                      <span className="text-xs font-black text-[#E40000]">
-                        {c.code}
-                      </span>
-                      <p className="text-[10px] text-neutral-500">
-                        {c.description || `Get ${c.discount_percent || 15}% OFF`}
+                {distanceKm && (
+                  <p className={cx('text-[13px] mt-2', isBeyondDeliveryRange ? 'text-pd-error' : 'text-pd-ink-2')}>
+                    <span className="pd-tabular">{distanceKm} km</span> from {selectedBranch?.name || 'Persian Darbar'}
+                  </p>
+                )}
+                {isBeyondDeliveryRange && (
+                  <div className="mt-3 rounded-[12px] bg-[#FDECEC] p-3 flex items-start gap-2.5">
+                    <AlertCircle className="w-[18px] h-[18px] shrink-0 mt-0.5 text-pd-error" />
+                    <div className="text-[13px] leading-[18px] text-pd-ink">
+                      <p className="font-semibold">We deliver within 20 km</p>
+                      <p className="text-pd-ink-2 mt-0.5">
+                        You are <span className="pd-tabular">{numDist.toFixed(1)} km</span> away. Switch to Pickup to order from this outlet.
                       </p>
                     </div>
-                    <span className="text-[11px] font-bold text-red-600">
-                      APPLY
+                  </div>
+                )}
+                {!isBeyondDeliveryRange && (
+                  <div className="mt-3 pt-3 border-t border-[color:var(--pd-line)] flex items-center gap-2 text-[13px]">
+                    <Bike className="w-4 h-4 text-pd-ink-2 shrink-0" strokeWidth={1.75} />
+                    {freeDeliveryUnlocked ? (
+                      <span className="text-pd-success font-medium">Free delivery on this order</span>
+                    ) : (
+                      <span className="text-pd-ink-2">
+                        Add <span className="font-semibold text-pd-ink pd-tabular">{formatINR(freeDeliveryDiff)}</span> more for free delivery
+                      </span>
+                    )}
+                  </div>
+                )}
+              </Card>
+            )}
+
+            {/* Items */}
+            <Card className="px-4 pt-4 pb-1">
+              <CardTitle
+                action={
+                  <button type="button" onClick={onClearCart} className="text-[13px] font-medium text-pd-ink-3 pd-press">
+                    Clear
+                  </button>
+                }
+              >
+                Items
+              </CardTitle>
+              <ul className="divide-y divide-[color:var(--pd-line)]">
+                {cart.map((item) => (
+                  <li key={item._id || item.id} className="flex items-center gap-3 py-3">
+                    <VegMark veg={isVegDish(item)} size={13} className="self-start mt-1" />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-[15px] font-medium text-pd-ink leading-5">{item.name}</h4>
+                      <p className="text-[13px] text-pd-ink-2 mt-0.5 pd-tabular">{formatINR(item.price)}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <AddStepper
+                        size="sm"
+                        quantity={item.quantity}
+                        onIncrement={() => onUpdateCartQty(item._id || item.id, 1)}
+                        onDecrement={() => onUpdateCartQty(item._id || item.id, -1)}
+                        className="!shadow-none"
+                      />
+                      <span className="text-[13px] font-semibold text-pd-ink pd-tabular">
+                        {formatINR(item.price * item.quantity)}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              {onOrderMore && (
+                <button
+                  type="button"
+                  onClick={onOrderMore}
+                  className="w-full flex items-center gap-2 py-3.5 border-t border-[color:var(--pd-line)] text-[14px] font-semibold text-pd-action pd-press"
+                >
+                  <Plus className="w-4 h-4" strokeWidth={2.25} />
+                  Add more items
+                </button>
+              )}
+            </Card>
+
+            {/* Instructions (collapsed by default) */}
+            <Card className="p-4">
+              <button
+                type="button"
+                onClick={() => setShowInstructions((v) => !v)}
+                aria-expanded={showInstructions}
+                className="w-full flex items-center justify-between text-left"
+              >
+                <span>
+                  <span className="block text-[15px] font-semibold text-pd-ink">Cooking &amp; delivery instructions</span>
+                  <span className="block text-[13px] text-pd-ink-2 mt-0.5">
+                    {instructionCount > 0 ? `${instructionCount} added` : 'Optional'}
+                  </span>
+                </span>
+                <ChevronDown className={cx('w-5 h-5 text-pd-ink-3 transition-transform duration-200', showInstructions && 'rotate-180')} />
+              </button>
+
+              {showInstructions && (
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <p className="text-[13px] font-medium text-pd-ink-2 mb-2">For the kitchen</p>
+                    <div className="flex flex-wrap gap-2">
+                      {COOKING_OPTIONS.map((tag) => {
+                        const selected = cookingTags.includes(tag);
+                        return (
+                          <button
+                            key={tag}
+                            type="button"
+                            aria-pressed={selected}
+                            onClick={() => onToggleCookingTag(tag)}
+                            className={cx(
+                              'h-8 px-3 rounded-full text-[13px] font-medium border transition-colors',
+                              selected ? 'border-pd-ink bg-pd-ink text-white' : 'border-[color:var(--pd-line)] bg-white text-pd-ink'
+                            )}
+                          >
+                            {tag}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <input
+                      type="text"
+                      value={cookingNote}
+                      onChange={(e) => onSetCookingNote(e.target.value)}
+                      placeholder="Note for the chef"
+                      className="w-full mt-3 h-11 bg-pd-surface rounded-[12px] px-3.5 text-[16px] text-pd-ink placeholder:text-pd-ink-3 focus:outline-none focus:ring-2 focus:ring-pd-action/30"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-medium text-pd-ink-2 mb-2">For the rider</p>
+                    <div className="flex flex-wrap gap-2">
+                      {DELIVERY_OPTIONS.map((tag) => {
+                        const selected = deliveryTags.includes(tag);
+                        return (
+                          <button
+                            key={tag}
+                            type="button"
+                            aria-pressed={selected}
+                            onClick={() => onToggleDeliveryTag(tag)}
+                            className={cx(
+                              'h-8 px-3 rounded-full text-[13px] font-medium border transition-colors',
+                              selected ? 'border-pd-ink bg-pd-ink text-white' : 'border-[color:var(--pd-line)] bg-white text-pd-ink'
+                            )}
+                          >
+                            {tag}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </Card>
+
+            {/* Offers */}
+            <Card className="p-4">
+              <CardTitle
+                icon={Tag}
+                action={
+                  coupons.length > 0 && !appliedCoupon ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowCouponsList(!showCouponsList)}
+                      className="text-[13px] font-semibold text-pd-action pd-press"
+                    >
+                      {showCouponsList ? 'Hide offers' : `View ${coupons.length} offers`}
+                    </button>
+                  ) : null
+                }
+              >
+                Offers
+              </CardTitle>
+
+              {appliedCoupon ? (
+                <div className="flex items-center justify-between rounded-[12px] bg-[#EAF6EE] px-3.5 py-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Check className="w-[18px] h-[18px] text-pd-success shrink-0" strokeWidth={2.5} />
+                    <span className="text-[14px] text-pd-ink truncate">
+                      <span className="font-semibold">{appliedCoupon.code}</span> applied · you save <span className="pd-tabular">{formatINR(couponDiscount)}</span>
                     </span>
                   </div>
-                ))}
-              </div>
+                  <button type="button" onClick={onRemoveCoupon} className="text-[13px] font-semibold text-pd-ink-2 pl-2 pd-press">
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                    placeholder="Enter coupon code"
+                    autoCapitalize="characters"
+                    className="flex-1 min-w-0 h-11 bg-pd-surface rounded-[12px] px-3.5 text-[16px] font-medium tracking-wide text-pd-ink placeholder:text-pd-ink-3 placeholder:font-normal placeholder:tracking-normal focus:outline-none focus:ring-2 focus:ring-pd-action/30"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (couponInput.trim()) onApplyCoupon(couponInput.trim());
+                    }}
+                    disabled={validatingCoupon || !couponInput.trim()}
+                    className="h-11 px-4 rounded-[12px] bg-pd-ink text-white text-[14px] font-semibold disabled:opacity-35 pd-press"
+                  >
+                    {validatingCoupon ? 'Checking…' : 'Apply'}
+                  </button>
+                </div>
+              )}
+
+              {showCouponsList && coupons.length > 0 && !appliedCoupon && (
+                <ul className="mt-3 divide-y divide-[color:var(--pd-line)] border-t border-[color:var(--pd-line)]">
+                  {coupons.map((c) => (
+                    <li key={c.code}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCouponInput(c.code);
+                          onApplyCoupon(c.code);
+                        }}
+                        className="w-full flex items-center justify-between gap-3 py-3 text-left pd-press"
+                      >
+                        <span className="min-w-0">
+                          <span className="block text-[14px] font-semibold text-pd-ink tracking-wide">{c.code}</span>
+                          <span className="block text-[13px] text-pd-ink-2 truncate">
+                            {c.description || `Get ${c.discount_percent || 15}% off`}
+                          </span>
+                        </span>
+                        <span className="text-[13px] font-semibold text-pd-action shrink-0">Apply</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+
+            {/* PD Coins */}
+            {pdCoins > 0 && (
+              <Card className="p-4">
+                <label className="flex items-center justify-between gap-3 cursor-pointer">
+                  <span className="flex items-center gap-3 min-w-0">
+                    <span className="w-9 h-9 rounded-full bg-pd-gold-tint flex items-center justify-center shrink-0">
+                      <Coins className="w-[18px] h-[18px] text-pd-gold" strokeWidth={2} />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-[15px] font-semibold text-pd-ink">Use PD Coins</span>
+                      <span className="block text-[13px] text-pd-ink-2 pd-tabular">
+                        {pdCoins} coins · save up to {formatINR(maxRedeemableCoins)}
+                      </span>
+                    </span>
+                  </span>
+                  <input type="checkbox" checked={applyCoins} onChange={onToggleCoins} className="sr-only peer" />
+                  <span
+                    aria-hidden="true"
+                    className="relative shrink-0 w-[51px] h-[31px] rounded-full bg-[#E3E1DC] transition-colors peer-checked:bg-pd-success peer-focus-visible:ring-2 peer-focus-visible:ring-pd-action/40 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:w-[27px] after:h-[27px] after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-[20px]"
+                  />
+                </label>
+              </Card>
             )}
-          </div>
 
-          {/* ── Persian Darbar PD Coins Redemption ── */}
-          {pdCoins > 0 && (
-            <div className="bg-gradient-to-r from-amber-50 to-yellow-50 p-3 rounded-2xl border border-amber-200 flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0 border border-amber-300">
-                  <Coins className="w-4 h-4 text-amber-600" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-black text-amber-900">
-                    Redeem PD Coins
-                  </h4>
-                  <p className="text-[10px] text-amber-800">
-                    Balance: {pdCoins} coins · Save up to ₹{maxRedeemableCoins}
-                  </p>
-                </div>
+            {/* Bill */}
+            <Card className="p-4">
+              <CardTitle>Bill details</CardTitle>
+              <div className="space-y-2.5 text-pd-ink-2">
+                <BillRow label="Item total" value={formatINR(cartSubtotal)} />
+                {orderType === 'DELIVERY' && (
+                  <BillRow
+                    label="Delivery fee"
+                    value={cartDeliveryFee === 0 ? <span className="text-pd-success font-medium">Free</span> : formatINR(cartDeliveryFee)}
+                  />
+                )}
+                <BillRow label="GST & restaurant charges (5%)" value={formatINR(cartTaxes)} />
+                {couponDiscount > 0 && (
+                  <BillRow label="Coupon discount" value={`− ${formatINR(couponDiscount)}`} className="text-pd-success" />
+                )}
+                {coinsDiscount > 0 && (
+                  <BillRow label="PD Coins" value={`− ${formatINR(coinsDiscount)}`} className="text-pd-success" />
+                )}
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={applyCoins}
-                  onChange={onToggleCoins}
-                  className="sr-only peer"
-                />
-                <div className="w-8 h-4 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-amber-600" />
-              </label>
-            </div>
-          )}
+              <div className="mt-3 pt-3 border-t border-[color:var(--pd-line)] flex items-center justify-between">
+                <span className="text-[16px] font-semibold text-pd-ink">To pay</span>
+                <span className="text-[17px] font-bold text-pd-ink pd-tabular">{formatINR(cartTotal)}</span>
+              </div>
+              {totalSavings > 0 && (
+                <p className="mt-3 rounded-[10px] bg-[#EAF6EE] text-pd-success text-[13px] font-medium text-center py-2 pd-tabular">
+                  You are saving {formatINR(totalSavings)} on this order
+                </p>
+              )}
+            </Card>
 
-          {/* ── Cooking & Delivery Tags ── */}
-          <div className="space-y-3">
-            <div>
-              <label className="block text-[11px] font-extrabold text-neutral-500 uppercase tracking-wider mb-1.5">
-                Cooking Instructions
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                {COOKING_OPTIONS.map((tag) => {
-                  const selected = cookingTags.includes(tag);
+            {/* Payment */}
+            <Card className="p-4">
+              <CardTitle>Pay with</CardTitle>
+              <div className="grid grid-cols-2 gap-2.5">
+                {[
+                  { id: 'cod', label: orderType === 'TAKEAWAY' ? 'Pay at outlet' : 'Cash on delivery', icon: Banknote },
+                  { id: 'online', label: 'UPI / Online', icon: CreditCard },
+                ].map(({ id, label, icon: Icon }) => {
+                  const active = payMethod === id;
                   return (
                     <button
-                      key={tag}
+                      key={id}
                       type="button"
-                      onClick={() => onToggleCookingTag(tag)}
-                      className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${
-                        selected
-                          ? 'border-[#E40000] bg-red-50 text-[#E40000]'
-                          : 'border-neutral-200 bg-white text-neutral-600'
-                      }`}
+                      aria-pressed={active}
+                      onClick={() => onSetPayMethod(id)}
+                      className={cx(
+                        'h-14 rounded-[12px] border-2 flex items-center justify-center gap-2 text-[14px] font-semibold pd-press transition-colors',
+                        active ? 'border-pd-ink bg-white text-pd-ink' : 'border-transparent bg-pd-surface text-pd-ink-2'
+                      )}
                     >
-                      {tag}
+                      <Icon className="w-[18px] h-[18px]" strokeWidth={1.75} />
+                      {label}
                     </button>
                   );
                 })}
               </div>
-              <input
-                type="text"
-                value={cookingNote}
-                onChange={(e) => onSetCookingNote(e.target.value)}
-                placeholder="Any special note for chef..."
-                className="w-full mt-2 bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-1.5 text-xs text-neutral-800 placeholder-neutral-400 focus:outline-none"
-              />
-            </div>
+            </Card>
 
-            <div>
-              <label className="block text-[11px] font-extrabold text-neutral-500 uppercase tracking-wider mb-1.5">
-                Delivery Instructions
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                {DELIVERY_OPTIONS.map((tag) => {
-                  const selected = deliveryTags.includes(tag);
-                  return (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => onToggleDeliveryTag(tag)}
-                      className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${
-                        selected
-                          ? 'border-emerald-600 bg-emerald-50 text-emerald-800'
-                          : 'border-neutral-200 bg-white text-neutral-600'
-                      }`}
-                    >
-                      {tag}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            <div className="h-2" />
           </div>
 
-          {/* ── Bill Details Breakdown ── */}
-          <div className="bg-neutral-50 p-3.5 rounded-2xl border border-neutral-200/80 space-y-2 text-xs">
-            <h3 className="font-extrabold text-neutral-900 mb-2">
-              Bill Summary
-            </h3>
-            <div className="flex items-center justify-between text-neutral-600">
-              <span>Item Total</span>
-              <span>₹{cartSubtotal.toLocaleString()}</span>
-            </div>
-            <div className="flex items-center justify-between text-neutral-600">
-              <span>Delivery Partner Fee</span>
-              <span>{cartDeliveryFee === 0 ? 'FREE' : `₹${cartDeliveryFee}`}</span>
-            </div>
-            <div className="flex items-center justify-between text-neutral-600">
-              <span>GST &amp; Restaurant Taxes (5%)</span>
-              <span>₹{cartTaxes}</span>
-            </div>
-            {couponDiscount > 0 && (
-              <div className="flex items-center justify-between text-emerald-600 font-bold">
-                <span>Coupon Discount</span>
-                <span>- ₹{couponDiscount}</span>
-              </div>
-            )}
-            {coinsDiscount > 0 && (
-              <div className="flex items-center justify-between text-amber-600 font-bold">
-                <span>PD Coins Redeemed</span>
-                <span>- ₹{coinsDiscount}</span>
-              </div>
-            )}
-            <div className="flex items-center justify-between text-neutral-900 font-black text-sm pt-2 border-t border-neutral-200">
-              <span>To Pay</span>
-              <span>₹{cartTotal.toLocaleString()}</span>
-            </div>
-          </div>
-
-          {/* Payment Method */}
-          <div>
-            <label className="block text-[11px] font-extrabold text-neutral-500 uppercase tracking-wider mb-2">
-              Payment Method
-            </label>
-            <div className="grid grid-cols-2 gap-2.5">
-              <button
-                type="button"
-                onClick={() => onSetPayMethod('cod')}
-                className={`p-3.5 rounded-2xl border text-xs font-bold flex flex-col items-center justify-center space-y-1.5 transition-all ios-press cursor-pointer ${
-                  payMethod === 'cod'
-                    ? 'border-[#E40000] bg-red-50/70 text-[#E40000] ring-1 ring-[#E40000]/40 shadow-xs'
-                    : 'border-neutral-200/80 bg-neutral-50/80 hover:bg-neutral-100 text-neutral-700'
-                }`}
-              >
-                <div className="flex items-center space-x-1.5">
-                  <Banknote className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span className="font-extrabold">Cash on Delivery</span>
-                </div>
-              </button>
-              <button
-                type="button"
-                onClick={() => onSetPayMethod('online')}
-                className={`p-3.5 rounded-2xl border text-xs font-bold flex flex-col items-center justify-center space-y-1.5 transition-all ios-press cursor-pointer ${
-                  payMethod === 'online'
-                    ? 'border-[#E40000] bg-red-50/70 text-[#E40000] ring-1 ring-[#E40000]/40 shadow-xs'
-                    : 'border-neutral-200/80 bg-neutral-50/80 hover:bg-neutral-100 text-neutral-700'
-                }`}
-              >
-                <div className="flex items-center space-x-1.5">
-                  <CreditCard className="w-4 h-4 text-sky-600 shrink-0" />
-                  <span className="font-extrabold">UPI / Online Pay</span>
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Fixed Footer CTA: Apple Pay / High-Contrast Action ── */}
-        <div
-          className="p-4 border-t border-neutral-100 bg-white/95 backdrop-blur-xl"
-          style={{
-            paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)'
-          }}
-        >
-          <button
-            onClick={onPlaceOrder}
-            disabled={placingOrder || isBeyondDeliveryRange}
-            className={`w-full text-white font-black text-sm py-4 rounded-2xl shadow-lg transition-all flex items-center justify-center space-x-2 border cursor-pointer ${
-              isBeyondDeliveryRange
-                ? 'bg-neutral-400 border-neutral-300 opacity-60 cursor-not-allowed shadow-none'
-                : 'bg-gradient-to-r from-[#E40000] via-[#D31027] to-[#B91C1C] hover:brightness-105 shadow-[0_8px_24px_-4px_rgba(228,0,0,0.45)] border-white/20 ios-press disabled:opacity-50'
-            }`}
+          {/* Footer */}
+          <div
+            className="bg-white border-t border-[color:var(--pd-line)] px-4 pt-3 flex items-center gap-4"
+            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}
           >
-            <span>
-              {isBeyondDeliveryRange
-                ? `Delivery Unavailable Beyond 20 km (${numDist.toFixed(1)} km)`
-                : placingOrder
-                ? 'Confirming Feast...'
-                : currentUser
-                ? `Confirm Royal Feast · ₹${cartTotal.toLocaleString()}`
-                : `Login to Confirm · ₹${cartTotal.toLocaleString()}`}
-            </span>
-          </button>
-        </div>
-      </div>
-    </div>
+            <div className="shrink-0">
+              <p className="text-[17px] font-bold text-pd-ink pd-tabular leading-tight">{formatINR(cartTotal)}</p>
+              <p className="text-[12px] text-pd-ink-3">Total</p>
+            </div>
+            <button
+              type="button"
+              onClick={onPlaceOrder}
+              disabled={placingOrder || isBeyondDeliveryRange}
+              className={cx(
+                'flex-1 h-[52px] rounded-[14px] text-white text-[16px] font-semibold pd-press transition-colors',
+                isBeyondDeliveryRange ? 'bg-pd-ink-3 cursor-not-allowed' : 'bg-pd-action hover:bg-pd-action-press disabled:opacity-60'
+              )}
+            >
+              {ctaLabel}
+            </button>
+          </div>
+        </Drawer.Content>
+      </Drawer.Portal>
+    </Drawer.Root>
   );
 };
 

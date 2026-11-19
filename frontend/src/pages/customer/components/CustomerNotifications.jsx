@@ -93,7 +93,7 @@ export const NotificationBell = ({ count = 0, onClick }) => (
   >
     <Bell className="w-4 h-4 text-neutral-800" />
     {count > 0 && (
-      <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-[#E40000] text-white text-[9px] font-black rounded-full flex items-center justify-center px-1 border-2 border-white animate-in zoom-in duration-200 shadow-xs">
+      <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-pd-action text-white text-[11px] font-bold rounded-full flex items-center justify-center px-1 border-2 border-white animate-in zoom-in duration-200 shadow-xs">
         {count > 9 ? '9+' : count}
       </span>
     )}
@@ -119,7 +119,7 @@ export const HeadsUpNotificationBanner = ({ alert, onClose, onTap }) => {
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <h4 className="text-xs font-black text-white truncate">
+              <h4 className="text-xs font-bold text-white truncate">
                 {alert.title}
               </h4>
             </div>
@@ -130,7 +130,7 @@ export const HeadsUpNotificationBanner = ({ alert, onClose, onTap }) => {
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
-          <span className="text-[10px] font-black text-amber-300 bg-white/10 px-2 py-1 rounded-lg">
+          <span className="text-[11px] font-bold text-amber-300 bg-white/10 px-2 py-1 rounded-lg">
             Track
           </span>
           <button
@@ -180,7 +180,7 @@ export const CustomerNotificationDrawer = ({
             {/* Header */}
             <div className="px-5 pt-5 pb-3 border-b border-neutral-100 flex items-center justify-between shrink-0">
               <div>
-                <h2 className="text-base font-black text-neutral-900">Notifications</h2>
+                <h2 className="text-base font-bold text-neutral-900">Notifications</h2>
                 {unreadCount > 0 && (
                   <p className="text-[11px] text-neutral-500">{unreadCount} unread updates</p>
                 )}
@@ -189,7 +189,7 @@ export const CustomerNotificationDrawer = ({
                 {unreadCount > 0 && (
                   <button
                     onClick={onMarkAllRead}
-                    className="text-[11px] font-bold text-[#E40000] flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-100 transition-colors cursor-pointer"
+                    className="text-[11px] font-bold text-pd-action flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-100 transition-colors cursor-pointer"
                   >
                     <Check className="w-3 h-3" />
                     Mark all read
@@ -239,20 +239,20 @@ export const CustomerNotificationDrawer = ({
                         {/* Content */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-1">
-                            <p className={`text-xs font-black text-neutral-900 leading-tight ${!notif.read ? '' : 'font-bold'}`}>
+                            <p className={`text-xs font-bold text-neutral-900 leading-tight ${!notif.read ? '' : 'font-bold'}`}>
                               {notif.title}
                             </p>
                             <div className="flex items-center gap-1 shrink-0">
                               {!notif.read && (
                                 <span className={`w-2 h-2 rounded-full ${style.dot} shrink-0`} />
                               )}
-                              <span className="text-[9px] text-neutral-400 whitespace-nowrap">{notif.time}</span>
+                              <span className="text-[11px] text-neutral-400 whitespace-nowrap">{notif.time}</span>
                             </div>
                           </div>
                           <p className="text-[11px] text-neutral-600 mt-1 leading-relaxed">{notif.body}</p>
                           {notif.actionLabel && (
                             <div className="flex items-center gap-1 mt-2">
-                              <span className={`text-[10px] font-black ${style.iconColor}`}>{notif.actionLabel}</span>
+                              <span className={`text-[11px] font-bold ${style.iconColor}`}>{notif.actionLabel}</span>
                               <ChevronRight className={`w-3 h-3 ${style.iconColor}`} />
                             </div>
                           )}

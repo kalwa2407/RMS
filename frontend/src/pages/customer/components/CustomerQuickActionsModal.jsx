@@ -20,14 +20,14 @@ const CustomerQuickActionsModal = ({
       <div className="w-full max-w-[360px] bg-white rounded-3xl p-5 shadow-2xl space-y-4 border border-neutral-100">
         <div className="flex items-center justify-between pb-2 border-b border-gray-100">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#EA384D] to-[#D31027] text-white flex items-center justify-center shadow-xs">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#EA384D] to-pd-action-press text-white flex items-center justify-center shadow-xs">
               <Sparkles className="w-4 h-4 fill-current animate-pulse" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-neutral-900">
+              <h3 className="text-sm font-bold text-neutral-900">
                 Quick Assistant
               </h3>
-              <p className="text-[10px] text-neutral-500 font-medium">
+              <p className="text-[11px] text-neutral-500 font-medium">
                 Persian Darbar Concierge
               </p>
             </div>
@@ -48,17 +48,17 @@ const CustomerQuickActionsModal = ({
               className="w-full bg-red-50 hover:bg-red-100 border border-red-200 p-3 rounded-2xl flex items-center justify-between text-left transition-colors"
             >
               <div className="flex items-center space-x-2.5">
-                <ShoppingBag className="w-4 h-4 text-[#E40000]" />
+                <ShoppingBag className="w-4 h-4 text-pd-action" />
                 <div>
-                  <h4 className="text-xs font-black text-[#E40000]">
+                  <h4 className="text-xs font-bold text-pd-action">
                     View Cart ({cartCount} items)
                   </h4>
-                  <p className="text-[10px] text-red-600/80">
+                  <p className="text-[11px] text-red-600/80">
                     Ready to place your feast
                   </p>
                 </div>
               </div>
-              <span className="text-xs font-bold text-[#E40000]">›</span>
+              <span className="text-xs font-bold text-pd-action">›</span>
             </button>
           )}
 
@@ -71,10 +71,10 @@ const CustomerQuickActionsModal = ({
               <div className="flex items-center space-x-2.5">
                 <Clock className="w-4 h-4 text-emerald-600 animate-spin" />
                 <div>
-                  <h4 className="text-xs font-black text-emerald-900">
+                  <h4 className="text-xs font-bold text-emerald-900">
                     Track Live Order
                   </h4>
-                  <p className="text-[10px] text-emerald-700">
+                  <p className="text-[11px] text-emerald-700">
                     Status: {activeOrder.status || 'Cooking'}
                   </p>
                 </div>
@@ -92,10 +92,10 @@ const CustomerQuickActionsModal = ({
               <Crown className="w-4 h-4 text-amber-600 fill-amber-400 shrink-0" />
               <div>
 
-                <h4 className="text-xs font-black text-amber-900">
+                <h4 className="text-xs font-bold text-amber-900">
                   Chef's Special Recommendation
                 </h4>
-                <p className="text-[10px] text-amber-700">
+                <p className="text-[11px] text-amber-700">
                   Mutton Dum Biryani + Saffron Raita
                 </p>
               </div>
@@ -111,10 +111,10 @@ const CustomerQuickActionsModal = ({
             <div className="flex items-center space-x-2.5">
               <Calendar className="w-4 h-4 text-purple-700" />
               <div>
-                <h4 className="text-xs font-black text-purple-900">
+                <h4 className="text-xs font-bold text-purple-900">
                   Book Table for Tonight
                 </h4>
-                <p className="text-[10px] text-purple-700">
+                <p className="text-[11px] text-purple-700">
                   Reserve a table instantly
                 </p>
               </div>
@@ -133,7 +133,7 @@ const CustomerQuickActionsModal = ({
                 <h4 className="text-xs font-bold text-neutral-800">
                   Call Restaurant Direct
                 </h4>
-                <p className="text-[10px] text-neutral-500">
+                <p className="text-[11px] text-neutral-500">
                   {selectedBranch?.name || 'Bandra Flagship'} ({selectedBranch?.phones?.[0] || '+91 98929 57741'})
                 </p>
               </div>

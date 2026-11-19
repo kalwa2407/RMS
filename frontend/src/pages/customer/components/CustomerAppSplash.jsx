@@ -42,17 +42,17 @@ const CustomerAppSplash = ({ isReady = true, minDurationMs = 500 }) => {
         </div>
 
         {/* Brand Typography (Apple iOS Luxury Minimalist) */}
-        <h1 className="text-xl sm:text-2xl font-black tracking-[0.22em] text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-100 uppercase text-center font-serif">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-[0.22em] text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-100 uppercase text-center font-serif">
           Persian Darbar
         </h1>
-        <p className="text-[10px] sm:text-[11px] font-bold tracking-[0.3em] text-amber-300/70 uppercase mt-1 text-center">
+        <p className="text-[11px] sm:text-[11px] font-bold tracking-[0.3em] text-amber-300/70 uppercase mt-1 text-center">
           Since 1976 • The Royal Feast
         </p>
 
         {/* Sleek Minimal iOS Activity Spinner */}
         <div className="mt-8 flex items-center space-x-2">
           <div className="w-5 h-5 rounded-full border-2 border-amber-500/20 border-t-amber-400 animate-spin" />
-          <span className="text-[11px] font-semibold text-neutral-400 tracking-wider">
+          <span className="text-[11px] font-semibold text-neutral-400 tracking-wide">
             Loading royal menu...
           </span>
         </div>
