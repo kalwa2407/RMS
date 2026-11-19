@@ -1022,6 +1022,7 @@ const CustomerDashboard = () => {
   useBackHandler(isNotifOpen, () => closeNotifications());
   useBackHandler(Boolean(trackingOrderId), () => setTrackingOrderId(null));
   useBackHandler(Boolean(selectedDishDetail), () => setSelectedDishDetail(null));
+  useBackHandler(showCompleteProfile, () => setShowCompleteProfile(false));
 
   // If unauthenticated, render minimal clean container while navigating to /customer/login
   const isGuestBrowse = sessionStorage.getItem('customer_guest_browse') === 'true';
@@ -1073,7 +1074,7 @@ const CustomerDashboard = () => {
         />
 
         {/* ── Live Activity Pill (auto-detects iOS Dynamic Island vs Android Material) ── */}
-        {activeOrder && !trackingOrderId && !isCartOpen && !isProfileOpen && (
+        {activeOrder && cart.length > 0 && !trackingOrderId && !isCartOpen && !isProfileOpen && (
           <CustomerDynamicIsland
             activeOrder={activeOrder}
             distanceKm={distanceKm}
@@ -1461,69 +1462,66 @@ const CustomerDashboard = () => {
         {/* ── PWA Install Banner ── */}
         <CustomerPwaInstallModal />
 
-        {/* ── Complete Profile Modal (New Patron or Post-Deletion) ── */}
+        {/* ── Complete Profile Sheet (New Patron or Post-Deletion) ── */}
         {showCompleteProfile && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in">
-            <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-amber-200/60 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-400/10 rounded-full blur-xl pointer-events-none" />
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 animate-in fade-in duration-200">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="pd-complete-profile-title"
+              className="w-full max-w-md bg-white rounded-t-[24px] sm:rounded-[24px] px-5 pt-6 animate-in slide-in-from-bottom duration-300 ease-pd-out"
+              style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 20px)' }}
+            >
+              <h3 id="pd-complete-profile-title" className="text-[22px] font-bold text-pd-ink tracking-[-0.01em]">Complete your profile</h3>
+              <p className="mt-1 text-[15px] text-pd-ink-2">Add your number so we can reach you about your orders.</p>
 
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 rounded-2xl bg-amber-500/15 text-amber-800 flex items-center justify-center text-xl shrink-0">
-                  👑
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-neutral-900 tracking-tight">Complete Your Profile</h3>
-                  <p className="text-xs text-neutral-500 font-medium">Welcome to Persian Darbar! Enter your details to enable delivery tracking.</p>
-                </div>
-              </div>
-
-              <form onSubmit={handleSaveInitialProfile} className="space-y-4 pt-1">
-                <div>
-                  <label className="block text-xs font-bold text-neutral-600 uppercase tracking-wide mb-1.5">
-                    10-Digit Mobile Number *
-                  </label>
-                  <div className="flex items-center rounded-2xl border-2 border-neutral-200 focus-within:border-amber-500 px-3 py-2.5 bg-neutral-50 focus-within:bg-white transition-all">
-                    <span className="text-sm font-bold text-neutral-500 mr-2">+91</span>
+              <form onSubmit={handleSaveInitialProfile} className="mt-5 space-y-4">
+                <label className="block">
+                  <span className="block text-[13px] font-medium text-pd-ink-2 mb-1.5">Mobile number</span>
+                  <span className="flex items-center h-12 rounded-[12px] bg-pd-surface px-3.5 focus-within:ring-2 focus-within:ring-pd-action/30">
+                    <span className="text-[16px] text-pd-ink-2 mr-2 pd-tabular">+91</span>
                     <input
                       type="tel"
                       inputMode="numeric"
+                      autoComplete="tel-national"
                       maxLength={10}
                       value={completePhone}
                       onChange={(e) => setCompletePhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                      placeholder="9820144782"
+                      placeholder="10-digit number"
                       required
-                      className="w-full bg-transparent text-sm font-bold text-neutral-900 outline-none placeholder:text-neutral-400"
+                      className="flex-1 min-w-0 bg-transparent text-[16px] text-pd-ink outline-none placeholder:text-pd-ink-3 pd-tabular"
                     />
-                  </div>
-                </div>
+                  </span>
+                </label>
 
-                <div>
-                  <label className="block text-xs font-bold text-neutral-600 uppercase tracking-wide mb-1.5">
-                    Delivery Address <span className="font-normal text-neutral-400 lowercase">(optional for now)</span>
-                  </label>
+                <label className="block">
+                  <span className="block text-[13px] font-medium text-pd-ink-2 mb-1.5">
+                    Delivery address <span className="text-pd-ink-3">(optional)</span>
+                  </span>
                   <textarea
                     rows={2}
                     value={completeAddress}
                     onChange={(e) => setCompleteAddress(e.target.value)}
-                    placeholder="e.g. Flat 302, Diamond Towers, Camp, Pune"
-                    className="w-full rounded-2xl border-2 border-neutral-200 focus:border-amber-500 p-3 text-xs font-medium text-neutral-900 bg-neutral-50 focus:bg-white outline-none resize-none transition-all placeholder:text-neutral-400"
+                    autoComplete="street-address"
+                    placeholder="Flat, building, street, area"
+                    className="w-full rounded-[12px] bg-pd-surface px-3.5 py-3 text-[16px] text-pd-ink outline-none resize-none placeholder:text-pd-ink-3 focus:ring-2 focus:ring-pd-action/30"
                   />
-                </div>
+                </label>
 
-                <div className="pt-2 flex items-center space-x-2">
+                <div className="pt-1 grid grid-cols-2 gap-3">
                   <button
                     type="button"
                     onClick={() => setShowCompleteProfile(false)}
-                    className="flex-1 py-3 px-4 rounded-xl text-xs font-bold text-neutral-500 hover:text-neutral-700 bg-neutral-100 hover:bg-neutral-200 transition-colors cursor-pointer"
+                    className="h-12 rounded-[12px] bg-pd-surface text-pd-ink text-[15px] font-semibold pd-press"
                   >
-                    I'll add later
+                    Later
                   </button>
                   <button
                     type="submit"
                     disabled={savingProfileDetails}
-                    className="flex-1 py-3 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 shadow-md transition-all cursor-pointer disabled:opacity-50"
+                    className="h-12 rounded-[12px] bg-pd-action text-white text-[15px] font-semibold pd-press disabled:opacity-60"
                   >
-                    {savingProfileDetails ? 'Saving...' : 'Save & Continue ›'}
+                    {savingProfileDetails ? 'Saving…' : 'Save'}
                   </button>
                 </div>
               </form>

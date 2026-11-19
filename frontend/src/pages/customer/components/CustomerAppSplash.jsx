@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Crown } from 'lucide-react';
 
+// Matches the native launch screen colour (Capacitor SplashScreen #0B131B)
+// so the hand-off from native splash to the web layer is seamless.
 const CustomerAppSplash = ({ isReady = true, minDurationMs = 500 }) => {
   const [visible, setVisible] = useState(true);
   const [fading, setFading] = useState(false);
@@ -8,7 +9,7 @@ const CustomerAppSplash = ({ isReady = true, minDurationMs = 500 }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setFading(true);
-      const hideTimer = setTimeout(() => setVisible(false), 550);
+      const hideTimer = setTimeout(() => setVisible(false), 400);
       return () => clearTimeout(hideTimer);
     }, minDurationMs);
 
@@ -19,43 +20,16 @@ const CustomerAppSplash = ({ isReady = true, minDurationMs = 500 }) => {
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#0B0C0E] text-white transition-opacity duration-500 ease-out ${
+      aria-hidden="true"
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-[#0B131B] transition-opacity duration-[400ms] ease-pd-out ${
         fading ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
-      style={{
-        background: 'radial-gradient(circle at 50% 45%, rgba(212, 175, 55, 0.15) 0%, #08090A 75%)',
-        WebkitBackdropFilter: 'blur(20px)',
-        backdropFilter: 'blur(20px)'
-      }}
     >
-      {/* Subtle iOS Luxury Gold Aura */}
-      <div className="relative flex flex-col items-center">
-        {/* Royal Persian Darbar Crown Logo */}
-        <div className="relative mb-6">
-          <img
-            src="/app-icon.png"
-            alt="Persian Darbar"
-            className="w-20 h-20 rounded-3xl object-cover shadow-2xl shadow-amber-900/40 animate-pulse border border-amber-400/40"
-          />
-          {/* Subtle Ambient Gold Ring */}
-          <div className="absolute -inset-1 rounded-3xl bg-gradient-to-tr from-amber-500/20 via-transparent to-amber-300/30 blur-xs pointer-events-none" />
-        </div>
-
-        {/* Brand Typography (Apple iOS Luxury Minimalist) */}
-        <h1 className="text-xl sm:text-2xl font-bold tracking-[0.22em] text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-100 uppercase text-center font-serif">
+      <div className={`flex flex-col items-center transition-transform duration-500 ease-pd-out ${fading ? 'scale-[1.04]' : 'scale-100'}`}>
+        <img src="/app-icon.png" alt="" className="w-20 h-20 rounded-[22px] object-cover" />
+        <p className="mt-5 text-[22px] text-white tracking-[0.04em]" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
           Persian Darbar
-        </h1>
-        <p className="text-[11px] sm:text-[11px] font-bold tracking-[0.3em] text-amber-300/70 uppercase mt-1 text-center">
-          Since 1976 • The Royal Feast
         </p>
-
-        {/* Sleek Minimal iOS Activity Spinner */}
-        <div className="mt-8 flex items-center space-x-2">
-          <div className="w-5 h-5 rounded-full border-2 border-amber-500/20 border-t-amber-400 animate-spin" />
-          <span className="text-[11px] font-semibold text-neutral-400 tracking-wide">
-            Loading royal menu...
-          </span>
-        </div>
       </div>
     </div>
   );
