@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogIn, Eye, EyeOff } from "lucide-react";
+import { LogIn, Eye, EyeOff, ChevronLeft } from "lucide-react";
 import axios from "axios";
 import API_BASE from "../../lib/config";
 import logoImg from "../../assets/logo.png";
@@ -32,93 +32,88 @@ const KitchenLogin = () => {
     }
   };
 
+  const inputCls =
+    "w-full h-14 bg-white border border-[rgba(14,26,32,0.14)] rounded-[14px] px-4 text-[17px] text-pd-ink outline-none placeholder:text-pd-ink-3 focus:border-pd-ink focus:ring-4 focus:ring-[rgba(14,26,32,0.08)] transition-[border-color,box-shadow]";
+
   return (
-    <div
-      className="min-h-screen flex flex-col items-center justify-center px-5"
-      style={{
-        background: "linear-gradient(160deg, #1a0a00 0%, #2d1a0a 60%, #1a0a00 100%)",
-      }}
-    >
-      {/* Real logo */}
-      <img
-        src={logoImg}
-        alt="Persian Darbar"
-        className="mb-4 h-60 w-auto object-contain drop-shadow-2xl"
-        style={{ mixBlendMode: 'screen', filter: "drop-shadow(0 4px 24px rgba(249,115,22,0.35))" }}
-      />
-
-      <h1
-        className="text-3xl font-bold text-white mb-1 text-center"
-        style={{ fontFamily: "'Playfair Display', serif" }}
-      >
-        Kitchen Panel
-      </h1>
-      <p className="text-sm text-orange-400/70 mb-10 text-center uppercase tracking-widest">
-        Persian Darbar — Kitchen Login
-      </p>
-
-      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
-        <div>
-          <label className="text-xs font-bold uppercase tracking-widest text-orange-400/70 mb-1.5 block">
-            Staff ID
-          </label>
-          <input
-            type="text"
-            required
-            value={form.staff_id}
-            onChange={(e) => setForm({ ...form, staff_id: e.target.value })}
-            placeholder="e.g. KTC001"
-            className="w-full bg-[#2d1a0a] border border-orange-500/20 rounded-2xl px-5 py-3.5 text-white text-sm outline-none focus:border-orange-500/50 transition-all placeholder:text-gray-500"
-          />
+    <div className="min-h-screen bg-pd-surface text-pd-ink antialiased flex flex-col items-center justify-center px-5 py-10">
+      <div className="w-full max-w-[400px]">
+        <div className="mx-auto mb-8 w-full rounded-[24px] bg-pd-ink flex items-center justify-center overflow-hidden h-40">
+          <img src={logoImg} alt="Persian Darbar" className="h-56 w-auto object-contain" />
         </div>
 
-        <div>
-          <label className="text-xs font-bold uppercase tracking-widest text-orange-400/70 mb-1.5 block">
-            Password
-          </label>
-          <div className="relative">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-pd-ink-3 text-center">Persian Darbar</p>
+        <h1 className="mt-1 text-[28px] font-bold tracking-[-0.02em] text-center">Kitchen display</h1>
+        <p className="mt-2 text-[16px] text-pd-ink-2 text-center">Sign in with your kitchen staff ID.</p>
+
+        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+          <div>
+            <label htmlFor="kitchen-staff-id" className="text-[15px] font-semibold text-pd-ink-2 mb-1.5 block">
+              Staff ID
+            </label>
             <input
-              type={showPw ? "text" : "password"}
+              id="kitchen-staff-id"
+              type="text"
               required
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              placeholder="Enter password"
-              className="w-full bg-[#2d1a0a] border border-orange-500/20 rounded-2xl px-5 py-3.5 pr-12 text-white text-sm outline-none focus:border-orange-500/50 transition-all placeholder:text-gray-500"
+              autoComplete="username"
+              value={form.staff_id}
+              onChange={(e) => setForm({ ...form, staff_id: e.target.value })}
+              placeholder="e.g. KTC001"
+              className={inputCls}
             />
-            <button
-              type="button"
-              onClick={() => setShowPw(!showPw)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
-            >
-              {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
           </div>
-        </div>
 
-        {error && (
-          <p className="text-red-400 text-xs text-center bg-red-900/20 border border-red-500/20 rounded-xl px-4 py-2">
-            {error}
-          </p>
-        )}
+          <div>
+            <label htmlFor="kitchen-password" className="text-[15px] font-semibold text-pd-ink-2 mb-1.5 block">
+              Password
+            </label>
+            <div className="relative">
+              <input
+                id="kitchen-password"
+                type={showPw ? "text" : "password"}
+                required
+                autoComplete="current-password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                placeholder="Enter password"
+                className={`${inputCls} pr-14`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPw(!showPw)}
+                aria-label={showPw ? "Hide password" : "Show password"}
+                className="absolute right-1 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-[12px] text-pd-ink-2"
+              >
+                {showPw ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            </div>
+          </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-500 text-white font-bold py-4 rounded-2xl transition-all text-sm uppercase tracking-widest mt-2"
-        >
-          <LogIn className="h-4 w-4" />
-          {loading ? "Logging in..." : "Login"}
-        </button>
+          {error && (
+            <p role="alert" className="text-[15px] font-medium text-pd-error bg-[#FDECEC] rounded-[12px] px-4 py-3">
+              {error}
+            </p>
+          )}
 
-        <button
-          type="button"
-          onClick={() => navigate("/staff-entry")}
-          className="w-full text-center text-xs text-gray-400 hover:text-white transition-colors py-2 flex items-center justify-center gap-1.5 mt-2"
-        >
-          <span>&larr;</span>
-          <span>Back to Staff Portal</span>
-        </button>
-      </form>
+          <button
+            type="submit"
+            disabled={loading}
+            className="pd-press w-full h-14 rounded-[14px] bg-pd-action text-white text-[17px] font-semibold flex items-center justify-center gap-2 disabled:opacity-60 mt-2"
+          >
+            <LogIn className="h-5 w-5" />
+            {loading ? "Signing in…" : "Sign in"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate("/staff-entry")}
+            className="w-full h-12 text-[15px] font-medium text-pd-ink-2 flex items-center justify-center gap-1.5"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Back to Staff Portal
+          </button>
+        </form>
+      </div>
     </div>
   );
 };
