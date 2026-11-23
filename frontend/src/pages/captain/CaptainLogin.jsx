@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogIn, Eye, EyeOff } from "lucide-react";
+import { LogIn, Eye, EyeOff, ChevronLeft } from "lucide-react";
 import axios from "axios";
 import API_BASE from "../../lib/config";
 import logoImg from "../../assets/logo.png";
@@ -36,91 +36,79 @@ const CaptainLogin = () => {
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center px-5"
-      style={{
-        background: "linear-gradient(160deg, #0f2933 0%, #1a4855 60%, #0f2933 100%)",
-      }}
+      className="min-h-screen bg-pd-surface text-pd-ink antialiased flex flex-col items-center justify-center px-4 py-10"
+      style={{ paddingTop: "max(40px, env(safe-area-inset-top))" }}
     >
-      {/* Real logo */}
-      <img
-        src={logoImg}
-        alt="Persian Darbar"
-        className="mb-4 h-60 w-auto object-contain drop-shadow-2xl"
-        style={{ mixBlendMode: 'screen', filter: "drop-shadow(0 4px 24px rgba(234,179,8,0.35))" }}
-      />
-
-      <h1
-        className="text-3xl font-bold text-white mb-1 text-center"
-        style={{ fontFamily: "'Playfair Display', serif" }}
-      >
-        Captain Panel
-      </h1>
-      <p className="text-sm text-gray-400 mb-10 text-center uppercase tracking-widest">
-        Persian Darbar — Staff Login
-      </p>
-
-      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
-        <div>
-          <label className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1.5 block">
-            Captain ID
-          </label>
-          <input
-            type="text"
-            required
-            value={form.captain_id}
-            onChange={(e) => setForm({ ...form, captain_id: e.target.value })}
-            placeholder="e.g. CPT001"
-            className="w-full bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl px-5 py-3.5 text-white text-sm outline-none focus:border-[#EAB308]/50 transition-all placeholder:text-gray-500"
-          />
+      <div className="w-full max-w-[400px]">
+        <div className="mx-auto w-[168px] h-[112px] rounded-[24px] bg-pd-teal overflow-hidden flex items-center justify-center shadow-pd-1">
+          <img src={logoImg} alt="Persian Darbar" className="w-[260px] max-w-none h-auto object-contain" />
         </div>
 
-        <div>
-          <label className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1.5 block">
-            Password
-          </label>
-          <div className="relative">
-            <input
-              type={showPw ? "text" : "password"}
-              required
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              placeholder="Enter password"
-              className="w-full bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl px-5 py-3.5 pr-12 text-white text-sm outline-none focus:border-[#EAB308]/50 transition-all placeholder:text-gray-500"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPw(!showPw)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
-            >
-              {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
+        <h1 className="mt-6 text-[28px] leading-tight font-bold tracking-[-0.02em] text-center">Captain sign in</h1>
+        <p className="mt-1 text-[15px] text-pd-ink-2 text-center">Persian Darbar staff</p>
+
+        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+          <div className="bg-white rounded-[16px] border border-[color:var(--pd-line)] shadow-pd-1 divide-y divide-[color:var(--pd-line)]">
+            <label className="flex items-center gap-3 px-4 min-h-[52px]">
+              <span className="w-[92px] shrink-0 text-[15px] font-medium">Captain ID</span>
+              <input
+                type="text"
+                required
+                autoComplete="username"
+                autoCapitalize="characters"
+                value={form.captain_id}
+                onChange={(e) => setForm({ ...form, captain_id: e.target.value })}
+                placeholder="e.g. CPT001"
+                className="flex-1 min-w-0 h-[52px] bg-transparent text-[16px] outline-none placeholder:text-pd-ink-3"
+              />
+            </label>
+            <label className="flex items-center gap-3 pl-4 pr-1 min-h-[52px]">
+              <span className="w-[92px] shrink-0 text-[15px] font-medium">Password</span>
+              <input
+                type={showPw ? "text" : "password"}
+                required
+                autoComplete="current-password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                placeholder="Required"
+                className="flex-1 min-w-0 h-[52px] bg-transparent text-[16px] outline-none placeholder:text-pd-ink-3"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPw(!showPw)}
+                aria-label={showPw ? "Hide password" : "Show password"}
+                className="w-11 h-11 flex items-center justify-center text-pd-ink-3 shrink-0"
+              >
+                {showPw ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            </label>
           </div>
-        </div>
 
-        {error && (
-          <p className="text-red-400 text-xs text-center bg-red-900/20 border border-red-500/20 rounded-xl px-4 py-2">
-            {error}
-          </p>
-        )}
+          {error && (
+            <p role="alert" className="text-[14px] text-pd-error bg-[#FDECEC] rounded-[12px] px-4 py-3">
+              {error}
+            </p>
+          )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full flex items-center justify-center gap-2 bg-[#EAB308] hover:bg-yellow-400 text-black font-bold py-4 rounded-2xl transition-all text-sm uppercase tracking-widest mt-2"
-        >
-          <LogIn className="h-4 w-4" />
-          {loading ? "Logging in..." : "Login"}
-        </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full h-12 flex items-center justify-center gap-2 rounded-[12px] bg-pd-action text-white text-[16px] font-semibold pd-press hover:bg-pd-action-press disabled:opacity-60"
+          >
+            <LogIn className="h-5 w-5" />
+            {loading ? "Signing in…" : "Sign in"}
+          </button>
 
-        <button
-          type="button"
-          onClick={() => navigate("/staff-entry")}
-          className="w-full text-center text-xs text-gray-400 hover:text-white transition-colors py-2 flex items-center justify-center gap-1.5 mt-2"
-        >
-          <span>&larr;</span>
-          <span>Back to Staff Portal</span>
-        </button>
-      </form>
+          <button
+            type="button"
+            onClick={() => navigate("/staff-entry")}
+            className="w-full h-11 flex items-center justify-center gap-1 text-[15px] font-medium text-pd-ink-2 hover:text-pd-ink pd-press"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Back to staff portal
+          </button>
+        </form>
+      </div>
     </div>
   );
 };
