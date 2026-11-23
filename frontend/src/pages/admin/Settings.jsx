@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
-  Save, Key, MapPin, Phone, Mail, Clock, Eye, EyeOff,
-  RefreshCw, Image, CheckCircle, AlertCircle, Volume2,
-  Upload, Play, Music, ShoppingBag, UtensilsCrossed, Loader2, Zap
+  Save, Key, Eye, EyeOff, Image, CheckCircle,
+  Upload, Play, Music, ShoppingBag, UtensilsCrossed, Loader2
 } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
 import API_BASE from "../../lib/config";
-import { Page, PageHeader } from "./ui";
+import { cx, Page, PageHeader, Button, Segmented, StatusPill, Switch, FormField, FormGroup, FormRow, Input, LoadingState } from "./ui";
 
 // ── Porter Config Panel (sub-component used in Settings) ─────────────────────
 const PorterConfigPanel = () => {
@@ -25,81 +24,38 @@ const PorterConfigPanel = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="text-gray-500 text-sm animate-pulse">Checking Porter configuration...</div>;
-  if (!config) return <div className="text-red-400 text-sm">Could not reach backend to check Porter status.</div>;
+  if (loading) return <div className="px-4 py-3 text-[14px] text-[var(--a-text-2)]">Checking Porter configuration…</div>;
+  if (!config) return <div className="px-4 py-3 text-[14px] text-[var(--a-error)]">Could not reach the backend to check Porter status.</div>;
 
   return (
-    <div className="space-y-4">
-      {/* Status */}
-      <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${config.configured ? "bg-green-900/20 border-green-500/30" : "bg-red-900/20 border-red-500/30"}`}>
-        <div className={`w-2.5 h-2.5 rounded-full ${config.configured ? "bg-green-400" : "bg-red-400"}`} />
-        <div>
-          <p className={`text-sm font-bold ${config.configured ? "text-green-400" : "text-red-400"}`}>
-            {config.configured ? "Porter API Connected" : "Porter API Key Not Set"}
-          </p>
-          <p className="text-gray-500 text-xs">
-            {config.configured
-              ? `Environment: ${config.environment === "sandbox" ? "🧪 Sandbox (Testing)" : "🚀 Production"}`
-              : 'Add PORTER_API_KEY to backend/.env to activate'}
-          </p>
-        </div>
+    <>
+      <FormRow label="Porter API" hint={config.configured ? `Environment: ${config.environment === "sandbox" ? "Sandbox (testing)" : "Production"}` : "Add PORTER_API_KEY to backend/.env to activate"}>
+        <StatusPill tone={config.configured ? "success" : "error"} dot>{config.configured ? "Connected" : "Key not set"}</StatusPill>
+      </FormRow>
+      <FormRow label="Pickup name"><span className="text-[14px] text-[var(--a-text-2)]">{config.restaurant_name}</span></FormRow>
+      <FormRow label="Coordinates"><span className="text-[14px] text-[var(--a-text-2)] pd-tabular">{config.restaurant_lat}, {config.restaurant_lng}</span></FormRow>
+      <div className="flex items-start justify-between gap-4 px-4 py-3">
+        <span className="text-[15px] text-[var(--a-text)] shrink-0">Address</span>
+        <span className="text-[14px] text-[var(--a-text-2)] text-right">{config.restaurant_address}</span>
       </div>
-
-      {/* Restaurant Pickup Location */}
-      <div className="bg-[#0f2933] rounded-xl p-4">
-        <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-3">Restaurant Pickup Location</p>
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-400">Name</span>
-            <span className="text-white">{config.restaurant_name}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-400">Coordinates</span>
-            <span className="text-white font-mono text-xs">{config.restaurant_lat}, {config.restaurant_lng}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-400">Address</span>
-            <span className="text-white text-xs text-right max-w-[60%]">{config.restaurant_address}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Setup Instructions */}
+      <FormRow label="0 – 5 km"><span className="text-[14px] text-[var(--a-success)]">Free (customer pays ₹0)</span></FormRow>
+      <FormRow label="5 – 20 km"><span className="text-[14px] text-[var(--a-text)] pd-tabular">₹60 from customer</span></FormRow>
+      <FormRow label="Porter's cost"><span className="text-[14px] text-[var(--a-text-2)] pd-tabular">~₹50–120 (restaurant absorbs)</span></FormRow>
       {!config.configured && (
-        <div className="bg-[#0f2933] border border-orange-500/20 rounded-xl p-4">
-          <p className="text-orange-400 text-xs font-bold uppercase tracking-wider mb-2">Setup Steps</p>
-          <ol className="space-y-1.5 text-xs text-gray-400 list-none">
-            <li>1. Go to <span className="text-orange-400">porter.in/enterprise</span> → Request API access</li>
-            <li>2. Receive API key from Porter team</li>
-            <li>3. Set <code className="text-green-400 bg-black/30 px-1 rounded">PORTER_API_KEY=your_key</code> in <code className="text-gray-300">backend/.env</code></li>
-            <li>4. Change <code className="text-green-400 bg-black/30 px-1 rounded">PORTER_API_BASE_URL</code> to production URL when ready</li>
-            <li>5. Restart backend server</li>
+        <div className="px-4 py-3 text-[13px] leading-5 text-[var(--a-text-2)]">
+          <div className="font-medium text-[var(--a-text)] mb-1">Setup steps</div>
+          <ol className="list-decimal pl-4 space-y-0.5">
+            <li>Go to porter.in/enterprise and request API access</li>
+            <li>Receive the API key from the Porter team</li>
+            <li>Set <code className="px-1 rounded bg-[var(--a-fill)]">PORTER_API_KEY=your_key</code> in <code className="px-1 rounded bg-[var(--a-fill)]">backend/.env</code></li>
+            <li>Change <code className="px-1 rounded bg-[var(--a-fill)]">PORTER_API_BASE_URL</code> to the production URL when ready</li>
+            <li>Restart the backend server</li>
           </ol>
         </div>
       )}
-
-      {/* Delivery Policy */}
-      <div className="bg-[#0f2933] rounded-xl p-4">
-        <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-3">Delivery Fee Policy</p>
-        <div className="space-y-2">
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-gray-400">0 – 5 km</span>
-            <span className="text-green-400 font-bold">FREE (customer pays ₹0)</span>
-          </div>
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-gray-400">5 – 20 km</span>
-            <span className="text-[#EAB308] font-bold">₹60 from customer</span>
-          </div>
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-gray-400">Porter's cost</span>
-            <span className="text-gray-300 text-xs">~₹50–120 (restaurant absorbs)</span>
-          </div>
-        </div>
-      </div>
-    </div>
+    </>
   );
 };
-
 
 // ── Order Acceptance & Dispatch Automation Panel ─────────────────────────────
 const OrderAcceptanceConfigPanel = () => {
@@ -163,157 +119,51 @@ const OrderAcceptanceConfigPanel = () => {
     }
   };
 
-  if (loading) return <div className="text-gray-500 text-sm animate-pulse">Loading acceptance settings...</div>;
+  if (loading) return <div className="px-4 py-3 text-[14px] text-[var(--a-text-2)]">Loading acceptance settings…</div>;
 
   return (
-    <div className="space-y-6">
-      {/* Mode Selection Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Manual Mode Card */}
-        <div
-          onClick={() => setAcceptanceSettings(prev => ({ ...prev, mode: "manual" }))}
-          className={`cursor-pointer rounded-2xl p-4 border transition-all ${
-            acceptanceSettings.mode === "manual"
-              ? "bg-[#0f2933] border-[#EAB308] ring-2 ring-[#EAB308]/20 shadow-lg shadow-black/40"
-              : "bg-[#0f2933]/50 border-white/10 hover:border-white/20 opacity-70 hover:opacity-100"
-          }`}
-        >
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-lg">
-                🖐️
-              </div>
-              <div>
-                <h4 className="text-white font-bold text-sm">Mode 1: Manual Acceptance</h4>
-                <p className="text-gray-400 text-xs">Standard Restaurant Review</p>
-              </div>
-            </div>
-            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-              acceptanceSettings.mode === "manual" ? "border-[#EAB308] bg-[#EAB308]" : "border-gray-500"
-            }`}>
-              {acceptanceSettings.mode === "manual" && <div className="w-2 h-2 rounded-full bg-black" />}
-            </div>
-          </div>
-          <p className="text-xs text-gray-300">
-            Incoming orders remain in <strong>placed</strong> status until a restaurant manager or captain reviews the items and manually clicks <strong>Accept</strong>.
-          </p>
-        </div>
-
-        {/* Auto Mode Card */}
-        <div
-          onClick={() => setAcceptanceSettings(prev => ({ ...prev, mode: "auto" }))}
-          className={`cursor-pointer rounded-2xl p-4 border transition-all ${
-            acceptanceSettings.mode === "auto"
-              ? "bg-gradient-to-br from-emerald-950/40 to-[#0f2933] border-emerald-400 ring-2 ring-emerald-400/20 shadow-lg shadow-emerald-950/40"
-              : "bg-[#0f2933]/50 border-white/10 hover:border-white/20 opacity-70 hover:opacity-100"
-          }`}
-        >
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg">
-                ⚡
-              </div>
-              <div>
-                <h4 className="text-white font-bold text-sm">Mode 2: Auto-Acceptance</h4>
-                <p className="text-emerald-400 text-xs font-semibold">Automatic Kitchen & Rider Dispatch</p>
-              </div>
-            </div>
-            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-              acceptanceSettings.mode === "auto" ? "border-emerald-400 bg-emerald-400" : "border-gray-500"
-            }`}>
-              {acceptanceSettings.mode === "auto" && <div className="w-2 h-2 rounded-full bg-black" />}
-            </div>
-          </div>
-          <p className="text-xs text-gray-300">
-            If not accepted within <strong>{acceptanceSettings.delay_seconds}s</strong>, order is automatically accepted, KOT receipt dispatched to kitchen, and Porter rider assigned.
-          </p>
-        </div>
-      </div>
-
-      {/* Auto-Accept Timeout Config */}
-      <div className="bg-[#0f2933] rounded-2xl p-4 border border-white/10 space-y-3">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div>
-            <label className="text-white text-xs font-bold uppercase tracking-wider">
-              Auto-Accept Timeout Window (45–60 Seconds)
-            </label>
-            <p className="text-gray-400 text-xs mt-0.5">
-              Staff has this duration to review before the system automatically accepts & dispatches
-            </p>
-          </div>
-          <span className="font-mono text-emerald-400 font-extrabold text-sm px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
-            {acceptanceSettings.delay_seconds}s
-          </span>
-        </div>
-
-        {/* Preset pill buttons */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {[45, 50, 60].map(sec => (
-            <button
-              key={sec}
-              type="button"
-              onClick={() => setAcceptanceSettings(prev => ({ ...prev, delay_seconds: sec }))}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                acceptanceSettings.delay_seconds === sec
-                  ? "bg-emerald-500 text-white border-emerald-400 shadow-md shadow-emerald-500/20"
-                  : "bg-white/5 text-gray-300 border-white/10 hover:border-white/20"
-              }`}
-            >
-              {sec} Seconds {sec === 45 && "(Recommended)"}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Porter Service Provider Mode */}
-      <div className="bg-[#0f2933] rounded-2xl p-4 border border-white/10 space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h4 className="text-white font-bold text-sm flex items-center gap-2">
-              <span>🛵 Porter Delivery Rider Service</span>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                acceptanceSettings.porter_mock_mode
-                  ? "bg-orange-500/20 text-orange-300 border-orange-500/30"
-                  : "bg-blue-500/20 text-blue-300 border-blue-500/30"
-              }`}>
-                {acceptanceSettings.porter_mock_mode ? "Mock Simulation Active" : "Live API"}
-              </span>
-            </h4>
-            <p className="text-gray-400 text-xs mt-0.5">
-              Assigns a Porter delivery rider automatically whenever a delivery order is accepted
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setAcceptanceSettings(prev => ({ ...prev, porter_mock_mode: !prev.porter_mock_mode }))}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
-              acceptanceSettings.porter_mock_mode
-                ? "bg-orange-500/20 text-orange-300 border-orange-500/40"
-                : "bg-white/5 text-gray-300 border-white/10"
-            }`}
-          >
-            {acceptanceSettings.porter_mock_mode ? "🧪 Mock Active (Client Demo)" : "🚀 Live Mode"}
-          </button>
-        </div>
-        <p className="text-xs text-gray-400 bg-black/20 p-2.5 rounded-xl border border-white/5">
-          ℹ️ <strong>Mock Mode:</strong> Simulates Porter order creation with realistic rider names, contact details, bike numbers, and live tracking URLs so you can demonstrate the full rider service to the client without Porter API charges.
+    <>
+      <div className="px-4 py-3 space-y-2">
+        <Segmented
+          stretch
+          value={acceptanceSettings.mode}
+          onChange={(v) => setAcceptanceSettings(prev => ({ ...prev, mode: v }))}
+          options={[{ value: "manual", label: "Manual acceptance" }, { value: "auto", label: "Auto-acceptance" }]}
+        />
+        <p className="text-[13px] leading-[18px] text-[var(--a-text-2)]">
+          {acceptanceSettings.mode === "manual"
+            ? "Incoming orders stay as placed until a manager or captain reviews them and taps Accept."
+            : `If not accepted within ${acceptanceSettings.delay_seconds}s, the order is accepted automatically, the KOT goes to the kitchen and a Porter rider is assigned.`}
         </p>
       </div>
-
-      {/* Save Button */}
-      <button
-        type="button"
-        onClick={handleSave}
-        disabled={saving}
-        className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-sm shadow-lg shadow-emerald-950/40 transition-all flex items-center justify-center gap-2 active:scale-98"
+      <FormRow label="Auto-accept timeout" hint="Time staff has to review before the system accepts">
+        <Segmented
+          size="sm"
+          value={acceptanceSettings.delay_seconds}
+          onChange={(sec) => setAcceptanceSettings(prev => ({ ...prev, delay_seconds: sec }))}
+          options={[45, 50, 60].map(sec => ({ value: sec, label: `${sec}s` }))}
+        />
+      </FormRow>
+      <FormRow
+        label="Porter mock mode"
+        hint={acceptanceSettings.porter_mock_mode
+          ? "Simulates Porter bookings with sample rider details for demos, without API charges"
+          : "Uses the live Porter API"}
       >
-        {saved ? <CheckCircle className="w-4 h-4 text-white" /> : saving ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <Save className="w-4 h-4 text-white" />}
-        <span>{saved ? "Settings Saved Successfully!" : saving ? "Saving Settings..." : "Save Acceptance Settings"}</span>
-      </button>
-    </div>
+        <Switch
+          checked={acceptanceSettings.porter_mock_mode}
+          onChange={() => setAcceptanceSettings(prev => ({ ...prev, porter_mock_mode: !prev.porter_mock_mode }))}
+          label="Porter mock mode"
+        />
+      </FormRow>
+      <div className="px-4 py-3 flex justify-end">
+        <Button variant={saved ? "success" : "primary"} icon={saved ? CheckCircle : Save} onClick={handleSave} disabled={saving}>
+          {saved ? "Saved" : saving ? "Saving…" : "Save Acceptance Settings"}
+        </Button>
+      </div>
+    </>
   );
 };
-
 
 const Settings = () => {
   const { toast } = useToast();
@@ -603,367 +453,162 @@ const Settings = () => {
   };
 
   if (fetchingSettings) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="flex items-center gap-3 text-gray-400">
-          <RefreshCw className="w-5 h-5 animate-spin text-[#EAB308]" />
-          <span className="text-sm">Loading settings...</span>
-        </div>
-      </div>
-    );
+    return <LoadingState rows={4} label="Loading settings" />;
   }
 
-  const inputClass = "w-full px-4 py-3 bg-[#0f2933] border border-[#EAB308]/20 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#EAB308]/60 transition-colors text-sm";
-  const labelClass = "block text-[#EAB308] font-semibold mb-2 flex items-center gap-2 text-xs uppercase tracking-wider";
-  const btnClass = (saved) => `w-full py-3 rounded-xl font-bold flex justify-center items-center gap-2 transition-all disabled:opacity-50 text-sm active:scale-[0.99] cursor-pointer ${saved ? "bg-emerald-500 text-white" : "bg-[#EAB308] hover:bg-[#CA8A04] text-black shadow-lg"}`;
+  const SoundRow = ({ type, label, url, Icon }) => (
+    <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-4 py-3">
+      <div className="flex items-center gap-3 min-w-0 flex-1">
+        <span className="h-8 w-8 rounded-[8px] bg-[var(--a-fill)] flex items-center justify-center shrink-0"><Icon className="h-4 w-4 text-[var(--a-text-2)]" /></span>
+        <div className="min-w-0">
+          <div className="text-[15px] text-[var(--a-text)]">{label}</div>
+          <div className="text-[12px] text-[var(--a-text-3)]">{url ? "Custom audio file active" : "Using the default Persian chime"}</div>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <Button size="sm" variant="tinted" icon={Play} onClick={() => playSound(url, type)} disabled={playingSound[type]}>
+          {playingSound[type] ? "Playing…" : "Test"}
+        </Button>
+        <label
+          htmlFor={`sound-upload-${type}`}
+          className={cx("inline-flex items-center gap-1.5 h-8 px-3 rounded-[10px] text-[13px] font-medium bg-[var(--a-fill)] text-[var(--a-text)] cursor-pointer pd-press", uploadingSound[type] && "opacity-50 pointer-events-none")}
+        >
+          {uploadingSound[type] ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+          {uploadingSound[type] ? "Uploading…" : "Upload"}
+        </label>
+        <input
+          type="file"
+          id={`sound-upload-${type}`}
+          accept="audio/*,.mp3,.wav,.ogg,.webm,.m4a"
+          onChange={(e) => {
+            if (e.target.files[0]) handleSoundUpload(e.target.files[0], type);
+          }}
+          className="hidden"
+        />
+      </div>
+    </div>
+  );
+
+  const pwMismatch = passwordData.confirm_password && passwordData.confirm_password !== passwordData.new_password;
 
   return (
-    <Page className="max-w-4xl">
+    <Page className="max-w-3xl">
       <PageHeader title="Settings" subtitle="Restaurant details, notification sounds, UPI payments and admin security" />
 
-      {/* ─── 1. NOTIFICATION SOUNDS ─── */}
-      <div className="bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl p-6 shadow-xl space-y-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xl font-bold text-[#EAB308] flex items-center gap-2">
-            <Volume2 className="h-5 w-5" />
-            Notification Sounds
-          </h3>
-          <button
-            onClick={() => playSound("/notification.wav", "default")}
-            disabled={playingSound.default}
-            className="px-3 py-1.5 rounded-lg bg-[#0f2933] hover:bg-[#0f2933]/80 border border-[#EAB308]/20 text-xs text-gray-300 hover:text-white flex items-center gap-1.5 transition-all"
-          >
-            {playingSound.default ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[#EAB308]" /> : <Music className="w-3.5 h-3.5 text-[#EAB308]" />}
-            <span>Test Default Chime</span>
-          </button>
-        </div>
+      {/* Notification sounds */}
+      <FormGroup title="Notification sounds">
+        <SoundRow type="online" label="Online orders" url={onlineSoundUrl} Icon={ShoppingBag} />
+        <SoundRow type="dinein" label="Table dine-in orders" url={dineinSoundUrl} Icon={UtensilsCrossed} />
+        <FormRow label="Default chime">
+          <Button size="sm" variant="tinted" icon={playingSound.default ? Loader2 : Music} onClick={() => playSound("/notification.wav", "default")} disabled={playingSound.default}>
+            Test Default Chime
+          </Button>
+        </FormRow>
+      </FormGroup>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Online Orders Sound Card */}
-          <div className="bg-[#0f2933] border border-[#EAB308]/15 rounded-xl p-4 space-y-3">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-lg bg-[#EAB308]/15 text-[#EAB308]">
-                <ShoppingBag className="w-4 h-4" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-white text-sm font-bold truncate">Online Orders Sound</p>
-                <p className="text-gray-400 text-[11px] truncate">
-                  {onlineSoundUrl ? "Custom audio file active" : "Using default Persian chime"}
-                </p>
-              </div>
+      {/* Contact */}
+      <form onSubmit={handleContactUpdate}>
+        <FormGroup title="Restaurant and contact information">
+          <div className="p-4 space-y-4">
+            <FormField label="Address">
+              <Input required value={contactInfo.address} onChange={(e) => setContactInfo({ ...contactInfo, address: e.target.value })} placeholder="FC Road, Deccan Gymkhana, Pune, Maharashtra 411004" />
+            </FormField>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField label="Phone number">
+                <Input required value={contactInfo.phone} onChange={(e) => setContactInfo({ ...contactInfo, phone: e.target.value })} placeholder="+91 20 1234 5678" />
+              </FormField>
+              <FormField label="Email address">
+                <Input required type="email" value={contactInfo.email} onChange={(e) => setContactInfo({ ...contactInfo, email: e.target.value })} placeholder="reservations@persiandarbar.in" />
+              </FormField>
             </div>
+            <FormField label="Opening hours">
+              <Input value={contactInfo.opening_hours} onChange={(e) => setContactInfo({ ...contactInfo, opening_hours: e.target.value })} placeholder="11:00 AM – 11:30 PM (Daily)" />
+            </FormField>
+          </div>
+          <div className="px-4 py-3 flex justify-end">
+            <Button type="submit" variant={contactSaved ? "success" : "primary"} icon={contactSaved ? CheckCircle : Save} disabled={contactSaving}>
+              {contactSaved ? "Saved" : contactSaving ? "Saving…" : "Save Restaurant Details"}
+            </Button>
+          </div>
+        </FormGroup>
+      </form>
 
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => playSound(onlineSoundUrl, "online")}
-                disabled={playingSound.online}
-                className="flex-1 py-2 rounded-lg bg-[#EAB308] hover:bg-[#CA8A04] text-black text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95"
-              >
-                {playingSound.online ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5 fill-current" />}
-                <span>{playingSound.online ? "Playing..." : "Test Sound"}</span>
-              </button>
-
-              <label
-                htmlFor="sound-upload-online"
-                className={`flex-1 py-2 rounded-lg border border-[#EAB308]/30 hover:border-[#EAB308]/70 text-gray-200 hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${uploadingSound.online ? 'opacity-50 pointer-events-none' : ''}`}
-              >
-                {uploadingSound.online ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[#EAB308]" /> : <Upload className="w-3.5 h-3.5 text-[#EAB308]" />}
-                <span>{uploadingSound.online ? "Uploading..." : "Upload Sound"}</span>
-              </label>
-              <input
-                type="file"
-                id="sound-upload-online"
-                accept="audio/*,.mp3,.wav,.ogg,.webm,.m4a"
-                onChange={(e) => {
-                  if (e.target.files[0]) handleSoundUpload(e.target.files[0], "online");
-                }}
-                className="hidden"
-              />
+      {/* UPI */}
+      <form onSubmit={handleUPIUpdate}>
+        <FormGroup title="UPI QR code payment" footer="Customers see this QR code at table checkout.">
+          <div className="p-4 flex flex-col sm:flex-row gap-4">
+            <div className="h-40 w-40 shrink-0 rounded-[12px] border border-[var(--a-line)] bg-white p-2 flex items-center justify-center self-center sm:self-start">
+              {upiQRCode
+                ? <img src={upiQRCode} alt="UPI QR Code" className="h-full w-full object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
+                : <Image className="h-8 w-8 text-[#8A949C]" />}
+            </div>
+            <div className="flex-1 min-w-0 space-y-3">
+              <input ref={upiFileRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleUPIImageUpload(e.target.files[0])} />
+              <Button variant="tinted" icon={uploadingUpi ? Loader2 : Upload} onClick={() => upiFileRef.current?.click()} disabled={uploadingUpi}>
+                {uploadingUpi ? "Uploading QR image…" : "Upload QR image"}
+              </Button>
+              <FormField label="Or QR image URL" hint="PNG, JPG or WEBP">
+                <Input value={upiQRCode} onChange={(e) => setUpiQRCode(e.target.value)} placeholder="https://example.com/upi-qr.png or /static/uploads/qr.png" />
+              </FormField>
             </div>
           </div>
-
-          {/* Dine-In Orders Sound Card */}
-          <div className="bg-[#0f2933] border border-[#EAB308]/15 rounded-xl p-4 space-y-3">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-lg bg-blue-500/15 text-blue-400">
-                <UtensilsCrossed className="w-4 h-4" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-white text-sm font-bold truncate">Table Dine-In Sound</p>
-                <p className="text-gray-400 text-[11px] truncate">
-                  {dineinSoundUrl ? "Custom audio file active" : "Using default Persian chime"}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => playSound(dineinSoundUrl, "dinein")}
-                disabled={playingSound.dinein}
-                className="flex-1 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95"
-              >
-                {playingSound.dinein ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5 fill-current" />}
-                <span>{playingSound.dinein ? "Playing..." : "Test Sound"}</span>
-              </button>
-
-              <label
-                htmlFor="sound-upload-dinein"
-                className={`flex-1 py-2 rounded-lg border border-blue-400/30 hover:border-blue-400/70 text-gray-200 hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${uploadingSound.dinein ? 'opacity-50 pointer-events-none' : ''}`}
-              >
-                {uploadingSound.dinein ? <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" /> : <Upload className="w-3.5 h-3.5 text-blue-400" />}
-                <span>{uploadingSound.dinein ? "Uploading..." : "Upload Sound"}</span>
-              </label>
-              <input
-                type="file"
-                id="sound-upload-dinein"
-                accept="audio/*,.mp3,.wav,.ogg,.webm,.m4a"
-                onChange={(e) => {
-                  if (e.target.files[0]) handleSoundUpload(e.target.files[0], "dinein");
-                }}
-                className="hidden"
-              />
-            </div>
+          <div className="px-4 py-3 flex justify-end">
+            <Button type="submit" variant={upiSaved ? "success" : "primary"} icon={upiSaved ? CheckCircle : Save} disabled={upiSaving}>
+              {upiSaved ? "Saved" : upiSaving ? "Saving…" : "Save UPI QR Code"}
+            </Button>
           </div>
-        </div>
-      </div>
+        </FormGroup>
+      </form>
 
-      {/* ─── 2. CONTACT INFORMATION ─── */}
-      <div className="bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl p-6 shadow-xl">
-        <h3 className="text-xl font-bold text-[#EAB308] mb-5 flex items-center gap-2">
-          <MapPin className="h-5 w-5" />
-          Restaurant & Contact Information
-        </h3>
-        <form onSubmit={handleContactUpdate} className="space-y-4">
-          <div>
-            <label className={labelClass}><MapPin className="h-3.5 w-3.5" /> Address</label>
-            <input
-              required
-              value={contactInfo.address}
-              onChange={(e) => setContactInfo({ ...contactInfo, address: e.target.value })}
-              placeholder="FC Road, Deccan Gymkhana, Pune, Maharashtra 411004"
-              className={inputClass}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className={labelClass}><Phone className="h-3.5 w-3.5" /> Phone Number</label>
-              <input
-                required
-                value={contactInfo.phone}
-                onChange={(e) => setContactInfo({ ...contactInfo, phone: e.target.value })}
-                placeholder="+91 20 1234 5678"
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className={labelClass}><Mail className="h-3.5 w-3.5" /> Email Address</label>
-              <input
-                required
-                type="email"
-                value={contactInfo.email}
-                onChange={(e) => setContactInfo({ ...contactInfo, email: e.target.value })}
-                placeholder="reservations@persiandarbar.in"
-                className={inputClass}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className={labelClass}><Clock className="h-3.5 w-3.5" /> Opening Hours</label>
-            <input
-              value={contactInfo.opening_hours}
-              onChange={(e) => setContactInfo({ ...contactInfo, opening_hours: e.target.value })}
-              placeholder="11:00 AM – 11:30 PM (Daily)"
-              className={inputClass}
-            />
-          </div>
-
-          <button type="submit" disabled={contactSaving} className={btnClass(contactSaved)}>
-            {contactSaved ? <CheckCircle className="h-4 w-4" /> : contactSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            {contactSaved ? "Information Saved!" : contactSaving ? "Saving..." : "Save Restaurant Details"}
-          </button>
-        </form>
-      </div>
-
-      {/* ─── 3. UPI QR CODE ─── */}
-      <div className="bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl p-6 shadow-xl">
-        <h3 className="text-xl font-bold text-[#EAB308] mb-5 flex items-center gap-2">
-          <Image className="h-5 w-5" />
-          UPI QR Code Payment
-        </h3>
-        <div className="space-y-4">
-          {/* Preview */}
-          {upiQRCode && (
-            <div className="flex flex-col items-center justify-center p-4 bg-[#0f2933] border border-[#EAB308]/15 rounded-xl">
-              <p className="text-gray-400 text-xs mb-2">Live Customer Preview</p>
-              <img
-                src={upiQRCode}
-                alt="UPI QR Code"
-                className="w-44 h-44 object-contain rounded-xl border-2 border-[#EAB308]/30 bg-white p-2 shadow-lg"
-                onError={(e) => { e.target.style.display = 'none'; }}
-              />
-            </div>
-          )}
-
-          {/* Upload Image Button */}
-          <div>
-            <label className={labelClass}><Upload className="h-3.5 w-3.5" /> Upload QR Image</label>
-            <input
-              ref={upiFileRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => handleUPIImageUpload(e.target.files[0])}
-            />
-            <button
-              type="button"
-              onClick={() => upiFileRef.current?.click()}
-              disabled={uploadingUpi}
-              className="w-full border-2 border-dashed border-[#EAB308]/30 rounded-xl py-4 text-center text-gray-300 hover:border-[#EAB308]/70 hover:text-white transition-all text-sm disabled:opacity-50 cursor-pointer bg-[#0f2933]/50"
-            >
-              {uploadingUpi ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin text-[#EAB308]" />
-                  Uploading QR image...
-                </span>
-              ) : (
-                "📤 Click to select & upload QR code image (PNG / JPG / WEBP)"
-              )}
-            </button>
-          </div>
-
-          <form onSubmit={handleUPIUpdate} className="space-y-3">
-            <div>
-              <label className={labelClass}>Or Enter QR Image URL</label>
-              <input
-                value={upiQRCode}
-                onChange={(e) => setUpiQRCode(e.target.value)}
-                placeholder="https://example.com/upi-qr.png or /static/uploads/qr.png"
-                className={inputClass}
-              />
-            </div>
-            <button type="submit" disabled={upiSaving} className={btnClass(upiSaved)}>
-              {upiSaved ? <CheckCircle className="h-4 w-4" /> : upiSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              {upiSaved ? "UPI QR Saved!" : upiSaving ? "Saving..." : "Save UPI QR Code"}
-            </button>
-          </form>
-        </div>
-      </div>
-
-      {/* ─── 4. CHANGE PASSWORD ─── */}
-      <div className="bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl p-6 shadow-xl">
-        <h3 className="text-xl font-bold text-[#EAB308] mb-5 flex items-center gap-2">
-          <Key className="h-5 w-5" />
-          Change Admin Password
-        </h3>
-        <form onSubmit={handlePasswordChange} className="space-y-4">
-          {/* Old Password */}
-          <div>
-            <label className={labelClass}>Current Password</label>
-            <div className="relative">
-              <input
-                required
-                type={showOld ? "text" : "password"}
-                value={passwordData.old_password}
-                onChange={(e) => setPasswordData({ ...passwordData, old_password: e.target.value })}
-                placeholder="Enter current admin password"
-                className={inputClass + " pr-12"}
-              />
-              <button
-                type="button"
-                onClick={() => setShowOld(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white p-1"
-              >
-                {showOld ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-
-          {/* New Password & Confirm */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className={labelClass}>New Password</label>
+      {/* Password */}
+      <form onSubmit={handlePasswordChange}>
+        <FormGroup title="Admin password">
+          <div className="p-4 space-y-4">
+            <FormField label="Current password">
               <div className="relative">
-                <input
-                  required
-                  type={showNew ? "text" : "password"}
-                  value={passwordData.new_password}
-                  onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
-                  placeholder="Min 6 characters"
-                  className={inputClass + " pr-12"}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNew(v => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white p-1"
-                >
-                  {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                <Input required type={showOld ? "text" : "password"} value={passwordData.old_password}
+                  onChange={(e) => setPasswordData({ ...passwordData, old_password: e.target.value })} placeholder="Current admin password" className="pr-11" />
+                <button type="button" onClick={() => setShowOld(v => !v)} aria-label={showOld ? "Hide password" : "Show password"}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-[8px] text-[var(--a-text-3)] hover:bg-[var(--a-fill)] cursor-pointer">
+                  {showOld ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+            </FormField>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField label="New password">
+                <div className="relative">
+                  <Input required type={showNew ? "text" : "password"} value={passwordData.new_password}
+                    onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })} placeholder="At least 6 characters" className="pr-11" />
+                  <button type="button" onClick={() => setShowNew(v => !v)} aria-label={showNew ? "Hide password" : "Show password"}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-[8px] text-[var(--a-text-3)] hover:bg-[var(--a-fill)] cursor-pointer">
+                    {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </FormField>
+              <FormField label="Confirm new password" error={pwMismatch ? "Passwords do not match" : undefined}>
+                <Input required type="password" value={passwordData.confirm_password}
+                  onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })} placeholder="Re-enter new password"
+                  className={pwMismatch ? "!border-[var(--a-error)]" : ""} />
+              </FormField>
             </div>
-
-            <div>
-              <label className={labelClass}>Confirm New Password</label>
-              <input
-                required
-                type="password"
-                value={passwordData.confirm_password}
-                onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
-                placeholder="Re-enter new password"
-                className={`${inputClass} ${passwordData.confirm_password && passwordData.confirm_password !== passwordData.new_password ? "border-red-500/60" : ""}`}
-              />
-              {passwordData.confirm_password && passwordData.confirm_password !== passwordData.new_password && (
-                <p className="text-red-400 text-xs mt-1.5 flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  <span>Passwords do not match</span>
-                </p>
-              )}
-            </div>
           </div>
-
-          <button
-            type="submit"
-            disabled={pwSaving || (passwordData.confirm_password && passwordData.confirm_password !== passwordData.new_password)}
-            className={btnClass(pwSaved)}
-          >
-            {pwSaved ? <CheckCircle className="h-4 w-4" /> : pwSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Key className="h-4 w-4" />}
-            {pwSaved ? "Password Changed Successfully!" : pwSaving ? "Updating Password..." : "Change Admin Password"}
-          </button>
-        </form>
-      </div>
-
-      {/* ===== Order Acceptance & Dispatch Automation Section ===== */}
-      <div className="bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl p-6 shadow-xl">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-900/30">
-            <Zap className="text-white w-5 h-5" />
+          <div className="px-4 py-3 flex justify-end">
+            <Button type="submit" variant={pwSaved ? "success" : "primary"} icon={pwSaved ? CheckCircle : Key} disabled={pwSaving || pwMismatch}>
+              {pwSaved ? "Password Changed" : pwSaving ? "Updating…" : "Change Admin Password"}
+            </Button>
           </div>
-          <div>
-            <h3 className="text-white font-bold text-lg">Order Acceptance & Auto-Dispatch</h3>
-            <p className="text-gray-400 text-xs">Configure manual vs auto acceptance (45–60s), kitchen KOT routing, and Porter rider allocation</p>
-          </div>
-        </div>
+        </FormGroup>
+      </form>
 
+      {/* Order acceptance */}
+      <FormGroup title="Order acceptance and auto-dispatch" footer="Manual or automatic acceptance (45–60 s), kitchen KOT routing and Porter rider allocation.">
         <OrderAcceptanceConfigPanel />
-      </div>
+      </FormGroup>
 
-      {/* ===== Porter Integration Section ===== */}
-      <div className="bg-[#1a4855] border border-[#EAB308]/15 rounded-2xl p-6">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-900/30">
-            <span className="text-white text-lg">🛵</span>
-          </div>
-          <div>
-            <h3 className="text-white font-bold text-lg">Porter Delivery Integration</h3>
-            <p className="text-gray-400 text-xs">On-demand intracity delivery service for when in-house riders aren't available</p>
-          </div>
-        </div>
-
+      {/* Porter */}
+      <FormGroup title="Porter delivery integration" footer="On-demand intracity delivery when in-house riders aren't available.">
         <PorterConfigPanel />
-      </div>
+      </FormGroup>
     </Page>
   );
 };
