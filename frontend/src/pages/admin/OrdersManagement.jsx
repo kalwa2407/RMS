@@ -682,7 +682,7 @@ const OrdersManagement = () => {
       />
 
       {/* Settings: acceptance + billing */}
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="grid gap-3 xl:grid-cols-2">
         <Card className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3 min-w-0">
             <span className={cx("h-9 w-9 rounded-[10px] flex items-center justify-center shrink-0",
