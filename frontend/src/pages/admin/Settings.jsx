@@ -7,6 +7,7 @@ import {
 import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
 import API_BASE from "../../lib/config";
+import { Page, PageHeader } from "./ui";
 
 // ── Porter Config Panel (sub-component used in Settings) ─────────────────────
 const PorterConfigPanel = () => {
@@ -617,14 +618,8 @@ const Settings = () => {
   const btnClass = (saved) => `w-full py-3 rounded-xl font-bold flex justify-center items-center gap-2 transition-all disabled:opacity-50 text-sm active:scale-[0.99] cursor-pointer ${saved ? "bg-emerald-500 text-white" : "bg-[#EAB308] hover:bg-[#CA8A04] text-black shadow-lg"}`;
 
   return (
-    <div className="space-y-8 max-w-4xl pb-12">
-      {/* Header */}
-      <div>
-        <h2 className="text-3xl md:text-4xl font-bold text-[#EAB308]" style={{ fontFamily: "Playfair Display, serif" }}>
-          Settings
-        </h2>
-        <p className="text-gray-400 text-sm mt-1">Manage restaurant details, notification sounds, UPI payments & admin security</p>
-      </div>
+    <Page className="max-w-4xl">
+      <PageHeader title="Settings" subtitle="Restaurant details, notification sounds, UPI payments and admin security" />
 
       {/* ─── 1. NOTIFICATION SOUNDS ─── */}
       <div className="bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl p-6 shadow-xl space-y-6">
@@ -969,7 +964,7 @@ const Settings = () => {
 
         <PorterConfigPanel />
       </div>
-    </div>
+    </Page>
   );
 };
 

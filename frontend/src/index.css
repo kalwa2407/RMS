@@ -458,3 +458,20 @@ code {
 :is(.admin-theme-light, .admin-theme-dark) [class*="shadow-yellow-"] {
   box-shadow: var(--a-shadow) !important;
 }
+
+/* Translucent white/black layers from dark-only legacy screens (overlays excluded) */
+:is(.admin-theme-light, .admin-theme-dark) :is(.bg-white\/5, .bg-white\/10, .bg-white\/15, .bg-black\/20, .bg-black\/30, .bg-black\/40, .bg-black\/50, .bg-black\/60, .bg-gray-800, .bg-\[\#102430\], .bg-\[\#0f2933\]\/40):not(.fixed):not(.absolute.inset-0) {
+  background-color: var(--a-fill) !important;
+}
+:is(.admin-theme-light, .admin-theme-dark) :is(.hover\:bg-white\/10:hover, .hover\:bg-white\/15:hover, .hover\:bg-white\/20:hover) {
+  background-color: var(--a-fill-2) !important;
+}
+:is(.admin-theme-light, .admin-theme-dark) [class*="text-white/"] {
+  color: var(--a-text-2) !important;
+}
+:is(.admin-theme-light, .admin-theme-dark) :is([class*="from-[#0d222d]"], [class*="from-[#122c3b]"], [class*="from-[#0a1e24]"], [class*="from-[#0f2933]"], [class*="from-[#1a4855]"]) {
+  background-image: none !important;
+  background-color: var(--a-card) !important;
+}
+:is(.admin-theme-light, .admin-theme-dark) .font-extrabold { font-weight: 700; }
+:is(.admin-theme-light, .admin-theme-dark) ::selection { background: var(--a-accent); color: #FFFFFF; }

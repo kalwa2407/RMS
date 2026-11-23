@@ -3,6 +3,7 @@ import { Upload, Volume2, Check, ShoppingBag, UtensilsCrossed, Loader2, Play, Mu
 import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
 import API_BASE from "../../lib/config";
+import { Page, PageHeader } from "./ui";
 
 const SoundSettings = () => {
   const { toast } = useToast();
@@ -220,14 +221,8 @@ const SoundSettings = () => {
   );
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      {/* Page Title */}
-      <div>
-        <h2 className="text-3xl font-bold text-[#EAB308]" style={{ fontFamily: "Playfair Display, serif" }}>
-          Notification Sound Settings
-        </h2>
-        <p className="text-gray-300 text-sm mt-1">Configure audio alerts for new online orders and dine-in table requests</p>
-      </div>
+    <Page className="max-w-4xl">
+      <PageHeader title="Sounds" subtitle="Audio alerts for new online orders and dine-in table requests" />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Online Orders Sound */}
@@ -270,7 +265,7 @@ const SoundSettings = () => {
           <span>Test Default Chime</span>
         </button>
       </div>
-    </div>
+    </Page>
   );
 };
 

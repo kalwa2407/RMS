@@ -4,6 +4,7 @@ import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
 
 import API_BASE from "../../lib/config";
+import { Page, PageHeader, Button, LoadingState } from "./ui";
 
 const GalleryManagement = () => {
   const { toast } = useToast();
@@ -145,33 +146,20 @@ const GalleryManagement = () => {
   };
 
   if (loading) {
-    return (
-      <div className="text-center py-20 text-primary">Loading gallery...</div>
-    );
+    return <LoadingState rows={3} label="Loading gallery" />;
   }
 
   return (
-    <div>
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h2
-            className="text-4xl font-bold text-primary"
-            style={{ fontFamily: "Playfair Display, serif" }}
-          >
-            Gallery Management
-          </h2>
-          <p className="text-gray-300 mt-2">Total Images: {images.length}</p>
-        </div>
-
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="bg-primary hover:bg-[#CA8A04] text-black px-6 py-3 rounded-full font-bold flex items-center space-x-2"
-        >
-          {showAddForm ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
-          <span>{showAddForm ? "Cancel" : "Add New Image"}</span>
-        </button>
-      </div>
+    <Page>
+      <PageHeader
+        title="Gallery"
+        subtitle={<span className="pd-tabular">{images.length} images</span>}
+        actions={
+          <Button variant={showAddForm ? "secondary" : "primary"} icon={showAddForm ? X : Plus} onClick={() => setShowAddForm(!showAddForm)}>
+            {showAddForm ? "Cancel" : "Add Image"}
+          </Button>
+        }
+      />
 
       {/* Add Image Form */}
       {showAddForm && (
@@ -341,7 +329,7 @@ const GalleryManagement = () => {
           </div>
         ))}
       </div>
-    </div>
+    </Page>
   );
 };
 

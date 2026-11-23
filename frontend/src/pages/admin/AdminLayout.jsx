@@ -178,7 +178,7 @@ const AdminLayout = () => {
   const contentPad = railOnly ? "md:pl-[68px]" : fullAlways ? "md:pl-[248px]" : "md:pl-[68px] lg:pl-[248px]";
 
   return (
-    <div className={`min-h-screen admin-theme-${theme} ${isDark ? "dark" : ""} selection:bg-[var(--a-accent)] selection:text-[#FFFFFF]`}>
+    <div className={`min-h-screen admin-theme-${theme} ${isDark ? "dark" : ""}`}>
 
       {/* ═════════ SIDEBAR (iPad + desktop) ═════════ */}
       <aside

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { ChefHat, Clock, RefreshCw, CheckCircle, AlertCircle, Printer } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import API_BASE from "../../lib/config";
+import { Page, PageHeader, Button, LoadingState } from "./ui";
 import { printKOT } from "../../lib/PrintService";
 
 const KitchenView = () => {
@@ -73,29 +74,16 @@ const KitchenView = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <RefreshCw className="h-8 w-8 text-primary animate-spin" />
-      </div>
-    );
+    return <LoadingState rows={4} label="Loading kitchen orders" />;
   }
 
   return (
-    <div>
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
-        <div>
-          <h1 className="text-2xl font-bold text-[#EAB308]" style={{ fontFamily: "'Playfair Display', serif" }}>Kitchen View</h1>
-          <p className="text-gray-500 text-xs">Updated: {lastRefresh.toLocaleTimeString()} · Auto-refresh every 10s</p>
-        </div>
-        <button
-          onClick={fetchKitchenOrders}
-          className="flex items-center gap-2 bg-[#1a4855] px-3 py-2 rounded-lg text-[#EAB308] text-sm hover:bg-[#254a58] transition"
-        >
-          <RefreshCw className="h-4 w-4" />
-          <span className="hidden sm:inline">Refresh</span>
-        </button>
-      </div>
+    <Page>
+      <PageHeader
+        title="Kitchen"
+        subtitle={<span>Updated <span className="pd-tabular">{lastRefresh.toLocaleTimeString()}</span> · refreshes every 10 s</span>}
+        actions={<Button icon={RefreshCw} onClick={fetchKitchenOrders}>Refresh</Button>}
+      />
 
       {/* Orders Grid */}
       {orders.length === 0 ? (
@@ -221,7 +209,7 @@ const KitchenView = () => {
           ))}
         </div>
       )}
-    </div>
+    </Page>
   );
 };
 

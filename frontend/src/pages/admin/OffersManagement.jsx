@@ -484,17 +484,10 @@ const OffersManagement = () => {
   return (
     <div className="space-y-6 pb-12">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <Tag className="w-8 h-8 text-[#EAB308]" />
-            <h1 className="text-3xl font-extrabold text-white tracking-wide">
-              Offers & Promotions
-            </h1>
-          </div>
-          <p className="text-gray-400 text-sm mt-1">
-            Manage promotional banners, discounts, and animated graffiti shown on the Customer App.
-          </p>
+          <h1 className="text-[28px] leading-[34px] font-bold tracking-[-0.02em] text-[var(--a-text)] sm:text-[32px] sm:leading-[38px]">Offers</h1>
+          <p className="mt-1 text-[14px] leading-5 text-[var(--a-text-2)]">Promotional banners, coupons and discounts shown in the customer app.</p>
         </div>
 
         <div className="flex items-center gap-3">
