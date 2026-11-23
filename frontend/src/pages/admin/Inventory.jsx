@@ -206,11 +206,11 @@ const Inventory = () => {
           <thead>
             <tr>
               <Th>Item</Th>
-              <Th className="hidden md:table-cell">Category</Th>
+              <Th className="hidden xl:table-cell">Category</Th>
               <Th align="center">Stock</Th>
               <Th align="right" className="hidden sm:table-cell">Min level</Th>
-              <Th align="right" className="hidden lg:table-cell">Cost / unit</Th>
-              <Th>Status</Th>
+              <Th align="right" className="hidden xl:table-cell">Cost / unit</Th>
+              <Th className="hidden sm:table-cell">Status</Th>
               <Th align="right"> </Th>
             </tr>
           </thead>
@@ -223,8 +223,9 @@ const Inventory = () => {
                   <Td>
                     <div className="font-medium">{item.name}</div>
                     <div className="text-[12px] text-[var(--a-text-3)]">{item.supplier || "No supplier"}</div>
+                    <div className="sm:hidden mt-1">{out ? <StatusPill tone="error" dot>Out</StatusPill> : low ? <StatusPill tone="warn" dot>Low</StatusPill> : <StatusPill tone="success" dot>In stock</StatusPill>}</div>
                   </Td>
-                  <Td className="hidden md:table-cell text-[var(--a-text-2)]">{item.category}</Td>
+                  <Td className="hidden xl:table-cell text-[var(--a-text-2)]">{item.category}</Td>
                   <Td align="center">
                     <div className="inline-flex items-center gap-1.5">
                       <IconButton icon={Minus} label="Use one" className="h-7 w-7 rounded-full" onClick={() => updateStock(item._id, -1, "Used")} />
@@ -233,8 +234,8 @@ const Inventory = () => {
                     </div>
                   </Td>
                   <Td align="right" className="hidden sm:table-cell text-[var(--a-text-2)]">{item.min_stock} {item.unit}</Td>
-                  <Td align="right" className="hidden lg:table-cell">₹{item.cost_per_unit}</Td>
-                  <Td>
+                  <Td align="right" className="hidden xl:table-cell">₹{item.cost_per_unit}</Td>
+                  <Td className="hidden sm:table-cell">
                     {out
                       ? <StatusPill tone="error" dot>Out of stock</StatusPill>
                       : low ? <StatusPill tone="warn" dot>Low stock</StatusPill>

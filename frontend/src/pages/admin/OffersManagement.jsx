@@ -647,7 +647,7 @@ const OffersManagement = () => {
               )}
             </section>
 
-            <section className="space-y-2">
+            <section className="space-y-2 max-w-sm w-full">
               <SectionTitle title="App preview" subtitle="What customers see first" />
               <Card className="space-y-3">
                 {masterEnabled && activeOffersCount > 0 && topActive ? (
