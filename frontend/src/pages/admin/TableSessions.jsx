@@ -10,7 +10,6 @@ import {
   RefreshCw,
   UtensilsCrossed,
   Bell,
-  DollarSign,
   Volume2,
   VolumeX,
   Printer,
@@ -19,6 +18,7 @@ import { useToast } from "../../hooks/use-toast";
 import logoImg from "../../assets/logo.png";
 
 import API_BASE from "../../lib/config";
+import { Page, PageHeader, Card, List, ListRow, SectionTitle, Button, Segmented, StatusPill, KeyValue, FormField, Input, EmptyState, LoadingState } from "./ui";
 
 const TableSessions = () => {
   const { toast } = useToast();
@@ -401,238 +401,121 @@ const TableSessions = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <RefreshCw className="h-8 w-8 text-primary animate-spin" />
-      </div>
-    );
+    return <LoadingState rows={4} label="Loading dine-in sessions" />;
   }
 
+  const orderTone = (s) => ({ accepted: "info", preparing: "warn", ready: "success", served: "neutral", rejected: "error" }[s] || "neutral");
+
   return (
-    <div>
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
-        <div>
-          <h1 className="text-2xl font-bold text-[#EAB308]" style={{ fontFamily: "'Playfair Display', serif" }}>Dine-In Orders</h1>
-          <p className="text-gray-500 text-xs uppercase tracking-widest">Table Session Management</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setSoundEnabled(!soundEnabled)}
-            className={`px-3 py-2 rounded-lg flex items-center gap-1.5 text-sm font-bold transition ${
-              soundEnabled
-                ? "bg-green-600 text-white hover:bg-green-700"
-                : "bg-red-600 text-white hover:bg-red-700"
-            }`}
-          >
-            {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-            <span className="hidden sm:inline">{soundEnabled ? "Sound ON" : "Sound OFF"}</span>
-          </button>
-          <button
-            onClick={fetchData}
-            className="bg-[#1a4855] text-white px-3 py-2 rounded-lg flex items-center gap-1.5 text-sm hover:bg-[#234d5c] transition"
-          >
-            <RefreshCw className="h-4 w-4" />
-            <span className="hidden sm:inline">Refresh</span>
-          </button>
-        </div>
-      </div>
+    <Page>
+      <PageHeader
+        title="Dine-In"
+        subtitle="Table sessions, approvals and billing"
+        actions={
+          <>
+            <Button
+              variant={soundEnabled ? "tinted" : "destructive"}
+              icon={soundEnabled ? Volume2 : VolumeX}
+              onClick={() => setSoundEnabled(!soundEnabled)}
+            >
+              {soundEnabled ? "Sound On" : "Sound Off"}
+            </Button>
+            <Button icon={RefreshCw} onClick={fetchData}>Refresh</Button>
+          </>
+        }
+      />
 
-      {/* Tabs — horizontally scrollable on mobile */}
-      <div className="flex gap-2 mb-5 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-        <button
-          onClick={() => setActiveTab("pending")}
-          className={`px-4 py-2 rounded-lg font-medium transition flex items-center space-x-2 ${
-            activeTab === "pending"
-              ? "bg-yellow-500 text-black"
-              : "bg-[#1a4855] text-gray-300 hover:text-white"
-          }`}
-        >
-          <Bell className="h-4 w-4" />
-          <span>Pending Approval</span>
-          {pendingOrders.length > 0 && (
-            <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-              {pendingOrders.length}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab("active")}
-          className={`px-4 py-2 rounded-lg font-medium transition flex items-center space-x-2 ${
-            activeTab === "active"
-              ? "bg-green-500 text-black"
-              : "bg-[#1a4855] text-gray-300 hover:text-white"
-          }`}
-        >
-          <Users className="h-4 w-4" />
-          <span>Active Tables</span>
-          <span className="bg-green-700 text-white text-xs px-2 py-0.5 rounded-full">
-            {activeSessions.length}
-          </span>
-        </button>
-        <button
-          onClick={() => setActiveTab("billing")}
-          className={`px-4 py-2 rounded-lg font-medium transition flex items-center space-x-2 ${
-            activeTab === "billing"
-              ? "bg-blue-500 text-black"
-              : "bg-[#1a4855] text-gray-300 hover:text-white"
-          }`}
-        >
-          <Receipt className="h-4 w-4" />
-          <span>Billing</span>
-        </button>
-      </div>
+      <Segmented
+        value={activeTab}
+        onChange={setActiveTab}
+        options={[
+          { value: "pending", label: "Pending Approval", icon: Bell, count: pendingOrders.length },
+          { value: "active", label: `Active Tables (${activeSessions.length})`, icon: Users },
+          { value: "billing", label: "Billing", icon: Receipt },
+        ]}
+      />
 
-      {/* PENDING APPROVAL TAB */}
+      {/* PENDING APPROVAL */}
       {activeTab === "pending" && (
-        <div className="space-y-4">
-          {pendingOrders.length === 0 ? (
-            <div className="bg-[#1a4855] rounded-xl p-8 text-center">
-              <Bell className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-              <p className="text-gray-400">No pending orders</p>
-            </div>
-          ) : (
-            pendingOrders.map((order) => (
-              <div key={order.order_id} className="bg-[#1a4855] rounded-xl p-4 border-l-4 border-yellow-500">
-                <div className="flex justify-between items-start mb-4">
+        pendingOrders.length === 0 ? (
+          <Card><EmptyState icon={Bell} title="No pending orders" description="New table orders waiting for approval will appear here." /></Card>
+        ) : (
+          <div className="grid gap-3 xl:grid-cols-2">
+            {pendingOrders.map((order) => (
+              <Card key={order.order_id} padded={false}>
+                <div className="flex items-start justify-between gap-3 px-4 pt-4 pb-3">
                   <div>
-                    <div className="flex items-center space-x-3">
-                      <span className="bg-primary text-black px-3 py-1 rounded-lg font-bold">
-                        Table {order.table_number}
-                      </span>
-                      <span className="text-white font-medium">{order.customer_name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[17px] font-semibold text-[var(--a-text)]">Table {order.table_number}</span>
+                      <StatusPill tone="accent" dot>Waiting</StatusPill>
                     </div>
-                    <p className="text-gray-400 text-sm mt-1">
-                      <Clock className="h-3 w-3 inline mr-1" />
-                      {formatTime(order.created_at)}
-                    </p>
-                  </div>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => rejectOrder(order.order_id)}
-                      className="bg-red-500/20 text-red-500 px-4 py-2 rounded-lg font-bold hover:bg-red-500/30 transition flex items-center space-x-1"
-                    >
-                      <X className="h-4 w-4" />
-                      <span>Reject</span>
-                    </button>
-                    <button
-                      onClick={() => approveOrder(order.order_id)}
-                      className="bg-green-500 text-black px-4 py-2 rounded-lg font-bold hover:bg-green-400 transition flex items-center space-x-1"
-                    >
-                      <Check className="h-4 w-4" />
-                      <span>Accept & Send to Kitchen</span>
-                    </button>
+                    <div className="text-[13px] text-[var(--a-text-2)]">
+                      {order.customer_name} · <span className="pd-tabular">{formatTime(order.created_at)}</span>
+                    </div>
                   </div>
                 </div>
-
-                {/* Order Items */}
-                <div className="bg-[#0f2933] rounded-lg p-3">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="text-gray-400 text-sm border-b border-[#EAB308]/20">
-                        <th className="text-left py-2">Item</th>
-                        <th className="text-center py-2">Qty</th>
-                        <th className="text-right py-2">Price</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {order.items.map((item, idx) => (
-                        <tr key={idx} className="border-b border-gray-800">
-                          <td className="py-2 text-white">{item.name}</td>
-                          <td className="py-2 text-center text-primary font-bold">{item.quantity}</td>
-                          <td className="py-2 text-right text-white">₹{item.price * item.quantity}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <div className="flex justify-between items-center mt-3 pt-3 border-t border-[#EAB308]/20">
-                    <span className="text-primary font-bold">Total</span>
-                    <span className="text-primary font-bold text-lg">₹{order.total}</span>
-                  </div>
+                <div className="px-4 divide-y divide-[var(--a-line)]">
+                  {order.items.map((item, idx) => (
+                    <div key={idx} className="flex items-baseline justify-between gap-3 py-1.5 text-[14px]">
+                      <span className="text-[var(--a-text)]"><span className="pd-tabular text-[var(--a-text-3)] mr-1.5">{item.quantity}×</span>{item.name}</span>
+                      <span className="pd-tabular text-[var(--a-text)]">₹{item.price * item.quantity}</span>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            ))
-          )}
-        </div>
+                <div className="mx-4 mt-2 pt-2 border-t border-[var(--a-line)] flex items-baseline justify-between">
+                  <span className="text-[15px] font-semibold">Total</span>
+                  <span className="text-[17px] font-semibold pd-tabular">₹{order.total}</span>
+                </div>
+                <div className="px-4 py-3 mt-3 border-t border-[var(--a-line)] flex justify-end gap-2">
+                  <Button size="sm" variant="destructive" icon={X} onClick={() => rejectOrder(order.order_id)}>Reject</Button>
+                  <Button size="sm" variant="primary" icon={Check} onClick={() => approveOrder(order.order_id)}>Accept & Send to Kitchen</Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )
       )}
 
-      {/* ACTIVE TABLES TAB */}
+      {/* ACTIVE TABLES */}
       {activeTab === "active" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {activeSessions.length === 0 ? (
-            <div className="col-span-full bg-[#1a4855] rounded-xl p-8 text-center">
-              <Users className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-              <p className="text-gray-400">No active tables</p>
-            </div>
-          ) : (
-            activeSessions.map((session) => (
-              <div key={session.session_id} className="bg-[#1a4855] rounded-xl p-4">
-                <div className="flex justify-between items-start mb-4">
+        activeSessions.length === 0 ? (
+          <Card><EmptyState icon={Users} title="No active tables" description="Seated tables with open sessions appear here." /></Card>
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {activeSessions.map((session) => (
+              <Card key={session.session_id} padded={false} className="flex flex-col">
+                <div className="flex items-start justify-between gap-3 px-4 pt-4 pb-3">
                   <div>
-                    <div className="flex items-center space-x-2">
-                      <span className="bg-green-500 text-black px-3 py-1 rounded-lg font-bold">
-                        Table {session.table_number}
-                      </span>
-                      <span className={`px-2 py-0.5 rounded text-xs ${
-                        session.status === "active" ? "bg-green-500/20 text-green-500" : "bg-yellow-500/20 text-yellow-500"
-                      }`}>
-                        {session.status}
-                      </span>
+                    <div className="text-[17px] font-semibold text-[var(--a-text)]">Table {session.table_number}</div>
+                    <div className="text-[13px] text-[var(--a-text-2)]">
+                      {session.customer_name} · since <span className="pd-tabular">{formatTime(session.created_at)}</span>
                     </div>
-                    <p className="text-white font-medium mt-1">{session.customer_name}</p>
-                    <p className="text-gray-400 text-xs">
-                      Started: {formatTime(session.created_at)}
-                    </p>
                   </div>
+                  <StatusPill tone={session.status === "active" ? "success" : "warn"} dot>
+                    <span className="capitalize">{session.status}</span>
+                  </StatusPill>
                 </div>
 
-                {/* Session Orders */}
-                <div className="space-y-2 mb-4">
+                <div className="mx-4 rounded-[12px] border border-[var(--a-line)] divide-y divide-[var(--a-line)]">
                   {session.orders?.map((order, idx) => (
-                    <div key={order.order_id} className="bg-[#0f2933] rounded-lg p-2 text-sm">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-gray-400">Order #{idx + 1}</span>
-                        <span className={`px-2 py-0.5 rounded text-xs ${
-                          order.status === "accepted" ? "bg-green-500/20 text-green-500" :
-                          order.status === "preparing" ? "bg-blue-500/20 text-blue-500" :
-                          order.status === "ready" ? "bg-purple-500/20 text-purple-500" :
-                          order.status === "served" ? "bg-gray-500/20 text-gray-400" :
-                          "bg-gray-500/20 text-gray-500"
-                        }`}>
-                          {order.status}
-                        </span>
+                    <div key={order.order_id} className="px-3 py-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[14px] text-[var(--a-text)]">Order {idx + 1}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[14px] pd-tabular text-[var(--a-text)]">₹{order.total}</span>
+                          <StatusPill tone={orderTone(order.status)}><span className="capitalize">{order.status}</span></StatusPill>
+                        </div>
                       </div>
-                      <p className="text-white mb-2">₹{order.total}</p>
-                      
-                      {/* Status Update Buttons */}
                       {order.status !== "served" && order.status !== "rejected" && (
-                        <div className="flex flex-wrap gap-1">
+                        <div className="mt-2 flex flex-wrap gap-1.5">
                           {order.status === "accepted" && (
-                            <button
-                              onClick={() => updateOrderStatus(order.order_id, "preparing")}
-                              className="bg-blue-500/20 text-blue-500 px-2 py-1 rounded text-xs font-medium hover:bg-blue-500/30"
-                            >
-                              <ChefHat className="h-3 w-3 inline mr-1" />
-                              Preparing
-                            </button>
+                            <Button size="sm" variant="tinted" icon={ChefHat} className="h-7" onClick={() => updateOrderStatus(order.order_id, "preparing")}>Preparing</Button>
                           )}
                           {(order.status === "accepted" || order.status === "preparing") && (
-                            <button
-                              onClick={() => updateOrderStatus(order.order_id, "ready")}
-                              className="bg-purple-500/20 text-purple-500 px-2 py-1 rounded text-xs font-medium hover:bg-purple-500/30"
-                            >
-                              <UtensilsCrossed className="h-3 w-3 inline mr-1" />
-                              Ready
-                            </button>
+                            <Button size="sm" variant="tinted" icon={UtensilsCrossed} className="h-7" onClick={() => updateOrderStatus(order.order_id, "ready")}>Ready</Button>
                           )}
                           {(order.status === "ready" || order.status === "preparing") && (
-                            <button
-                              onClick={() => updateOrderStatus(order.order_id, "served")}
-                              className="bg-green-500/20 text-green-500 px-2 py-1 rounded text-xs font-medium hover:bg-green-500/30"
-                            >
-                              <Check className="h-3 w-3 inline mr-1" />
-                              Served
-                            </button>
+                            <Button size="sm" variant="tinted" icon={Check} className="h-7" onClick={() => updateOrderStatus(order.order_id, "served")}>Served</Button>
                           )}
                         </div>
                       )}
@@ -640,183 +523,106 @@ const TableSessions = () => {
                   ))}
                 </div>
 
-                {/* Session Total */}
-                <div className="bg-[#0f2933] rounded-lg p-3 mb-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Session Total</span>
-                    <span className="text-primary font-bold text-lg">₹{session.total}</span>
-                  </div>
+                <div className="mx-4 mt-3 flex items-baseline justify-between">
+                  <span className="text-[14px] text-[var(--a-text-2)]">Session total</span>
+                  <span className="text-[20px] font-semibold pd-tabular">₹{session.total}</span>
                 </div>
-
-                {/* Generate Bill Button */}
-                <button
-                  onClick={() => generateBill(session.session_id)}
-                  className="w-full bg-primary text-black py-2 rounded-lg font-bold hover:bg-white transition flex items-center justify-center space-x-2"
-                >
-                  <Receipt className="h-4 w-4" />
-                  <span>Generate Final Bill</span>
-                </button>
-              </div>
-            ))
-          )}
-        </div>
+                <div className="p-4 mt-auto">
+                  <Button variant="primary" icon={Receipt} className="w-full" onClick={() => generateBill(session.session_id)}>
+                    Generate Final Bill
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )
       )}
 
-      {/* BILLING TAB */}
+      {/* BILLING */}
       {activeTab === "billing" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Pending Bills */}
-          <div>
-            <h3 className="text-lg font-bold text-primary mb-4">Pending Bills</h3>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+          <section className="space-y-2">
+            <SectionTitle title="Pending bills" />
             {billingSessions.length === 0 ? (
-              <div className="bg-[#1a4855] rounded-xl p-8 text-center">
-                <Receipt className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-                <p className="text-gray-400">No pending bills</p>
-              </div>
+              <Card><EmptyState icon={Receipt} title="No pending bills" description="Generate a final bill from Active Tables." /></Card>
             ) : (
-              <div className="space-y-3">
-                {billingSessions.map((session) => (
-                  <div
-                    key={session.session_id}
-                    onClick={() => setSelectedSession(session)}
-                    className={`bg-[#1a4855] rounded-xl p-4 cursor-pointer transition ${
-                      selectedSession?.session_id === session.session_id
-                        ? "border border-primary/20"
-                        : "hover:bg-[#234d5c]"
-                    }`}
-                  >
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <span className="bg-blue-500 text-black px-3 py-1 rounded-lg font-bold">
-                          Table {session.table_number}
-                        </span>
-                        {session.bill_number && (
-                          <span className="ml-2 bg-[#EAB308]/20 text-primary font-mono text-sm px-2 py-1 rounded font-bold">
-                            #{session.bill_number}
-                          </span>
-                        )}
-                        <p className="text-white mt-1">{session.customer_name}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-primary font-bold text-xl">₹{session.total}</p>
-                        <p className="text-gray-400 text-xs">{session.orders?.length} orders</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <List>
+                {billingSessions.map((session) => {
+                  const selected = selectedSession?.session_id === session.session_id;
+                  return (
+                    <ListRow
+                      key={session.session_id}
+                      onClick={() => setSelectedSession(session)}
+                      className={selected ? "bg-[var(--a-fill-2)]" : ""}
+                      title={<span className="flex items-center gap-2">Table {session.table_number}{session.bill_number && <StatusPill tone="neutral">#{session.bill_number}</StatusPill>}</span>}
+                      subtitle={`${session.customer_name || "Guest"} · ${session.orders?.length || 0} orders`}
+                      trailing={<span className="text-[16px] font-semibold pd-tabular text-[var(--a-text)]">₹{session.total}</span>}
+                    />
+                  );
+                })}
+              </List>
             )}
-          </div>
+          </section>
 
-          {/* Bill Details */}
-          <div>
-            <h3 className="text-lg font-bold text-primary mb-4">Bill Details</h3>
+          <section className="space-y-2">
+            <SectionTitle title="Bill details" />
             {selectedSession ? (
-              <div className="bg-[#1a4855] rounded-xl p-4">
-                <div className="text-center mb-4 pb-4 border-b border-[#EAB308]/20">
-                  <h4 className="text-xl font-bold text-white">Persian Darbar</h4>
-                  {selectedSession.bill_number && (
-                    <p className="text-primary font-mono font-bold text-lg tracking-widest mt-1">
-                      Bill # {selectedSession.bill_number}
-                    </p>
-                  )}
-                  <p className="text-gray-400">Table {selectedSession.table_number}</p>
-                  <p className="text-gray-400">{selectedSession.customer_name}</p>
+              <Card className="space-y-4">
+                <div className="text-center pb-3 border-b border-[var(--a-line)]">
+                  <div className="text-[17px] font-semibold">Persian Darbar</div>
+                  {selectedSession.bill_number && <div className="text-[14px] pd-tabular text-[var(--a-text-2)]">Bill #{selectedSession.bill_number}</div>}
+                  <div className="text-[13px] text-[var(--a-text-2)]">Table {selectedSession.table_number} · {selectedSession.customer_name}</div>
                 </div>
 
-                {/* Items */}
-                <div className="space-y-2 mb-4">
+                <div className="divide-y divide-[var(--a-line)]">
                   {selectedSession.orders?.map((order) =>
                     order.items?.map((item, idx) => (
-                      <div key={`${order.order_id}-${idx}`} className="flex justify-between text-sm">
-                        <span className="text-white">
-                          {item.name} x{item.quantity}
-                        </span>
-                        <span className="text-white">₹{item.price * item.quantity}</span>
+                      <div key={`${order.order_id}-${idx}`} className="flex justify-between gap-3 py-1.5 text-[14px]">
+                        <span><span className="pd-tabular text-[var(--a-text-3)] mr-1.5">{item.quantity}×</span>{item.name}</span>
+                        <span className="pd-tabular">₹{item.price * item.quantity}</span>
                       </div>
                     ))
                   )}
                 </div>
 
-                {/* Totals */}
-                <div className="border-t border-[#EAB308]/20 pt-3 space-y-2">
-                  <div className="flex justify-between text-gray-400">
-                    <span>Subtotal</span>
-                    <span>₹{selectedSession.subtotal}</span>
+                <div className="pt-3 border-t border-[var(--a-line)] space-y-2">
+                  <KeyValue label="Subtotal" value={`₹${selectedSession.subtotal}`} />
+                  <KeyValue label="GST (5%)" value={`₹${selectedSession.taxes}`} />
+                  <div className="flex items-center justify-between text-[14px]">
+                    <span className="text-[var(--a-text-2)]">Discount</span>
+                    <Input type="number" value={discount} onChange={(e) => setDiscount(Number(e.target.value))} className="w-28 h-9 text-right pd-tabular" />
                   </div>
-                  <div className="flex justify-between text-gray-400">
-                    <span>GST (5%)</span>
-                    <span>₹{selectedSession.taxes}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Discount</span>
-                    <input
-                      type="number"
-                      value={discount}
-                      onChange={(e) => setDiscount(Number(e.target.value))}
-                      className="w-24 bg-[#0f2933] text-white px-2 py-1 rounded text-right"
-                    />
-                  </div>
-                  <div className="flex justify-between text-primary font-bold text-xl pt-2 border-t border-[#EAB308]/20">
-                    <span>Total</span>
-                    <span>₹{selectedSession.total - discount}</span>
+                  <div className="flex items-baseline justify-between pt-2 border-t border-[var(--a-line)]">
+                    <span className="text-[16px] font-semibold">Total</span>
+                    <span className="text-[24px] font-semibold pd-tabular">₹{selectedSession.total - discount}</span>
                   </div>
                 </div>
 
-                {/* Payment Method */}
-                <div className="mt-4 pt-4 border-t border-[#EAB308]/20">
-                  <p className="text-gray-400 text-sm mb-2">Payment Method</p>
-                  <div className="flex space-x-2">
-                    {["cash", "card", "upi"].map((method) => (
-                      <button
-                        key={method}
-                        onClick={() => setPaymentMethod(method)}
-                        className={`flex-1 py-2 rounded-lg font-medium transition ${
-                          paymentMethod === method
-                            ? "bg-primary text-black"
-                            : "bg-[#0f2933] text-gray-300 hover:text-white"
-                        }`}
-                      >
-                        {method.toUpperCase()}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <FormField label="Payment method">
+                  <Segmented
+                    stretch
+                    value={paymentMethod}
+                    onChange={setPaymentMethod}
+                    options={["cash", "card", "upi"].map(m => ({ value: m, label: m.toUpperCase() }))}
+                  />
+                </FormField>
 
-                {/* Print + Close Session Buttons */}
-                <div className="flex gap-2 mt-4">
-                  <button
-                    onClick={() => printBill(selectedSession)}
-                    className="flex-1 bg-[#1a4855] border border-[#EAB308]/40 text-primary py-3 rounded-lg font-bold hover:bg-[#234d5c] transition flex items-center justify-center space-x-2"
-                  >
-                    <Printer className="h-4 w-4" />
-                    <span>Print Bill</span>
-                  </button>
-                  <button
-                    onClick={() => closeSession(selectedSession.session_id)}
-                    className="flex-1 bg-green-500 text-black py-3 rounded-lg font-bold hover:bg-green-400 transition flex items-center justify-center space-x-2"
-                  >
-                    <CreditCard className="h-5 w-5" />
-                    <span>Complete Payment</span>
-                  </button>
+                <div className="flex gap-2">
+                  <Button className="flex-1" size="lg" icon={Printer} onClick={() => printBill(selectedSession)}>Print Bill</Button>
+                  <Button className="flex-1" size="lg" variant="success" icon={CreditCard} onClick={() => closeSession(selectedSession.session_id)}>Complete Payment</Button>
                 </div>
-              </div>
+              </Card>
             ) : (
-              <div className="bg-[#1a4855] rounded-xl p-8 text-center">
-                <DollarSign className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-                <p className="text-gray-400">Select a bill to view details</p>
-              </div>
+              <Card><EmptyState icon={Receipt} title="No bill selected" description="Select a pending bill to review and settle it." /></Card>
             )}
-          </div>
+          </section>
         </div>
       )}
 
       {/* Audio element for dine-in notification */}
       {soundUrl && <audio ref={audioRef} src={soundUrl} preload="auto" />}
-    </div>
+    </Page>
   );
 };
 
 export default TableSessions;
-
-
