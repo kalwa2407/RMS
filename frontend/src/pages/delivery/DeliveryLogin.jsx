@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogIn, Eye, EyeOff } from "lucide-react";
+import { LogIn, Eye, EyeOff, ChevronLeft } from "lucide-react";
 import axios from "axios";
 import API_BASE from "../../lib/config";
 import logoImg from "../../assets/logo.png";
@@ -32,93 +32,92 @@ const DeliveryLogin = () => {
     }
   };
 
+  const fieldClass =
+    "w-full h-14 rounded-[14px] bg-pd-surface px-4 text-[17px] text-pd-ink outline-none " +
+    "border border-transparent focus:border-pd-teal focus:bg-white transition-colors placeholder:text-pd-ink-3";
+
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center px-5"
-      style={{
-        background: "linear-gradient(160deg, #111827 0%, #1f2937 60%, #111827 100%)",
-      }}
+      className="min-h-[100dvh] flex flex-col bg-white text-pd-ink"
+      style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}
     >
-      {/* Real logo */}
-      <img
-        src={logoImg}
-        alt="Persian Darbar"
-        className="mb-4 h-60 w-auto object-contain drop-shadow-2xl"
-        style={{ mixBlendMode: 'screen', filter: "drop-shadow(0 4px 24px rgba(59,130,246,0.3))" }}
-      />
-
-      <h1
-        className="text-3xl font-bold text-white mb-1 text-center"
-        style={{ fontFamily: "'Playfair Display', serif" }}
-      >
-        Delivery Partner
-      </h1>
-      <p className="text-sm text-gray-400 mb-10 text-center uppercase tracking-widest">
-        Persian Darbar — Rider Login
-      </p>
-
-      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
-        <div>
-          <label className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1.5 block">
-            Phone Number
-          </label>
-          <input
-            type="tel"
-            required
-            value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: e.target.value })}
-            placeholder="e.g. 9876543210"
-            className="w-full bg-[#1f2937] border border-blue-500/20 rounded-2xl px-5 py-3.5 text-white text-sm outline-none focus:border-blue-500/50 transition-all placeholder:text-gray-500"
+      <div className="flex-1 w-full max-w-sm mx-auto px-5 flex flex-col">
+        {/* Brand tile: the logo artwork is light, so it sits on the Darbar teal. */}
+        <div className="mt-6 rounded-[24px] bg-pd-teal h-44 flex items-center justify-center overflow-hidden">
+          <img
+            src={logoImg}
+            alt="Persian Darbar"
+            className="h-56 w-auto object-contain"
+            style={{ mixBlendMode: "screen" }}
           />
         </div>
 
-        <div>
-          <label className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1.5 block">
-            Password
-          </label>
-          <div className="relative">
+        <h1 className="mt-8 text-[30px] leading-9 font-bold tracking-[-0.02em]">Delivery Partner</h1>
+        <p className="mt-1 text-[16px] text-pd-ink-2">Sign in with the phone number registered with Persian Darbar.</p>
+
+        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+          <label className="block">
+            <span className="block text-[14px] font-semibold text-pd-ink-2 mb-1.5">Phone number</span>
             <input
-              type={showPw ? "text" : "password"}
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
               required
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              placeholder="Enter password"
-              className="w-full bg-[#1f2937] border border-blue-500/20 rounded-2xl px-5 py-3.5 pr-12 text-white text-sm outline-none focus:border-blue-500/50 transition-all placeholder:text-gray-500"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              placeholder="e.g. 9876543210"
+              className={fieldClass}
             />
-            <button
-              type="button"
-              onClick={() => setShowPw(!showPw)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
-            >
-              {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
-          </div>
-        </div>
+          </label>
 
-        {error && (
-          <p className="text-red-400 text-xs text-center bg-red-900/20 border border-red-500/20 rounded-xl px-4 py-2">
-            {error}
-          </p>
-        )}
+          <label className="block">
+            <span className="block text-[14px] font-semibold text-pd-ink-2 mb-1.5">Password</span>
+            <span className="relative block">
+              <input
+                type={showPw ? "text" : "password"}
+                autoComplete="current-password"
+                required
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                placeholder="Enter password"
+                className={fieldClass + " pr-14"}
+              />
+              <button
+                type="button"
+                aria-label={showPw ? "Hide password" : "Show password"}
+                onClick={() => setShowPw(!showPw)}
+                className="pd-press absolute right-1.5 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center text-pd-ink-2"
+              >
+                {showPw ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            </span>
+          </label>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-2xl transition-all text-sm uppercase tracking-widest mt-2"
-        >
-          <LogIn className="h-4 w-4" />
-          {loading ? "Logging in..." : "Login"}
-        </button>
+          {error && (
+            <p role="alert" className="text-[15px] text-pd-error bg-[#FBEDEE] rounded-[12px] px-4 py-3">
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="pd-press w-full h-14 rounded-[14px] bg-pd-action text-white text-[17px] font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
+          >
+            <LogIn className="h-5 w-5" />
+            {loading ? "Signing in…" : "Sign in"}
+          </button>
+        </form>
 
         <button
           type="button"
           onClick={() => navigate("/staff-entry")}
-          className="w-full text-center text-xs text-gray-400 hover:text-white transition-colors py-2 flex items-center justify-center gap-1.5 mt-2"
+          className="pd-press mt-8 h-12 w-full text-[16px] font-semibold text-pd-teal flex items-center justify-center gap-1.5"
         >
-          <span>&larr;</span>
-          <span>Back to Staff Portal</span>
+          <ChevronLeft className="h-5 w-5" />
+          Back to Staff Portal
         </button>
-      </form>
+      </div>
     </div>
   );
 };

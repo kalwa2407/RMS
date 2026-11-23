@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Bike, LogOut, RefreshCw, MapPin, Package,
-  CheckCircle, Truck, Phone, CreditCard,
-  Clock, Navigation, IndianRupee, Star,
-  ChevronRight, RotateCw
+  Bike, LogOut, MapPin, CheckCircle, Truck, Phone,
+  Navigation, ChevronRight, RotateCw, WifiOff, Banknote
 } from "lucide-react";
 import axios from "axios";
 import API_BASE from "../../lib/config";
+import { cx, EmptyState } from "../customer/ui";
+import { IconButton, StatusPill, Segmented, ListRow, Hairline, OrderCardSkeleton } from "./ui";
 
-const fmt = (n) => `₹${Number(n||0).toFixed(0)}`;
+const fmt = (n) => `₹${Math.round(Number(n||0)).toLocaleString("en-IN")}`;
 
 const formatTime = (ts) => {
   if (!ts) return "—";
@@ -30,11 +30,37 @@ const timeSince = (ts) => {
 };
 
 const STATUS_FLOW = {
-  ready:            { next:"out_for_delivery", label:"Picked Up — Start Delivery", icon:Truck, color:"#16a34a" },
-  out_for_delivery: { next:"delivered",        label:"Mark as Delivered",          icon:CheckCircle, color:"#7c3aed" },
+  ready:            { next:"out_for_delivery", label:"Picked up, start delivery", shortLabel:"Start delivery", icon:Truck,       buttonClass:"bg-pd-action text-white" },
+  out_for_delivery: { next:"delivered",        label:"Mark as delivered",         shortLabel:"Mark delivered", icon:CheckCircle, buttonClass:"bg-pd-success text-white" },
 };
 
-const GOLD = "#EAB308";
+const STATUS_META = {
+  ready:            { tone:"warn",    label:"Ready for pickup" },
+  out_for_delivery: { tone:"teal",    label:"On the way" },
+  delivered:        { tone:"success", label:"Delivered" },
+};
+
+const statusMeta = (status) =>
+  STATUS_META[status] || { tone:"neutral", label:String(status || "Assigned").replace(/_/g, " ") };
+
+const hasGpsPin = (order) => Boolean(order.latitude || order.coordinates?.lat);
+
+const greetingFor = (d) => {
+  const h = d.getHours();
+  return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : h < 21 ? "Good evening" : "Good night";
+};
+
+const shortTime = (d) => d.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true});
+
+/* Big primary status button (56pt tall) with its loading state. */
+const StatusButton = ({ flow, busy, onClick, compact = false, className = "" }) => (
+  <button type="button" onClick={onClick} disabled={busy} aria-label={flow.label}
+    className={cx("pd-press h-14 rounded-[14px] px-3 text-[17px] font-semibold whitespace-nowrap flex items-center justify-center gap-2 disabled:opacity-60", flow.buttonClass, className)}>
+    {busy
+      ? <><RotateCw className="h-5 w-5 animate-spin"/> Updating…</>
+      : <><flow.icon className="h-5 w-5 shrink-0" strokeWidth={2.25}/> {compact ? flow.shortLabel : flow.label}</>}
+  </button>
+);
 
 const DeliveryPanel = () => {
   const navigate = useNavigate();
@@ -49,6 +75,7 @@ const DeliveryPanel = () => {
   const [profile, setProfile]  = useState(null);
   const [orders, setOrders]    = useState([]);
   const [loading, setLoading]  = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [updating, setUpdating]= useState(null);
   const [tab, setTab]          = useState("active");
   const [shiftStart]           = useState(() => new Date());
@@ -150,10 +177,13 @@ const DeliveryPanel = () => {
       const newStats = { count:delivered.length, earnings:delivered.reduce((s,o) => s+(o.total||0),0) };
       setCumulativeStats(newStats);
       localStorage.setItem(statsKey, JSON.stringify(newStats));
+      setLoadError(false);
     } catch (err) {
       if (err.response?.status===401||err.response?.status===403) {
         ["delivery_token", "delivery_id", "delivery_name"].forEach(k => localStorage.removeItem(k));
         navigate("/staff-entry",{replace:true});
+      } else {
+        setLoadError(true);
       }
     } finally { setLoading(false); }
   }, [token, navigate, statsKey]);
@@ -191,218 +221,222 @@ const DeliveryPanel = () => {
   const completedOrders = orders.filter(o => o.status === "delivered");
   const displayOrders   = tab === "active" ? activeOrders : completedOrders;
 
-  return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background:"linear-gradient(160deg,#060810 0%,#0a0f1a 50%,#060810 100%)", fontFamily:"'Outfit',sans-serif" }}>
-      {/* Ambient */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div style={{ position:"absolute",top:"-10%",right:"-5%",width:"450px",height:"450px",background:"radial-gradient(circle,rgba(22,163,74,0.06) 0%,transparent 70%)",borderRadius:"50%" }}/>
-        <div style={{ position:"absolute",bottom:"5%",left:"-8%",width:"350px",height:"350px",background:"radial-gradient(circle,rgba(124,58,237,0.06) 0%,transparent 70%)",borderRadius:"50%" }}/>
-      </div>
+  // The order the rider is working on right now drives the bottom action dock:
+  // a live delivery first, otherwise the next pickup.
+  const currentOrder = tab === "active"
+    ? (activeOrders.find(o => o.status === "out_for_delivery") || activeOrders.find(o => STATUS_FLOW[o.status]))
+    : null;
+  const currentFlow = currentOrder ? STATUS_FLOW[currentOrder.status] : null;
 
-      {/* HEADER */}
-      <div className="shrink-0 z-40 relative" style={{ background:"rgba(6,8,16,0.98)",borderBottom:"1px solid rgba(255,255,255,0.07)",backdropFilter:"blur(20px)" }}>
-        {/* Greeting card */}
-        <div className="flex items-center justify-between px-4 pt-4 pb-3">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color:"#4ade80" }}>
-              {clockNow.getHours()<12?"Good Morning":clockNow.getHours()<17?"Good Afternoon":clockNow.getHours()<21?"Good Evening":"Good Night"}
-            </p>
-            <p className="text-white font-bold text-base leading-tight" style={{ fontFamily:"'Playfair Display',serif" }}>{profile?.name || "Delivery Partner"}</p>
-            <div className="flex items-center gap-2 mt-0.5">
-              <p className="text-green-400 text-[10px] font-medium flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-green-400 rounded-full inline-block animate-pulse"/>
-                Online · Shift since {shiftStart.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true})}
-              </p>
-              {isGpsBroadcasting && (
-                <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[8px] font-black tracking-wider uppercase border border-emerald-500/40 flex items-center gap-1">
-                  <span className="w-1 h-1 rounded-full bg-emerald-400 animate-ping"/> GPS Active
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="flex items-end gap-3">
-            <div className="text-right">
-              <p className="text-white font-black text-2xl leading-none" style={{ fontFamily:"'Playfair Display',serif" }}>
-                {clockNow.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true})}
-              </p>
-              <p className="text-gray-600 text-[9px] uppercase tracking-wider mt-0.5">
-                {clockNow.toLocaleDateString("en-IN",{day:"2-digit",month:"short",weekday:"short"})}
-              </p>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <button onClick={fetchOrders} className="p-2 rounded-xl active:scale-90" style={{ background:"rgba(255,255,255,0.05)" }}><RotateCw className="h-4 w-4 text-gray-400"/></button>
-              <button onClick={logout} className="p-2 rounded-xl active:scale-90" style={{ background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.2)" }}><LogOut className="h-4 w-4 text-red-400"/></button>
-            </div>
-          </div>
+  const renderOrder = (order) => {
+    const flow = STATUS_FLOW[order.status];
+    const meta = statusMeta(order.status);
+    const isCOD = order.payment_method === "cod";
+    const isUpdating = updating === order.order_id;
+    const isCompleted = order.status === "delivered";
+    const isCurrent = currentOrder && currentOrder.order_id === order.order_id;
+    const items = order.items || [];
+    return (
+      <article key={order.order_id}
+        className={cx("rounded-[18px] bg-white overflow-hidden", isCurrent ? "shadow-pd-2 ring-1 ring-pd-ink/10" : "shadow-pd-1")}>
+        {/* Status + order meta */}
+        <div className="flex items-center justify-between gap-3 px-4 pt-4">
+          <StatusPill tone={meta.tone} className={STATUS_META[order.status] ? "" : "capitalize"}>{meta.label}</StatusPill>
+          <p className="text-[13px] text-pd-ink-3 pd-tabular truncate">
+            #{order.order_id?.slice(-6)} · {timeSince(order.created_at)}
+          </p>
         </div>
 
-        {/* Stats row */}
-        <div className="flex px-4 pb-4 gap-3">
-          {[
-            { icon:CheckCircle, val:cumulativeStats.count, label:"Delivered", color:"#4ade80", bg:"rgba(22,163,74,0.1)", border:"rgba(22,163,74,0.2)" },
-            { icon:IndianRupee, val:fmt(cumulativeStats.earnings).replace("₹",""), label:"₹ Value", color:"#a78bfa", bg:"rgba(124,58,237,0.1)", border:"rgba(124,58,237,0.2)" },
-            { icon:Package, val:activeOrders.length, label:"Active", color:GOLD, bg:"rgba(234,179,8,0.08)", border:"rgba(234,179,8,0.2)" },
-          ].map(s => (
-            <div key={s.label} className="flex-1 rounded-2xl px-3 py-3 flex items-center gap-2.5" style={{ background:s.bg, border:`1px solid ${s.border}` }}>
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background:s.bg }}>
-                <s.icon style={{ width:"18px",height:"18px",color:s.color }}/>
-              </div>
-              <div>
-                <p className="font-black text-2xl leading-none" style={{ color:s.color }}>{s.val}</p>
-                <p className="text-[10px] font-medium mt-0.5" style={{ color:`${s.color}88` }}>{s.label}</p>
-              </div>
-            </div>
-          ))}
+        <h2 className="px-4 pt-2.5 text-[20px] leading-[26px] font-semibold text-pd-ink tracking-[-0.01em] truncate">
+          {order.customer_name || "Customer"}
+        </h2>
+
+        {/* Address + phone, grouped like an iOS inset list */}
+        <div className="mx-4 mt-3 rounded-[14px] bg-pd-surface overflow-hidden">
+          <ListRow
+            onClick={() => openMaps(order)}
+            icon={MapPin}
+            iconClassName="bg-pd-teal text-white"
+            className="items-start"
+            title={<span className="block text-[16px] leading-[22px] text-pd-ink">{order.address || "No address on order"}</span>}
+            subtitle={
+              <span className="mt-1 flex items-center gap-1 text-[14px] font-semibold text-pd-teal">
+                <Navigation className="h-3.5 w-3.5" strokeWidth={2.5}/>
+                {hasGpsPin(order) ? "Navigate to GPS pin" : "Open in Google Maps"}
+              </span>
+            }
+            trailing={<ChevronRight className="h-5 w-5 text-pd-ink-3 shrink-0 self-center"/>}
+          />
+          {order.phone && (
+            <>
+              <Hairline inset={68}/>
+              <ListRow
+                href={`tel:${order.phone}`}
+                icon={Phone}
+                iconClassName="bg-pd-success text-white"
+                title={<span className="block text-[17px] font-semibold text-pd-ink pd-tabular">{order.phone}</span>}
+                subtitle={<span className="block text-[14px] text-pd-ink-2">Call customer</span>}
+                trailing={<ChevronRight className="h-5 w-5 text-pd-ink-3 shrink-0"/>}
+              />
+            </>
+          )}
         </div>
 
-        {/* Tab bar */}
-        <div className="flex mx-4 mb-4 rounded-2xl overflow-hidden" style={{ background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)" }}>
-          {[
-            { key:"active", label:"Active", count:activeOrders.length },
-            { key:"completed", label:"Completed", count:completedOrders.length },
-          ].map(({ key, label, count }) => (
-            <button key={key} onClick={() => setTab(key)}
-              className="flex-1 py-2.5 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2"
-              style={{
-                background: tab===key ? (key==="active" ? "rgba(22,163,74,0.2)" : "rgba(124,58,237,0.2)") : "transparent",
-                color: tab===key ? (key==="active" ? "#4ade80" : "#a78bfa") : "#6b7280",
-                borderRadius:"16px"
-              }}>
-              {label}
-              {count>0 && <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black" style={{ background:tab===key ? (key==="active"?"rgba(22,163,74,0.3)":"rgba(124,58,237,0.3)"):"rgba(255,255,255,0.08)", color:"inherit" }}>{count}</span>}
-            </button>
-          ))}
+        {/* Items */}
+        <div className="px-4 pt-4">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-pd-ink-3">
+            {items.length} {items.length === 1 ? "item" : "items"}
+          </p>
+          <ul className="mt-1.5 divide-y divide-[var(--pd-line)]">
+            {items.map((item, i) => (
+              <li key={i} className="flex items-baseline gap-3 py-2 text-[16px]">
+                <span className="w-8 shrink-0 font-semibold text-pd-ink pd-tabular">{item.quantity}×</span>
+                <span className="flex-1 min-w-0 text-pd-ink">{item.name}</span>
+                <span className="text-pd-ink-2 pd-tabular">{fmt(item.price*item.quantity)}</span>
+              </li>
+            ))}
+          </ul>
         </div>
-      </div>
 
-      {/* CONTENT */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 relative z-10">
-        {loading ? (
-          <div className="flex items-center justify-center h-48 gap-2 text-sm text-gray-600">
-            <RotateCw className="h-4 w-4 animate-spin"/> Loading...
-          </div>
-        ) : displayOrders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-60 gap-4">
-            <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background:"rgba(255,255,255,0.03)",border:"2px solid rgba(255,255,255,0.07)" }}>
-              {tab==="active" ? <Bike className="h-10 w-10 text-gray-700"/> : <CheckCircle className="h-10 w-10 text-gray-700"/>}
+        {/* Payment */}
+        {isCOD && !isCompleted ? (
+          <div className="mx-4 mt-2 rounded-[14px] bg-[#FDF3E3] px-4 py-3 flex items-center gap-3">
+            <Banknote className="h-6 w-6 text-pd-warn shrink-0" strokeWidth={2}/>
+            <div className="flex-1 min-w-0">
+              <p className="text-[16px] font-semibold text-pd-ink">Collect cash</p>
+              <p className="text-[13px] text-pd-ink-2">Cash on delivery</p>
             </div>
-            <p className="text-white font-semibold" style={{ fontFamily:"'Playfair Display',serif" }}>{tab==="active" ? "No active orders" : "No completed orders"}</p>
-            <p className="text-gray-600 text-sm">{tab==="active" ? "Sit tight — orders appear here" : "Delivered orders will show here"}</p>
+            <p className="text-[24px] font-semibold text-pd-ink pd-tabular">{fmt(order.total)}</p>
           </div>
         ) : (
-          displayOrders.map(order => {
-            const flow = STATUS_FLOW[order.status];
-            const isCOD = order.payment_method === "cod";
-            const isUpdating = updating === order.order_id;
-            const isCompleted = order.status === "delivered";
-            const isPickup = order.status === "ready";
-            const isOFD = order.status === "out_for_delivery";
-            return (
-              <div key={order.order_id} className="rounded-3xl overflow-hidden"
-                style={{
-                  background: isCompleted ? "rgba(255,255,255,0.02)" : "rgba(15,20,35,0.9)",
-                  border:`1.5px solid ${isPickup?"rgba(22,163,74,0.5)":isOFD?"rgba(124,58,237,0.4)":isCompleted?"rgba(255,255,255,0.05)":"rgba(255,255,255,0.07)"}`,
-                  boxShadow: isPickup?"0 0 20px rgba(22,163,74,0.1)":isOFD?"0 0 20px rgba(124,58,237,0.1)":"none"
-                }}>
-                {/* Status banner */}
-                {(isPickup||isOFD) && (
-                  <div className="px-4 py-2.5 flex items-center gap-2" style={{ background:isPickup?"rgba(22,163,74,0.1)":"rgba(124,58,237,0.1)", borderBottom:`1px solid ${isPickup?"rgba(22,163,74,0.18)":"rgba(124,58,237,0.15)"}` }}>
-                    <div className="w-2 h-2 rounded-full animate-pulse" style={{ background:isPickup?"#4ade80":"#a78bfa" }}/>
-                    <p className="text-xs font-bold" style={{ color:isPickup?"#4ade80":"#a78bfa" }}>
-                      {isPickup ? "🟢 Ready for pickup at restaurant" : "🛵 On the way to customer"}
-                    </p>
-                  </div>
-                )}
-
-                {/* Order header */}
-                <div className="flex items-center justify-between px-4 pt-4 pb-2">
-                  <div className="flex items-center gap-2">
-                    <p className="text-gray-600 text-xs font-mono">#{order.order_id?.slice(-8)}</p>
-                    <span className="text-gray-700">·</span>
-                    <p className="text-gray-600 text-xs">{timeSince(order.created_at)}</p>
-                  </div>
-                  {isCompleted && (
-                    <div className="flex items-center gap-1 rounded-full px-2.5 py-1" style={{ background:"rgba(34,197,94,0.1)",border:"1px solid rgba(34,197,94,0.2)" }}>
-                      <CheckCircle className="h-3 w-3 text-green-400"/>
-                      <span className="text-green-400 text-[10px] font-bold">Delivered</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Customer info */}
-                <div className="px-4 pb-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background:"rgba(234,179,8,0.1)",border:"1px solid rgba(234,179,8,0.2)" }}>
-                      <span className="text-xs font-bold" style={{ color:GOLD }}>{order.customer_name?.[0]?.toUpperCase()||"?"}</span>
-                    </div>
-                    <div>
-                      <p className="text-white font-bold text-sm leading-tight">{order.customer_name}</p>
-                      {order.phone && <p className="text-gray-500 text-xs">{order.phone}</p>}
-                    </div>
-                  </div>
-                  <button onClick={() => openMaps(order)}
-                    className="w-full flex items-start gap-3 rounded-2xl p-3 text-left active:scale-[0.98] transition-all cursor-pointer"
-                    style={{ background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.06)" }}>
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background:"rgba(22,163,74,0.15)" }}>
-                      <MapPin className="h-4 w-4 text-green-400"/>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <p className="text-gray-200 text-sm leading-snug">{order.address||"—"}</p>
-                        {(order.latitude || order.coordinates?.lat) && (
-                          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full shrink-0">
-                            📍 GPS Pin
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-green-500 text-xs mt-1 flex items-center gap-1 font-semibold">
-                        <Navigation className="h-3 w-3"/>
-                        {(order.latitude || order.coordinates?.lat) ? 'Start Turn-by-Turn GPS Navigation' : 'Open in Google Maps'}
-                      </p>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-gray-600 shrink-0 self-center"/>
-                  </button>
-                </div>
-
-                {/* Items */}
-                <div className="px-4 pb-3">
-                  <p className="text-gray-600 text-[10px] uppercase tracking-wider mb-1.5">Items</p>
-                  <div className="space-y-1">
-                    {(order.items||[]).map((item,i) => (
-                      <div key={i} className="flex justify-between text-sm">
-                        <span className="text-gray-300">{item.quantity}× {item.name}</span>
-                        <span className="text-gray-500">{fmt(item.price*item.quantity)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Payment row */}
-                <div className="mx-4 mb-4 rounded-2xl px-4 py-3 flex items-center justify-between"
-                  style={{ background:isCOD?"rgba(249,115,22,0.08)":"rgba(255,255,255,0.04)", border:isCOD?"1px solid rgba(249,115,22,0.25)":"1px solid rgba(255,255,255,0.06)" }}>
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="h-4 w-4 text-gray-500"/>
-                    <span className="text-gray-400 text-xs font-bold uppercase tracking-wider">{order.payment_method||"—"}</span>
-                    {isCOD && <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background:"rgba(249,115,22,0.15)",color:"#fb923c",border:"1px solid rgba(249,115,22,0.25)" }}>COLLECT CASH</span>}
-                  </div>
-                  <span className="text-white font-black text-xl" style={{ fontFamily:"'Playfair Display',serif" }}>{fmt(order.total)}</span>
-                </div>
-
-                {/* CTA */}
-                {flow && !isCompleted && (
-                  <div className="px-4 pb-4">
-                    <button onClick={() => updateStatus(order.order_id,flow.next)} disabled={isUpdating}
-                      className="w-full py-4 rounded-2xl font-black text-white text-sm tracking-wide flex items-center justify-center gap-2.5 active:scale-[0.98] disabled:opacity-50"
-                      style={{ background:`linear-gradient(135deg,${flow.color},${isPickup?"#059669":"#5b21b6"})`, boxShadow:`0 8px 24px ${flow.color}40` }}>
-                      {isUpdating ? <><RotateCw className="h-4 w-4 animate-spin"/> Updating...</> : <><flow.icon className="h-5 w-5"/> {flow.label}</>}
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })
+          <div className="mx-4 mt-2 border-t border-[var(--pd-line)] pt-3 flex items-center justify-between">
+            <p className="text-[15px] text-pd-ink-2">
+              {isCOD ? "Cash collected · COD" : <>Paid · <span className="uppercase">{order.payment_method || "—"}</span></>}
+            </p>
+            <p className="text-[20px] font-semibold text-pd-ink pd-tabular">{fmt(order.total)}</p>
+          </div>
         )}
-      </div>
+
+        {/* Primary action. The current order's action lives in the bottom dock. */}
+        {flow && !isCompleted && !isCurrent ? (
+          <div className="p-4">
+            <StatusButton flow={flow} busy={isUpdating} onClick={() => updateStatus(order.order_id, flow.next)} className="w-full"/>
+          </div>
+        ) : (
+          <div className="h-4"/>
+        )}
+      </article>
+    );
+  };
+
+  const isEmpty = displayOrders.length === 0;
+
+  return (
+    <div className="h-[100dvh] flex flex-col overflow-hidden bg-pd-surface text-pd-ink">
+      {/* HEADER */}
+      <header className="shrink-0 z-40 bg-white border-b border-[var(--pd-line)]" style={{ paddingTop:"env(safe-area-inset-top)" }}>
+        <div className="flex items-start gap-2 px-4 pt-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-[14px] font-medium text-pd-ink-2 pd-tabular">
+              {greetingFor(clockNow)} · {shortTime(clockNow)}
+            </p>
+            <h1 className="text-[26px] leading-[32px] font-bold tracking-[-0.02em] text-pd-ink truncate">
+              {profile?.name || "Delivery Partner"}
+            </h1>
+          </div>
+          <IconButton label="Refresh orders" onClick={fetchOrders}><RotateCw className="h-5 w-5" strokeWidth={2.25}/></IconButton>
+          <IconButton label="Log out" onClick={logout} tone="danger"><LogOut className="h-5 w-5" strokeWidth={2.25}/></IconButton>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 pt-1.5">
+          <span className="inline-flex items-center gap-1.5 text-[14px] font-semibold text-pd-success">
+            <span className="w-2 h-2 rounded-full bg-pd-success" aria-hidden="true"/>
+            Online
+            <span className="font-normal text-pd-ink-2 pd-tabular">· shift since {shortTime(shiftStart)}</span>
+          </span>
+          {isGpsBroadcasting && (
+            <StatusPill tone="teal">Sharing live location</StatusPill>
+          )}
+        </div>
+
+        {/* Stats */}
+        <dl className="mx-4 mt-3 grid grid-cols-3 rounded-[14px] bg-pd-surface divide-x divide-[var(--pd-line)]">
+          {[
+            { label:"Delivered",   val:cumulativeStats.count },
+            { label:"Order value", val:fmt(cumulativeStats.earnings) },
+            { label:"Active",      val:activeOrders.length },
+          ].map(s => (
+            <div key={s.label} className="px-3 py-2.5 min-w-0">
+              <dd className="text-[22px] leading-7 font-semibold text-pd-ink pd-tabular truncate">{s.val}</dd>
+              <dt className="text-[13px] text-pd-ink-2 truncate">{s.label}</dt>
+            </div>
+          ))}
+        </dl>
+
+        <div className="px-4 py-3">
+          <Segmented value={tab} onChange={setTab} options={[
+            { key:"active",    label:"Active",    count:activeOrders.length },
+            { key:"completed", label:"Completed", count:completedOrders.length },
+          ]}/>
+        </div>
+      </header>
+
+      {/* CONTENT */}
+      <main className="flex-1 overflow-y-auto overscroll-contain px-4 pt-4 pb-6 space-y-4"
+        style={!currentFlow ? { paddingBottom:"calc(24px + env(safe-area-inset-bottom))" } : undefined}>
+        {loadError && !isEmpty && (
+          <div role="status" className="rounded-[14px] bg-[#FDF3E3] px-4 py-3 flex items-center gap-3">
+            <WifiOff className="h-5 w-5 text-pd-warn shrink-0"/>
+            <p className="flex-1 text-[14px] text-pd-ink">Couldn't refresh. Showing the last update.</p>
+            <button type="button" onClick={fetchOrders} className="pd-press text-[15px] font-semibold text-pd-action h-11 px-1">Retry</button>
+          </div>
+        )}
+
+        {loading && isEmpty ? (
+          <>
+            <OrderCardSkeleton/>
+            <OrderCardSkeleton/>
+            <p className="sr-only">Loading deliveries</p>
+          </>
+        ) : loadError && isEmpty ? (
+          <EmptyState icon={WifiOff} className="bg-white rounded-[18px] shadow-pd-1"
+            title="Couldn't load deliveries"
+            message="Check your internet connection and try again."
+            actionLabel="Try again" onAction={fetchOrders}/>
+        ) : isEmpty ? (
+          <EmptyState icon={tab === "active" ? Bike : CheckCircle} className="bg-white rounded-[18px] shadow-pd-1"
+            title={tab === "active" ? "No deliveries right now" : "No completed deliveries"}
+            message={tab === "active" ? "New orders assigned to you will appear here automatically." : "Orders you deliver will show up here."}/>
+        ) : (
+          (currentOrder ? [currentOrder, ...displayOrders.filter(o => o !== currentOrder)] : displayOrders).map(renderOrder)
+        )}
+      </main>
+
+      {/* BOTTOM ACTION DOCK: call, navigate and the next status step, within thumb reach */}
+      {currentFlow && (
+        <div className="shrink-0 z-40 bg-white border-t border-[var(--pd-line)] px-4 pt-3"
+          style={{ paddingBottom:"max(12px, env(safe-area-inset-bottom))" }}>
+          <p className="text-[13px] text-pd-ink-2 truncate mb-2">
+            <span className="font-semibold text-pd-ink">{currentOrder.customer_name || "Customer"}</span>
+            <span className="pd-tabular"> · #{currentOrder.order_id?.slice(-6)}</span>
+            {currentOrder.payment_method === "cod" && <span className="text-pd-warn font-semibold pd-tabular"> · Collect {fmt(currentOrder.total)}</span>}
+          </p>
+          <div className="flex gap-2.5">
+            {currentOrder.phone && (
+              <a href={`tel:${currentOrder.phone}`} aria-label="Call customer"
+                className="pd-press w-14 h-14 rounded-[14px] bg-pd-surface text-pd-ink flex items-center justify-center shrink-0">
+                <Phone className="h-6 w-6" strokeWidth={2}/>
+              </a>
+            )}
+            <button type="button" onClick={() => openMaps(currentOrder)} aria-label="Navigate to customer"
+              className="pd-press w-14 h-14 rounded-[14px] bg-pd-surface text-pd-teal flex items-center justify-center shrink-0">
+              <Navigation className="h-6 w-6" strokeWidth={2}/>
+            </button>
+            <StatusButton flow={currentFlow} busy={updating === currentOrder.order_id}
+              onClick={() => updateStatus(currentOrder.order_id, currentFlow.next)} compact className="flex-1 min-w-0"/>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
