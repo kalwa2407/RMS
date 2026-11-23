@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Plus, Trash2, X } from "lucide-react";
+import { Plus, Trash2, Image as ImageIcon } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
 
 import API_BASE from "../../lib/config";
-import { Page, PageHeader, Button, LoadingState } from "./ui";
+import { Page, PageHeader, Card, Button, IconButton, StatusPill, Sheet, FormField, Input, Select, FileInput, EmptyState, LoadingState } from "./ui";
 
 const GalleryManagement = () => {
   const { toast } = useToast();
@@ -154,185 +154,114 @@ const GalleryManagement = () => {
       <PageHeader
         title="Gallery"
         subtitle={<span className="pd-tabular">{images.length} images</span>}
-        actions={
-          <Button variant={showAddForm ? "secondary" : "primary"} icon={showAddForm ? X : Plus} onClick={() => setShowAddForm(!showAddForm)}>
-            {showAddForm ? "Cancel" : "Add Image"}
-          </Button>
-        }
+        actions={<Button variant="primary" icon={Plus} onClick={() => setShowAddForm(true)}>Add Image</Button>}
       />
 
-      {/* Add Image Form */}
-      {showAddForm && (
-        <div className="bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl p-6 mb-8">
-          <h3 className="text-2xl font-bold text-primary mb-4">
-            Add New Image
-          </h3>
+      {images.length === 0 ? (
+        <Card>
+          <EmptyState icon={ImageIcon} title="No images yet" description="Add photos of the food and dining room for the website gallery."
+            action={<Button variant="primary" icon={Plus} onClick={() => setShowAddForm(true)}>Add Image</Button>} />
+        </Card>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+          {images.map((image, idx) => (
+            <Card key={image._id || image.id || `img-${idx}`} padded={false} className="overflow-hidden flex flex-col">
+              <div className="relative aspect-[4/3] bg-[var(--a-inset)]">
+                <img
+                  src={getAdminImageUrl(image)}
+                  alt={image.caption}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "/signature_persian_kabab_platter_1776082069527.png";
+                  }}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="flex items-start gap-2 p-3">
+                <div className="min-w-0 flex-1">
+                  <div className="text-[14px] font-medium text-[var(--a-text)] truncate">{image.caption}</div>
+                  <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                    <StatusPill tone="neutral">{image.category || "Ambience"}</StatusPill>
+                    <span className="text-[12px] text-[var(--a-text-3)] pd-tabular">
+                      {image.created_at ? new Date(image.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "Recently"}
+                    </span>
+                  </div>
+                </div>
+                <IconButton icon={Trash2} label="Delete image" variant="plain" className="!text-[var(--a-error)] h-8 w-8 shrink-0" onClick={() => handleDelete(image._id || image.id)} />
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-primary font-semibold mb-2">
-                Image *
-              </label>
-              
-              {/* File Upload Option */}
-              <div className="mb-3">
-                <label className="block text-sm text-gray-400 mb-2">
-                  Upload from your device:
-                </label>
-                <input
-                  type="file"
+      <Sheet
+        open={showAddForm}
+        onClose={() => setShowAddForm(false)}
+        title="Add image"
+        subtitle="Shown in the website gallery"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowAddForm(false)}>Cancel</Button>
+            <Button variant="primary" type="submit" form="gallery-form">Add Image to Gallery</Button>
+          </>
+        }
+      >
+        <form id="gallery-form" onSubmit={handleSubmit} className="space-y-4">
+          <FormField label="Image" hint={uploadingImage ? "Uploading image…" : "Upload from your device or paste an image URL"}>
+            <div className="flex items-start gap-3">
+              {formData.image_url ? (
+                <img
+                  src={formData.image_url}
+                  alt="Preview"
+                  className="h-24 w-24 rounded-[12px] object-cover border border-[var(--a-line)] shrink-0"
+                  onError={(e) => {
+                    e.target.src = "https://via.placeholder.com/150?text=Invalid+Image";
+                  }}
+                />
+              ) : (
+                <div className="h-24 w-24 rounded-[12px] bg-[var(--a-fill)] flex items-center justify-center shrink-0">
+                  <ImageIcon className="h-6 w-6 text-[var(--a-text-3)]" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0 space-y-2">
+                <FileInput
                   accept="image/*"
+                  disabled={uploadingImage}
                   onChange={(e) => {
                     const file = e.target.files[0];
                     if (file) {
                       handleImageUpload(file);
                     }
                   }}
-                  className="w-full px-4 py-2 bg-[#0f2933] border border-[#EAB308]/20 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-primary file:text-black file:cursor-pointer hover:file:bg-[#d4a406]"
-                  disabled={uploadingImage}
                 />
-                {uploadingImage && (
-                  <p className="text-sm text-primary mt-1">Uploading image...</p>
-                )}
-              </div>
-
-              {/* OR divider */}
-              <div className="flex items-center my-3">
-                <div className="flex-1 border-t border-[#EAB308]/20"></div>
-                <span className="px-3 text-gray-500 text-sm">OR</span>
-                <div className="flex-1 border-t border-[#EAB308]/20"></div>
-              </div>
-
-              {/* URL Input Option */}
-              <div>
-                <label className="block text-sm text-gray-400 mb-2">
-                  Enter image URL:
-                </label>
-                <input
+                <Input
                   value={formData.image_url}
-                  onChange={(e) =>
-                    setFormData({ ...formData, image_url: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
                   placeholder="https://example.com/image.jpg"
-                  className="w-full px-4 py-2 bg-[#0f2933] border border-[#EAB308]/20 rounded-lg text-white focus:border-primary/50 focus:outline-none"
                 />
               </div>
-
-              {/* Image Preview */}
-              {formData.image_url && (
-                <div className="mt-3">
-                  <p className="text-sm text-gray-400 mb-2">Preview:</p>
-                  <img
-                    src={formData.image_url}
-                    alt="Preview"
-                    className="w-32 h-32 object-cover rounded-lg border border-[#EAB308]/20"
-                    onError={(e) => {
-                      e.target.src = "https://via.placeholder.com/150?text=Invalid+Image";
-                    }}
-                  />
-                </div>
-              )}
             </div>
-
-            <div>
-              <label className="block text-primary font-semibold mb-2">
-                Caption *
-              </label>
-              <input
-                required
-                value={formData.caption}
-                onChange={(e) =>
-                  setFormData({ ...formData, caption: e.target.value })
-                }
-                placeholder="e.g. Royal Raan Biryani or The Grand Darbar Hall"
-                className="w-full px-4 py-2 bg-[#0f2933] border border-[#EAB308]/20 rounded-lg text-white focus:border-primary/50 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-primary font-semibold mb-2">
-                Category *
-              </label>
-              <select
-                value={formData.category}
-                onChange={(e) =>
-                  setFormData({ ...formData, category: e.target.value })
-                }
-                className="w-full px-4 py-2 bg-[#0f2933] border border-[#EAB308]/20 rounded-lg text-white focus:border-primary/50 focus:outline-none"
-              >
-                <option value="Ambience">Ambience (Dining Hall, Seating, Décor)</option>
-                <option value="Food">Food (Signature Dishes, Platters, Biryani)</option>
-                <option value="Royal">Royal (Archways, Art, Mocktails, Chandeliers)</option>
-                <option value="Events">Events (Banquets, Family Dastarkhwan, Celebrations)</option>
-              </select>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full bg-primary hover:bg-[#CA8A04] text-black py-3 rounded-full font-bold transition-all shadow-lg shadow-[#EAB308]/20"
-            >
-              Add Image to Gallery
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* Gallery Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {images.map((image, idx) => (
-          <div
-            key={image._id || image.id || `img-${idx}`}
-            className="bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl overflow-hidden group hover:border-primary/50 transition-all duration-300 flex flex-col"
-          >
-            <div className="relative h-64 bg-[#0d1c22]">
-              <img
-                src={getAdminImageUrl(image)}
-                alt={image.caption}
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = "/signature_persian_kabab_platter_1776082069527.png";
-                }}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-
-              {/* Category Badge */}
-              <div className="absolute top-3 left-3">
-                <span className="bg-black/70 backdrop-blur-sm border border-[#EAB308]/40 text-[#EAB308] text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md">
-                  {image.category || "Ambience"}
-                </span>
-              </div>
-
-              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all duration-300 flex items-center justify-center">
-                <button
-                  onClick={() => handleDelete(image._id || image.id)}
-                  title="Delete image"
-                  className="opacity-0 group-hover:opacity-100 bg-red-600 hover:bg-red-700 text-white p-3 rounded-full transition-all duration-300 shadow-lg scale-90 hover:scale-100"
-                >
-                  <Trash2 className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-4 flex-1 flex flex-col justify-between">
-              <div>
-                <p className="text-white font-bold text-base">{image.caption}</p>
-                <p className="text-gray-400 text-xs mt-1">
-                  Category: <span className="text-[#EAB308]">{image.category || "Ambience"}</span>
-                </p>
-              </div>
-              <p className="text-gray-500 text-[11px] mt-2 border-t border-white/5 pt-2">
-                Added: {image.created_at
-                  ? new Date(image.created_at).toLocaleDateString()
-                  : "Recently"}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
+          </FormField>
+          <FormField label="Caption">
+            <Input
+              required
+              value={formData.caption}
+              onChange={(e) => setFormData({ ...formData, caption: e.target.value })}
+              placeholder="e.g. Royal Raan Biryani or The Grand Darbar Hall"
+            />
+          </FormField>
+          <FormField label="Category">
+            <Select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })}>
+              <option value="Ambience">Ambience (dining hall, seating, décor)</option>
+              <option value="Food">Food (signature dishes, platters, biryani)</option>
+              <option value="Royal">Royal (archways, art, mocktails, chandeliers)</option>
+              <option value="Events">Events (banquets, family dastarkhwan, celebrations)</option>
+            </Select>
+          </FormField>
+        </form>
+      </Sheet>
     </Page>
   );
 };
 
 export default GalleryManagement;
-
-
