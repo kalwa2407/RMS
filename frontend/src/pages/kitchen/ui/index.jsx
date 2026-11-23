@@ -79,7 +79,8 @@ const Note = ({ label, children, large }) => (
 );
 
 // ── Ticket card ──────────────────────────────────────────────
-export const TicketCard = ({ order, isUpdating, isPrinting, onPrint, onAdvance, formatTime }) => {
+// forwardRef: AnimatePresence mode="popLayout" measures exiting tickets through a ref.
+export const TicketCard = React.forwardRef(({ order, isUpdating, isPrinting, onPrint, onAdvance, formatTime }, ref) => {
   const reduce = useReducedMotion();
   const ts = order.accepted_at || order.created_at;
   const level = urgencyLevel(ts);
@@ -90,6 +91,7 @@ export const TicketCard = ({ order, isUpdating, isPrinting, onPrint, onAdvance, 
 
   return (
     <motion.article
+      ref={ref}
       layout={reduce ? false : "position"}
       initial={reduce ? { opacity: 0 } : { opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
@@ -211,7 +213,8 @@ export const TicketCard = ({ order, isUpdating, isPrinting, onPrint, onAdvance, 
       </footer>
     </motion.article>
   );
-};
+});
+TicketCard.displayName = "TicketCard";
 
 // ── States ───────────────────────────────────────────────────
 export const TicketSkeleton = () => (
