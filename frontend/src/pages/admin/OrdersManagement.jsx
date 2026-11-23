@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Check, X, Clock, Package, Truck, Home, Printer, Eye, Bell, Trash2, Bike, UtensilsCrossed, ShoppingBag, MapPin, Phone, ExternalLink, RefreshCw, Zap, AlertTriangle, ToggleLeft, ToggleRight, WifiOff, MessageCircle } from "lucide-react";
+import { Check, X, Clock, Package, Truck, Home, Printer, Eye, Bell, Trash2, Bike, UtensilsCrossed, ShoppingBag, MapPin, Phone, ExternalLink, RefreshCw, Zap, AlertTriangle, WifiOff, MessageCircle, Volume2 } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
 import API_BASE from "../../lib/config";
+import { cx, Page, PageHeader, Card, Button, IconButton, Segmented, StatusPill, CountBadge, EmptyState, LoadingState, KeyValue, Sheet, FormGroup, FormRow, FormField, Input } from "./ui";
 import { printOrder, printKOT, getPrintMode, isSerialPrinterConnected, connectSerialPrinter } from "../../lib/PrintService";
 
 /* Porter status → display config */
@@ -561,30 +562,30 @@ const OrdersManagement = () => {
 
   const getStatusConfig = (status) => {
     const configs = {
-      placed: { label: "New", color: "bg-blue-500", icon: Bell },
-      accepted: { label: "Accepted", color: "bg-green-500", icon: Check },
-      preparing: { label: "Preparing", color: "bg-yellow-500", icon: Clock },
-      ready: { label: "Ready", color: "bg-purple-500", icon: Package },
-      out_for_delivery: { label: "Out for Delivery", color: "bg-orange-500", icon: Truck },
-      delivered: { label: "Delivered", color: "bg-green-700", icon: Home },
-      cancelled: { label: "Cancelled", color: "bg-red-500", icon: X },
-      rejected: { label: "Rejected", color: "bg-red-700", icon: X },
+      placed: { label: "New", tone: "accent", icon: Bell },
+      accepted: { label: "Accepted", tone: "info", icon: Check },
+      preparing: { label: "Preparing", tone: "warn", icon: Clock },
+      ready: { label: "Ready", tone: "success", icon: Package },
+      out_for_delivery: { label: "Out for Delivery", tone: "info", icon: Truck },
+      delivered: { label: "Delivered", tone: "neutral", icon: Home },
+      cancelled: { label: "Cancelled", tone: "error", icon: X },
+      rejected: { label: "Rejected", tone: "error", icon: X },
     };
-    return configs[status] || { label: status, color: "bg-gray-500", icon: Package };
+    return configs[status] || { label: status, tone: "neutral", icon: Package };
   };
 
   const getNextActions = (status, orderType) => {
     switch (status) {
       case "placed": return [
-        { label: "✅ Accept", value: "accepted", color: "bg-green-600 hover:bg-green-700" },
-        { label: "✗ Reject", value: "rejected", color: "bg-red-600 hover:bg-red-700" },
+        { label: "Accept", value: "accepted", variant: "primary", icon: Check },
+        { label: "Reject", value: "rejected", variant: "destructive", icon: X },
       ];
-      case "accepted": return [{ label: "🔥 Start Preparing", value: "preparing", color: "bg-yellow-600 hover:bg-yellow-700" }];
-      case "preparing": return [{ label: "✅ Mark Ready", value: "ready", color: "bg-purple-600 hover:bg-purple-700" }];
+      case "accepted": return [{ label: "Start Preparing", value: "preparing", variant: "primary", icon: Clock }];
+      case "preparing": return [{ label: "Mark Ready", value: "ready", variant: "primary", icon: Package }];
       case "ready":
-        if (orderType === "DINE_IN") return [{ label: "✔ Mark Served", value: "delivered", color: "bg-green-700 hover:bg-green-800" }];
-        return [{ label: "🛵 Out for Delivery", value: "out_for_delivery", color: "bg-orange-600 hover:bg-orange-700" }];
-      case "out_for_delivery": return [{ label: "✔ Mark Delivered", value: "delivered", color: "bg-emerald-600 hover:bg-emerald-700" }];
+        if (orderType === "DINE_IN") return [{ label: "Mark Served", value: "delivered", variant: "primary", icon: Check }];
+        return [{ label: "Out for Delivery", value: "out_for_delivery", variant: "primary", icon: Truck }];
+      case "out_for_delivery": return [{ label: "Mark Delivered", value: "delivered", variant: "primary", icon: Home }];
       default: return [];
     }
   };
@@ -618,694 +619,399 @@ const OrdersManagement = () => {
   const newDineCount = orders.filter(o => o.status === "placed" && o.order_type === "DINE_IN").length;
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-400">Loading orders...</p>
-        </div>
-      </div>
-    );
+    return <LoadingState rows={5} label="Loading orders" />;
   }
 
-  return (
-    <div>
-      {/* Header */}
-      <div className="mb-5 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
-        <div>
-          <h2 className="text-2xl sm:text-4xl font-black text-neutral-900 dark:text-white tracking-tight" style={{ fontFamily: "Playfair Display, serif" }}>
-            Orders Management
-          </h2>
-          <div className="flex flex-wrap items-center gap-2 mt-2">
-            <span className="text-neutral-600 dark:text-gray-400 text-sm font-semibold">Total: {orders.length}</span>
-            {newOrdersCount > 0 && (
-              <span className="inline-flex items-center gap-1 bg-red-600 text-white px-3 py-1 rounded-full text-xs font-black animate-pulse shadow-sm">
-                <Bell className="w-3 h-3" /> {newOrdersCount} New
+  const typeMeta = (t) =>
+    t === "DINE_IN" ? { label: "Dine-In", icon: UtensilsCrossed } :
+    t === "DELIVERY" ? { label: "Delivery", icon: Bike } :
+    { label: "Takeaway", icon: ShoppingBag };
+
+  const riderMenu = (order, align = "left") => (
+    <div className={cx(
+      "absolute bottom-full mb-1.5 z-30 w-64 overflow-hidden rounded-[12px] border border-[var(--a-line)] bg-[var(--a-card)] shadow-[var(--a-shadow-pop)]",
+      align === "right" ? "right-0" : "left-0"
+    )}>
+      <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--a-line)]">
+        <span className="text-[12px] font-semibold text-[var(--a-text)]">In-house riders</span>
+        <span className="text-[12px] text-[var(--a-text-3)] pd-tabular">{deliveryPartners.length} available</span>
+      </div>
+      {deliveryPartners.length === 0 ? (
+        <p className="px-3 py-3 text-[13px] text-[var(--a-text-2)]">No active riders configured</p>
+      ) : (
+        <div className="max-h-56 overflow-y-auto divide-y divide-[var(--a-line)]">
+          {deliveryPartners.map(p => (
+            <button
+              key={p.id || p._id}
+              type="button"
+              onClick={() => assignDelivery(order.order_id, p.id || p._id)}
+              className="w-full text-left px-3 py-2.5 flex items-center gap-2.5 hover:bg-[var(--a-fill)] cursor-pointer"
+            >
+              <span className="h-7 w-7 rounded-full bg-[var(--a-fill-2)] flex items-center justify-center shrink-0">
+                <Bike className="h-3.5 w-3.5 text-[var(--a-text-2)]" />
               </span>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <button onClick={playNotificationSound}
-            className="bg-white dark:bg-[#1a4855] border border-neutral-300 dark:border-[#EAB308]/30 text-neutral-800 dark:text-white px-3.5 py-2 rounded-xl hover:bg-neutral-100 dark:hover:bg-[#2a5865] text-xs font-bold flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer">
-            🔊 <span className="hidden sm:inline">Test Sound</span>
-          </button>
-          <div className="text-xs text-neutral-500 dark:text-gray-400 hidden sm:flex items-center gap-1 font-semibold">🔄 Auto 10s</div>
-        </div>
-      </div>
-
-      {/* ── Order Acceptance Mode (Mode 1: Manual vs Mode 2: Auto 45-60s) ── */}
-      <div className={`mb-4 rounded-2xl border px-4 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 transition-all shadow-xs ${
-        acceptanceMode === "auto"
-          ? "bg-emerald-50/80 border-emerald-300/80 dark:bg-gradient-to-r dark:from-emerald-950/60 dark:via-[#10333d] dark:to-[#0f2933] dark:border-emerald-500/40"
-          : "bg-white dark:bg-[#141B26] border-neutral-200/90 dark:border-white/10"
-      }`}>
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${
-            acceptanceMode === "auto"
-              ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-emerald-500/20"
-              : "bg-neutral-100 text-neutral-800 border border-neutral-200 dark:bg-[#EAB308]/15 dark:text-[#EAB308] dark:border-transparent"
-          }`}>
-            {acceptanceMode === "auto" ? <Zap className="w-5 h-5 text-white" /> : <Clock className="w-5 h-5 text-neutral-800 dark:text-[#EAB308]" />}
-          </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h4 className={`text-sm font-black ${
-                acceptanceMode === "auto" ? "text-emerald-900 dark:text-emerald-300" : "text-neutral-900 dark:text-white"
-              }`}>
-                {acceptanceMode === "auto" ? "⚡ Auto-Acceptance Mode (Active)" : "🖐️ Manual Acceptance Mode"}
-              </h4>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                acceptanceMode === "auto"
-                  ? "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/40"
-                  : "bg-neutral-100 text-neutral-800 border-neutral-300 dark:bg-[#EAB308]/15 dark:text-[#EAB308] dark:border-[#EAB308]/30"
-              }`}>
-                {acceptanceMode === "auto" ? `${autoAcceptDelaySeconds}s Auto-Accept` : "Manual Review"}
+              <span className="min-w-0 flex-1">
+                <span className="block text-[14px] font-medium text-[var(--a-text)] truncate">{p.name}</span>
+                <span className="block text-[12px] text-[var(--a-text-3)] truncate">{[p.vehicle_type, p.phone].filter(Boolean).join(" · ")}</span>
               </span>
-            </div>
-            <p className="text-xs text-neutral-600 dark:text-gray-300/80 mt-0.5">
-              {acceptanceMode === "auto"
-                ? `Orders not accepted within ${autoAcceptDelaySeconds}s are automatically accepted → KOT sent to kitchen → Porter rider auto-assigned (Mock)`
-                : "Orders stay in 'placed' status until manually accepted by admin or captain"}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
-          <div className="bg-neutral-100 dark:bg-[#0f2933] p-1 rounded-xl border border-neutral-200/90 dark:border-white/10 flex items-center gap-1">
-            <button
-              onClick={() => toggleAcceptanceMode("manual")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                acceptanceMode === "manual"
-                  ? "bg-white text-neutral-900 shadow-sm border border-neutral-200/90 dark:bg-white/15 dark:text-white dark:border-white/20"
-                  : "text-neutral-600 dark:text-gray-400 hover:text-neutral-900 dark:hover:text-white"
-              }`}
-            >
-              <ToggleLeft className="w-4 h-4 text-neutral-500 dark:text-gray-400" />
-              <span>Manual</span>
-            </button>
-
-            <button
-              onClick={() => toggleAcceptanceMode("auto")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                acceptanceMode === "auto"
-                  ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md border border-emerald-400/50"
-                  : "text-neutral-600 dark:text-gray-400 hover:text-neutral-900 dark:hover:text-white"
-              }`}
-            >
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <ToggleRight className="w-4 h-4 text-white" />
-              <span>Auto ({autoAcceptDelaySeconds}s)</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Order Type Tabs (Online vs Dine-In) */}
-      <div className="mb-4 grid grid-cols-3 gap-2">
-        {orderTypeTabs.map(tab => {
-          const Icon = tab.icon;
-          const isActive = orderTypeTab === tab.value;
-          const badge = tab.value === "online" ? newOnlineCount : tab.value === "dinein" ? newDineCount : newOrdersCount;
-          return (
-            <button key={tab.value} onClick={() => setOrderTypeTab(tab.value)}
-              className={`relative flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-sm transition-all border cursor-pointer ${
-                isActive
-                  ? "bg-neutral-900 text-white border-neutral-900 shadow-sm dark:bg-amber-500 dark:text-neutral-950 dark:border-amber-500"
-                  : "bg-white text-neutral-700 border-neutral-200/90 hover:bg-neutral-50 dark:bg-[#141B26] dark:text-gray-300 dark:border-white/10 dark:hover:bg-white/5"
-              }`}>
-              <Icon className="w-4 h-4" />
-              <span className="hidden sm:inline">{tab.label}</span>
-              <span className="sm:hidden">{tab.value === "all" ? "All" : tab.value === "online" ? "Online" : "Dine-In"}</span>
-              {badge > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs">
-                  {badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* ── Online Billing Mode Toggle ─────────────────────────────────────── */}
-      {(orderTypeTab === "online" || orderTypeTab === "all") && (
-        <div className={`mb-4 rounded-2xl border px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 transition-all shadow-xs ${
-          onlineBillingMode === "auto"
-            ? "bg-emerald-50/80 border-emerald-300/80 dark:bg-emerald-900/20 dark:border-emerald-500/30"
-            : "bg-white border-neutral-200/90 dark:bg-[#141B26] dark:border-white/10"
-        }`}>
-          {/* Left: Mode Info */}
-          <div className="flex items-center gap-3 flex-1">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-              onlineBillingMode === "auto"
-                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400"
-                : "bg-neutral-100 text-neutral-800 border border-neutral-200 dark:bg-[#EAB308]/10 dark:text-[#EAB308] dark:border-transparent"
-            }`}>
-              <Printer className="w-4 h-4" />
-            </div>
-            <div>
-              <p className={`text-sm font-black ${
-                onlineBillingMode === "auto" ? "text-emerald-900 dark:text-emerald-300" : "text-neutral-900 dark:text-white"
-              }`}>
-                {onlineBillingMode === "auto" ? "🤖 Auto Bill Mode" : "🖐 Manual Bill Mode"}
-                <span className={`ml-2 text-xs font-bold px-2 py-0.5 rounded-full border ${
-                  onlineBillingMode === "auto"
-                    ? "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30"
-                    : "bg-neutral-100 text-neutral-800 border-neutral-300 dark:bg-[#EAB308]/15 dark:text-[#EAB308] dark:border-[#EAB308]/30"
-                }`}>
-                  Online Orders
-                </span>
-              </p>
-              <p className="text-xs text-neutral-600 dark:text-gray-400 mt-0.5">
-                {onlineBillingMode === "auto"
-                  ? "Bill prints automatically to thermal printer when order is accepted"
-                  : "Click 'Print Bill' manually on each order after accepting"}
-              </p>
-            </div>
-          </div>
-
-          {/* Right: Printer Status + Toggle */}
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Printer Connection Status */}
-            {onlineBillingMode === "auto" && (
-              <div className="flex items-center gap-1.5">
-                {printerConnected ? (
-                  <span className="flex items-center gap-1 text-xs text-emerald-800 bg-emerald-100 border border-emerald-300 px-2.5 py-1.5 rounded-lg font-bold dark:text-emerald-400 dark:bg-emerald-900/30 dark:border-emerald-500/30">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Printer Ready
-                  </span>
-                ) : (
-                  <div className="flex items-center gap-1.5">
-                    <span className="flex items-center gap-1.5 text-xs text-red-700 bg-red-100 border border-red-300 px-2.5 py-1.5 rounded-lg font-bold dark:text-red-400 dark:bg-red-900/20 dark:border-red-500/30">
-                      <WifiOff className="w-3 h-3" />
-                      Not Connected
-                    </span>
-                    <button
-                      onClick={handleConnectPrinter}
-                      className="text-xs text-neutral-900 bg-neutral-100 hover:bg-neutral-200 border border-neutral-300 px-2.5 py-1.5 rounded-lg font-bold transition-colors cursor-pointer dark:text-white dark:bg-[#EAB308]/20 dark:border-[#EAB308]/30"
-                    >
-                      Connect
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Toggle Button */}
-            <button
-              onClick={toggleOnlineBillingMode}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                onlineBillingMode === "auto"
-                  ? "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500 shadow-xs"
-                  : "bg-neutral-100 hover:bg-neutral-200 text-neutral-900 border-neutral-300 dark:bg-[#0f2933] dark:hover:bg-[#1a4855] dark:text-gray-300 dark:border-white/10"
-              }`}
-            >
-              {onlineBillingMode === "auto"
-                ? <><ToggleRight className="w-4 h-4 text-white" /> Auto</>
-                : <><ToggleLeft className="w-4 h-4 text-neutral-500 dark:text-gray-400" /> Manual</>
-              }
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Super Admin Outlet Filter Tabs */}
-      {adminBranch === "all" && (
-        <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-          <span className="text-xs font-bold text-neutral-500 dark:text-neutral-400 shrink-0 uppercase tracking-wider text-[10px]">
-            OUTLET:
-          </span>
-          {[
-            { id: "all", name: "All Outlets" },
-            { id: "pune", name: "Pune" },
-            { id: "kurla", name: "Kurla" },
-            { id: "bandra", name: "Bandra" },
-            { id: "andheri", name: "Andheri" },
-          ].map(b => (
-            <button
-              key={b.id}
-              onClick={() => setSelectedBranchFilter(b.id)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                selectedBranchFilter === b.id
-                  ? "bg-amber-500 text-neutral-950 border-amber-500 shadow-xs"
-                  : "bg-white text-neutral-700 border-neutral-200/90 hover:bg-neutral-50 dark:bg-[#141B26] dark:text-gray-300 dark:border-white/10 dark:hover:bg-white/5"
-              }`}
-            >
-              {b.name}
             </button>
           ))}
         </div>
       )}
+    </div>
+  );
 
-      {/* Status Filter Tabs */}
-      <div className="mb-5 flex gap-2 overflow-x-auto pb-2 scrollbar-none">
-        {statusTabs.map(tab => (
-          <button key={tab.value} onClick={() => setStatusFilter(tab.value)}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${
-              statusFilter === tab.value
-                ? "bg-neutral-900 text-white border-neutral-900 shadow-sm dark:bg-amber-500 dark:text-neutral-950 dark:border-amber-500"
-                : "bg-white text-neutral-700 border-neutral-200/90 hover:bg-neutral-50 dark:bg-[#141B26] dark:text-gray-300 dark:border-white/10 dark:hover:bg-white/5"
-            }`}>
-            {tab.label}
-            {tab.value === "placed" && newOrdersCount > 0 && (
-              <span className="ml-1.5 bg-red-600 text-white text-[10px] px-1.5 py-0.5 rounded-full font-black">{newOrdersCount}</span>
-            )}
-          </button>
-        ))}
+  const porterTone = (s) => ({
+    open: "warn", accepted: "info", reached_for_pickup: "info", order_picked_up: "info",
+    started_for_delivery: "info", reached_for_delivery: "success", delivered: "success", cancelled: "error",
+  }[s] || "warn");
+
+  return (
+    <Page>
+      <PageHeader
+        title="Orders"
+        subtitle={
+          <span className="inline-flex items-center gap-2 flex-wrap">
+            <span className="pd-tabular">{orders.length} orders</span>
+            <span className="text-[var(--a-text-3)]">·</span>
+            <span>Refreshes every 10 s</span>
+            {newOrdersCount > 0 && <StatusPill tone="accent" dot>{newOrdersCount} new</StatusPill>}
+          </span>
+        }
+        actions={<Button size="sm" icon={Volume2} onClick={playNotificationSound}>Test Sound</Button>}
+      />
+
+      {/* Settings: acceptance + billing */}
+      <div className="grid gap-3 lg:grid-cols-2">
+        <Card className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3 min-w-0">
+            <span className={cx("h-9 w-9 rounded-[10px] flex items-center justify-center shrink-0",
+              acceptanceMode === "auto" ? "bg-[var(--a-success-tint)] text-[var(--a-success)]" : "bg-[var(--a-fill)] text-[var(--a-text-2)]")}>
+              {acceptanceMode === "auto" ? <Zap className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
+            </span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-[15px] font-semibold text-[var(--a-text)]">Order acceptance</h3>
+                <StatusPill tone={acceptanceMode === "auto" ? "success" : "neutral"}>
+                  {acceptanceMode === "auto" ? `Auto after ${autoAcceptDelaySeconds}s` : "Manual review"}
+                </StatusPill>
+              </div>
+              <p className="mt-0.5 text-[13px] leading-[18px] text-[var(--a-text-2)]">
+                {acceptanceMode === "auto"
+                  ? `Orders not accepted within ${autoAcceptDelaySeconds}s are accepted automatically, the KOT goes to the kitchen and a Porter rider is assigned (mock).`
+                  : "Orders stay as New until an admin or captain accepts them."}
+              </p>
+            </div>
+          </div>
+          <Segmented
+            size="sm"
+            value={acceptanceMode}
+            onChange={(v) => toggleAcceptanceMode(v)}
+            options={[{ value: "manual", label: "Manual" }, { value: "auto", label: `Auto (${autoAcceptDelaySeconds}s)` }]}
+          />
+        </Card>
+
+        {(orderTypeTab === "online" || orderTypeTab === "all") && (
+          <Card className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3 min-w-0">
+              <span className={cx("h-9 w-9 rounded-[10px] flex items-center justify-center shrink-0",
+                onlineBillingMode === "auto" ? "bg-[var(--a-success-tint)] text-[var(--a-success)]" : "bg-[var(--a-fill)] text-[var(--a-text-2)]")}>
+                <Printer className="h-4 w-4" />
+              </span>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-[15px] font-semibold text-[var(--a-text)]">Online bill printing</h3>
+                  {onlineBillingMode === "auto" && (
+                    printerConnected
+                      ? <StatusPill tone="success" dot>Printer ready</StatusPill>
+                      : <StatusPill tone="error" icon={WifiOff}>Printer not connected</StatusPill>
+                  )}
+                </div>
+                <p className="mt-0.5 text-[13px] leading-[18px] text-[var(--a-text-2)]">
+                  {onlineBillingMode === "auto"
+                    ? "The bill prints on the thermal printer when an order is accepted."
+                    : "Print each bill manually after accepting the order."}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {onlineBillingMode === "auto" && !printerConnected && (
+                <Button size="sm" variant="plain" onClick={handleConnectPrinter}>Connect</Button>
+              )}
+              <Segmented
+                size="sm"
+                value={onlineBillingMode}
+                onChange={(v) => { if (v !== onlineBillingMode) toggleOnlineBillingMode(); }}
+                options={[{ value: "manual", label: "Manual" }, { value: "auto", label: "Auto" }]}
+              />
+            </div>
+          </Card>
+        )}
       </div>
 
-      {/* Orders List */}
-      {filteredOrders.length === 0 ? (
-        <div className="text-center py-20 text-gray-500">
-          <Package className="w-16 h-16 mx-auto mb-4 opacity-20" />
-          <p className="text-lg font-medium">No orders found</p>
-          <p className="text-sm mt-1">
-            {orderTypeTab !== "all" ? `No ${orderTypeTab === "online" ? "online/delivery" : "dine-in"} orders` : "No orders match the current filter"}
-          </p>
+      {/* Filters */}
+      <div className="space-y-3">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <Segmented
+            value={orderTypeTab}
+            onChange={setOrderTypeTab}
+            options={orderTypeTabs.map(t => ({
+              value: t.value,
+              icon: t.icon,
+              label: t.label,
+              count: t.value === "online" ? newOnlineCount : t.value === "dinein" ? newDineCount : newOrdersCount,
+            }))}
+          />
+          {adminBranch === "all" && (
+            <Segmented
+              size="sm"
+              value={selectedBranchFilter}
+              onChange={setSelectedBranchFilter}
+              options={[
+                { value: "all", label: "All Outlets" },
+                { value: "pune", label: "Pune" },
+                { value: "kurla", label: "Kurla" },
+                { value: "bandra", label: "Bandra" },
+                { value: "andheri", label: "Andheri" },
+              ]}
+            />
+          )}
         </div>
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-1 px-1">
+          {statusTabs.map(tab => {
+            const active = statusFilter === tab.value;
+            return (
+              <button
+                key={tab.value}
+                onClick={() => setStatusFilter(tab.value)}
+                className={cx(
+                  "h-8 px-3 rounded-full text-[13px] font-medium whitespace-nowrap transition-colors cursor-pointer inline-flex items-center gap-1.5 border",
+                  active
+                    ? "bg-[var(--a-text)] text-[var(--a-bg)] border-transparent"
+                    : "bg-[var(--a-card)] text-[var(--a-text-2)] border-[var(--a-line)] hover:text-[var(--a-text)]"
+                )}
+              >
+                {tab.label}
+                {tab.value === "placed" && newOrdersCount > 0 && <CountBadge>{newOrdersCount}</CountBadge>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Orders */}
+      {filteredOrders.length === 0 ? (
+        <Card>
+          <EmptyState
+            icon={Package}
+            title="No orders"
+            description={orderTypeTab !== "all" ? `No ${orderTypeTab === "online" ? "online or delivery" : "dine-in"} orders right now.` : "No orders match the current filter."}
+          />
+        </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="grid gap-3 xl:grid-cols-2">
           {filteredOrders.map(order => {
             const statusConfig = getStatusConfig(order.status);
-            const StatusIcon = statusConfig.icon;
             const nextActions = getNextActions(order.status, order.order_type);
+            const tm = typeMeta(order.order_type);
+            const TypeIcon = tm.icon;
+            const porter = PORTER_STATUS_DISPLAY[order.porter_status] || { label: order.porter_status || "Booked" };
 
             return (
-              <div key={order.order_id}
-                className={`bg-white dark:bg-[#141B26] border rounded-2xl overflow-hidden transition-all shadow-xs hover:shadow-md ${
-                  order.order_type === "DINE_IN" ? "border-purple-200 dark:border-purple-500/20" :
-                  order.order_type === "DELIVERY" ? "border-amber-200/90 dark:border-[#EAB308]/20" : "border-blue-200 dark:border-blue-500/20"
-                }`}>
-                {/* Order Type Banner */}
-                <div className={`px-4 py-2 text-xs font-black uppercase tracking-wider flex items-center gap-2 border-b ${
-                  order.order_type === "DINE_IN" ? "bg-purple-50 text-purple-900 border-purple-100 dark:bg-purple-500/15 dark:text-purple-400 dark:border-purple-500/20" :
-                  order.order_type === "DELIVERY" ? "bg-amber-50 text-amber-950 border-amber-100 dark:bg-[#EAB308]/10 dark:text-[#EAB308] dark:border-amber-500/20" : "bg-blue-50 text-blue-900 border-blue-100 dark:bg-blue-500/15 dark:text-blue-400 dark:border-blue-500/20"
-                }`}>
-                  {order.order_type === "DINE_IN" ? <UtensilsCrossed className="w-3.5 h-3.5" /> :
-                   order.order_type === "DELIVERY" ? <Bike className="w-3.5 h-3.5" /> : <ShoppingBag className="w-3.5 h-3.5" />}
-                  <span>{order.order_type?.replace("_", "-")}</span>
-                  <span className="bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/30 px-2 py-0.5 rounded-md font-bold text-[10px] tracking-normal">
-                    {order.branch_name || (order.branch ? `${order.branch.toUpperCase()} OUTLET` : "PUNE OUTLET")}
-                  </span>
-                  {order.order_type === "DINE_IN" && order.table_number && (
-                    <span className="ml-auto bg-neutral-900 text-white dark:bg-primary dark:text-black px-2.5 py-0.5 rounded-md font-black text-xs">Table {order.table_number}</span>
+              <Card key={order.order_id} padded={false} className="flex flex-col">
+                {/* Header */}
+                <div className="flex items-start justify-between gap-3 px-4 pt-4 pb-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[16px] font-semibold text-[var(--a-text)] pd-tabular">#{order.order_id?.slice(-10) || order.order_id}</span>
+                      {order.kot_number && <StatusPill tone="neutral">{order.kot_number}</StatusPill>}
+                      {order.auto_accepted && <StatusPill tone="success" icon={Zap}>Auto-accepted</StatusPill>}
+                    </div>
+                    <div className="mt-1 flex items-center gap-1.5 flex-wrap text-[13px] text-[var(--a-text-2)]">
+                      <TypeIcon className="h-3.5 w-3.5" />
+                      <span>{tm.label}</span>
+                      {order.order_type === "DINE_IN" && order.table_number && <span>· Table {order.table_number}</span>}
+                      <span className="text-[var(--a-text-3)]">·</span>
+                      <span>{order.branch_name || (order.branch ? `${order.branch.charAt(0).toUpperCase()}${order.branch.slice(1)}` : "Pune")}</span>
+                      <span className="text-[var(--a-text-3)]">·</span>
+                      <span className="pd-tabular">{formatOrderTime(order.created_at)}</span>
+                    </div>
+                  </div>
+                  <StatusPill tone={statusConfig.tone} dot>{statusConfig.label}</StatusPill>
+                </div>
+
+                {/* Customer */}
+                <div className="mx-4 rounded-[10px] bg-[var(--a-inset)] px-3 py-2.5 grid gap-2 sm:grid-cols-2">
+                  <div className="min-w-0">
+                    <div className="text-[14px] font-medium text-[var(--a-text)] truncate">{order.customer_name || "Guest"}</div>
+                    <div className="mt-0.5 flex items-center gap-2 text-[13px] text-[var(--a-text-2)]">
+                      <span className="pd-tabular">{order.phone || "No phone"}</span>
+                      {order.phone && (
+                        <button onClick={() => openOrderWhatsApp(order)} className="inline-flex items-center gap-1 text-[var(--a-success)] font-medium hover:underline cursor-pointer" title="Chat with customer on WhatsApp">
+                          <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {(order.address || order.table_number) && (
+                    <div className="min-w-0 text-[13px] leading-[18px] text-[var(--a-text-2)]">
+                      <div className="flex items-start gap-1.5">
+                        <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0 text-[var(--a-text-3)]" />
+                        <span className="line-clamp-2">{order.address || `Table ${order.table_number}`}</span>
+                      </div>
+                      {order.distance_km && <div className="pl-5 text-[var(--a-text-3)] pd-tabular">{order.distance_km} km away</div>}
+                    </div>
                   )}
                 </div>
 
-                <div className="p-4 sm:p-5">
-                  {/* Header row */}
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-base font-black text-neutral-900 dark:text-white font-mono">{order.order_id?.slice(-10) || order.order_id}</h3>
-                        {order.kot_number && (
-                          <span className="bg-orange-100 text-orange-900 border border-orange-300 font-black font-mono px-2.5 py-0.5 rounded-md text-xs dark:bg-orange-500/20 dark:text-orange-400 dark:border-orange-500/30">{order.kot_number}</span>
-                        )}
-                        {order.auto_accepted && (
-                          <span className="bg-emerald-100 text-emerald-900 border border-emerald-300 px-2 py-0.5 rounded-md text-xs font-bold flex items-center gap-1 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30">
-                            <Zap className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Auto-Accepted
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-neutral-500 dark:text-gray-400 text-xs mt-0.5 flex items-center gap-1 font-medium">
-                        <Clock className="w-3 h-3" /> {formatOrderTime(order.created_at)}
-                      </p>
+                {/* Auto-accept countdown */}
+                {order.status === "placed" && acceptanceMode === "auto" && (
+                  <div className="mx-4 mt-3 rounded-[10px] bg-[var(--a-warn-tint)] px-3 py-2.5 flex items-center justify-between gap-3">
+                    <div className="text-[13px] leading-[18px] text-[var(--a-warn)]">
+                      <div className="font-semibold">Auto-accepting in <span className="pd-tabular">{getCountdownSeconds(order)}s</span></div>
+                      <div className="opacity-80">KOT goes to the kitchen and a Porter rider is assigned.</div>
                     </div>
-                    <div className={`${statusConfig.color} text-white px-3 py-1.5 rounded-xl flex items-center gap-1.5 text-xs font-bold shrink-0 shadow-xs`}>
-                      <StatusIcon className="w-3.5 h-3.5" />
-                      {statusConfig.label}
-                    </div>
+                    <Button size="sm" variant="success" icon={Check} onClick={() => updateStatus(order, "accepted")}>Accept now</Button>
                   </div>
+                )}
 
-                  {/* Customer + Address */}
-                  <div className="grid sm:grid-cols-2 gap-3 mb-3.5 bg-neutral-50 dark:bg-[#0B0F15] rounded-xl p-3.5 border border-neutral-200/80 dark:border-white/5">
-                    <div>
-                      <p className="text-neutral-500 dark:text-gray-400 text-[10px] font-black uppercase tracking-wider mb-0.5">CUSTOMER</p>
-                      <p className="text-neutral-900 dark:text-white font-black text-sm">{order.customer_name}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <p className="text-neutral-800 dark:text-gray-300 text-xs font-bold">{order.phone || "—"}</p>
-                        {order.phone && (
-                          <button
-                            onClick={() => openOrderWhatsApp(order)}
-                            className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 px-2 py-0.5 rounded-md transition-colors cursor-pointer dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30"
-                            title="Chat with customer on WhatsApp"
-                          >
-                            <MessageCircle className="w-3 h-3" />
-                            <span>WhatsApp</span>
-                          </button>
-                        )}
+                {/* Items */}
+                <div className="px-4 pt-3">
+                  <div className="divide-y divide-[var(--a-line)]">
+                    {(order.items || []).map((item, idx) => (
+                      <div key={idx} className="flex items-baseline justify-between gap-3 py-1.5 text-[14px]">
+                        <span className="min-w-0 text-[var(--a-text)]">
+                          <span className="pd-tabular text-[var(--a-text-3)] mr-1.5">{item.quantity}×</span>{item.name}
+                        </span>
+                        <span className="pd-tabular text-[var(--a-text)]">₹{(item.price * item.quantity).toFixed(0)}</span>
                       </div>
-                    </div>
-                    {(order.address || order.table_number) && (
-                      <div>
-                        <p className="text-neutral-500 dark:text-gray-400 text-[10px] font-black uppercase tracking-wider mb-0.5">
-                          {order.order_type === "DINE_IN" ? "TABLE NUMBER" : "DELIVERY ADDRESS"}
-                        </p>
-                        <p className="text-neutral-900 dark:text-white text-sm font-bold leading-snug">{order.address || `Table ${order.table_number}`}</p>
-                        {order.distance_km && <p className="text-neutral-600 dark:text-gray-400 text-xs mt-0.5 font-medium">{order.distance_km} km away</p>}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Auto-Accept Live Countdown Banner for placed orders */}
-                  {order.status === "placed" && acceptanceMode === "auto" && (
-                    <div className="mb-3 px-3.5 py-2.5 rounded-xl bg-amber-50 dark:bg-gradient-to-r dark:from-amber-500/20 dark:via-[#133742] dark:to-[#0f2933] border border-amber-300 dark:border-amber-500/40 flex items-center justify-between gap-3 shadow-xs">
-                      <div className="flex items-center gap-2.5">
-                        <div className="relative flex items-center justify-center shrink-0">
-                          <div className="w-3.5 h-3.5 rounded-full bg-amber-500 animate-ping absolute opacity-75" />
-                          <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-amber-950 dark:text-amber-200 flex items-center gap-1.5 flex-wrap">
-                            <span>⚡ Auto-Accepting in</span>
-                            <span className="font-mono text-sm px-2 py-0.5 bg-amber-200 dark:bg-amber-400/20 rounded-md border border-amber-400/50 text-amber-950 dark:text-amber-300 font-extrabold shadow-xs">
-                              {getCountdownSeconds(order)}s
-                            </span>
-                          </p>
-                          <p className="text-[10px] text-neutral-600 dark:text-gray-300/80 mt-0.5">
-                            Receipt auto-dispatched to Kitchen & Porter rider assigned
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => updateStatus(order, "accepted")}
-                        className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all active:scale-95 flex items-center gap-1 shrink-0 cursor-pointer"
-                      >
-                        <Check className="w-3.5 h-3.5" /> Accept Now
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Items */}
-                  <div className="mb-3.5">
-                    <p className="text-neutral-500 dark:text-gray-400 text-[10px] font-black uppercase tracking-wider mb-2">ORDER ITEMS</p>
-                    <div className="space-y-1.5">
-                      {(order.items || []).map((item, idx) => (
-                        <div key={idx} className="flex justify-between text-sm py-0.5">
-                          <span className="text-neutral-900 dark:text-gray-100 font-bold">
-                            {item.name} <span className="text-neutral-500 dark:text-gray-400 font-medium">×{item.quantity}</span>
-                          </span>
-                          <span className="text-neutral-900 dark:text-amber-400 font-black font-mono">
-                            ₹{(item.price * item.quantity).toFixed(0)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Cooking & Delivery Instructions from Online Customer */}
-                  {(order.cooking_instructions || order.delivery_instructions || order.special_instructions) && (
-                    <div className="mb-3.5 space-y-1.5 p-3 rounded-xl bg-amber-50/80 border border-amber-200/90 dark:bg-[#0a1e26] dark:border-[#EAB308]/20">
-                      {(order.cooking_instructions || order.special_instructions) && (
-                        <div className="flex items-start gap-1.5 text-xs text-amber-950 dark:text-amber-300">
-                          <span className="font-black shrink-0">🍳 Chef Note:</span>
-                          <span className="text-amber-900 dark:text-amber-100 font-medium">{order.cooking_instructions || order.special_instructions}</span>
-                        </div>
-                      )}
-                      {order.delivery_instructions && (
-                        <div className="flex items-start gap-1.5 text-xs text-emerald-950 dark:text-emerald-300">
-                          <span className="font-black shrink-0">🛵 Delivery Note:</span>
-                          <span className="text-emerald-900 dark:text-emerald-100 font-medium">{order.delivery_instructions}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Totals */}
-                  <div className="border-t border-neutral-200 dark:border-[#EAB308]/15 pt-3 mb-4">
-                    <div className="flex justify-between text-xs text-neutral-600 dark:text-gray-400 mb-1 font-medium">
-                      <span>Subtotal</span><span>₹{(order.subtotal || 0).toFixed(2)}</span>
-                    </div>
-                    {order.delivery_fee > 0 && (
-                      <div className="flex justify-between text-xs text-neutral-600 dark:text-gray-400 mb-1 font-medium">
-                        <span>Delivery Fee</span><span>₹{order.delivery_fee.toFixed(2)}</span>
-                      </div>
-                    )}
-                    {order.taxes > 0 && (
-                      <div className="flex justify-between text-xs text-neutral-600 dark:text-gray-400 mb-1 font-medium">
-                        <span>GST</span><span>₹{order.taxes.toFixed(2)}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between font-bold text-base mt-2 pt-2 border-t border-neutral-100 dark:border-white/5">
-                      <span className="text-neutral-900 dark:text-white font-black">Total</span>
-                      <span className="text-[#E40000] dark:text-amber-400 font-black text-lg font-mono">₹{(order.total || 0).toFixed(2)}</span>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex flex-wrap gap-2">
-                    {nextActions.map(action => (
-                      <button key={action.value}
-                        onClick={() => updateStatus(order, action.value)}
-                        className={`${action.color} text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer`}>
-                        {action.label}
-                      </button>
                     ))}
+                  </div>
+                </div>
 
-                    {/* Print Bill & KOT (online orders - including newly placed) */}
-                    {["placed", "accepted", "preparing", "ready", "out_for_delivery", "delivered"].includes(order.status) && order.order_type !== "DINE_IN" && (
-                      <div className="flex items-center gap-1.5">
-                        {order.bill_number && (
-                          <span className="bg-neutral-100 text-neutral-900 font-mono text-xs px-2.5 py-1 rounded-lg font-bold border border-neutral-300 dark:bg-[#EAB308]/15 dark:text-[#EAB308] dark:border-[#EAB308]/30">
-                            #{order.bill_number}
-                          </span>
-                        )}
-                        <button
-                          onClick={() => printOnlineOrderBill(order)}
-                          className="bg-neutral-100 hover:bg-neutral-200 border border-neutral-300 text-neutral-900 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer dark:bg-[#0f2933] dark:border-[#EAB308]/30 dark:text-white dark:hover:bg-[#1a4855]"
-                          title="Print Bill"
-                        >
-                          <Printer className="w-4 h-4" />
-                          <span>Print Bill</span>
-                        </button>
-
-                        <button
-                          onClick={() => printOnlineOrderKOT(order)}
-                          className="bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-900 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer dark:bg-orange-500/10 dark:border-orange-500/30 dark:text-orange-300 dark:hover:bg-orange-500/20"
-                          title="Print Kitchen Order Ticket (KOT)"
-                        >
-                          <Printer className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-                          <span>Print KOT</span>
-                        </button>
-                      </div>
+                {/* Notes */}
+                {(order.cooking_instructions || order.delivery_instructions || order.special_instructions) && (
+                  <div className="mx-4 mt-2 space-y-1 rounded-[10px] bg-[var(--a-gold-tint)] px-3 py-2 text-[13px] leading-[18px]">
+                    {(order.cooking_instructions || order.special_instructions) && (
+                      <div><span className="font-semibold text-[var(--a-gold)]">Chef note: </span><span className="text-[var(--a-text)]">{order.cooking_instructions || order.special_instructions}</span></div>
                     )}
-
-                    {/* WhatsApp Customer Dispatch Button */}
-                    {order.phone && order.order_type !== "DINE_IN" && (
-                      <button
-                        onClick={() => openOrderWhatsApp(order)}
-                        className="bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 dark:bg-emerald-600/20 dark:hover:bg-emerald-600/30 dark:border-emerald-500/40 dark:text-emerald-400 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
-                        title="Send WhatsApp confirmation to customer"
-                      >
-                        <MessageCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                        <span>WhatsApp</span>
-                      </button>
+                    {order.delivery_instructions && (
+                      <div><span className="font-semibold text-[var(--a-gold)]">Delivery note: </span><span className="text-[var(--a-text)]">{order.delivery_instructions}</span></div>
                     )}
+                  </div>
+                )}
 
-                    {/* ── Delivery Assignment (In-House Fleet OR Porter) ── */}
-                    {order.order_type === "DELIVERY" && ["accepted","preparing","ready","out_for_delivery"].includes(order.status) && (
-                      <div className="w-full mt-2">
+                {/* Totals */}
+                <div className="mx-4 mt-3 pt-3 border-t border-[var(--a-line)] space-y-1">
+                  <KeyValue label="Subtotal" value={`₹${(order.subtotal || 0).toFixed(2)}`} className="text-[13px]" />
+                  {order.delivery_fee > 0 && <KeyValue label="Delivery fee" value={`₹${order.delivery_fee.toFixed(2)}`} className="text-[13px]" />}
+                  {order.taxes > 0 && <KeyValue label="GST" value={`₹${order.taxes.toFixed(2)}`} className="text-[13px]" />}
+                  <div className="flex items-baseline justify-between pt-1">
+                    <span className="text-[15px] font-semibold text-[var(--a-text)]">Total</span>
+                    <span className="text-[18px] font-semibold text-[var(--a-text)] pd-tabular">₹{(order.total || 0).toFixed(2)}</span>
+                  </div>
+                </div>
 
-                        {/* 1. Porter Active Banner */}
-                        {order.porter_order_id && (
-                          <div className="mb-2 rounded-xl border overflow-hidden bg-neutral-50 dark:bg-[#0f2933] border-neutral-200 dark:border-white/10">
-                            <div className={`flex items-center justify-between px-3 py-2 border-b ${(PORTER_STATUS_DISPLAY[order.porter_status] || PORTER_STATUS_DISPLAY["open"]).bg}`}>
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <Zap className={`w-3.5 h-3.5 ${(PORTER_STATUS_DISPLAY[order.porter_status] || PORTER_STATUS_DISPLAY["open"]).color}`} />
-                                <span className={`text-xs font-bold ${(PORTER_STATUS_DISPLAY[order.porter_status] || PORTER_STATUS_DISPLAY["open"]).color}`}>
-                                  Porter: {(PORTER_STATUS_DISPLAY[order.porter_status] || { label: order.porter_status || "Booked" }).label}
-                                </span>
-                                <span className="bg-orange-100 text-orange-800 text-[10px] font-bold px-2 py-0.5 rounded border border-orange-300 dark:bg-orange-500/20 dark:text-orange-300 dark:border-orange-500/30">
-                                  Mock Courier Service
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <button
-                                  onClick={() => refreshPorterStatus(order)}
-                                  disabled={porterRefreshing === order.order_id}
-                                  title="Refresh Porter status"
-                                  className="w-6 h-6 rounded-full bg-white border border-neutral-300 dark:bg-white/5 dark:border-white/10 flex items-center justify-center text-neutral-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors"
-                                >
-                                  <RefreshCw className={`w-3 h-3 ${porterRefreshing === order.order_id ? "animate-spin" : ""}`} />
-                                </button>
-                                {!["order_picked_up","started_for_delivery","delivered"].includes(order.porter_status) && (
-                                  <button
-                                    onClick={() => cancelPorterBooking(order)}
-                                    disabled={porterCancelling === order.order_id}
-                                    title="Cancel Porter"
-                                    className="w-6 h-6 rounded-full bg-red-100 border border-red-300 dark:bg-red-900/30 dark:border-red-500/30 flex items-center justify-center text-red-600 dark:text-red-400 transition-colors"
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </button>
-                                )}
-                              </div>
+                {/* Delivery assignment */}
+                {order.order_type === "DELIVERY" && ["accepted","preparing","ready","out_for_delivery"].includes(order.status) && (
+                  <div className="mx-4 mt-3">
+                    {order.porter_order_id && (
+                      <div className="rounded-[10px] border border-[var(--a-line)] overflow-hidden">
+                        <div className="flex items-center justify-between gap-2 px-3 py-2 bg-[var(--a-inset)]">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <StatusPill tone={porterTone(order.porter_status)} icon={Zap}>Porter: {porter.label.replace(" ✓", "")}</StatusPill>
+                            <span className="text-[12px] text-[var(--a-text-3)]">Mock courier service</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <IconButton icon={RefreshCw} label="Refresh Porter status" className={cx("h-7 w-7", porterRefreshing === order.order_id && "[&>svg]:animate-spin")}
+                              onClick={() => refreshPorterStatus(order)} disabled={porterRefreshing === order.order_id} />
+                            {!["order_picked_up","started_for_delivery","delivered"].includes(order.porter_status) && (
+                              <IconButton icon={X} label="Cancel Porter" variant="destructive" className="h-7 w-7"
+                                onClick={() => cancelPorterBooking(order)} disabled={porterCancelling === order.order_id} />
+                            )}
+                          </div>
+                        </div>
+                        {(order.porter_rider_name || order.porter_rider_phone || order.porter_tracking_url) && (
+                          <div className="px-3 py-2 flex items-center justify-between gap-2 flex-wrap text-[13px]">
+                            <div className="flex items-center gap-3 text-[var(--a-text)]">
+                              {order.porter_rider_name && <span className="inline-flex items-center gap-1.5"><Bike className="h-3.5 w-3.5 text-[var(--a-text-3)]" />{order.porter_rider_name}</span>}
+                              {order.porter_rider_phone && <a href={`tel:${order.porter_rider_phone}`} className="inline-flex items-center gap-1.5 pd-tabular hover:underline"><Phone className="h-3.5 w-3.5 text-[var(--a-text-3)]" />{order.porter_rider_phone}</a>}
                             </div>
-                            {(order.porter_rider_name || order.porter_rider_phone || order.porter_tracking_url) && (
-                              <div className="px-3 py-2 flex items-center justify-between gap-2 flex-wrap">
-                                <div className="flex items-center gap-3">
-                                  {order.porter_rider_name && (
-                                    <div className="flex items-center gap-1.5">
-                                      <Bike className="w-3.5 h-3.5 text-neutral-500 dark:text-gray-400" />
-                                      <span className="text-neutral-900 dark:text-white text-xs font-bold">{order.porter_rider_name}</span>
-                                    </div>
-                                  )}
-                                  {order.porter_rider_phone && (
-                                    <div className="flex items-center gap-1.5">
-                                      <Phone className="w-3.5 h-3.5 text-neutral-500 dark:text-gray-400" />
-                                      <a href={`tel:${order.porter_rider_phone}`} className="text-neutral-900 dark:text-[#EAB308] text-xs font-bold underline">{order.porter_rider_phone}</a>
-                                    </div>
-                                  )}
-                                </div>
-                                {order.porter_tracking_url && (
-                                  <a href={order.porter_tracking_url} target="_blank" rel="noreferrer"
-                                    className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline transition-colors font-bold">
-                                    <MapPin className="w-3 h-3" /> Live Track <ExternalLink className="w-3 h-3" />
-                                  </a>
-                                )}
-                              </div>
+                            {order.porter_tracking_url && (
+                              <a href={order.porter_tracking_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-[var(--a-info)] hover:underline">
+                                Live track <ExternalLink className="h-3 w-3" />
+                              </a>
                             )}
                           </div>
                         )}
-
-                        {/* 2. In-House Rider Assigned Card */}
-                        {order.delivery_partner_name && !order.porter_order_id && (
-                          <div className="rounded-xl p-3 bg-emerald-50/80 border border-emerald-300/80 dark:bg-gradient-to-r dark:from-emerald-950/40 dark:to-[#0e2c36] dark:border-emerald-500/30 flex items-center justify-between gap-2 flex-wrap mb-2 shadow-2xs">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-lg bg-emerald-100 border border-emerald-300 text-emerald-800 dark:bg-emerald-500/20 dark:border-emerald-500/30 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                                <Bike className="w-4 h-4" />
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-neutral-900 dark:text-white text-xs font-black">{order.delivery_partner_name}</span>
-                                  <span className="text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30">
-                                    PD FLEET
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2 text-[10px] text-neutral-600 dark:text-gray-400 mt-0.5">
-                                  <span>{order.delivery_partner_vehicle || "Royal Fleet Bike"}</span>
-                                  {order.delivery_partner_phone && (
-                                    <>
-                                      <span>•</span>
-                                      <a href={`tel:${order.delivery_partner_phone}`} className="text-neutral-900 dark:text-[#EAB308] hover:underline font-bold font-mono">
-                                        📞 {order.delivery_partner_phone}
-                                      </a>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1.5 ml-auto">
-                              <div className="relative">
-                                <button
-                                  type="button"
-                                  onClick={() => setAssigningOrder(assigningOrder === order.order_id ? null : order.order_id)}
-                                  className="text-[10px] font-bold px-2 py-1 rounded-lg bg-neutral-200 hover:bg-neutral-300 text-neutral-800 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white/80 transition cursor-pointer"
-                                >
-                                  Change
-                                </button>
-                                {assigningOrder === order.order_id && (
-                                  <div className="absolute bottom-full right-0 mb-1 bg-white border border-neutral-300 dark:bg-[#0f2933] dark:border-[#EAB308]/25 rounded-2xl shadow-2xl z-30 w-56 overflow-hidden">
-                                    <p className="text-[10px] text-neutral-500 dark:text-gray-400 font-bold uppercase tracking-wider px-3 pt-2.5 pb-1">Assign Different Rider</p>
-                                    {deliveryPartners.length === 0 ? (
-                                      <p className="text-neutral-500 dark:text-gray-400 text-xs px-3 py-2">No active riders</p>
-                                    ) : (
-                                      deliveryPartners.map(p => (
-                                        <button
-                                          key={p.id || p._id}
-                                          type="button"
-                                          onClick={() => assignDelivery(order.order_id, p.id || p._id)}
-                                          className="w-full text-left px-3 py-2 text-xs text-neutral-900 hover:bg-neutral-100 dark:text-gray-200 dark:hover:bg-[#1a4855] transition-colors flex items-center gap-2 cursor-pointer"
-                                        >
-                                          <Bike className="w-3.5 h-3.5 text-neutral-700 dark:text-[#EAB308]" />
-                                          <div>
-                                            <p className="font-bold">{p.name}</p>
-                                            <p className="text-neutral-500 dark:text-gray-400 text-[10px]">{p.vehicle_type} · {p.phone}</p>
-                                          </div>
-                                        </button>
-                                      ))
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => unassignDelivery(order.order_id)}
-                                disabled={unassigningOrder === order.order_id}
-                                title="Unassign Rider"
-                                className="text-[10px] font-bold px-2 py-1 rounded-lg bg-red-100 border border-red-300 text-red-700 hover:bg-red-200 dark:bg-red-950/40 dark:border-red-500/30 dark:text-red-400 transition cursor-pointer"
-                              >
-                                {unassigningOrder === order.order_id ? '...' : 'Unassign'}
-                              </button>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* 3. Not Assigned to Either — Show BOTH In-House Rider & Book Porter options */}
-                        {!order.delivery_partner_name && !order.porter_order_id && (
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {/* In-House Rider Button */}
-                            <div className="relative">
-                              <button
-                                type="button"
-                                onClick={() => setAssigningOrder(assigningOrder === order.order_id ? null : order.order_id)}
-                                className="bg-neutral-900 hover:bg-black text-white dark:bg-gradient-to-r dark:from-[#ca8a04] dark:to-[#EAB308] dark:text-black px-3.5 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer"
-                              >
-                                <Bike className="w-3.5 h-3.5" /> In-House Rider
-                              </button>
-                              {assigningOrder === order.order_id && (
-                                <div className="absolute bottom-full left-0 mb-1 bg-white border border-neutral-300 dark:bg-[#0f2933] dark:border-[#EAB308]/25 rounded-2xl shadow-2xl z-30 w-64 overflow-hidden">
-                                  <div className="px-3 py-2 bg-neutral-100 dark:bg-[#1a4855]/60 border-b border-neutral-200 dark:border-white/10 flex items-center justify-between">
-                                    <span className="text-[10px] text-neutral-900 dark:text-[#EAB308] font-black uppercase tracking-wider">Persian Darbar Fleet</span>
-                                    <span className="text-[9px] text-neutral-600 dark:text-gray-400 font-bold">{deliveryPartners.length} Available</span>
-                                  </div>
-                                  {deliveryPartners.length === 0 ? (
-                                    <p className="text-neutral-500 dark:text-gray-400 text-xs px-3 py-3">No active riders configured</p>
-                                  ) : (
-                                    <div className="max-h-48 overflow-y-auto">
-                                      {deliveryPartners.map(p => (
-                                        <button
-                                          key={p.id || p._id}
-                                          type="button"
-                                          onClick={() => assignDelivery(order.order_id, p.id || p._id)}
-                                          className="w-full text-left px-3 py-2.5 text-xs text-neutral-900 hover:bg-neutral-100 dark:text-gray-200 dark:hover:bg-[#1a4855] transition-colors flex items-center gap-2.5 border-b border-neutral-100 dark:border-white/5 last:border-b-0 cursor-pointer"
-                                        >
-                                          <div className="w-6 h-6 rounded-md bg-neutral-100 text-neutral-800 dark:bg-[#EAB308]/15 dark:text-[#EAB308] flex items-center justify-center shrink-0">
-                                            <Bike className="w-3.5 h-3.5" />
-                                          </div>
-                                          <div className="flex-1 min-w-0">
-                                            <p className="font-bold text-neutral-900 dark:text-white truncate">{p.name}</p>
-                                            <p className="text-neutral-500 dark:text-gray-400 text-[10px] truncate">{p.vehicle_type} · {p.phone}</p>
-                                          </div>
-                                        </button>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Porter Button (Next Stage / Backup Option) */}
-                            <button
-                              type="button"
-                              onClick={() => openPorterModal(order)}
-                              className="bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
-                            >
-                              <Zap className="w-3.5 h-3.5" /> Book Porter
-                            </button>
-                          </div>
-                        )}
                       </div>
                     )}
 
-                    {/* View Details */}
-                    <button onClick={() => setSelectedOrder(order)}
-                      className="bg-neutral-100 hover:bg-neutral-200 border border-neutral-300 text-neutral-800 dark:bg-[#0f2933] dark:border-white/10 dark:text-gray-400 dark:hover:text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-colors ml-auto cursor-pointer shadow-2xs">
-                      <Eye className="w-4 h-4" /> Details
-                    </button>
+                    {order.delivery_partner_name && !order.porter_order_id && (
+                      <div className="rounded-[10px] border border-[var(--a-line)] px-3 py-2.5 flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="h-8 w-8 rounded-full bg-[var(--a-success-tint)] text-[var(--a-success)] flex items-center justify-center shrink-0"><Bike className="h-4 w-4" /></span>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[14px] font-medium text-[var(--a-text)] truncate">{order.delivery_partner_name}</span>
+                              <StatusPill tone="success">PD Fleet</StatusPill>
+                            </div>
+                            <div className="text-[12px] text-[var(--a-text-2)]">
+                              {order.delivery_partner_vehicle || "Fleet bike"}
+                              {order.delivery_partner_phone && <> · <a href={`tel:${order.delivery_partner_phone}`} className="pd-tabular hover:underline">{order.delivery_partner_phone}</a></>}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="relative">
+                            <Button size="sm" variant="tinted" onClick={() => setAssigningOrder(assigningOrder === order.order_id ? null : order.order_id)}>Change</Button>
+                            {assigningOrder === order.order_id && riderMenu(order, "right")}
+                          </div>
+                          <Button size="sm" variant="destructive" onClick={() => unassignDelivery(order.order_id)} disabled={unassigningOrder === order.order_id}>
+                            {unassigningOrder === order.order_id ? "Removing…" : "Unassign"}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
 
-                    {/* Delete delivered */}
+                    {!order.delivery_partner_name && !order.porter_order_id && (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <div className="relative">
+                          <Button size="sm" variant="secondary" icon={Bike} onClick={() => setAssigningOrder(assigningOrder === order.order_id ? null : order.order_id)}>
+                            In-house rider
+                          </Button>
+                          {assigningOrder === order.order_id && riderMenu(order, "left")}
+                        </div>
+                        <Button size="sm" variant="secondary" icon={Zap} onClick={() => openPorterModal(order)}>Book Porter</Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="mt-auto px-4 py-3 mt-3 border-t border-[var(--a-line)] flex flex-wrap items-center gap-2">
+                  {nextActions.map(action => (
+                    <Button key={action.value} size="sm" variant={action.variant} icon={action.icon} onClick={() => updateStatus(order, action.value)}>
+                      {action.label}
+                    </Button>
+                  ))}
+
+                  {["placed", "accepted", "preparing", "ready", "out_for_delivery", "delivered"].includes(order.status) && order.order_type !== "DINE_IN" && (
+                    <>
+                      {order.bill_number && <StatusPill tone="neutral">#{order.bill_number}</StatusPill>}
+                      <Button size="sm" variant="tinted" icon={Printer} onClick={() => printOnlineOrderBill(order)} title="Print Bill">Bill</Button>
+                      <Button size="sm" variant="tinted" icon={Printer} onClick={() => printOnlineOrderKOT(order)} title="Print Kitchen Order Ticket (KOT)">KOT</Button>
+                    </>
+                  )}
+
+                  {order.phone && order.order_type !== "DINE_IN" && (
+                    <IconButton icon={MessageCircle} label="Send WhatsApp message to customer" onClick={() => openOrderWhatsApp(order)} />
+                  )}
+
+                  <div className="ml-auto flex items-center gap-1.5">
+                    <Button size="sm" variant="plain" icon={Eye} onClick={() => setSelectedOrder(order)}>Details</Button>
                     {order.status === "delivered" && (
-                      <button onClick={async () => {
+                      <IconButton icon={Trash2} label="Delete order" variant="destructive" onClick={async () => {
                         if (!window.confirm("Delete this order?")) return;
                         try {
                           const token = localStorage.getItem("admin_token");
@@ -1313,198 +1019,117 @@ const OrdersManagement = () => {
                           toast({ title: "Deleted", description: "Order deleted" });
                           fetchOrders();
                         } catch { toast({ title: "Error", description: "Failed to delete", variant: "destructive" }); }
-                      }}
-                        className="bg-red-100 hover:bg-red-200 border border-red-300 text-red-700 dark:bg-red-900/30 dark:border-red-500/30 dark:text-red-400 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      }} />
                     )}
                   </div>
                 </div>
-              </div>
+              </Card>
             );
           })}
         </div>
       )}
 
-      {/* Order Details Modal */}
-      {selectedOrder && (
-        <div className="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
-          <div className="bg-white dark:bg-[#1a4855] text-neutral-900 dark:text-white rounded-2xl p-5 max-w-lg w-full max-h-[90vh] overflow-y-auto border border-neutral-200 dark:border-[#EAB308]/20 shadow-2xl">
-            <div className="flex justify-between items-start mb-5">
-              <div>
-                <h3 className="text-xl font-black text-neutral-900 dark:text-primary" style={{ fontFamily: "Playfair Display, serif" }}>Order Details</h3>
-                <p className="text-neutral-500 dark:text-gray-400 text-sm font-mono">{selectedOrder.order_id}</p>
-              </div>
-              <button onClick={() => setSelectedOrder(null)} className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer p-1">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3 mb-5">
-              <div className="bg-neutral-50 dark:bg-[#0f2933] border border-neutral-200 dark:border-white/5 rounded-xl p-3 text-sm">
-                <div className="flex justify-between mb-1"><span className="text-neutral-500 dark:text-gray-400">Type</span><span className="font-bold text-neutral-900 dark:text-white">{selectedOrder.order_type?.replace("_","-")}</span></div>
-                <div className="flex justify-between mb-1"><span className="text-neutral-500 dark:text-gray-400">Placed</span><span className="font-bold text-neutral-900 dark:text-white">{formatOrderTime(selectedOrder.created_at)}</span></div>
-                <div className="flex justify-between"><span className="text-neutral-500 dark:text-gray-400">Status</span><span className="text-emerald-700 dark:text-primary font-black uppercase text-xs">{selectedOrder.status}</span></div>
-              </div>
-            </div>
-
-            <h4 className="text-xs font-black text-neutral-500 dark:text-white mb-2 uppercase tracking-wider">Status Timeline</h4>
-            <div className="space-y-2 mb-5">
-              {(selectedOrder.status_history || []).map((h, idx) => (
-                <div key={idx} className="bg-neutral-50 dark:bg-[#0f2933] border border-neutral-200 dark:border-white/5 rounded-xl p-3 flex justify-between items-start">
+      {/* Order details */}
+      <Sheet
+        open={!!selectedOrder}
+        onClose={() => setSelectedOrder(null)}
+        title="Order details"
+        subtitle={selectedOrder?.order_id}
+        size="sm"
+        footer={<Button variant="secondary" onClick={() => setSelectedOrder(null)}>Close</Button>}
+      >
+        {selectedOrder && (
+          <div className="space-y-5">
+            <FormGroup>
+              <FormRow label="Type"><span className="text-[15px] text-[var(--a-text-2)]">{typeMeta(selectedOrder.order_type).label}</span></FormRow>
+              <FormRow label="Placed"><span className="text-[15px] text-[var(--a-text-2)] pd-tabular">{formatOrderTime(selectedOrder.created_at)}</span></FormRow>
+              <FormRow label="Status"><StatusPill tone={getStatusConfig(selectedOrder.status).tone} dot>{getStatusConfig(selectedOrder.status).label}</StatusPill></FormRow>
+            </FormGroup>
+            <FormGroup title="Status timeline">
+              {(selectedOrder.status_history || []).length === 0 ? (
+                <div className="px-4 py-3 text-[14px] text-[var(--a-text-2)]">No status changes recorded yet.</div>
+              ) : (selectedOrder.status_history || []).map((h, idx) => (
+                <div key={idx} className="flex items-start justify-between gap-3 px-4 py-3">
                   <div>
-                    <p className="text-neutral-900 dark:text-primary font-bold text-sm capitalize">{h.status}</p>
-                    {h.note && <p className="text-neutral-500 dark:text-gray-400 text-xs mt-0.5">{h.note}</p>}
+                    <div className="text-[15px] text-[var(--a-text)] capitalize">{String(h.status).replace(/_/g, " ")}</div>
+                    {h.note && <div className="text-[13px] text-[var(--a-text-2)]">{h.note}</div>}
                   </div>
-                  <p className="text-neutral-500 dark:text-gray-400 text-xs shrink-0 ml-3 font-medium">{formatOrderTime(h.timestamp)}</p>
+                  <div className="text-[13px] text-[var(--a-text-3)] pd-tabular shrink-0">{formatOrderTime(h.timestamp)}</div>
                 </div>
               ))}
-            </div>
-
-            <button onClick={() => setSelectedOrder(null)}
-              className="w-full bg-neutral-900 text-white dark:bg-primary dark:text-black py-3 rounded-xl font-bold hover:bg-black transition-colors cursor-pointer shadow-sm">
-              Close
-            </button>
+            </FormGroup>
           </div>
-        </div>
-      )}
+        )}
+      </Sheet>
 
-      {/* ===== Porter Booking Modal (Stage 2 Integration) ===== */}
-      {porterModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
-          <div className="bg-white dark:bg-[#0f2933] border border-orange-200 dark:border-orange-500/30 rounded-2xl p-5 max-w-md w-full shadow-2xl">
-
-            {/* Header */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-md">
-                  <Zap className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-neutral-900 dark:text-white font-black text-lg">Book Porter Rider</h3>
-                  <p className="text-neutral-500 dark:text-gray-400 text-xs font-mono">{porterModal.order?.order_id?.slice(-10)}</p>
-                </div>
-              </div>
-              <button onClick={() => setPorterModal(null)} className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer p-1">
-                <X className="w-5 h-5" />
-              </button>
+      {/* Porter booking */}
+      <Sheet
+        open={!!porterModal}
+        onClose={() => setPorterModal(null)}
+        title="Book Porter rider"
+        subtitle={porterModal?.order?.order_id?.slice(-10)}
+        size="sm"
+        footer={porterModal && (porterModal.step === "no_coords" ? (
+          <>
+            <Button variant="secondary" onClick={() => setPorterModal(null)}>Cancel</Button>
+            <Button variant="primary" onClick={() => _fetchPorterQuote(porterModal.order, porterModal.tempLat, porterModal.tempLng)} disabled={!porterModal.tempLat || !porterModal.tempLng}>Get quote</Button>
+          </>
+        ) : porterModal.step === "quoted" && porterModal.quote ? (
+          <>
+            <Button variant="secondary" onClick={() => setPorterModal(null)}>Cancel</Button>
+            <Button variant="primary" icon={Check} onClick={confirmPorterBook}>Confirm booking</Button>
+          </>
+        ) : null)}
+      >
+        {porterModal?.step === "no_coords" && (
+          <div className="space-y-4">
+            <div className="flex items-start gap-2 rounded-[10px] bg-[var(--a-warn-tint)] px-3 py-2.5 text-[13px] leading-[18px] text-[var(--a-warn)]">
+              <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+              <span>This order has no GPS coordinates. Enter the customer's approximate coordinates to get a Porter quote.</span>
             </div>
-
-            {/* Step: No Coordinates */}
-            {porterModal.step === "no_coords" && (
-              <div>
-                <div className="flex items-start gap-2 bg-yellow-50 border border-yellow-200 dark:bg-yellow-500/10 dark:border-yellow-500/30 rounded-xl p-3 mb-4">
-                  <AlertTriangle className="w-4 h-4 text-yellow-600 dark:text-yellow-400 shrink-0 mt-0.5" />
-                  <p className="text-yellow-800 dark:text-yellow-300 text-xs font-medium">This order doesn't have GPS coordinates stored. Please enter the customer's approximate coordinates to get a Porter quote.</p>
-                </div>
-                <p className="text-neutral-600 dark:text-gray-400 text-xs mb-3">Customer address: <span className="text-neutral-900 dark:text-white font-bold">{porterModal.order?.address}</span></p>
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div>
-                    <label className="text-[10px] text-neutral-500 dark:text-gray-400 uppercase tracking-wider mb-1 block font-bold">Latitude</label>
-                    <input
-                      type="number" step="any"
-                      value={porterModal.tempLat || ""}
-                      onChange={e => setPorterModal(prev => ({ ...prev, tempLat: e.target.value }))}
-                      placeholder="e.g. 18.5230"
-                      className="w-full bg-neutral-50 dark:bg-[#1a4855] border border-neutral-300 dark:border-white/10 rounded-xl px-3 py-2 text-neutral-900 dark:text-white text-sm focus:outline-none focus:border-orange-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-neutral-500 dark:text-gray-400 uppercase tracking-wider mb-1 block font-bold">Longitude</label>
-                    <input
-                      type="number" step="any"
-                      value={porterModal.tempLng || ""}
-                      onChange={e => setPorterModal(prev => ({ ...prev, tempLng: e.target.value }))}
-                      placeholder="e.g. 73.8567"
-                      className="w-full bg-neutral-50 dark:bg-[#1a4855] border border-neutral-300 dark:border-white/10 rounded-xl px-3 py-2 text-neutral-900 dark:text-white text-sm focus:outline-none focus:border-orange-500"
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => setPorterModal(null)} className="flex-1 py-2.5 rounded-xl text-sm border border-neutral-300 dark:border-white/10 text-neutral-700 dark:text-gray-400 hover:bg-neutral-100 transition-colors font-bold cursor-pointer">Cancel</button>
-                  <button
-                    onClick={() => _fetchPorterQuote(porterModal.order, porterModal.tempLat, porterModal.tempLng)}
-                    disabled={!porterModal.tempLat || !porterModal.tempLng}
-                    className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-orange-600 to-orange-500 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer shadow-sm"
-                  >
-                    Get Quote
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Step: Quoting (loading) */}
-            {porterModal.step === "quoting" && (
-              <div className="text-center py-8">
-                <div className="w-10 h-10 border-3 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" style={{ borderWidth: 3 }} />
-                <p className="text-neutral-600 dark:text-gray-400 text-sm font-semibold">Fetching Porter quote...</p>
-              </div>
-            )}
-
-            {/* Step: Quoted */}
-            {porterModal.step === "quoted" && porterModal.quote && (
-              <div>
-                <div className="bg-neutral-50 dark:bg-[#1a4855] border border-neutral-200 dark:border-transparent rounded-xl p-3 mb-4 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-neutral-500 dark:text-gray-400">Customer</span>
-                    <span className="text-neutral-900 dark:text-white font-bold">{porterModal.quote.customer_name}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-neutral-500 dark:text-gray-400">Distance</span>
-                    <span className="text-neutral-900 dark:text-white font-semibold">{porterModal.quote.distance_km ? `${porterModal.quote.distance_km} km` : "—"}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-neutral-500 dark:text-gray-400">Customer delivery fee</span>
-                    <span className={(porterModal.quote.distance_km || 0) <= 5 ? "text-emerald-700 font-bold" : "text-[#E40000] font-bold"}>
-                      {(porterModal.quote.distance_km || 0) <= 5 ? "FREE (≤5km)" : "₹60"}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="bg-orange-50 border border-orange-200 dark:bg-gradient-to-br dark:from-orange-900/30 dark:to-orange-800/20 dark:border-orange-500/30 rounded-xl p-4 mb-4">
-                  <p className="text-orange-800 dark:text-orange-400 text-xs font-black uppercase tracking-wider mb-3">Porter Quote (Your Cost)</p>
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <p className="text-3xl font-black text-neutral-900 dark:text-white">₹{porterModal.quote.estimated_fare?.toFixed(0)}</p>
-                      <p className="text-neutral-500 dark:text-gray-400 text-xs font-medium">Estimated Porter fare</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xl font-bold text-orange-600 dark:text-orange-400">{porterModal.quote.eta_minutes} min</p>
-                      <p className="text-neutral-500 dark:text-gray-400 text-xs">Rider ETA</p>
-                    </div>
-                  </div>
-                  <p className="text-neutral-500 dark:text-gray-500 text-xs">{porterModal.quote.note}</p>
-                </div>
-
-                <div className="flex items-center gap-2 mb-4">
-                  <Bike className="w-4 h-4 text-orange-500" />
-                  <span className="text-neutral-800 dark:text-gray-300 text-sm capitalize font-medium">Vehicle: {porterModal.quote.vehicle_type}</span>
-                </div>
-
-                <div className="flex gap-2">
-                  <button onClick={() => setPorterModal(null)} className="flex-1 py-2.5 rounded-xl text-sm border border-neutral-300 dark:border-white/10 text-neutral-700 dark:text-gray-400 hover:bg-neutral-100 transition-colors font-bold cursor-pointer">Cancel</button>
-                  <button
-                    onClick={confirmPorterBook}
-                    className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white transition-all shadow-md cursor-pointer"
-                  >
-                    ✓ Confirm Book Porter
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Step: Booking */}
-            {porterModal.step === "booking" && (
-              <div className="text-center py-8">
-                <div className="w-10 h-10 border-3 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" style={{ borderWidth: 3 }} />
-                <p className="text-neutral-700 dark:text-gray-400 text-sm font-bold">Booking Porter rider...</p>
-                <p className="text-neutral-500 dark:text-gray-600 text-xs mt-1">This may take a few seconds</p>
-              </div>
-            )}
+            <p className="text-[13px] text-[var(--a-text-2)]">Customer address: <span className="text-[var(--a-text)]">{porterModal.order?.address}</span></p>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Latitude">
+                <Input type="number" step="any" value={porterModal.tempLat || ""} onChange={e => setPorterModal(prev => ({ ...prev, tempLat: e.target.value }))} placeholder="e.g. 18.5230" />
+              </FormField>
+              <FormField label="Longitude">
+                <Input type="number" step="any" value={porterModal.tempLng || ""} onChange={e => setPorterModal(prev => ({ ...prev, tempLng: e.target.value }))} placeholder="e.g. 73.8567" />
+              </FormField>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+
+        {(porterModal?.step === "quoting" || porterModal?.step === "booking") && (
+          <div className="py-10 flex flex-col items-center gap-3">
+            <div className="h-7 w-7 rounded-full border-2 border-[var(--a-fill-2)] border-t-[var(--a-text-2)] animate-spin" />
+            <p className="text-[14px] text-[var(--a-text-2)]">{porterModal.step === "quoting" ? "Fetching Porter quote…" : "Booking Porter rider… this may take a few seconds"}</p>
+          </div>
+        )}
+
+        {porterModal?.step === "quoted" && porterModal.quote && (
+          <div className="space-y-4">
+            <div className="rounded-[12px] border border-[var(--a-line)] bg-[var(--a-card)] p-4 flex items-end justify-between">
+              <div>
+                <div className="text-[13px] text-[var(--a-text-2)]">Estimated Porter fare (your cost)</div>
+                <div className="text-[32px] leading-[38px] font-semibold text-[var(--a-text)] pd-tabular">₹{porterModal.quote.estimated_fare?.toFixed(0)}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-[13px] text-[var(--a-text-2)]">Rider ETA</div>
+                <div className="text-[20px] font-semibold text-[var(--a-text)] pd-tabular">{porterModal.quote.eta_minutes} min</div>
+              </div>
+            </div>
+            <FormGroup footer={porterModal.quote.note}>
+              <FormRow label="Customer"><span className="text-[15px] text-[var(--a-text-2)]">{porterModal.quote.customer_name}</span></FormRow>
+              <FormRow label="Distance"><span className="text-[15px] text-[var(--a-text-2)] pd-tabular">{porterModal.quote.distance_km ? `${porterModal.quote.distance_km} km` : "—"}</span></FormRow>
+              <FormRow label="Customer delivery fee">
+                <StatusPill tone={(porterModal.quote.distance_km || 0) <= 5 ? "success" : "neutral"}>{(porterModal.quote.distance_km || 0) <= 5 ? "Free (≤5 km)" : "₹60"}</StatusPill>
+              </FormRow>
+              <FormRow label="Vehicle"><span className="text-[15px] text-[var(--a-text-2)] capitalize">{porterModal.quote.vehicle_type}</span></FormRow>
+            </FormGroup>
+          </div>
+        )}
+      </Sheet>
+    </Page>
   );
 };
 

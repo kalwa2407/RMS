@@ -5,17 +5,16 @@ import {
   Menu as MenuIcon,
   Image,
   Star,
-  TrendingUp,
+  ChevronRight,
 } from "lucide-react";
 import axios from "axios";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import API_BASE from "../../lib/config";
+import { Page, PageHeader, StatCard, SectionTitle, List, ListRow, LoadingState } from "./ui";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const outletContext = useOutletContext();
-  const isDark = outletContext?.isDark ?? (localStorage.getItem("admin_theme") !== "light");
 
   const [stats, setStats] = useState({
     totalOrders: 0,
@@ -42,7 +41,6 @@ const Dashboard = () => {
       const token = localStorage.getItem("admin_token");
       const headers = { Authorization: `Bearer ${token}` };
 
-      // ✔ FIXED — using ADMIN ROUTES
       const [
         ordersRes,
         reservationsRes,
@@ -92,215 +90,72 @@ const Dashboard = () => {
     }
   };
 
-  // Quick CTA cards
   const statCards = [
-    {
-      title: "Total Orders",
-      value: stats.totalOrders,
-      subtitle: `${stats.pendingOrders} pending`,
-      icon: ShoppingBag,
-      color: "bg-blue-500",
-    },
-    {
-      title: "Reservations",
-      value: stats.totalReservations,
-      subtitle: `${stats.pendingReservations} pending`,
-      icon: Calendar,
-      color: "bg-green-500",
-    },
-    {
-      title: "Menu Items",
-      value: stats.totalMenuItems,
-      subtitle: "Active dishes",
-      icon: MenuIcon,
-      color: "bg-purple-500",
-    },
-    {
-      title: "Gallery Images",
-      value: stats.totalGalleryImages,
-      subtitle: "Uploaded images",
-      icon: Image,
-      color: "bg-orange-500",
-    },
-    {
-      title: "Reviews",
-      value: stats.totalReviews,
-      subtitle: `Avg: ${stats.avgRating} ⭐`,
-      icon: Star,
-      color: "bg-yellow-500",
-    },
-    {
-      title: "Performance",
-      value: "Excellent",
-      subtitle: "All systems operational",
-      icon: TrendingUp,
-      color: "bg-teal-500",
-    },
+    { title: "Orders", value: stats.totalOrders, subtitle: `${stats.pendingOrders} awaiting acceptance`, icon: ShoppingBag, tone: "accent", to: "/admin/orders" },
+    { title: "Reservations", value: stats.totalReservations, subtitle: `${stats.pendingReservations} pending`, icon: Calendar, tone: "info", to: "/admin/reservations" },
+    { title: "Menu items", value: stats.totalMenuItems, subtitle: "Dishes on the menu", icon: MenuIcon, tone: "neutral", to: "/admin/menu" },
+    { title: "Reviews", value: stats.totalReviews, subtitle: stats.totalReviews ? `Average rating ${stats.avgRating}` : "No reviews yet", icon: Star, tone: "gold", to: "/admin/reviews" },
+  ];
+
+  const quickActions = [
+    { label: "Live orders", hint: `${stats.pendingOrders} new`, icon: ShoppingBag, to: "/admin/orders" },
+    { label: "Table bookings", hint: `${stats.pendingReservations} pending`, icon: Calendar, to: "/admin/reservations" },
+    { label: "Manage menu", hint: `${stats.totalMenuItems} items`, icon: MenuIcon, to: "/admin/menu" },
+    { label: "Gallery", hint: `${stats.totalGalleryImages} images`, icon: Image, to: "/admin/gallery" },
   ];
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 space-y-3">
-        <div className="w-8 h-8 border-2 border-red-500/20 border-t-[#E40000] rounded-full animate-spin" />
-        <p className="text-xs font-semibold text-neutral-500">Loading Master Dashboard...</p>
-      </div>
-    );
+    return <LoadingState rows={4} label="Loading dashboard" />;
   }
 
+  const today = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" });
+
   return (
-    <div className="space-y-6">
-      {/* HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className={`text-2xl sm:text-3xl font-black tracking-tight ${
-            isDark ? "text-white" : "text-neutral-900"
-          }`}>
-            Executive Dashboard
-          </h2>
-          <p className={`text-xs font-semibold uppercase tracking-wider mt-1 ${
-            isDark ? "text-neutral-400" : "text-neutral-500"
-          }`}>
-            Persian Darbar · Camp Pune Live Telemetry
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className={`px-3 py-1.5 rounded-full text-[11px] font-bold flex items-center gap-1.5 shadow-xs border ${
-            isDark
-              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-              : "bg-emerald-50 text-emerald-700 border-emerald-200/80"
-          }`}>
-            <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${
-              isDark ? "bg-emerald-400" : "bg-emerald-500"
-            }`} />
-            <span>All Systems Live</span>
-          </span>
-        </div>
+    <Page>
+      <PageHeader title="Dashboard" subtitle={today} />
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {statCards.map((card) => (
+          <StatCard
+            key={card.title}
+            label={card.title}
+            value={card.value}
+            sub={card.subtitle}
+            icon={card.icon}
+            tone={card.tone}
+            onClick={() => navigate(card.to)}
+          />
+        ))}
       </div>
 
-      {/* STAT CARDS (macOS Widget Grid - Exact dark theme when isDark) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {statCards.map((card, index) => {
-          const Icon = card.icon;
-          return (
-            <div
-              key={index}
-              className={`rounded-3xl p-5 transition-all duration-200 ios-press group shadow-xs border ${
-                isDark
-                  ? "bg-white/[0.03] hover:bg-white/[0.05] border-white/[0.08] hover:border-amber-400/40"
-                  : "bg-white hover:bg-neutral-50/60 border-black/[0.06] hover:border-amber-400/50"
-              }`}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs border ${
-                  isDark
-                    ? "bg-white/[0.06] border-white/[0.08] text-amber-400"
-                    : "bg-amber-500/10 border-amber-500/20 text-amber-600"
-                }`}>
-                  <Icon className={`h-5 w-5 ${isDark ? "text-amber-300" : "text-amber-600"}`} />
-                </div>
-                <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${
-                  isDark
-                    ? "bg-white/[0.05] text-neutral-400 border-white/[0.06]"
-                    : "bg-neutral-100 text-neutral-600 border-neutral-200/60"
-                }`}>
-                  {card.title}
-                </span>
-              </div>
-
-              <h3 className={`text-3xl font-black tracking-tight mb-1 ${
-                isDark ? "text-white" : "text-neutral-900"
-              }`}>
-                {card.value}
-              </h3>
-              <p className={`text-xs font-medium ${
-                isDark ? "text-neutral-400" : "text-neutral-500"
-              }`}>
-                {card.subtitle}
-              </p>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* QUICK ACTIONS (Exact dark theme when isDark) */}
-      <div className={`rounded-3xl p-6 sm:p-7 space-y-4 shadow-sm border ${
-        isDark
-          ? "bg-white/[0.02] border-white/[0.08]"
-          : "bg-neutral-50/70 border-black/[0.06]"
-      }`}>
-        <div className="flex items-center justify-between">
-          <h3 className={`text-base font-black tracking-tight ${
-            isDark ? "text-white" : "text-neutral-900"
-          }`}>
-            Quick Actions &amp; Operations
-          </h3>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
-            macOS Fast Navigation
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <button
-            onClick={() => navigate("/admin/menu")}
-            className={`border p-5 rounded-2xl transition-all ios-press cursor-pointer text-center group active:scale-95 shadow-xs ${
-              isDark
-                ? "bg-white/[0.04] border-white/[0.08] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-white/20 text-neutral-300 hover:text-white"
-                : "bg-white border-black/[0.06] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-transparent text-neutral-800 hover:text-white"
-            }`}
-          >
-            <MenuIcon className={`h-5 w-5 mx-auto mb-2 group-hover:scale-110 transition-transform group-hover:text-white ${
-              isDark ? "text-amber-300" : "text-amber-600"
-            }`} />
-            <p className="text-xs font-black uppercase tracking-wider">Manage Menu</p>
-          </button>
-
-          <button
-            onClick={() => navigate("/admin/gallery")}
-            className={`border p-5 rounded-2xl transition-all ios-press cursor-pointer text-center group active:scale-95 shadow-xs ${
-              isDark
-                ? "bg-white/[0.04] border-white/[0.08] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-white/20 text-neutral-300 hover:text-white"
-                : "bg-white border-black/[0.06] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-transparent text-neutral-800 hover:text-white"
-            }`}
-          >
-            <Image className={`h-5 w-5 mx-auto mb-2 group-hover:scale-110 transition-transform group-hover:text-white ${
-              isDark ? "text-amber-300" : "text-amber-600"
-            }`} />
-            <p className="text-xs font-black uppercase tracking-wider">Gallery</p>
-          </button>
-
-          <button
-            onClick={() => navigate("/admin/orders")}
-            className={`border p-5 rounded-2xl transition-all ios-press cursor-pointer text-center group active:scale-95 shadow-xs ${
-              isDark
-                ? "bg-white/[0.04] border-white/[0.08] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-white/20 text-neutral-300 hover:text-white"
-                : "bg-white border-black/[0.06] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-transparent text-neutral-800 hover:text-white"
-            }`}
-          >
-            <ShoppingBag className={`h-5 w-5 mx-auto mb-2 group-hover:scale-110 transition-transform group-hover:text-white ${
-              isDark ? "text-amber-300" : "text-amber-600"
-            }`} />
-            <p className="text-xs font-black uppercase tracking-wider">Live Orders</p>
-          </button>
-
-          <button
-            onClick={() => navigate("/admin/reservations")}
-            className={`border p-5 rounded-2xl transition-all ios-press cursor-pointer text-center group active:scale-95 shadow-xs ${
-              isDark
-                ? "bg-white/[0.04] border-white/[0.08] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-white/20 text-neutral-300 hover:text-white"
-                : "bg-white border-black/[0.06] hover:bg-gradient-to-r hover:from-[#E40000] hover:to-[#C90000] hover:border-transparent text-neutral-800 hover:text-white"
-            }`}
-          >
-            <Calendar className={`h-5 w-5 mx-auto mb-2 group-hover:scale-110 transition-transform group-hover:text-white ${
-              isDark ? "text-amber-300" : "text-amber-600"
-            }`} />
-            <p className="text-xs font-black uppercase tracking-wider">Table Bookings</p>
-          </button>
-        </div>
-      </div>
-    </div>
+      <section className="space-y-2">
+        <SectionTitle title="Quick actions" />
+        <List className="max-w-3xl">
+          {quickActions.map((a) => {
+            const Icon = a.icon;
+            return (
+              <ListRow
+                key={a.label}
+                onClick={() => navigate(a.to)}
+                leading={
+                  <span className="h-8 w-8 rounded-[8px] bg-[var(--a-fill)] flex items-center justify-center">
+                    <Icon className="h-4 w-4 text-[var(--a-text-2)]" />
+                  </span>
+                }
+                title={a.label}
+                trailing={
+                  <>
+                    <span className="text-[13px] text-[var(--a-text-3)] pd-tabular">{a.hint}</span>
+                    <ChevronRight className="h-4 w-4 text-[var(--a-text-3)]" />
+                  </>
+                }
+              />
+            );
+          })}
+        </List>
+      </section>
+    </Page>
   );
 };
 
 export default Dashboard;
-
-
