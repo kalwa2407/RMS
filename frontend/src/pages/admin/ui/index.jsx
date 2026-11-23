@@ -484,3 +484,60 @@ export const KeyValue = ({ label, value, strong, className = "" }) => (
     <span className={cx("pd-tabular text-right", strong ? "font-semibold text-[var(--a-text)]" : "text-[var(--a-text)]")}>{value}</span>
   </div>
 );
+
+/* Horizontal filter chips (categories, statuses) */
+export const ChipRow = ({ options, value, onChange, className = "" }) => (
+  <div className={cx("flex gap-1.5 overflow-x-auto no-scrollbar -mx-1 px-1", className)}>
+    {options.map((opt) => {
+      const active = opt.value === value;
+      return (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          className={cx(
+            "h-8 px-3 rounded-full text-[13px] font-medium whitespace-nowrap transition-colors cursor-pointer border inline-flex items-center gap-1.5",
+            active
+              ? "bg-[var(--a-text)] text-[var(--a-bg)] border-transparent"
+              : "bg-[var(--a-card)] text-[var(--a-text-2)] border-[var(--a-line)] hover:text-[var(--a-text)]"
+          )}
+        >
+          {opt.label}
+          {opt.count ? <CountBadge>{opt.count}</CountBadge> : null}
+        </button>
+      );
+    })}
+  </div>
+);
+
+/* Inline notice / callout */
+export const Notice = ({ tone = "neutral", icon: Icon, className = "", children }) => {
+  const bg = {
+    neutral: "bg-[var(--a-fill)]",
+    gold: "bg-[var(--a-gold-tint)]",
+    warn: "bg-[var(--a-warn-tint)]",
+    error: "bg-[var(--a-error-tint)]",
+    success: "bg-[var(--a-success-tint)]",
+    info: "bg-[var(--a-info-tint)]",
+    accent: "bg-[var(--a-accent-tint)]",
+  }[tone];
+  return (
+    <div className={cx("flex items-start gap-2.5 rounded-[12px] px-3.5 py-3 text-[13px] leading-[18px] text-[var(--a-text)]", bg, className)}>
+      {Icon && <Icon className={cx("h-4 w-4 shrink-0 mt-[1px]", toneText[tone])} />}
+      <div className="min-w-0">{children}</div>
+    </div>
+  );
+};
+
+/* Native file input styled as a tinted button */
+export const FileInput = ({ className = "", ...rest }) => (
+  <input
+    type="file"
+    className={cx(
+      "block w-full text-[13px] text-[var(--a-text-2)] file:mr-3 file:h-8 file:px-3 file:rounded-[8px] file:border-0",
+      "file:bg-[var(--a-fill-2)] file:text-[var(--a-text)] file:text-[13px] file:font-medium file:cursor-pointer",
+      className
+    )}
+    {...rest}
+  />
+);
