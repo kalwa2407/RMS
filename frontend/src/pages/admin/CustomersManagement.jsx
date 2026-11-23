@@ -260,7 +260,7 @@ export default function CustomersManagement() {
         <div className="flex flex-col gap-2 md:flex-row md:items-center">
           <SearchField value={searchQuery} onChange={setSearchQuery} placeholder="Name, phone, email or user ID" className="flex-1" />
           <div className="flex items-center gap-2">
-            <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="h-9 text-[14px] w-auto" aria-label="Sort customers">
+            <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="h-9 text-[14px] !w-auto" aria-label="Sort customers">
               <option value="spent_desc">Highest lifetime spend</option>
               <option value="orders_desc">Most orders</option>
               <option value="res_desc">Most table bookings</option>
