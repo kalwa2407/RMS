@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import API_BASE from "../../lib/config";
 import { useToast } from "../../hooks/use-toast";
+import { cx, Page, PageHeader, Card, StatCard, Table, Th, Td, Button, Segmented, SearchField, Select, StatusPill, Sheet, FormGroup, EmptyState, LoadingState } from "./ui";
 
 export default function CustomersManagement() {
   const { toast } = useToast();
@@ -197,1197 +198,461 @@ export default function CustomersManagement() {
     }
   };
 
+  const pct = (n) => (dataPayload.total_count ? Math.round((n / dataPayload.total_count) * 100) : 0);
+  const openDossier = (customer) => { setSelectedCustomer(customer); setDossierTab("dishes"); };
+  const Avatar = ({ customer, size = "md" }) => {
+    const cls = size === "lg" ? "h-14 w-14 text-[20px]" : size === "sm" ? "h-9 w-9 text-[14px]" : "h-11 w-11 text-[16px]";
+    return customer.picture ? (
+      <img src={customer.picture} alt={customer.name} className={cx(cls, "rounded-full object-cover border border-[var(--a-line)] shrink-0")} />
+    ) : (
+      <div className={cx(cls, "rounded-full bg-[var(--a-info-tint)] text-[var(--a-info)] font-semibold flex items-center justify-center shrink-0")}>
+        {(customer.name || "U").charAt(0).toUpperCase()}
+      </div>
+    );
+  };
+
   return (
-    <div className="space-y-6">
+    <Page>
+      <PageHeader
+        title="Customers"
+        subtitle={<span className="pd-tabular">{dataPayload.total_count} registered customers</span>}
+        actions={
+          <Button icon={RefreshCw} onClick={() => fetchCustomers(true)} disabled={refreshing} title="Reload customer metrics">
+            {refreshing ? "Syncing…" : "Refresh"}
+          </Button>
+        }
+      />
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          1. HEADER & EXECUTIVE ACTIONS (Apple Pro Studio Style)
-      ══════════════════════════════════════════════════════════════════════ */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-black/[0.06] p-6 rounded-3xl shadow-xs">
-        <div className="flex items-center gap-4">
-          <div className="w-13 h-13 rounded-2xl bg-gradient-to-tr from-[#E40000] to-[#C90000] text-white flex items-center justify-center shadow-md shadow-red-500/20 shrink-0">
-            <Users className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-black text-neutral-900 tracking-tight">
-                Patron Directory &amp; CRM
-              </h1>
-              <span className="text-[11px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-red-50 text-[#E40000] border border-red-200/80">
-                {dataPayload.total_count} Verified Patrons
-              </span>
-            </div>
-            <p className="text-xs text-neutral-500 font-medium mt-1">
-              Persian Darbar Camp Pune · Segmented customer profiles, live dish order histories, and dining reservations
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 self-start md:self-center">
-          <button
-            onClick={() => fetchCustomers(true)}
-            disabled={refreshing}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-neutral-100 hover:bg-neutral-200/80 text-neutral-800 transition-all text-xs font-bold shadow-2xs active:scale-95 cursor-pointer"
-            title="Reload customer metrics"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 text-neutral-600 ${refreshing ? "animate-spin" : ""}`} />
-            <span>{refreshing ? "Syncing..." : "Refresh"}</span>
-          </button>
-        </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard label="All customers" value={dataPayload.total_count} sub="Registered accounts" icon={Users}
+          onClick={() => setActiveTab("all")} className={activeTab === "all" ? "ring-2 ring-[var(--a-accent)]/40" : ""} />
+        <StatCard label="Google sign-in" value={dataPayload.google_count} sub={`${pct(dataPayload.google_count)}% of customers`} icon={Globe} tone="info"
+          onClick={() => setActiveTab("google")} className={activeTab === "google" ? "ring-2 ring-[var(--a-accent)]/40" : ""} />
+        <StatCard label="Phone OTP" value={dataPayload.phone_count} sub={`${pct(dataPayload.phone_count)}% of customers`} icon={Smartphone} tone="success"
+          onClick={() => setActiveTab("phone")} className={activeTab === "phone" ? "ring-2 ring-[var(--a-accent)]/40" : ""} />
+        <StatCard label="Lifetime spend" value={`₹${Number(dataPayload.total_spent_all || 0).toLocaleString("en-IN")}`}
+          sub={`${dataPayload.total_orders_all} orders · ${dataPayload.total_reservations_all} bookings`} icon={TrendingUp} tone="gold" />
       </div>
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          2. METRIC STATS OVERVIEW CARDS (Apple Squircle KPI Cards)
-      ══════════════════════════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {/* Total Customers */}
-        <div 
-          onClick={() => setActiveTab("all")}
-          className={`cursor-pointer bg-white border rounded-3xl p-5 shadow-xs transition-all ios-press ${
-            activeTab === "all" ? "border-neutral-900 ring-2 ring-neutral-900/10" : "border-black/[0.06] hover:border-neutral-300"
-          }`}
-        >
-          <div className="flex items-center justify-between text-neutral-500 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">All Patrons</span>
-            <div className="w-8 h-8 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-700">
-              <Users className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-3xl font-black text-neutral-900">{dataPayload.total_count}</div>
-          <div className="text-[11px] text-neutral-500 font-medium mt-1">
-            100% Registered CRM Directory
-          </div>
+      <div className="space-y-3">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <Segmented
+            value={activeTab}
+            onChange={setActiveTab}
+            options={[
+              { value: "all", label: `All (${dataPayload.total_count})`, icon: Users },
+              { value: "google", label: `Google (${dataPayload.google_count})`, icon: Globe },
+              { value: "phone", label: `Mobile OTP (${dataPayload.phone_count})`, icon: Smartphone },
+            ]}
+          />
+          <Segmented
+            size="sm"
+            value={activityFilter}
+            onChange={setActivityFilter}
+            options={[
+              { value: "all", label: "Any activity" },
+              { value: "has_orders", label: "Has Orders" },
+              { value: "has_res", label: "Has Bookings" },
+              { value: "vip", label: "VIP", icon: Crown },
+            ]}
+          />
         </div>
-
-        {/* Google Users */}
-        <div 
-          onClick={() => setActiveTab("google")}
-          className={`cursor-pointer bg-white border rounded-3xl p-5 shadow-xs transition-all ios-press ${
-            activeTab === "google" ? "border-blue-600 ring-2 ring-blue-500/20" : "border-black/[0.06] hover:border-blue-300"
-          }`}
-        >
-          <div className="flex items-center justify-between text-blue-600 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-              <Globe className="w-3.5 h-3.5" /> Google Accounts
-            </span>
-            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-              {dataPayload.total_count ? Math.round((dataPayload.google_count / dataPayload.total_count) * 100) : 0}%
-            </span>
-          </div>
-          <div className="text-3xl font-black text-neutral-900">{dataPayload.google_count}</div>
-          <div className="text-[11px] text-blue-600 font-semibold mt-1">OAuth Google Sign-in Patrons</div>
-        </div>
-
-        {/* Phone OTP Users */}
-        <div 
-          onClick={() => setActiveTab("phone")}
-          className={`cursor-pointer bg-white border rounded-3xl p-5 shadow-xs transition-all ios-press ${
-            activeTab === "phone" ? "border-emerald-600 ring-2 ring-emerald-500/20" : "border-black/[0.06] hover:border-emerald-300"
-          }`}
-        >
-          <div className="flex items-center justify-between text-emerald-600 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-              <Smartphone className="w-3.5 h-3.5" /> Mobile OTP Users
-            </span>
-            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-              {dataPayload.total_count ? Math.round((dataPayload.phone_count / dataPayload.total_count) * 100) : 0}%
-            </span>
-          </div>
-          <div className="text-3xl font-black text-neutral-900">{dataPayload.phone_count}</div>
-          <div className="text-[11px] text-emerald-700 font-semibold mt-1">Direct SMS / WhatsApp OTP</div>
-        </div>
-
-        {/* Lifetime Revenue & Orders */}
-        <div className="bg-white border border-black/[0.06] rounded-3xl p-5 shadow-xs">
-          <div className="flex items-center justify-between text-amber-600 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Gross Orders Volume</span>
-            <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600">
-              <TrendingUp className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-3xl font-black text-neutral-900">
-            ₹{Number(dataPayload.total_spent_all || 0).toLocaleString("en-IN")}
-          </div>
-          <div className="text-[11px] text-neutral-500 font-medium mt-1">
-            {dataPayload.total_orders_all} Orders · {dataPayload.total_reservations_all} Table Bookings
-          </div>
-        </div>
-      </div>
-
-      {/* ══════════════════════════════════════════════════════════════════════
-          3. SEGMENT TABS, SEARCH & VIEW MODE TOOLBAR
-      ══════════════════════════════════════════════════════════════════════ */}
-      <div className="bg-white border border-black/[0.06] p-5 rounded-3xl space-y-4 shadow-xs">
-        {/* Top: Tabs & Counts */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-100 pb-4">
-          {/* Apple Segmented Control for Authentication Provider */}
-          <div className="flex bg-neutral-100 p-1 rounded-2xl gap-1">
-            {/* All Users Tab */}
-            <button
-              onClick={() => setActiveTab("all")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "all"
-                  ? "bg-white text-neutral-900 shadow-sm"
-                  : "text-neutral-500 hover:text-neutral-900"
-              }`}
-            >
-              <Users className="w-3.5 h-3.5" />
-              <span>All Patrons</span>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
-                activeTab === "all" ? "bg-neutral-100 text-neutral-800" : "bg-black/5 text-neutral-500"
-              }`}>
-                {dataPayload.total_count}
-              </span>
-            </button>
-
-            {/* Google Users Tab */}
-            <button
-              onClick={() => setActiveTab("google")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "google"
-                  ? "bg-white text-blue-600 shadow-sm"
-                  : "text-neutral-500 hover:text-blue-600"
-              }`}
-            >
-              <Globe className="w-3.5 h-3.5" />
-              <span>Google</span>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
-                activeTab === "google" ? "bg-blue-50 text-blue-600" : "bg-black/5 text-neutral-500"
-              }`}>
-                {dataPayload.google_count}
-              </span>
-            </button>
-
-            {/* Phone OTP Users Tab */}
-            <button
-              onClick={() => setActiveTab("phone")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "phone"
-                  ? "bg-white text-emerald-600 shadow-sm"
-                  : "text-neutral-500 hover:text-emerald-600"
-              }`}
-            >
-              <Smartphone className="w-3.5 h-3.5" />
-              <span>Mobile OTP</span>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
-                activeTab === "phone" ? "bg-emerald-50 text-emerald-700" : "bg-black/5 text-neutral-500"
-              }`}>
-                {dataPayload.phone_count}
-              </span>
-            </button>
-          </div>
-
-          {/* Quick Activity Filters */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-xs text-neutral-400 font-semibold mr-1">Activity:</span>
-            <button
-              onClick={() => setActivityFilter("all")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activityFilter === "all"
-                  ? "bg-neutral-900 text-white shadow-2xs"
-                  : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200/70"
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setActivityFilter("has_orders")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activityFilter === "has_orders"
-                  ? "bg-[#E40000] text-white shadow-xs"
-                  : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200/70"
-              }`}
-            >
-              Has Orders
-            </button>
-            <button
-              onClick={() => setActivityFilter("has_res")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activityFilter === "has_res"
-                  ? "bg-purple-600 text-white shadow-xs"
-                  : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200/70"
-              }`}
-            >
-              Has Bookings
-            </button>
-            <button
-              onClick={() => setActivityFilter("vip")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-                activityFilter === "vip"
-                  ? "bg-amber-500 text-neutral-950 shadow-xs"
-                  : "bg-amber-50 text-amber-700 border border-amber-200/80 hover:bg-amber-100"
-              }`}
-            >
-              <Crown className="w-3 h-3" />
-              <span>VIP Patrons</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Bottom Toolbar: Search, Sort & View Mode Switcher */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-3">
-          {/* Apple Search Capsule */}
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search patron by name, phone (+91), email, or user ID..."
-              className="w-full pl-10 pr-10 py-2.5 rounded-2xl bg-neutral-50 border border-neutral-200/80 text-neutral-900 placeholder-neutral-400 text-xs font-medium focus:outline-none focus:border-red-500 focus:bg-white transition-all shadow-inner"
+        <div className="flex flex-col gap-2 md:flex-row md:items-center">
+          <SearchField value={searchQuery} onChange={setSearchQuery} placeholder="Name, phone, email or user ID" className="flex-1" />
+          <div className="flex items-center gap-2">
+            <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="h-9 text-[14px] !w-auto" aria-label="Sort customers">
+              <option value="spent_desc">Highest lifetime spend</option>
+              <option value="orders_desc">Most orders</option>
+              <option value="res_desc">Most table bookings</option>
+              <option value="newest">Newest registered</option>
+              <option value="coins_desc">Most PD Coins</option>
+            </Select>
+            <Segmented
+              value={viewMode}
+              onChange={setViewMode}
+              options={[{ value: "grid", label: "Cards", icon: LayoutGrid }, { value: "table", label: "Table", icon: List }]}
             />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-
-          <div className="flex items-center gap-3 w-full md:w-auto shrink-0 justify-between md:justify-end">
-            {/* Sort Dropdown */}
-            <div className="flex items-center gap-2">
-              <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200/80 text-neutral-800 text-xs font-bold focus:outline-none focus:border-red-500 cursor-pointer shadow-2xs"
-              >
-                <option value="spent_desc">Highest Lifetime Spend (₹)</option>
-                <option value="orders_desc">Most Orders Placed</option>
-                <option value="res_desc">Most Table Bookings</option>
-                <option value="newest">Newest Registered</option>
-                <option value="coins_desc">Highest PD Coins</option>
-              </select>
-            </div>
-
-            {/* Layout Arrangement Toggle (Grid vs Table) */}
-            <div className="flex items-center bg-neutral-100 p-1 rounded-xl">
-              <button
-                onClick={() => setViewMode("grid")}
-                title="Directory Cards Arrangement"
-                className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                  viewMode === "grid"
-                    ? "bg-white text-neutral-900 shadow-2xs"
-                    : "text-neutral-400 hover:text-neutral-800"
-                }`}
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode("table")}
-                title="Master Table Arrangement"
-                className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                  viewMode === "table"
-                    ? "bg-white text-neutral-900 shadow-2xs"
-                    : "text-neutral-400 hover:text-neutral-800"
-                }`}
-              >
-                <List className="w-4 h-4" />
-              </button>
-            </div>
           </div>
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          4. CUSTOMER ARRANGEMENT (GRID CARDS & MASTER TABLE VIEW)
-      ══════════════════════════════════════════════════════════════════════ */}
       {loading ? (
-        <div className="bg-white border border-black/[0.06] rounded-3xl p-16 flex flex-col items-center justify-center text-center shadow-xs">
-          <div className="w-10 h-10 border-3 border-red-500/20 border-t-[#E40000] rounded-full animate-spin mb-4" />
-          <h3 className="text-base font-bold text-neutral-900">Aggregating Patron Intelligence...</h3>
-          <p className="text-xs text-neutral-400 mt-1">Compiling dish preferences, lifetime spends, and table booking histories</p>
-        </div>
+        <LoadingState rows={6} label="Loading customers" />
       ) : filteredCustomers.length === 0 ? (
-        <div className="bg-white border border-black/[0.06] rounded-3xl p-16 flex flex-col items-center justify-center text-center shadow-xs">
-          <Users className="w-12 h-12 text-neutral-300 mb-3" />
-          <h3 className="text-lg font-bold text-neutral-900">No Customers Found</h3>
-          <p className="text-xs text-neutral-500 max-w-md mt-1">
-            {searchQuery
-              ? `No patron matches the query "${searchQuery}". Try searching with a different name or number.`
-              : `No customers found in this segment.`}
-          </p>
-          {(searchQuery || activityFilter !== "all") && (
-            <button
-              onClick={() => { setSearchQuery(""); setActivityFilter("all"); setActiveTab("all"); }}
-              className="mt-4 px-4 py-2 rounded-2xl bg-neutral-900 text-white font-bold text-xs shadow-xs hover:bg-black transition-all cursor-pointer"
-            >
-              Reset Filters
-            </button>
-          )}
-        </div>
+        <Card>
+          <EmptyState
+            icon={Users}
+            title="No customers found"
+            description={searchQuery ? `No customer matches "${searchQuery}".` : "No customers in this segment."}
+            action={(searchQuery || activityFilter !== "all") && (
+              <Button onClick={() => { setSearchQuery(""); setActivityFilter("all"); setActiveTab("all"); }}>Reset Filters</Button>
+            )}
+          />
+        </Card>
       ) : viewMode === "grid" ? (
-        /* ─────────────────────────────────────────────────────────────
-           ARRANGEMENT A: APPLE CRM DIRECTORY CARDS (GRID VIEW)
-        ───────────────────────────────────────────────────────────── */
-        <div className="space-y-3">
-          <div className="text-xs font-semibold text-neutral-500 px-1 flex items-center justify-between">
-            <span>Arranged by <strong>{sortBy.replace("_desc", "").toUpperCase()}</strong> · Showing <strong className="text-neutral-900">{filteredCustomers.length}</strong> patrons</span>
-            <span className="hidden sm:inline">Tap any card to view detailed dining dossier</span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4.5">
+        <div className="space-y-2">
+          <p className="px-1 text-[13px] text-[var(--a-text-2)] pd-tabular">{filteredCustomers.length} customers</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
             {filteredCustomers.map((customer) => {
               const isGoogle = customer.provider === "google";
-              const isGuest = customer.is_guest;
-              const hasOrders = (customer.total_orders || 0) > 0;
               const totalSpent = Number(customer.total_spent || 0);
               const isVip = totalSpent >= 2500 || (customer.total_orders || 0) >= 4;
-              const topDish = customer.favorite_items && customer.favorite_items.length > 0
-                ? customer.favorite_items[0]
-                : null;
+              const topDish = customer.favorite_items && customer.favorite_items.length > 0 ? customer.favorite_items[0] : null;
 
               return (
-                <div
+                <Card
                   key={customer.uid || customer._id}
-                  onClick={() => { setSelectedCustomer(customer); setDossierTab("dishes"); }}
-                  className="bg-white hover:bg-neutral-50/50 border border-black/[0.06] hover:border-amber-400/60 rounded-3xl p-5 transition-all duration-200 cursor-pointer shadow-xs hover:shadow-md group flex flex-col justify-between relative overflow-hidden"
+                  padded={false}
+                  onClick={() => openDossier(customer)}
+                  className="flex flex-col cursor-pointer hover:bg-[var(--a-inset)] transition-colors"
                 >
-                  {/* VIP Ribbon badge on top-right */}
-                  {isVip && (
-                    <div className="absolute top-0 right-0 bg-gradient-to-l from-amber-500 to-amber-400 text-neutral-950 font-black text-[9px] uppercase tracking-wider px-3 py-0.5 rounded-bl-xl shadow-2xs flex items-center gap-1">
-                      <Crown className="w-2.5 h-2.5" />
-                      <span>VIP Patron</span>
-                    </div>
-                  )}
-
-                  <div>
-                    {/* Header: Avatar, Name, and Provider Tag */}
-                    <div className="flex items-start gap-3.5">
-                      {/* Avatar */}
-                      <div className="relative shrink-0">
-                        {customer.picture ? (
-                          <img
-                            src={customer.picture}
-                            alt={customer.name}
-                            className="w-12 h-12 rounded-2xl object-cover border border-black/[0.08] shadow-xs"
-                          />
-                        ) : (
-                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-base shadow-xs ${
-                            isGoogle
-                              ? "bg-blue-50 text-blue-700 border border-blue-200"
-                              : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                          }`}>
-                            {(customer.name || "U").charAt(0).toUpperCase()}
-                          </div>
-                        )}
-
-                        {/* Corner indicator */}
-                        <div className={`absolute -bottom-1 -right-1 w-4.5 h-4.5 rounded-full flex items-center justify-center text-[9px] shadow-xs ${
-                          isGoogle ? "bg-blue-600 text-white" : "bg-emerald-600 text-white"
-                        }`}>
-                          {isGoogle ? <Globe className="w-2.5 h-2.5" /> : <Smartphone className="w-2.5 h-2.5" />}
-                        </div>
+                  <div className="flex items-start gap-3 p-4">
+                    <Avatar customer={customer} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-[15px] font-semibold text-[var(--a-text)] truncate">{customer.name || "Guest"}</span>
+                        {isVip && <StatusPill tone="gold" icon={Crown}>VIP</StatusPill>}
                       </div>
-
-                      {/* Name & Provider badge */}
-                      <div className="min-w-0 flex-1 pr-14">
-                        <h3 className="text-sm font-black text-neutral-900 group-hover:text-[#E40000] transition-colors truncate">
-                          {customer.name || "Guest Patron"}
-                        </h3>
-
-                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                          {isGoogle ? (
-                            <span className="inline-flex items-center gap-1 text-[9.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200/80">
-                              <Globe className="w-2.5 h-2.5" /> Google
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-[9.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-                              <Smartphone className="w-2.5 h-2.5" /> Phone OTP
-                            </span>
-                          )}
-
-                          {isGuest && (
-                            <span className="text-[9.5px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                              Guest
-                            </span>
-                          )}
-                        </div>
-
-                        <p className="text-[10px] text-neutral-400 font-medium mt-1 truncate">
-                          Joined: {formatDate(customer.created_at)}
-                        </p>
+                      <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                        <StatusPill tone={isGoogle ? "info" : "success"} icon={isGoogle ? Globe : Smartphone}>{isGoogle ? "Google" : "Phone OTP"}</StatusPill>
+                        {customer.is_guest && <StatusPill tone="neutral">Guest</StatusPill>}
                       </div>
+                      <div className="mt-1 text-[12px] text-[var(--a-text-3)] pd-tabular">Joined {formatDate(customer.created_at)}</div>
                     </div>
+                  </div>
 
-                    {/* Contact details row */}
-                    <div className="mt-3.5 pt-3 border-t border-neutral-100 space-y-1.5">
+                  {(customer.phone || customer.email) && (
+                    <div className="px-4 pb-3 space-y-1 text-[13px]">
                       {customer.phone && (
-                        <div className="flex items-center justify-between text-xs text-neutral-700">
-                          <span className="flex items-center gap-1.5 font-mono font-semibold">
-                            <Phone className="w-3 h-3 text-[#E40000]" />
-                            +91 {customer.phone}
-                          </span>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="flex items-center gap-1.5 text-[var(--a-text)] pd-tabular"><Phone className="h-3.5 w-3.5 text-[var(--a-text-3)]" />+91 {customer.phone}</span>
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCopy(`+91${customer.phone}`, customer.uid);
-                            }}
-                            className="p-1 text-neutral-400 hover:text-neutral-700 rounded-lg hover:bg-neutral-100"
+                            onClick={(e) => { e.stopPropagation(); handleCopy(`+91${customer.phone}`, customer.uid); }}
+                            className="p-1 rounded-[6px] text-[var(--a-text-3)] hover:bg-[var(--a-fill)] cursor-pointer"
                             title="Copy Phone Number"
                           >
-                            {copiedUid === customer.uid ? (
-                              <Check className="w-3 h-3 text-emerald-600" />
-                            ) : (
-                              <Copy className="w-3 h-3" />
-                            )}
+                            {copiedUid === customer.uid ? <Check className="h-3.5 w-3.5 text-[var(--a-success)]" /> : <Copy className="h-3.5 w-3.5" />}
                           </button>
                         </div>
                       )}
-
                       {customer.email && (
-                        <div className="flex items-center gap-1.5 text-xs text-neutral-500 truncate">
-                          <Mail className="w-3 h-3 text-blue-500 shrink-0" />
-                          <span className="truncate">{customer.email}</span>
-                        </div>
+                        <div className="flex items-center gap-1.5 text-[var(--a-text-2)] truncate"><Mail className="h-3.5 w-3.5 text-[var(--a-text-3)] shrink-0" /><span className="truncate">{customer.email}</span></div>
                       )}
                     </div>
+                  )}
 
-                    {/* Telemetry Chips Bar (3 Pills) */}
-                    <div className="grid grid-cols-3 gap-2 mt-3.5 bg-neutral-50/90 border border-neutral-200/60 p-2.5 rounded-2xl text-center">
-                      {/* Orders & Spend */}
-                      <div className="border-r border-neutral-200/60 pr-1">
-                        <div className="text-[10px] font-bold text-neutral-500 flex items-center justify-center gap-1">
-                          <ShoppingBag className="w-3 h-3 text-[#E40000]" /> Orders
-                        </div>
-                        <div className="text-xs font-black text-neutral-900 mt-0.5">
-                          {customer.total_orders || 0}
-                        </div>
-                        <div className="text-[10px] font-black text-emerald-700 font-mono">
-                          ₹{totalSpent.toLocaleString("en-IN")}
-                        </div>
-                      </div>
-
-                      {/* Reservations */}
-                      <div className="border-r border-neutral-200/60 pr-1">
-                        <div className="text-[10px] font-bold text-neutral-500 flex items-center justify-center gap-1">
-                          <Calendar className="w-3 h-3 text-purple-600" /> Bookings
-                        </div>
-                        <div className="text-xs font-black text-neutral-900 mt-0.5">
-                          {customer.total_reservations || 0}
-                        </div>
-                        <div className="text-[10px] font-medium text-neutral-400">
-                          Tables
-                        </div>
-                      </div>
-
-                      {/* Coins */}
-                      <div>
-                        <div className="text-[10px] font-bold text-neutral-500 flex items-center justify-center gap-1">
-                          <Coins className="w-3 h-3 text-amber-500" /> Coins
-                        </div>
-                        <div className="text-xs font-black text-amber-600 mt-0.5">
-                          {customer.pd_coins || 0}
-                        </div>
-                        <div className="text-[10px] font-medium text-neutral-400">
-                          Balance
-                        </div>
-                      </div>
+                  <div className="mx-4 grid grid-cols-3 rounded-[12px] bg-[var(--a-inset)] divide-x divide-[var(--a-line)] text-center">
+                    <div className="py-2">
+                      <div className="text-[12px] text-[var(--a-text-3)]">Orders</div>
+                      <div className="text-[15px] font-semibold pd-tabular">{customer.total_orders || 0}</div>
+                      <div className="text-[12px] text-[var(--a-text-2)] pd-tabular">₹{totalSpent.toLocaleString("en-IN")}</div>
                     </div>
+                    <div className="py-2">
+                      <div className="text-[12px] text-[var(--a-text-3)]">Bookings</div>
+                      <div className="text-[15px] font-semibold pd-tabular">{customer.total_reservations || 0}</div>
+                    </div>
+                    <div className="py-2">
+                      <div className="text-[12px] text-[var(--a-text-3)]">Coins</div>
+                      <div className="text-[15px] font-semibold pd-tabular text-[var(--a-gold)]">{customer.pd_coins || 0}</div>
+                    </div>
+                  </div>
 
-                    {/* Favorite Dish Pill */}
+                  <div className="px-4 pt-3 text-[13px] leading-[18px]">
                     {topDish ? (
-                      <div className="mt-3 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-xl text-left">
-                        <div className="text-[9.5px] uppercase font-black text-amber-800 flex items-center gap-1">
-                          <Crown className="w-2.5 h-2.5 text-amber-600" /> Favorite Item
-                        </div>
-                        <div className="text-xs font-bold text-neutral-900 truncate mt-0.5">
-                          {topDish.name}
-                        </div>
-                        <div className="text-[10px] text-neutral-500">
-                          Ordered <strong className="text-amber-800">{topDish.count}×</strong> (₹{topDish.total_spent})
-                        </div>
-                      </div>
+                      <span className="text-[var(--a-text-2)]">
+                        Favourite: <span className="text-[var(--a-text)] font-medium">{topDish.name}</span>{" "}
+                        <span className="pd-tabular">({topDish.count}×, ₹{topDish.total_spent})</span>
+                      </span>
                     ) : (
-                      <div className="mt-3 text-[10px] text-neutral-400 italic bg-neutral-50 py-1.5 px-3 rounded-xl border border-neutral-200/60">
-                        New patron · No orders placed yet
-                      </div>
+                      <span className="text-[var(--a-text-3)]">No orders placed yet</span>
                     )}
                   </div>
 
-                  {/* Card Footer: Quick Actions */}
-                  <div className="mt-4 pt-3 border-t border-neutral-100 flex items-center justify-between gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedCustomer(customer);
-                        setDossierTab("dishes");
-                      }}
-                      className="flex-1 px-3 py-2 rounded-xl bg-neutral-900 hover:bg-[#E40000] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>Inspect Dossier</span>
-                    </button>
-
+                  <div className="mt-auto px-4 py-3 mt-3 border-t border-[var(--a-line)] flex items-center gap-2">
+                    <Button size="sm" variant="tinted" icon={Eye} className="flex-1" onClick={(e) => { e.stopPropagation(); openDossier(customer); }}>
+                      View Profile
+                    </Button>
                     {customer.phone && (
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        {/* Direct WhatsApp */}
+                      <>
                         <a
-                          href={`https://wa.me/91${customer.phone}?text=${encodeURIComponent(
-                            `Hello ${customer.name || "Customer"}, greetings from Persian Darbar Camp, Pune!`
-                          )}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="p-2 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white border border-emerald-200/80 transition-all cursor-pointer shadow-2xs"
-                          title="Chat on WhatsApp"
+                          href={`https://wa.me/91${customer.phone}?text=${encodeURIComponent(`Hello ${customer.name || "Customer"}, greetings from Persian Darbar Camp, Pune!`)}`}
+                          target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
+                          className="h-8 w-8 rounded-[10px] flex items-center justify-center bg-[var(--a-success-tint)] text-[var(--a-success)] pd-press"
+                          title="Chat on WhatsApp" aria-label="Chat on WhatsApp"
                         >
-                          <MessageCircle className="w-3.5 h-3.5" />
+                          <MessageCircle className="h-4 w-4" />
                         </a>
-
-                        {/* Direct Call */}
                         <a
-                          href={`tel:${customer.phone}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="p-2 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white border border-blue-200/80 transition-all cursor-pointer shadow-2xs"
-                          title="Call Customer"
+                          href={`tel:${customer.phone}`} onClick={(e) => e.stopPropagation()}
+                          className="h-8 w-8 rounded-[10px] flex items-center justify-center bg-[var(--a-fill)] text-[var(--a-text-2)] pd-press"
+                          title="Call Customer" aria-label="Call Customer"
                         >
-                          <Phone className="w-3.5 h-3.5" />
+                          <Phone className="h-4 w-4" />
                         </a>
-                      </div>
+                      </>
                     )}
                   </div>
-                </div>
+                </Card>
               );
             })}
           </div>
         </div>
       ) : (
-        /* ─────────────────────────────────────────────────────────────
-           ARRANGEMENT B: MASTER DATA TABLE (TABLE VIEW)
-        ───────────────────────────────────────────────────────────── */
-        <div className="bg-white border border-black/[0.06] rounded-3xl shadow-xs overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-neutral-50/80 border-b border-neutral-200/80 text-neutral-500 font-bold uppercase tracking-wider text-[10px]">
-                <tr>
-                  <th className="py-3.5 px-5">Patron</th>
-                  <th className="py-3.5 px-4">Contact</th>
-                  <th className="py-3.5 px-4">Orders / Spend</th>
-                  <th className="py-3.5 px-4">Bookings</th>
-                  <th className="py-3.5 px-4">PD Coins</th>
-                  <th className="py-3.5 px-4">Top Favorite Item</th>
-                  <th className="py-3.5 px-5 text-right">Action</th>
+        <Table>
+          <thead>
+            <tr>
+              <Th>Customer</Th>
+              <Th>Contact</Th>
+              <Th align="right">Orders</Th>
+              <Th align="right">Spend</Th>
+              <Th align="right">Bookings</Th>
+              <Th align="right">Coins</Th>
+              <Th>Favourite item</Th>
+              <Th align="right"> </Th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredCustomers.map((customer) => {
+              const isGoogle = customer.provider === "google";
+              const topDish = customer.favorite_items && customer.favorite_items.length > 0 ? customer.favorite_items[0] : null;
+              const totalSpent = Number(customer.total_spent || 0);
+              return (
+                <tr key={customer.uid || customer._id} onClick={() => openDossier(customer)} className="cursor-pointer hover:bg-[var(--a-fill)]">
+                  <Td>
+                    <div className="flex items-center gap-3">
+                      <Avatar customer={customer} size="sm" />
+                      <div className="min-w-0">
+                        <div className="font-medium truncate">{customer.name || "Guest"}</div>
+                        <div className="text-[12px] text-[var(--a-text-3)]">{isGoogle ? "Google" : "Phone OTP"}</div>
+                      </div>
+                    </div>
+                  </Td>
+                  <Td>
+                    {customer.phone && <div className="pd-tabular">+91 {customer.phone}</div>}
+                    {customer.email && <div className="text-[12px] text-[var(--a-text-3)] truncate max-w-[200px]">{customer.email}</div>}
+                  </Td>
+                  <Td align="right">{customer.total_orders || 0}</Td>
+                  <Td align="right">₹{totalSpent.toLocaleString("en-IN")}</Td>
+                  <Td align="right">{customer.total_reservations || 0}</Td>
+                  <Td align="right">{customer.pd_coins || 0}</Td>
+                  <Td>
+                    {topDish ? (
+                      <div className="max-w-[200px]">
+                        <div className="truncate">{topDish.name}</div>
+                        <div className="text-[12px] text-[var(--a-text-3)]">{topDish.count}× ordered</div>
+                      </div>
+                    ) : <span className="text-[var(--a-text-3)]">—</span>}
+                  </Td>
+                  <Td align="right">
+                    <Button size="sm" variant="plain" onClick={(e) => { e.stopPropagation(); openDossier(customer); }}>Profile</Button>
+                  </Td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100">
-                {filteredCustomers.map((customer) => {
-                  const isGoogle = customer.provider === "google";
-                  const topDish = customer.favorite_items && customer.favorite_items.length > 0
-                    ? customer.favorite_items[0]
-                    : null;
-                  const totalSpent = Number(customer.total_spent || 0);
+              );
+            })}
+          </tbody>
+        </Table>
+      )}
 
-                  return (
-                    <tr
-                      key={customer.uid || customer._id}
-                      onClick={() => { setSelectedCustomer(customer); setDossierTab("dishes"); }}
-                      className="hover:bg-neutral-50/80 transition-colors cursor-pointer group"
-                    >
-                      {/* Patron Identity */}
-                      <td className="py-3.5 px-5">
-                        <div className="flex items-center gap-3">
-                          {customer.picture ? (
-                            <img
-                              src={customer.picture}
-                              alt={customer.name}
-                              className="w-9 h-9 rounded-xl object-cover border border-black/[0.06] shrink-0"
-                            />
-                          ) : (
-                            <div className="w-9 h-9 rounded-xl bg-neutral-100 text-neutral-700 font-black flex items-center justify-center shrink-0">
-                              {(customer.name || "U").charAt(0).toUpperCase()}
+      {/* Customer profile */}
+      <Sheet
+        open={!!selectedCustomer}
+        onClose={() => setSelectedCustomer(null)}
+        size="lg"
+        title={selectedCustomer?.name || "Customer profile"}
+        subtitle={selectedCustomer ? (selectedCustomer.provider === "google" ? "Google account" : "Mobile phone OTP") : ""}
+        footer={selectedCustomer && (
+          <>
+            {selectedCustomer.phone && (
+              <>
+                <a
+                  href={`https://wa.me/91${selectedCustomer.phone}?text=${encodeURIComponent(`Hello ${selectedCustomer.name || "Customer"}, greetings from Persian Darbar! We appreciate your loyalty with us.`)}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 h-9 px-3.5 rounded-[10px] text-[14px] font-medium bg-[var(--a-success-tint)] text-[var(--a-success)] pd-press"
+                >
+                  <MessageCircle className="h-4 w-4" /> WhatsApp
+                </a>
+                <a href={`tel:${selectedCustomer.phone}`} className="inline-flex items-center gap-2 h-9 px-3.5 rounded-[10px] text-[14px] font-medium bg-[var(--a-fill)] text-[var(--a-text)] pd-press">
+                  <Phone className="h-4 w-4" /> Call
+                </a>
+              </>
+            )}
+            {selectedCustomer.email && (
+              <a href={`mailto:${selectedCustomer.email}?subject=Greetings%20from%20Persian%20Darbar`} className="inline-flex items-center gap-2 h-9 px-3.5 rounded-[10px] text-[14px] font-medium bg-[var(--a-fill)] text-[var(--a-text)] pd-press">
+                <Mail className="h-4 w-4" /> Email
+              </a>
+            )}
+            <Button variant="secondary" className="ml-auto" onClick={() => setSelectedCustomer(null)}>Close</Button>
+          </>
+        )}
+      >
+        {selectedCustomer && (
+          <div className="space-y-5">
+            <div className="flex items-center gap-4">
+              <Avatar customer={selectedCustomer} size="lg" />
+              <div className="min-w-0 text-[14px] space-y-0.5">
+                {selectedCustomer.phone && <div className="flex items-center gap-1.5 pd-tabular"><Phone className="h-3.5 w-3.5 text-[var(--a-text-3)]" />+91 {selectedCustomer.phone}</div>}
+                {selectedCustomer.email && <div className="flex items-center gap-1.5 text-[var(--a-text-2)] truncate"><Mail className="h-3.5 w-3.5 text-[var(--a-text-3)]" />{selectedCustomer.email}</div>}
+                <div className="text-[12px] text-[var(--a-text-3)] truncate">ID {selectedCustomer.uid}</div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 rounded-[12px] border border-[var(--a-line)] bg-[var(--a-card)] divide-x divide-y sm:divide-y-0 divide-[var(--a-line)] text-center">
+              {[
+                ["Orders", selectedCustomer.total_orders || 0],
+                ["Lifetime spend", `₹${Number(selectedCustomer.total_spent || 0).toLocaleString("en-IN")}`],
+                ["Reservations", selectedCustomer.total_reservations || 0],
+                ["PD Coins", selectedCustomer.pd_coins || 0],
+              ].map(([l, v]) => (
+                <div key={l} className="py-3">
+                  <div className="text-[12px] text-[var(--a-text-3)]">{l}</div>
+                  <div className="text-[20px] font-semibold pd-tabular">{v}</div>
+                </div>
+              ))}
+            </div>
+
+            <Segmented
+              value={dossierTab}
+              onChange={setDossierTab}
+              options={[
+                { value: "dishes", label: `Dishes (${selectedCustomer.favorite_items?.length || 0})`, icon: UtensilsCrossed },
+                { value: "orders", label: `Orders (${selectedCustomer.orders?.length || 0})`, icon: ShoppingBag },
+                { value: "reservations", label: `Bookings (${selectedCustomer.reservations?.length || 0})`, icon: Calendar },
+                { value: "coins", label: "Coins", icon: Coins },
+              ]}
+            />
+
+            {dossierTab === "dishes" && (
+              !selectedCustomer.favorite_items || selectedCustomer.favorite_items.length === 0 ? (
+                <EmptyState icon={UtensilsCrossed} title="No food orders recorded" description="This customer has not completed any food orders yet." />
+              ) : (
+                <FormGroup footer="Lifetime count of every dish this customer has ordered.">
+                  {selectedCustomer.favorite_items.map((item, idx) => {
+                    const maxCount = selectedCustomer.favorite_items[0].count || 1;
+                    const percentage = Math.round((item.count / maxCount) * 100);
+                    return (
+                      <div key={idx} className="px-4 py-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <span className="w-5 text-[13px] text-[var(--a-text-3)] pd-tabular">{idx + 1}</span>
+                            <span className="text-[15px] truncate">{item.name}</span>
+                          </div>
+                          <div className="text-right text-[13px] pd-tabular shrink-0">
+                            <span className="text-[var(--a-text)]">{item.count}×</span>
+                            <span className="text-[var(--a-text-3)]"> · ₹{Number(item.total_spent || 0).toLocaleString("en-IN")}</span>
+                          </div>
+                        </div>
+                        <div className="mt-2 ml-8 h-1 rounded-full bg-[var(--a-chart-soft)] overflow-hidden">
+                          <div className="h-full rounded-full bg-[var(--a-chart)]" style={{ width: `${percentage}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </FormGroup>
+              )
+            )}
+
+            {dossierTab === "orders" && (
+              !selectedCustomer.orders || selectedCustomer.orders.length === 0 ? (
+                <EmptyState icon={ShoppingBag} title="No orders on record" />
+              ) : (
+                <div className="space-y-3">
+                  {selectedCustomer.orders.map((ord, idx) => {
+                    const oid = ord.order_id || ord._id || ord.id || `ORD-${idx + 1}`;
+                    const orderTotal = ord.total || ord.total_amount || ord.final_amount || 0;
+                    const status = (ord.status || "completed").toLowerCase();
+                    const tone = status === "completed" || status === "delivered" ? "success" : status === "cancelled" ? "error" : "warn";
+                    return (
+                      <div key={oid} className="rounded-[12px] border border-[var(--a-line)] bg-[var(--a-card)]">
+                        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 border-b border-[var(--a-line)]">
+                          <div className="flex items-center gap-2 flex-wrap text-[13px]">
+                            <span className="font-semibold pd-tabular">{oid}</span>
+                            <span className="text-[var(--a-text-3)] pd-tabular">{formatDateTime(ord.created_at || ord.timestamp)}</span>
+                            {ord.order_type && <StatusPill tone="neutral">{ord.order_type}</StatusPill>}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <StatusPill tone={tone} dot><span className="capitalize">{status}</span></StatusPill>
+                            <span className="text-[14px] font-semibold pd-tabular">₹{Number(orderTotal).toLocaleString("en-IN")}</span>
+                          </div>
+                        </div>
+                        <div className="px-4 py-2 divide-y divide-[var(--a-line)]">
+                          {ord.items && ord.items.map((it, itemIdx) => (
+                            <div key={itemIdx} className="flex items-center justify-between py-1.5 text-[14px]">
+                              <span><span className="pd-tabular text-[var(--a-text-3)] mr-1.5">{it.quantity || it.qty || 1}×</span>{it.name || it.title}</span>
+                              <span className="pd-tabular text-[var(--a-text-2)]">₹{Number((it.price || 0) * (it.quantity || it.qty || 1)).toLocaleString("en-IN")}</span>
                             </div>
-                          )}
-                          <div className="min-w-0">
-                            <span className="font-bold text-neutral-900 group-hover:text-[#E40000] transition-colors block truncate">
-                              {customer.name || "Guest Patron"}
-                            </span>
-                            <span className={`inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.2 rounded-md ${
-                              isGoogle ? "bg-blue-50 text-blue-600" : "bg-emerald-50 text-emerald-700"
-                            }`}>
-                              {isGoogle ? "Google" : "Phone OTP"}
-                            </span>
-                          </div>
+                          ))}
                         </div>
-                      </td>
-
-                      {/* Contact */}
-                      <td className="py-3.5 px-4">
-                        <div className="space-y-0.5">
-                          {customer.phone && (
-                            <span className="block font-mono font-semibold text-neutral-800">
-                              +91 {customer.phone}
-                            </span>
-                          )}
-                          {customer.email && (
-                            <span className="block text-neutral-400 truncate max-w-[180px]">
-                              {customer.email}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Orders / Spend */}
-                      <td className="py-3.5 px-4">
-                        <div>
-                          <span className="font-black text-neutral-900 block">
-                            {customer.total_orders || 0} Orders
-                          </span>
-                          <span className="font-mono font-bold text-emerald-700 text-[11px]">
-                            ₹{totalSpent.toLocaleString("en-IN")}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Bookings */}
-                      <td className="py-3.5 px-4">
-                        <span className="font-bold text-neutral-700">
-                          {customer.total_reservations || 0} Tables
-                        </span>
-                      </td>
-
-                      {/* PD Coins */}
-                      <td className="py-3.5 px-4">
-                        <span className="font-black text-amber-600 flex items-center gap-1">
-                          <Coins className="w-3 h-3 text-amber-500" />
-                          {customer.pd_coins || 0}
-                        </span>
-                      </td>
-
-                      {/* Top Item */}
-                      <td className="py-3.5 px-4">
-                        {topDish ? (
-                          <div className="truncate max-w-[180px]">
-                            <span className="font-bold text-neutral-900 block truncate">
-                              {topDish.name}
-                            </span>
-                            <span className="text-[10px] text-amber-700 font-semibold">
-                              {topDish.count}× ordered
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-neutral-400 italic">None</span>
+                        {ord.delivery_address && (
+                          <div className="px-4 pb-3 text-[13px] text-[var(--a-text-2)]">Delivery address: {ord.delivery_address}</div>
                         )}
-                      </td>
-
-                      {/* Action */}
-                      <td className="py-3.5 px-5 text-right">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedCustomer(customer);
-                            setDossierTab("dishes");
-                          }}
-                          className="px-3 py-1.5 rounded-xl bg-neutral-100 group-hover:bg-[#E40000] text-neutral-700 group-hover:text-white font-bold text-xs transition-all cursor-pointer"
-                        >
-                          Dossier
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* ══════════════════════════════════════════════════════════════════════
-          5. CUSTOMER DOSSIER MODAL (Apple Sheet Style)
-      ══════════════════════════════════════════════════════════════════════ */}
-      {selectedCustomer && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 lg:p-6 overflow-y-auto animate-fadeIn">
-          <div className="bg-white border border-black/[0.08] rounded-3xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
-
-            {/* Dossier Top Banner */}
-            <div className="p-6 bg-neutral-50/70 border-b border-neutral-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                {/* Large Avatar */}
-                <div className="relative shrink-0">
-                  {selectedCustomer.picture ? (
-                    <img
-                      src={selectedCustomer.picture}
-                      alt={selectedCustomer.name}
-                      className="w-16 h-16 rounded-2xl object-cover border-2 border-white shadow-md"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 rounded-2xl bg-neutral-200 text-neutral-800 flex items-center justify-center text-2xl font-black shadow-sm">
-                      {(selectedCustomer.name || "U").charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                  <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs shadow-md ${
-                    selectedCustomer.provider === "google" ? "bg-blue-600 text-white" : "bg-emerald-600 text-white"
-                  }`}>
-                    {selectedCustomer.provider === "google" ? <Globe className="w-3.5 h-3.5" /> : <Smartphone className="w-3.5 h-3.5" />}
-                  </div>
+                      </div>
+                    );
+                  })}
                 </div>
+              )
+            )}
 
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-xl lg:text-2xl font-black text-neutral-900 tracking-tight">
-                      {selectedCustomer.name || "Customer Profile"}
-                    </h2>
-                    {selectedCustomer.provider === "google" ? (
-                      <span className="text-xs px-2.5 py-0.5 rounded-full font-black bg-blue-50 text-blue-700 border border-blue-200">
-                        Google Verified
-                      </span>
-                    ) : (
-                      <span className="text-xs px-2.5 py-0.5 rounded-full font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        Mobile Phone OTP
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-500 mt-1">
-                    {selectedCustomer.phone && (
-                      <span className="font-mono text-neutral-800 font-semibold flex items-center gap-1">
-                        <Phone className="w-3 h-3 text-[#E40000]" />
-                        +91 {selectedCustomer.phone}
-                      </span>
-                    )}
-                    {selectedCustomer.email && (
-                      <span className="flex items-center gap-1 text-neutral-600">
-                        <Mail className="w-3 h-3 text-blue-500" />
-                        {selectedCustomer.email}
-                      </span>
-                    )}
-                    <span className="text-neutral-400">
-                      ID: <span className="font-mono text-neutral-600">{selectedCustomer.uid}</span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Close Button */}
-              <button
-                onClick={() => setSelectedCustomer(null)}
-                className="self-start md:self-center p-2.5 rounded-2xl bg-neutral-100 hover:bg-neutral-200 text-neutral-600 hover:text-neutral-900 transition-all cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Quick KPI Ribbon */}
-            <div className="grid grid-cols-4 bg-white border-b border-neutral-100 p-4 text-center divide-x divide-neutral-100">
-              <div>
-                <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Total Orders</div>
-                <div className="text-xl font-black text-neutral-900 mt-0.5">{selectedCustomer.total_orders || 0}</div>
-              </div>
-              <div>
-                <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Lifetime Spend</div>
-                <div className="text-xl font-black text-emerald-700 font-mono mt-0.5">
-                  ₹{Number(selectedCustomer.total_spent || 0).toLocaleString("en-IN")}
-                </div>
-              </div>
-              <div>
-                <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Reservations</div>
-                <div className="text-xl font-black text-purple-700 mt-0.5">{selectedCustomer.total_reservations || 0}</div>
-              </div>
-              <div>
-                <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">PD Coins</div>
-                <div className="text-xl font-black text-amber-600 mt-0.5">{selectedCustomer.pd_coins || 0}</div>
-              </div>
-            </div>
-
-            {/* Dossier Segmented Tab Navigation */}
-            <div className="bg-neutral-50 px-6 pt-3 flex gap-2 border-b border-neutral-200/80 overflow-x-auto">
-              {/* Tab 1: Dish Breakdown */}
-              <button
-                onClick={() => setDossierTab("dishes")}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-t-2xl text-xs font-bold transition-all border-b-2 cursor-pointer ${
-                  dossierTab === "dishes"
-                    ? "bg-white text-[#E40000] border-[#E40000] shadow-2xs"
-                    : "text-neutral-500 hover:text-neutral-900 border-transparent"
-                }`}
-              >
-                <UtensilsCrossed className="w-3.5 h-3.5" />
-                <span>Dishes &amp; Frequencies</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-neutral-200 font-black">
-                  {selectedCustomer.favorite_items?.length || 0}
-                </span>
-              </button>
-
-              {/* Tab 2: Orders List */}
-              <button
-                onClick={() => setDossierTab("orders")}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-t-2xl text-xs font-bold transition-all border-b-2 cursor-pointer ${
-                  dossierTab === "orders"
-                    ? "bg-white text-[#E40000] border-[#E40000] shadow-2xs"
-                    : "text-neutral-500 hover:text-neutral-900 border-transparent"
-                }`}
-              >
-                <ShoppingBag className="w-3.5 h-3.5" />
-                <span>Order History</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-neutral-200 font-black">
-                  {selectedCustomer.orders?.length || 0}
-                </span>
-              </button>
-
-              {/* Tab 3: Table Reservations */}
-              <button
-                onClick={() => setDossierTab("reservations")}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-t-2xl text-xs font-bold transition-all border-b-2 cursor-pointer ${
-                  dossierTab === "reservations"
-                    ? "bg-white text-[#E40000] border-[#E40000] shadow-2xs"
-                    : "text-neutral-500 hover:text-neutral-900 border-transparent"
-                }`}
-              >
-                <Calendar className="w-3.5 h-3.5" />
-                <span>Table Bookings</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-neutral-200 font-black">
-                  {selectedCustomer.reservations?.length || 0}
-                </span>
-              </button>
-
-              {/* Tab 4: Loyalty Coins History */}
-              <button
-                onClick={() => setDossierTab("coins")}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-t-2xl text-xs font-bold transition-all border-b-2 cursor-pointer ${
-                  dossierTab === "coins"
-                    ? "bg-white text-[#E40000] border-[#E40000] shadow-2xs"
-                    : "text-neutral-500 hover:text-neutral-900 border-transparent"
-                }`}
-              >
-                <Coins className="w-3.5 h-3.5" />
-                <span>PD Coins Ledger</span>
-              </button>
-            </div>
-
-            {/* Dossier Content Body */}
-            <div className="p-6 overflow-y-auto flex-1 space-y-4 max-h-[55vh]">
-
-              {/* TAB 1: DISH ORDER FREQUENCY */}
-              {dossierTab === "dishes" && (
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
-                      <Crown className="w-4 h-4 text-amber-500" />
-                      Dish Order Breakdown &amp; Quantities
-                    </h4>
-                    <p className="text-xs text-neutral-500">
-                      Lifetime count of every dish ordered by this customer at Persian Darbar.
-                    </p>
-                  </div>
-
-                  {!selectedCustomer.favorite_items || selectedCustomer.favorite_items.length === 0 ? (
-                    <div className="text-center py-12 bg-neutral-50 rounded-2xl border border-neutral-200/60">
-                      <UtensilsCrossed className="w-10 h-10 text-neutral-300 mx-auto mb-2" />
-                      <p className="text-neutral-700 font-bold text-xs">No food orders recorded</p>
-                      <p className="text-[11px] text-neutral-400">This patron has not completed any food orders yet.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2.5">
-                      {selectedCustomer.favorite_items.map((item, idx) => {
-                        const maxCount = selectedCustomer.favorite_items[0].count || 1;
-                        const percentage = Math.round((item.count / maxCount) * 100);
-
-                        return (
-                          <div
-                            key={idx}
-                            className="bg-neutral-50/80 border border-neutral-200/70 p-3.5 rounded-2xl hover:border-amber-400/50 transition-all"
-                          >
-                            <div className="flex items-center justify-between gap-3 mb-2">
-                              <div className="flex items-center gap-3">
-                                <span className={`w-6 h-6 rounded-lg text-xs font-black flex items-center justify-center shrink-0 ${
-                                  idx === 0
-                                    ? "bg-amber-400 text-neutral-950 shadow-2xs"
-                                    : idx === 1
-                                    ? "bg-neutral-300 text-neutral-900"
-                                    : idx === 2
-                                    ? "bg-amber-700 text-white"
-                                    : "bg-neutral-200 text-neutral-600"
-                                }`}>
-                                  #{idx + 1}
-                                </span>
-                                <div>
-                                  <span className="text-xs font-bold text-neutral-900">{item.name}</span>
-                                </div>
-                              </div>
-
-                              <div className="text-right shrink-0">
-                                <div className="text-xs font-black text-amber-700">
-                                  Ordered {item.count} {item.count === 1 ? "time" : "times"}
-                                </div>
-                                <div className="text-[11px] font-mono text-emerald-700 font-bold">
-                                  ₹{Number(item.total_spent || 0).toLocaleString("en-IN")}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Popularity progress meter */}
-                            <div className="w-full bg-neutral-200 h-1.5 rounded-full overflow-hidden">
-                              <div
-                                className="bg-gradient-to-r from-amber-400 to-emerald-500 h-full rounded-full transition-all duration-500"
-                                style={{ width: `${percentage}%` }}
-                              />
-                            </div>
+            {dossierTab === "reservations" && (
+              !selectedCustomer.reservations || selectedCustomer.reservations.length === 0 ? (
+                <EmptyState icon={Calendar} title="No table bookings on record" />
+              ) : (
+                <FormGroup>
+                  {selectedCustomer.reservations.map((res, idx) => {
+                    const rid = res.id || res._id || `RES-${idx + 1}`;
+                    const status = (res.status || "confirmed").toLowerCase();
+                    const tone = status === "confirmed" ? "success" : status === "completed" ? "neutral" : status === "cancelled" ? "error" : "warn";
+                    return (
+                      <div key={rid} className="px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[15px] pd-tabular">{res.date || "Date"} · {res.time || "Time"}</span>
+                            <StatusPill tone={tone} dot><span className="capitalize">{status}</span></StatusPill>
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* TAB 2: ORDER HISTORY */}
-              {dossierTab === "orders" && (
-                <div className="space-y-3">
-                  <div>
-                    <h4 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
-                      <ShoppingBag className="w-4 h-4 text-[#E40000]" />
-                      Complete Order History ({selectedCustomer.orders?.length || 0})
-                    </h4>
-                  </div>
-
-                  {!selectedCustomer.orders || selectedCustomer.orders.length === 0 ? (
-                    <div className="text-center py-12 bg-neutral-50 rounded-2xl border border-neutral-200/60">
-                      <ShoppingBag className="w-10 h-10 text-neutral-300 mx-auto mb-2" />
-                      <p className="text-neutral-700 font-bold text-xs">No orders on record</p>
-                    </div>
-                  ) : (
-                    selectedCustomer.orders.map((ord, idx) => {
-                      const oid = ord.order_id || ord._id || ord.id || `ORD-${idx + 1}`;
-                      const orderTotal = ord.total || ord.total_amount || ord.final_amount || 0;
-                      const status = (ord.status || "completed").toLowerCase();
-
-                      return (
-                        <div
-                          key={oid}
-                          className="bg-neutral-50/80 border border-neutral-200/70 p-4 rounded-2xl space-y-3"
-                        >
-                          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-200/60 pb-2">
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-xs font-black text-neutral-900 bg-white px-2 py-0.5 rounded-lg border border-neutral-200/70 shadow-2xs">
-                                {oid}
-                              </span>
-                              <span className="text-[11px] text-neutral-500">
-                                {formatDateTime(ord.created_at || ord.timestamp)}
-                              </span>
-                              {ord.order_type && (
-                                <span className="text-[9.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                                  {ord.order_type}
-                                </span>
-                              )}
-                            </div>
-
-                            <div className="flex items-center gap-3">
-                              <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
-                                status === "completed" || status === "delivered"
-                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                  : status === "cancelled"
-                                  ? "bg-red-50 text-red-700 border border-red-200"
-                                  : "bg-amber-50 text-amber-700 border border-amber-200"
-                              }`}>
-                                {status}
-                              </span>
-                              <span className="text-xs font-black font-mono text-emerald-700">
-                                ₹{Number(orderTotal).toLocaleString("en-IN")}
-                              </span>
-                            </div>
+                          <div className="text-[13px] text-[var(--a-text-2)] pd-tabular">
+                            {res.guests || res.guest_count || 2} guests{res.table_number ? ` · Table ${res.table_number}` : ""} · {rid}
                           </div>
-
-                          {/* Itemized list */}
-                          <div className="space-y-1.5 pl-1">
-                            {ord.items && ord.items.map((it, itemIdx) => (
-                              <div key={itemIdx} className="flex items-center justify-between text-xs text-neutral-700">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-bold text-[#E40000] bg-red-50 px-1.5 py-0.2 rounded font-mono text-[11px]">
-                                    {it.quantity || it.qty || 1}×
-                                  </span>
-                                  <span className="font-semibold text-neutral-900">{it.name || it.title}</span>
-                                </div>
-                                <span className="font-mono text-neutral-500">
-                                  ₹{Number((it.price || 0) * (it.quantity || it.qty || 1)).toLocaleString("en-IN")}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-
-                          {/* Address */}
-                          {ord.delivery_address && (
-                            <div className="text-[11px] text-neutral-600 bg-white p-2 rounded-xl border border-neutral-200/60">
-                              📍 <strong>Delivery Address:</strong> {ord.delivery_address}
-                            </div>
-                          )}
+                          {res.special_requests && <div className="text-[13px] text-[var(--a-text-3)] italic">“{res.special_requests}”</div>}
                         </div>
-                      );
-                    })
-                  )}
+                        <div className="text-[12px] text-[var(--a-text-3)] pd-tabular shrink-0">Booked {formatDateTime(res.created_at)}</div>
+                      </div>
+                    );
+                  })}
+                </FormGroup>
+              )
+            )}
+
+            {dossierTab === "coins" && (
+              <div className="space-y-4">
+                <div className="rounded-[12px] bg-[var(--a-gold-tint)] px-4 py-3">
+                  <div className="text-[13px] text-[var(--a-text-2)]">Wallet balance</div>
+                  <div className="text-[24px] font-semibold pd-tabular text-[var(--a-gold)]">{selectedCustomer.pd_coins || 0} PD Coins</div>
+                  <div className="text-[13px] text-[var(--a-text-2)] pd-tabular">Worth ₹{selectedCustomer.pd_coins || 0} in discounts</div>
                 </div>
-              )}
-
-              {/* TAB 3: TABLE RESERVATIONS */}
-              {dossierTab === "reservations" && (
-                <div className="space-y-3">
-                  <div>
-                    <h4 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-purple-600" />
-                      Table Bookings &amp; Reservations ({selectedCustomer.reservations?.length || 0})
-                    </h4>
-                  </div>
-
-                  {!selectedCustomer.reservations || selectedCustomer.reservations.length === 0 ? (
-                    <div className="text-center py-12 bg-neutral-50 rounded-2xl border border-neutral-200/60">
-                      <Calendar className="w-10 h-10 text-neutral-300 mx-auto mb-2" />
-                      <p className="text-neutral-700 font-bold text-xs">No table bookings on record</p>
-                    </div>
-                  ) : (
-                    selectedCustomer.reservations.map((res, idx) => {
-                      const rid = res.id || res._id || `RES-${idx + 1}`;
-                      const status = (res.status || "confirmed").toLowerCase();
-
+                {!selectedCustomer.coins_history || selectedCustomer.coins_history.length === 0 ? (
+                  <EmptyState icon={Coins} title="No coin transactions" />
+                ) : (
+                  <FormGroup title="Transactions">
+                    {selectedCustomer.coins_history.map((tx, idx) => {
+                      const isCredit = tx.type === "credit" || tx.type === "earned";
                       return (
-                        <div
-                          key={rid}
-                          className="bg-neutral-50/80 border border-neutral-200/70 p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3"
-                        >
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-xs font-black text-neutral-900 bg-white px-2 py-0.5 rounded-lg border border-neutral-200/70">
-                                {rid}
-                              </span>
-                              <span className={`text-[9.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                                status === "confirmed"
-                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                  : status === "completed"
-                                  ? "bg-blue-50 text-blue-700 border border-blue-200"
-                                  : status === "cancelled"
-                                  ? "bg-red-50 text-red-700 border border-red-200"
-                                  : "bg-amber-50 text-amber-700 border border-amber-200"
-                              }`}>
-                                {status}
-                              </span>
-                            </div>
-
-                            <div className="text-xs font-black text-neutral-900">
-                              📅 {res.date || "Date"} · ⏰ {res.time || "Time slot"}
-                            </div>
-
-                            <div className="text-xs text-neutral-600 flex items-center gap-3">
-                              <span>👥 <strong>{res.guests || res.guest_count || 2}</strong> Guests</span>
-                              {res.table_number && <span>🪑 Table <strong>#{res.table_number}</strong></span>}
-                            </div>
-
-                            {res.special_requests && (
-                              <div className="text-[11px] text-amber-700 italic mt-1">
-                                Note: "{res.special_requests}"
-                              </div>
-                            )}
+                        <div key={idx} className="px-4 py-3 flex items-center justify-between gap-3">
+                          <div>
+                            <div className="text-[15px]">{tx.reason || tx.note || "Coin transaction"}</div>
+                            <div className="text-[12px] text-[var(--a-text-3)] pd-tabular">{formatDateTime(tx.timestamp)}</div>
                           </div>
-
-                          <div className="text-right text-[11px] text-neutral-400">
-                            Booked on: {formatDateTime(res.created_at)}
+                          <div className={cx("text-[15px] font-semibold pd-tabular", isCredit ? "text-[var(--a-success)]" : "text-[var(--a-error)]")}>
+                            {isCredit ? "+" : "−"}{tx.amount || tx.coins}
                           </div>
                         </div>
                       );
-                    })
-                  )}
-                </div>
-              )}
-
-              {/* TAB 4: COINS HISTORY */}
-              {dossierTab === "coins" && (
-                <div className="space-y-4">
-                  <div className="bg-amber-500/10 border border-amber-500/25 p-4 rounded-2xl flex items-center justify-between">
-                    <div>
-                      <div className="text-xs text-amber-800 uppercase font-bold">Active Wallet Balance</div>
-                      <div className="text-2xl font-black text-amber-600 flex items-center gap-2 mt-0.5">
-                        <Coins className="w-6 h-6" />
-                        <span>{selectedCustomer.pd_coins || 0} PD Coins</span>
-                      </div>
-                      <div className="text-xs text-neutral-600 mt-1">
-                        Worth ₹{selectedCustomer.pd_coins || 0} in discounts at Persian Darbar
-                      </div>
-                    </div>
-                  </div>
-
-                  <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-wider">Transaction History</h4>
-
-                  {!selectedCustomer.coins_history || selectedCustomer.coins_history.length === 0 ? (
-                    <div className="text-center py-8 bg-neutral-50 rounded-2xl border border-neutral-200/60 text-neutral-400 text-xs">
-                      No coin ledger entries on record.
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {selectedCustomer.coins_history.map((tx, idx) => {
-                        const isCredit = tx.type === "credit" || tx.type === "earned";
-                        return (
-                          <div
-                            key={idx}
-                            className="bg-neutral-50/80 border border-neutral-200/70 p-3 rounded-xl flex items-center justify-between text-xs"
-                          >
-                            <div>
-                              <div className="font-bold text-neutral-900">{tx.reason || tx.note || "Coin Transaction"}</div>
-                              <div className="text-neutral-400 text-[11px]">{formatDateTime(tx.timestamp)}</div>
-                            </div>
-                            <div className={`font-black font-mono text-xs ${isCredit ? "text-emerald-700" : "text-red-600"}`}>
-                              {isCredit ? "+" : "-"}{tx.amount || tx.coins} Coins
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-
-            </div>
-
-            {/* Dossier Bottom Action Bar */}
-            <div className="p-4 bg-neutral-50/80 border-t border-neutral-200/80 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-2">
-                {selectedCustomer.phone && (
-                  <>
-                    {/* WhatsApp CTA */}
-                    <a
-                      href={`https://wa.me/91${selectedCustomer.phone}?text=${encodeURIComponent(
-                        `Hello ${selectedCustomer.name || "Customer"}, greetings from Persian Darbar! We appreciate your loyalty with us.`
-                      )}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all shadow-xs cursor-pointer"
-                    >
-                      <MessageCircle className="w-3.5 h-3.5" />
-                      <span>WhatsApp Customer</span>
-                    </a>
-
-                    {/* Phone Call CTA */}
-                    <a
-                      href={`tel:${selectedCustomer.phone}`}
-                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-all shadow-xs cursor-pointer"
-                    >
-                      <Phone className="w-3.5 h-3.5" />
-                      <span>Call +91 {selectedCustomer.phone}</span>
-                    </a>
-                  </>
-                )}
-
-                {selectedCustomer.email && (
-                  <a
-                    href={`mailto:${selectedCustomer.email}?subject=Greetings%20from%20Persian%20Darbar`}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-neutral-200 text-neutral-700 hover:text-neutral-900 font-bold text-xs transition-all cursor-pointer shadow-2xs"
-                  >
-                    <Mail className="w-3.5 h-3.5" />
-                    <span>Send Email</span>
-                  </a>
+                    })}
+                  </FormGroup>
                 )}
               </div>
-
-              <button
-                onClick={() => setSelectedCustomer(null)}
-                className="px-5 py-2 rounded-xl bg-neutral-200 hover:bg-neutral-300 text-neutral-800 font-bold text-xs transition-all cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
-
+            )}
           </div>
-        </div>
-      )}
-
-    </div>
+        )}
+      </Sheet>
+    </Page>
   );
 }

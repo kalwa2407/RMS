@@ -3,6 +3,7 @@ import { Trash2, Star, Check, Clock, Eye, EyeOff } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
 import API_BASE from "../../lib/config";
+import { Page, PageHeader, Button, LoadingState } from "./ui";
 
 const ReviewsManagement = () => {
   const { toast } = useToast();
@@ -91,7 +92,7 @@ const ReviewsManagement = () => {
     }
   };
 
-  if (loading) return <div className="text-center py-20 text-primary">Loading reviews...</div>;
+  if (loading) return <LoadingState rows={4} label="Loading reviews" />;
 
   const pendingCount = reviews.filter(r => r.pending).length;
   const approvedCount = reviews.filter(r => !r.pending).length;
@@ -106,31 +107,20 @@ const ReviewsManagement = () => {
     : "‚Äì";
 
   return (
-    <div>
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5">
-        <div>
-          <h2 className="text-2xl sm:text-4xl font-bold text-primary" style={{ fontFamily: "Playfair Display, serif" }}>
-            Reviews
-          </h2>
-        <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-400">
-          <span>‚≠ê Avg: <strong className="text-white">{avgRating}</strong></span>
-          <span>‚úÖ Approved: <strong className="text-green-400">{approvedCount}</strong></span>
-          {pendingCount > 0 && (
-            <span className="flex items-center gap-1 text-yellow-400 font-bold animate-pulse">
-              <Clock className="h-3.5 w-3.5" />
-              {pendingCount} Pending Approval
-            </span>
-          )}
-          </div>
-        </div>
-        <button
-          onClick={() => setShowAddForm(v => !v)}
-          className="bg-primary hover:bg-[#CA8A04] text-black px-5 py-2.5 rounded-full font-bold flex items-center gap-2 transition-all text-sm self-start shrink-0"
-        >
-          {showAddForm ? "? Cancel" : "+ Add External Review"}
-        </button>
-      </div>
+    <Page>
+      <PageHeader
+        title="Reviews"
+        subtitle={
+          <span className="pd-tabular">
+            Average {avgRating} ∑ {approvedCount} approved{pendingCount > 0 ? ` ∑ ${pendingCount} pending approval` : ""}
+          </span>
+        }
+        actions={
+          <Button variant={showAddForm ? "secondary" : "primary"} onClick={() => setShowAddForm(v => !v)}>
+            {showAddForm ? "Cancel" : "Add External Review"}
+          </Button>
+        }
+      />
 
       {/* Add External Review Form */}
       {showAddForm && (
@@ -334,7 +324,7 @@ const ReviewsManagement = () => {
           })}
         </div>
       )}
-    </div>
+    </Page>
   );
 };
 

@@ -18,6 +18,7 @@ import {
 import { useToast } from "../../hooks/use-toast";
 
 import API_BASE from "../../lib/config";
+import { Page, PageHeader, Button, LoadingState } from "./ui";
 
 const Inventory = () => {
   const { toast } = useToast();
@@ -166,32 +167,16 @@ const Inventory = () => {
   const totalValue = inventory.reduce((sum, item) => sum + item.current_stock * item.cost_per_unit, 0);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <RefreshCw className="h-8 w-8 text-primary animate-spin" />
-      </div>
-    );
+    return <LoadingState rows={5} label="Loading inventory" />;
   }
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center space-x-3">
-          <Package className="h-8 w-8 text-primary" />
-          <div>
-            <h1 className="text-2xl font-bold text-primary">Inventory Management</h1>
-            <p className="text-gray-400 text-sm">Track stock levels & supplies</p>
-          </div>
-        </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="bg-primary text-black px-4 py-2 rounded-lg font-bold flex items-center space-x-2 hover:bg-white transition"
-        >
-          <Plus className="h-5 w-5" />
-          <span>Add Item</span>
-        </button>
-      </div>
+    <Page>
+      <PageHeader
+        title="Inventory"
+        subtitle="Track stock levels and supplies"
+        actions={<Button variant="primary" icon={Plus} onClick={() => setShowAddModal(true)}>Add Item</Button>}
+      />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -514,7 +499,7 @@ const Inventory = () => {
           </div>
         </div>
       )}
-    </div>
+    </Page>
   );
 };
 

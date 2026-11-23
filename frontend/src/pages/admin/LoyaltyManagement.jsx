@@ -251,29 +251,18 @@ export default function LoyaltyManagement() {
   const redeemDiscount = parseInt(redeemCoins, 10) || 0;
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 text-white">
+    <div className="space-y-6 pb-4 text-[var(--a-text)]">
       {/* ── HEADER ── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gradient-to-r from-[#0d222d] via-[#102b38] to-[#0c1e28] border border-amber-500/20 p-5 sm:p-6 rounded-2xl shadow-xl">
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20 p-2 border border-amber-300/40">
-              <img src="/pd_coin.png" alt="PD Coin" className="w-full h-full object-contain" />
-            </div>
-            <div className="absolute -bottom-1 -right-1 bg-black/80 rounded-full p-1 border border-amber-400/40">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            </div>
-          </div>
+      <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <img src="/pd_coin.png" alt="PD Coin" className="w-11 h-11 object-contain shrink-0" />
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">
-                PD Coins Loyalty Program
-              </h1>
-              <span className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-full bg-amber-400/10 text-amber-400 border border-amber-400/30">
-                10% Cashback
-              </span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-[28px] leading-[34px] font-bold tracking-[-0.02em] text-[var(--a-text)] sm:text-[32px] sm:leading-[38px]">Loyalty</h1>
+              <span className="inline-flex items-center rounded-full px-2.5 py-[3px] text-[12px] font-medium bg-[var(--a-gold-tint)] text-[var(--a-gold)]">10% cashback</span>
             </div>
-            <p className="text-xs sm:text-sm text-white/60 mt-1">
-              Look up customer profile by phone/name, credit 10% of bill amount as PD Coins, or redeem coins as bill discounts.
+            <p className="mt-1 text-[14px] leading-5 text-[var(--a-text-2)]">
+              Find a customer by phone or name, credit 10% of the bill as PD Coins, or redeem coins as a bill discount.
             </p>
           </div>
         </div>

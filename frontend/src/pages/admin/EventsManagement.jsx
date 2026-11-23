@@ -3,6 +3,7 @@ import { Plus, Edit2, Trash2, Save, X, Calendar, Clock, MapPin, Users, Phone, Ey
 import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
 import API_BASE from "../../lib/config";
+import { Page, PageHeader, Button, Segmented } from "./ui";
 
 const EVENT_CATEGORIES = ["Special Event", "Live Music", "Food Festival", "Cultural Night", "Private Dining", "Corporate Event", "Seasonal Special"];
 
@@ -125,27 +126,22 @@ const EventsManagement = () => {
   const pendingContacts = contacts.filter(c => c.status === "pending").length;
 
   return (
-    <div>
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-5">
-        <div>
-          <h2 className="text-2xl sm:text-4xl font-bold text-primary" style={{ fontFamily: "Playfair Display, serif" }}>Events Management</h2>
-          <p className="text-gray-400 text-sm mt-1">{events.length} events · {contacts.length} inquiries{pendingContacts > 0 ? ` (${pendingContacts} pending)` : ""}</p>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={() => setShowForm(!showForm)} className="bg-primary hover:bg-[#CA8A04] text-black px-5 py-2.5 rounded-full font-bold flex items-center gap-2 transition-all self-start sm:self-auto text-sm">
-            {showForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-            {showForm ? "Cancel" : "+ Add Event"}
-          </button>
-        </div>
-      </div>
+    <Page>
+      <PageHeader
+        title="Events"
+        subtitle={<span className="pd-tabular">{events.length} events · {contacts.length} inquiries{pendingContacts > 0 ? ` (${pendingContacts} pending)` : ""}</span>}
+        actions={
+          <Button variant={showForm ? "secondary" : "primary"} icon={showForm ? X : Plus} onClick={() => setShowForm(!showForm)}>
+            {showForm ? "Cancel" : "Add Event"}
+          </Button>
+        }
+      />
 
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6">
-        {[["events", "Events"], ["contacts", `Inquiries${pendingContacts > 0 ? ` (${pendingContacts})` : ""}`]].map(([tab, label]) => (
-          <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab ? "bg-primary text-black" : "bg-[#1a4855] text-gray-300 hover:bg-[#2a5865]"}`}>{label}</button>
-        ))}
-      </div>
+      <Segmented
+        value={activeTab}
+        onChange={setActiveTab}
+        options={[{ value: "events", label: "Events" }, { value: "contacts", label: "Inquiries", count: pendingContacts }]}
+      />
 
       {/* Add/Edit Form */}
       {showForm && (
@@ -321,7 +317,7 @@ const EventsManagement = () => {
           ))}
         </div>
       )}
-    </div>
+    </Page>
   );
 };
 

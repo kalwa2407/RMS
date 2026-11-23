@@ -4,14 +4,13 @@ import {
   DollarSign,
   ShoppingBag,
   Clock,
-  Calendar,
   RefreshCw,
   Bike,
-  Truck,
   TrendingUp,
 } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import API_BASE from "../../lib/config";
+import { cx, Page, PageHeader, Toolbar, Card, CardHeader, StatCard, SectionTitle, Table, Th, Td, Button, Segmented, Input, FormField, EmptyState, ErrorState, LoadingState } from "./ui";
 
 const Reports = () => {
   const { toast } = useToast();
@@ -93,453 +92,297 @@ const Reports = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <RefreshCw className="h-8 w-8 text-primary animate-spin" />
-      </div>
-    );
+    return <LoadingState rows={5} label="Loading reports" />;
   }
 
+  const fmtHour = (h) => {
+    const n = Number(h);
+    if (Number.isNaN(n)) return `${h}:00`;
+    const ampm = n >= 12 ? "PM" : "AM";
+    return `${n % 12 || 12} ${ampm}`;
+  };
+
+  /* Horizontal bars: one hue, the top value in the accent colour */
+  const HBars = ({ rows, valueKey, label, value, sub }) => {
+    const max = Math.max(1, ...rows.map((r) => Number(r[valueKey]) || 0));
+    const top = rows.reduce((best, r, i) => ((Number(r[valueKey]) || 0) > (Number(rows[best]?.[valueKey]) || 0) ? i : best), 0);
+    return (
+      <div className="space-y-3">
+        {rows.map((r, i) => {
+          const pct = Math.round(((Number(r[valueKey]) || 0) / max) * 100);
+          return (
+            <div key={i}>
+              <div className="flex items-baseline justify-between gap-3 text-[14px]">
+                <span className="text-[var(--a-text)] truncate">{label(r, i)}</span>
+                <span className="pd-tabular text-[var(--a-text)] shrink-0">
+                  {value(r)}{sub && <span className="text-[var(--a-text-3)]"> · {sub(r)}</span>}
+                </span>
+              </div>
+              <div className="mt-1.5 h-1.5 rounded-full bg-[var(--a-chart-soft)] overflow-hidden">
+                <div className={cx("h-full rounded-full", i === top ? "bg-[var(--a-accent)]" : "bg-[var(--a-chart)]")} style={{ width: `${pct}%` }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  /* Vertical column chart for the period's daily revenue */
+  const Columns = ({ rows }) => {
+    const max = Math.max(1, ...rows.map((d) => Number(d.revenue) || 0));
+    const topIdx = rows.reduce((best, d, i) => ((Number(d.revenue) || 0) > (Number(rows[best]?.revenue) || 0) ? i : best), 0);
+    return (
+      <div className="flex items-end gap-2 h-44 pt-4">
+        {rows.map((d, i) => {
+          const h = Math.max(2, Math.round(((Number(d.revenue) || 0) / max) * 100));
+          const dt = new Date(d.date);
+          const lbl = Number.isNaN(dt.getTime()) ? d.date : dt.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+          return (
+            <div key={i} className="flex-1 min-w-0 h-full flex flex-col items-center justify-end gap-1.5" title={`${lbl}: ${formatCurrency(d.revenue)}`}>
+              <div className={cx("w-full max-w-[40px] rounded-t-[6px]", i === topIdx ? "bg-[var(--a-accent)]" : "bg-[var(--a-chart)]")} style={{ height: `${h}%` }} />
+              <span className="text-[11px] text-[var(--a-text-3)] pd-tabular truncate w-full text-center">{lbl}</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const typeTotal = dailyReport
+    ? (dailyReport.order_types.dine_in || 0) + (dailyReport.order_types.delivery || 0) + (dailyReport.order_types.takeaway || 0)
+    : 0;
+
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center space-x-3">
-          <BarChart3 className="h-8 w-8 text-primary" />
-          <div>
-            <h1 className="text-2xl font-bold text-primary">Reports & Analytics</h1>
-            <p className="text-gray-400 text-sm">Business insights and performance</p>
-          </div>
-        </div>
-      </div>
+    <Page>
+      <PageHeader
+        title="Reports"
+        subtitle="Business insights and performance"
+        actions={
+          <Segmented
+            value={activeTab}
+            onChange={setActiveTab}
+            options={[
+              { value: "daily", label: "Daily" },
+              { value: "period", label: "Period" },
+              { value: "riders", label: "Riders", icon: Bike },
+            ]}
+          />
+        }
+      />
 
-      {/* Tabs */}
-      <div className="flex space-x-2 mb-6">
-        <button
-          onClick={() => setActiveTab("daily")}
-          className={`px-4 py-2 rounded-lg font-medium transition ${
-            activeTab === "daily"
-              ? "bg-primary text-black"
-              : "bg-[#1a4855] text-gray-300 hover:text-white"
-          }`}
-        >
-          Daily Report
-        </button>
-        <button
-          onClick={() => setActiveTab("period")}
-          className={`px-4 py-2 rounded-lg font-medium transition ${
-            activeTab === "period"
-              ? "bg-primary text-black"
-              : "bg-[#1a4855] text-gray-300 hover:text-white"
-          }`}
-        >
-          Period Report
-        </button>
-        <button
-          onClick={() => setActiveTab("riders")}
-          className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${
-            activeTab === "riders"
-              ? "bg-primary text-black"
-              : "bg-[#1a4855] text-gray-300 hover:text-white"
-          }`}
-        >
-          <Bike className="h-4 w-4" />
-          Rider Performance
-        </button>
-      </div>
+      {/* DAILY */}
+      {activeTab === "daily" && (
+        <>
+          <Toolbar>
+            <Input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="!w-auto h-9 text-[14px]" aria-label="Report date" />
+            <Button icon={RefreshCw} onClick={fetchDailyReport}>Load</Button>
+          </Toolbar>
 
-      {/* Daily Report */}
-      {activeTab === "daily" && dailyReport && (
-        <div>
-          {/* Date Selector */}
-          <div className="flex items-center space-x-4 mb-6">
-            <Calendar className="h-5 w-5 text-gray-400" />
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-[#1a4855] text-white px-4 py-2 rounded-lg border border-[#EAB308]/20"
-            />
-            <button
-              onClick={fetchDailyReport}
-              className="bg-primary text-black px-4 py-2 rounded-lg font-bold"
-            >
-              Load
-            </button>
-          </div>
-
-          {/* Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-[#1a4855] rounded-xl p-4">
-              <div className="flex items-center space-x-2 text-gray-400 mb-2">
-                <DollarSign className="h-5 w-5" />
-                <span>Total Sales</span>
-              </div>
-              <p className="text-2xl font-bold text-green-500">
-                {formatCurrency(dailyReport.summary.total_sales)}
-              </p>
-            </div>
-            <div className="bg-[#1a4855] rounded-xl p-4">
-              <div className="flex items-center space-x-2 text-gray-400 mb-2">
-                <ShoppingBag className="h-5 w-5" />
-                <span>Total Orders</span>
-              </div>
-              <p className="text-2xl font-bold text-white">
-                {dailyReport.summary.total_orders}
-              </p>
-              <p className="text-sm text-green-500">
-                {dailyReport.summary.completed_orders} completed
-              </p>
-            </div>
-            <div className="bg-[#1a4855] rounded-xl p-4">
-              <div className="flex items-center space-x-2 text-gray-400 mb-2">
-                <DollarSign className="h-5 w-5" />
-                <span>Avg Order Value</span>
-              </div>
-              <p className="text-2xl font-bold text-white">
-                {formatCurrency(dailyReport.summary.average_order_value)}
-              </p>
-            </div>
-          </div>
-
-          {/* Order Types */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="bg-[#1a4855] rounded-xl p-4 text-center">
-              <p className="text-gray-400 text-sm">Dine-in</p>
-              <p className="text-3xl font-bold text-primary">
-                {dailyReport.order_types.dine_in}
-              </p>
-            </div>
-            <div className="bg-[#1a4855] rounded-xl p-4 text-center">
-              <p className="text-gray-400 text-sm">Delivery</p>
-              <p className="text-3xl font-bold text-blue-500">
-                {dailyReport.order_types.delivery}
-              </p>
-            </div>
-            <div className="bg-[#1a4855] rounded-xl p-4 text-center">
-              <p className="text-gray-400 text-sm">Takeaway</p>
-              <p className="text-3xl font-bold text-purple-500">
-                {dailyReport.order_types.takeaway}
-              </p>
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Best Selling Items */}
-            <div className="bg-[#1a4855] rounded-xl p-4">
-              <h3 className="text-lg font-bold text-primary mb-4">Best Selling Items</h3>
-              {dailyReport.best_selling_items.length === 0 ? (
-                <p className="text-gray-400">No sales data</p>
-              ) : (
-                <div className="space-y-3">
-                  {dailyReport.best_selling_items.slice(0, 5).map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="flex justify-between items-center bg-[#0f2933] rounded-lg p-3"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <span className="w-6 h-6 bg-primary text-black rounded-full flex items-center justify-center text-sm font-bold">
-                          {idx + 1}
-                        </span>
-                        <span className="text-white">{item.name}</span>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-primary font-bold">{item.quantity} sold</p>
-                        <p className="text-gray-400 text-sm">
-                          {formatCurrency(item.revenue)}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Peak Hours */}
-            <div className="bg-[#1a4855] rounded-xl p-4">
-              <h3 className="text-lg font-bold text-primary mb-4">Peak Hours</h3>
-              {dailyReport.peak_hours.length === 0 ? (
-                <p className="text-gray-400">No data</p>
-              ) : (
-                <div className="space-y-3">
-                  {dailyReport.peak_hours.map((hour, idx) => (
-                    <div
-                      key={idx}
-                      className="flex justify-between items-center bg-[#0f2933] rounded-lg p-3"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <Clock className="h-5 w-5 text-primary" />
-                        <span className="text-white">
-                          {hour.hour}:00 - {hour.hour}:59
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-white font-bold">{hour.orders} orders</p>
-                        <p className="text-gray-400 text-sm">
-                          {formatCurrency(hour.revenue)}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Orders per Table */}
-          {dailyReport.orders_per_table.length > 0 && (
-            <div className="bg-[#1a4855] rounded-xl p-4 mt-6">
-              <h3 className="text-lg font-bold text-primary mb-4">Orders per Table</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                {dailyReport.orders_per_table.map((table, idx) => (
-                  <div
-                    key={idx}
-                    className="bg-[#0f2933] rounded-lg p-3 text-center"
-                  >
-                    <p className="text-primary font-bold">Table {table.table}</p>
-                    <p className="text-white">{table.orders} orders</p>
-                    <p className="text-gray-400 text-sm">
-                      {formatCurrency(table.revenue)}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Period Report */}
-      {activeTab === "period" && periodReport && (
-        <div>
-          {/* Date Range Selector */}
-          <div className="flex items-center space-x-4 mb-6 flex-wrap gap-2">
-            <div className="flex items-center space-x-2">
-              <span className="text-gray-400">From:</span>
-              <input
-                type="date"
-                value={dateRange.start}
-                onChange={(e) =>
-                  setDateRange({ ...dateRange, start: e.target.value })
-                }
-                className="bg-[#1a4855] text-white px-4 py-2 rounded-lg border border-[#EAB308]/20"
-              />
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-gray-400">To:</span>
-              <input
-                type="date"
-                value={dateRange.end}
-                onChange={(e) =>
-                  setDateRange({ ...dateRange, end: e.target.value })
-                }
-                className="bg-[#1a4855] text-white px-4 py-2 rounded-lg border border-[#EAB308]/20"
-              />
-            </div>
-            <button
-              onClick={fetchPeriodReport}
-              className="bg-primary text-black px-4 py-2 rounded-lg font-bold"
-            >
-              Generate Report
-            </button>
-          </div>
-
-          {/* Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-[#1a4855] rounded-xl p-4">
-              <p className="text-gray-400 text-sm">Total Sales</p>
-              <p className="text-2xl font-bold text-green-500">
-                {formatCurrency(periodReport.summary.total_sales)}
-              </p>
-            </div>
-            <div className="bg-[#1a4855] rounded-xl p-4">
-              <p className="text-gray-400 text-sm">Total Orders</p>
-              <p className="text-2xl font-bold text-white">
-                {periodReport.summary.total_orders}
-              </p>
-            </div>
-            <div className="bg-[#1a4855] rounded-xl p-4">
-              <p className="text-gray-400 text-sm">Daily Avg Revenue</p>
-              <p className="text-2xl font-bold text-white">
-                {formatCurrency(periodReport.summary.average_daily_revenue)}
-              </p>
-            </div>
-          </div>
-
-          {/* Daily Breakdown */}
-          <div className="bg-[#1a4855] rounded-xl p-4 mb-6">
-            <h3 className="text-lg font-bold text-primary mb-4">Daily Breakdown</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-gray-400 text-sm border-b border-[#EAB308]/20">
-                    <th className="text-left py-2">Date</th>
-                    <th className="text-center py-2">Orders</th>
-                    <th className="text-center py-2">Dine-in</th>
-                    <th className="text-center py-2">Delivery</th>
-                    <th className="text-center py-2">Takeaway</th>
-                    <th className="text-right py-2">Revenue</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {periodReport.daily_breakdown.map((day, idx) => (
-                    <tr key={idx} className="border-b border-[#EAB308]/20">
-                      <td className="py-3 text-white">{day.date}</td>
-                      <td className="py-3 text-center text-white">{day.orders}</td>
-                      <td className="py-3 text-center text-primary">{day.dine_in}</td>
-                      <td className="py-3 text-center text-blue-500">{day.delivery}</td>
-                      <td className="py-3 text-center text-purple-500">{day.takeaway}</td>
-                      <td className="py-3 text-right text-green-500">
-                        {formatCurrency(day.revenue)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Best Selling */}
-          <div className="bg-[#1a4855] rounded-xl p-4">
-            <h3 className="text-lg font-bold text-primary mb-4">Top Selling Items</h3>
-            <div className="grid md:grid-cols-2 gap-3">
-              {periodReport.best_selling_items.slice(0, 10).map((item, idx) => (
-                <div
-                  key={idx}
-                  className="flex justify-between items-center bg-[#0f2933] rounded-lg p-3"
-                >
-                  <div className="flex items-center space-x-3">
-                    <span className="w-6 h-6 bg-primary text-black rounded-full flex items-center justify-center text-sm font-bold">
-                      {idx + 1}
-                    </span>
-                    <span className="text-white">{item.name}</span>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-primary font-bold">{item.quantity} sold</p>
-                    <p className="text-gray-400 text-sm">
-                      {formatCurrency(item.revenue)}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Rider Performance Tab */}
-      {activeTab === "riders" && (
-        <div>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <Truck className="h-5 w-5 text-primary" />
-              Rider Delivery Performance
-            </h2>
-            <button
-              onClick={fetchRiderStats}
-              className="bg-primary text-black px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2"
-            >
-              <RefreshCw className="h-4 w-4" /> Refresh
-            </button>
-          </div>
-
-          {loadingRiders ? (
-            <div className="flex items-center justify-center h-32">
-              <RefreshCw className="h-6 w-6 text-primary animate-spin" />
-            </div>
-          ) : riderStats.length === 0 ? (
-            <div className="bg-[#1a4855] rounded-xl p-8 text-center">
-              <Bike className="h-12 w-12 text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-400">No delivery data available yet</p>
-              <p className="text-gray-600 text-sm mt-1">Stats will appear once orders are delivered</p>
-            </div>
+          {!dailyReport ? (
+            <Card><ErrorState title="No report for this date" description="The daily report could not be loaded." onRetry={fetchDailyReport} /></Card>
           ) : (
             <>
-              {/* Summary cards */}
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="bg-[#1a4855] rounded-xl p-4">
-                  <div className="flex items-center gap-2 text-gray-400 mb-2">
-                    <Bike className="h-5 w-5" />
-                    <span className="text-sm">Total Riders</span>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <StatCard label="Total sales" value={formatCurrency(dailyReport.summary.total_sales)} icon={DollarSign} tone="success" />
+                <StatCard label="Orders" value={dailyReport.summary.total_orders} sub={`${dailyReport.summary.completed_orders} completed`} icon={ShoppingBag} />
+                <StatCard label="Average order" value={formatCurrency(dailyReport.summary.average_order_value)} icon={TrendingUp} />
+                <Card>
+                  <div className="text-[13px] font-medium text-[var(--a-text-2)]">Order mix</div>
+                  <div className="mt-3 flex h-2 rounded-full overflow-hidden bg-[var(--a-chart-soft)]">
+                    {typeTotal > 0 && [
+                      ["dine_in", 1], ["delivery", 0.6], ["takeaway", 0.3],
+                    ].map(([k, o]) => (
+                      <div key={k} className="h-full bg-[var(--a-chart)]" style={{ width: `${(dailyReport.order_types[k] / typeTotal) * 100}%`, opacity: o }} />
+                    ))}
                   </div>
-                  <p className="text-2xl font-bold text-white">{riderStats.length}</p>
-                </div>
-                <div className="bg-[#1a4855] rounded-xl p-4">
-                  <div className="flex items-center gap-2 text-gray-400 mb-2">
-                    <ShoppingBag className="h-5 w-5" />
-                    <span className="text-sm">Total Deliveries</span>
+                  <div className="mt-3 grid grid-cols-3 text-[12px] text-[var(--a-text-2)]">
+                    <div><div>Dine-in</div><div className="text-[15px] font-semibold text-[var(--a-text)] pd-tabular">{dailyReport.order_types.dine_in}</div></div>
+                    <div><div>Delivery</div><div className="text-[15px] font-semibold text-[var(--a-text)] pd-tabular">{dailyReport.order_types.delivery}</div></div>
+                    <div><div>Takeaway</div><div className="text-[15px] font-semibold text-[var(--a-text)] pd-tabular">{dailyReport.order_types.takeaway}</div></div>
                   </div>
-                  <p className="text-2xl font-bold text-green-500">
-                    {riderStats.reduce((sum, r) => sum + r.deliveries, 0)}
-                  </p>
-                </div>
-                <div className="bg-[#1a4855] rounded-xl p-4">
-                  <div className="flex items-center gap-2 text-gray-400 mb-2">
-                    <TrendingUp className="h-5 w-5" />
-                    <span className="text-sm">Total Value</span>
-                  </div>
-                  <p className="text-2xl font-bold text-primary">
-                    {formatCurrency(riderStats.reduce((sum, r) => sum + r.total_value, 0))}
-                  </p>
-                </div>
+                </Card>
               </div>
 
-              {/* Rider table */}
-              <div className="bg-[#1a4855] rounded-xl overflow-hidden">
-                <table className="w-full">
+              <div className="grid gap-3 lg:grid-cols-2">
+                <Card>
+                  <CardHeader title="Best selling items" subtitle="Top 5 by quantity" />
+                  {dailyReport.best_selling_items.length === 0 ? (
+                    <EmptyState icon={BarChart3} title="No sales data" className="py-8" />
+                  ) : (
+                    <HBars
+                      rows={dailyReport.best_selling_items.slice(0, 5)}
+                      valueKey="quantity"
+                      label={(r, i) => <><span className="pd-tabular text-[var(--a-text-3)] mr-2">{i + 1}</span>{r.name}</>}
+                      value={(r) => `${r.quantity} sold`}
+                      sub={(r) => formatCurrency(r.revenue)}
+                    />
+                  )}
+                </Card>
+                <Card>
+                  <CardHeader title="Peak hours" subtitle="Orders by hour" />
+                  {dailyReport.peak_hours.length === 0 ? (
+                    <EmptyState icon={Clock} title="No data" className="py-8" />
+                  ) : (
+                    <HBars
+                      rows={dailyReport.peak_hours}
+                      valueKey="orders"
+                      label={(r) => `${fmtHour(r.hour)} – ${fmtHour(Number(r.hour) + 1)}`}
+                      value={(r) => `${r.orders} orders`}
+                      sub={r => (r.revenue !== undefined ? formatCurrency(r.revenue) : null)}
+                    />
+                  )}
+                </Card>
+              </div>
+
+              {dailyReport.orders_per_table.length > 0 && (
+                <section className="space-y-2">
+                  <SectionTitle title="Orders per table" />
+                  <Table>
+                    <thead>
+                      <tr><Th>Table</Th><Th align="right">Orders</Th><Th align="right">Revenue</Th></tr>
+                    </thead>
+                    <tbody>
+                      {dailyReport.orders_per_table.map((table, idx) => (
+                        <tr key={idx}>
+                          <Td>Table {table.table}</Td>
+                          <Td align="right">{table.orders}</Td>
+                          <Td align="right">{formatCurrency(table.revenue)}</Td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                </section>
+              )}
+            </>
+          )}
+        </>
+      )}
+
+      {/* PERIOD */}
+      {activeTab === "period" && (
+        <>
+          <Toolbar>
+            <FormField label="From" className="space-y-1">
+              <Input type="date" value={dateRange.start} onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })} className="!w-auto h-9 text-[14px]" />
+            </FormField>
+            <FormField label="To" className="space-y-1">
+              <Input type="date" value={dateRange.end} onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })} className="!w-auto h-9 text-[14px]" />
+            </FormField>
+            <Button variant="primary" className="self-end" onClick={fetchPeriodReport}>Generate Report</Button>
+          </Toolbar>
+
+          {!periodReport ? (
+            <Card><ErrorState title="No report for this period" description="The period report could not be loaded." onRetry={fetchPeriodReport} /></Card>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                <StatCard label="Total sales" value={formatCurrency(periodReport.summary.total_sales)} icon={DollarSign} tone="success" />
+                <StatCard label="Orders" value={periodReport.summary.total_orders} icon={ShoppingBag} />
+                <StatCard label="Daily average" value={formatCurrency(periodReport.summary.average_daily_revenue)} icon={TrendingUp} />
+              </div>
+
+              {periodReport.daily_breakdown.length > 0 && (
+                <Card>
+                  <CardHeader title="Revenue by day" subtitle="Highest day highlighted" />
+                  <Columns rows={periodReport.daily_breakdown} />
+                </Card>
+              )}
+
+              <section className="space-y-2">
+                <SectionTitle title="Daily breakdown" />
+                <Table>
                   <thead>
-                    <tr className="border-b border-white/10">
-                      <th className="text-left px-4 py-3 text-gray-400 text-sm font-semibold">#</th>
-                      <th className="text-left px-4 py-3 text-gray-400 text-sm font-semibold">Rider Name</th>
-                      <th className="text-center px-4 py-3 text-gray-400 text-sm font-semibold">Deliveries</th>
-                      <th className="text-right px-4 py-3 text-gray-400 text-sm font-semibold">Total Value</th>
-                      <th className="text-right px-4 py-3 text-gray-400 text-sm font-semibold">Last Active</th>
+                    <tr>
+                      <Th>Date</Th><Th align="right">Orders</Th><Th align="right">Dine-in</Th>
+                      <Th align="right">Delivery</Th><Th align="right">Takeaway</Th><Th align="right">Revenue</Th>
                     </tr>
                   </thead>
                   <tbody>
-                    {riderStats.map((rider, idx) => (
-                      <tr key={rider.rider_id} className="border-b border-white/5 hover:bg-white/5 transition">
-                        <td className="px-4 py-3">
-                          <span className="w-6 h-6 bg-primary text-black rounded-full flex items-center justify-center text-sm font-bold">
-                            {idx + 1}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-blue-500/15 flex items-center justify-center">
-                              <Bike className="h-4 w-4 text-blue-400" />
-                            </div>
-                            <span className="text-white font-semibold">{rider.rider_name}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <span className="bg-green-500/15 text-green-400 border border-green-500/25 px-3 py-1 rounded-full text-sm font-bold">
-                            {rider.deliveries}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-right text-primary font-bold">
-                          {formatCurrency(rider.total_value)}
-                        </td>
-                        <td className="px-4 py-3 text-right text-gray-400 text-sm">
-                          {rider.last_delivered
-                            ? new Date(rider.last_delivered).toLocaleDateString('en-IN', {
-                                day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
-                              })
-                            : '—'}
-                        </td>
+                    {periodReport.daily_breakdown.map((day, idx) => (
+                      <tr key={idx}>
+                        <Td>{day.date}</Td>
+                        <Td align="right">{day.orders}</Td>
+                        <Td align="right" className="text-[var(--a-text-2)]">{day.dine_in ?? "—"}</Td>
+                        <Td align="right" className="text-[var(--a-text-2)]">{day.delivery ?? "—"}</Td>
+                        <Td align="right" className="text-[var(--a-text-2)]">{day.takeaway ?? "—"}</Td>
+                        <Td align="right" className="font-medium">{formatCurrency(day.revenue)}</Td>
                       </tr>
                     ))}
                   </tbody>
-                </table>
-              </div>
+                </Table>
+              </section>
+
+              <Card>
+                <CardHeader title="Top selling items" subtitle="Top 10 by quantity" />
+                {periodReport.best_selling_items.length === 0 ? (
+                  <EmptyState icon={BarChart3} title="No sales data" className="py-8" />
+                ) : (
+                  <div className="grid gap-x-8 gap-y-3 md:grid-cols-2">
+                    <HBars
+                      rows={periodReport.best_selling_items.slice(0, 10)}
+                      valueKey="quantity"
+                      label={(r, i) => <><span className="pd-tabular text-[var(--a-text-3)] mr-2">{i + 1}</span>{r.name}</>}
+                      value={(r) => `${r.quantity} sold`}
+                      sub={(r) => formatCurrency(r.revenue)}
+                    />
+                  </div>
+                )}
+              </Card>
             </>
           )}
-        </div>
+        </>
       )}
-    </div>
+
+      {/* RIDERS */}
+      {activeTab === "riders" && (
+        <>
+          <SectionTitle
+            title="Rider delivery performance"
+            action={<Button icon={RefreshCw} onClick={fetchRiderStats}>Refresh</Button>}
+          />
+          {loadingRiders ? (
+            <LoadingState rows={3} label="Loading rider stats" />
+          ) : riderStats.length === 0 ? (
+            <Card><EmptyState icon={Bike} title="No delivery data yet" description="Stats appear once orders are delivered." /></Card>
+          ) : (
+            <>
+              <div className="grid grid-cols-3 gap-3">
+                <StatCard label="Riders" value={riderStats.length} icon={Bike} />
+                <StatCard label="Deliveries" value={riderStats.reduce((sum, r) => sum + r.deliveries, 0)} icon={ShoppingBag} />
+                <StatCard label="Total value" value={formatCurrency(riderStats.reduce((sum, r) => sum + r.total_value, 0))} icon={TrendingUp} tone="success" />
+              </div>
+              <Table>
+                <thead>
+                  <tr><Th>#</Th><Th>Rider</Th><Th align="right">Deliveries</Th><Th align="right">Total value</Th><Th align="right">Last active</Th></tr>
+                </thead>
+                <tbody>
+                  {riderStats.map((rider, idx) => (
+                    <tr key={rider.rider_id || idx}>
+                      <Td className="text-[var(--a-text-3)] w-10">{idx + 1}</Td>
+                      <Td>
+                        <div className="flex items-center gap-2.5">
+                          <span className="h-8 w-8 rounded-full bg-[var(--a-fill)] flex items-center justify-center"><Bike className="h-4 w-4 text-[var(--a-text-2)]" /></span>
+                          <span className="font-medium">{rider.rider_name || rider.name}</span>
+                        </div>
+                      </Td>
+                      <Td align="right">{rider.deliveries}</Td>
+                      <Td align="right">{formatCurrency(rider.total_value)}</Td>
+                      <Td align="right" className="text-[var(--a-text-2)]">
+                        {rider.last_delivered
+                          ? new Date(rider.last_delivered).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+                          : '—'}
+                      </Td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </>
+          )}
+        </>
+      )}
+    </Page>
   );
 };
 
 export default Reports;
-
-

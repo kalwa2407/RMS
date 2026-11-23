@@ -258,113 +258,220 @@ code {
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   Admin Theme Switcher: Light & Dark Modes
-   Matches Persian Darbar Mobile App Colors (#F2F2F7 & #FFFFFF) in Light Mode
-   and Sleek Obsidian (#0B0F15 & #141B26) in Dark Mode
+   Admin theme (Darbar UI, macOS / iPadOS style)
+   Token based: every admin surface reads --a-* variables, so light and
+   dark are a single switch on the root (.admin-theme-light / -dark).
+   The "Legacy" section at the end maps older hard-coded admin colours
+   onto the same tokens so screens not yet rebuilt still follow the theme.
    ════════════════════════════════════════════════════════════════════ */
 
-/* ── LIGHT MODE STYLING ── */
 .admin-theme-light {
-  background-color: #F2F2F7 !important;
-  color: #111827 !important;
+  --a-bg: #F6F5F2;
+  --a-sidebar: rgba(238, 237, 233, 0.82);
+  --a-card: #FFFFFF;
+  --a-inset: #F2F1ED;
+  --a-fill: rgba(14, 26, 32, 0.05);
+  --a-fill-2: rgba(14, 26, 32, 0.09);
+  --a-line: rgba(14, 26, 32, 0.09);
+  --a-line-strong: rgba(14, 26, 32, 0.16);
+  --a-text: #0E1A20;
+  --a-text-2: #4A5560;
+  --a-text-3: #6B757D;
+  --a-accent: #B4232F;
+  --a-accent-press: #951B26;
+  --a-accent-tint: #FBEDEE;
+  --a-on-accent: #FFFFFF;
+  --a-success: #1E7E37;
+  --a-success-tint: #E7F3EA;
+  --a-warn: #9A5C00;
+  --a-warn-tint: #FBF1E2;
+  --a-error: #C62828;
+  --a-error-tint: #FBEAEA;
+  --a-info: #1A3D47;
+  --a-info-tint: #E5EDEF;
+  --a-gold: #8C6420;
+  --a-gold-tint: #FBF4E4;
+  --a-chart: #1A3D47;
+  --a-chart-soft: rgba(26, 61, 71, 0.14);
+  --a-shadow: 0 1px 2px rgba(14, 26, 32, 0.05), 0 2px 8px rgba(14, 26, 32, 0.04);
+  --a-shadow-pop: 0 12px 40px rgba(14, 26, 32, 0.16), 0 2px 6px rgba(14, 26, 32, 0.06);
+  --border: 40 8% 88%;
+  --input: 40 8% 85%;
+  color-scheme: light;
 }
 
-.admin-theme-light .bg-\[\#0f2933\],
-.admin-theme-light .bg-\[\#0a1e26\] {
-  background-color: #F4F5F7 !important;
-  color: #111827 !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
-}
-
-.admin-theme-light .bg-\[\#1a4855\],
-.admin-theme-light .bg-\[\#143742\] {
-  background-color: #FFFFFF !important;
-  color: #111827 !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
-}
-
-.admin-theme-light .bg-\[\#1a4855\]\/50,
-.admin-theme-light .bg-\[\#1a4855\]\/70 {
-  background-color: #FFFFFF !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
-}
-
-.admin-theme-light .bg-\[\#2a5865\] {
-  background-color: #F0F2F5 !important;
-  color: #111827 !important;
-}
-
-/* In light theme, make text crisp, high-contrast dark */
-.admin-theme-light .text-white:not(button *):not(button):not(a *):not(a):not(.bg-\[\#E40000\] *):not(.bg-emerald-500 *):not(.bg-emerald-600 *):not(.bg-blue-600 *):not(.bg-red-500 *):not(.bg-red-600 *):not(.bg-black *):not(.bg-neutral-900 *) {
-  color: #111827 !important;
-}
-
-.admin-theme-light .text-gray-200,
-.admin-theme-light .text-gray-300 {
-  color: #1F2937 !important;
-}
-
-.admin-theme-light .text-gray-400 {
-  color: #4B5563 !important;
-}
-
-.admin-theme-light .text-gray-500 {
-  color: #6B7280 !important;
-}
-
-/* Headings in light mode should be crisp dark */
-.admin-theme-light h1,
-.admin-theme-light h2,
-.admin-theme-light h3,
-.admin-theme-light h4 {
-  color: #111827 !important;
-}
-
-.admin-theme-light .text-primary {
-  color: #111827 !important;
-}
-
-/* Active primary buttons & badges in light mode should be bold dark or red, not washed-out yellow */
-.admin-theme-light .bg-primary {
-  background-color: #111827 !important;
-  color: #FFFFFF !important;
-}
-
-.admin-theme-light .border-\[\#EAB308\]\/20,
-.admin-theme-light .border-\[\#EAB308\]\/30 {
-  border-color: rgba(0, 0, 0, 0.08) !important;
-}
-
-/* ── DARK MODE STYLING ── */
 .admin-theme-dark {
-  background-color: #0B0F15 !important;
-  color: #F3F4F6 !important;
+  --a-bg: #111315;
+  --a-sidebar: rgba(30, 32, 35, 0.78);
+  --a-card: #1B1D20;
+  --a-inset: #24272B;
+  --a-fill: rgba(255, 255, 255, 0.06);
+  --a-fill-2: rgba(255, 255, 255, 0.10);
+  --a-line: rgba(255, 255, 255, 0.08);
+  --a-line-strong: rgba(255, 255, 255, 0.15);
+  --a-text: #F2F2F0;
+  --a-text-2: #B3B8BC;
+  --a-text-3: #8C9399;
+  --a-accent: #E0505B;
+  --a-accent-press: #B4232F;
+  --a-accent-tint: rgba(214, 64, 76, 0.16);
+  --a-on-accent: #FFFFFF;
+  --a-success: #5BC27A;
+  --a-success-tint: rgba(91, 194, 122, 0.14);
+  --a-warn: #E3A548;
+  --a-warn-tint: rgba(227, 165, 72, 0.14);
+  --a-error: #F06A66;
+  --a-error-tint: rgba(240, 106, 102, 0.14);
+  --a-info: #8FC0CC;
+  --a-info-tint: rgba(143, 192, 204, 0.14);
+  --a-gold: #D9AE5C;
+  --a-gold-tint: rgba(217, 174, 92, 0.14);
+  --a-chart: #8FC0CC;
+  --a-chart-soft: rgba(143, 192, 204, 0.18);
+  --a-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --a-shadow-pop: 0 16px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --border: 220 5% 21%;
+  --input: 220 5% 24%;
+  color-scheme: dark;
 }
 
-.admin-theme-dark .bg-\[\#0f2933\],
-.admin-theme-dark .bg-\[\#0a1e26\] {
-  background-color: #0B0F15 !important;
-  color: #FFFFFF !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
+.admin-theme-light,
+.admin-theme-dark {
+  background-color: var(--a-bg);
+  color: var(--a-text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.admin-theme-dark .bg-\[\#1a4855\],
-.admin-theme-dark .bg-\[\#143742\] {
-  background-color: #141B26 !important;
-  color: #FFFFFF !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
+/* Typography normalisation across all admin screens */
+:is(.admin-theme-light, .admin-theme-dark) .font-black { font-weight: 700; }
+:is(.admin-theme-light, .admin-theme-dark) :is(.text-\[9px\], .text-\[10px\]) { font-size: 11px; line-height: 14px; }
+:is(.admin-theme-light, .admin-theme-dark) :is(h1, h2, h3, h4, [style*="Playfair"], [style*="Cormorant"], .font-serif) {
+  font-family: inherit !important;
+  font-style: normal;
+}
+:is(.admin-theme-light, .admin-theme-dark) .tracking-widest { letter-spacing: 0.06em; }
+:is(.admin-theme-light, .admin-theme-dark) input,
+:is(.admin-theme-light, .admin-theme-dark) select,
+:is(.admin-theme-light, .admin-theme-dark) textarea { font-family: inherit; }
+
+/* Sidebar material */
+.a-material {
+  background-color: var(--a-sidebar);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  backdrop-filter: saturate(180%) blur(24px);
 }
 
-.admin-theme-dark .bg-\[\#1a4855\]\/50,
-.admin-theme-dark .bg-\[\#1a4855\]\/70 {
-  background-color: rgba(20, 27, 38, 0.7) !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
+/* Native-feeling focus ring */
+:is(.admin-theme-light, .admin-theme-dark) :is(input, select, textarea):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--a-accent) 22%, transparent);
+  border-color: var(--a-accent);
 }
 
-.admin-theme-dark .bg-\[\#2a5865\] {
-  background-color: #1E2838 !important;
-  color: #FFFFFF !important;
+/* ── Legacy colour mapping (screens built before Darbar UI) ───────────── */
+:is(.admin-theme-light, .admin-theme-dark) :is(
+  .bg-\[\#0f2933\], .bg-\[\#0a1e26\], .bg-\[\#07171d\], .bg-\[\#0d2229\], .bg-\[\#0a1e24\],
+  .bg-\[\#0B0F15\], .bg-\[\#0f2933\]\/50, .bg-\[\#0f2933\]\/60, .bg-\[\#0f2933\]\/80
+) {
+  background-color: var(--a-inset) !important;
+  color: var(--a-text);
+  border-color: var(--a-line) !important;
 }
 
+:is(.admin-theme-light, .admin-theme-dark) :is(
+  .bg-\[\#1a4855\], .bg-\[\#143742\], .bg-\[\#141B26\], .bg-\[\#101721\]\/90, .bg-\[\#0f2430\]\/90,
+  .bg-\[\#1a4855\]\/40, .bg-\[\#1a4855\]\/50, .bg-\[\#1a4855\]\/60, .bg-\[\#1a4855\]\/70, .bg-\[\#1a4855\]\/80,
+  .bg-\[\#234d5c\], .bg-\[\#254a58\]
+) {
+  background-color: var(--a-card) !important;
+  color: var(--a-text);
+  border-color: var(--a-line) !important;
+}
 
+:is(.admin-theme-light, .admin-theme-dark) :is(.bg-\[\#2a5865\], .hover\:bg-\[\#2a5865\]:hover, .hover\:bg-\[\#1a4855\]:hover, .hover\:bg-\[\#234d5c\]:hover) {
+  background-color: var(--a-fill-2) !important;
+}
 
+:is(.admin-theme-light, .admin-theme-dark) :is(
+  .bg-\[\#EAB308\], .bg-\[\#CA8A04\], .bg-\[\#ca9a07\], .bg-\[\#ca9a04\], .bg-primary,
+  .bg-\[\#E40000\], .bg-yellow-500, .hover\:bg-\[\#CA8A04\]:hover, .hover\:bg-\[\#ca9a07\]:hover
+) {
+  background-color: var(--a-accent) !important;
+  background-image: none !important;
+  color: var(--a-on-accent) !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+:is(.admin-theme-light, .admin-theme-dark) :is(.bg-\[\#EAB308\], .bg-\[\#CA8A04\], .bg-primary, .bg-\[\#E40000\]) :is(svg, span, p) {
+  color: inherit !important;
+}
+
+:is(.admin-theme-light, .admin-theme-dark) :is(
+  .bg-\[\#EAB308\]\/10, .bg-\[\#EAB308\]\/15, .bg-\[\#EAB308\]\/20, .bg-\[\#EAB308\]\/30, .bg-primary\/10, .bg-primary\/20
+) {
+  background-color: var(--a-gold-tint) !important;
+}
+
+:is(.admin-theme-light, .admin-theme-dark) :is(.text-\[\#EAB308\], .text-primary, .text-\[\#CA8A04\], .text-yellow-400, .text-amber-400, .text-amber-300) {
+  color: var(--a-gold) !important;
+}
+
+:is(.admin-theme-light, .admin-theme-dark) :is(
+  .border-\[\#EAB308\]\/10, .border-\[\#EAB308\]\/20, .border-\[\#EAB308\]\/30, .border-\[\#EAB308\]\/40, .border-\[\#EAB308\]\/50,
+  .border-\[\#EAB308\], .border-primary, .border-primary\/20, .border-primary\/30, .border-gray-600, .border-gray-700, .border-gray-800,
+  .border-\[\#1a4855\], .border-\[\#2a5865\], .border-white\/5, .border-white\/10, .border-white\/20
+) {
+  border-color: var(--a-line) !important;
+}
+
+/* Text on legacy dark surfaces: follow the theme unless it sits on a filled control */
+:is(.admin-theme-light, .admin-theme-dark) .text-white:not(:is(
+  .bg-\[\#EAB308\], .bg-primary, .bg-\[\#E40000\], [class*="bg-red-5"], [class*="bg-red-6"], [class*="bg-red-7"],
+  [class*="bg-green-5"], [class*="bg-green-6"], [class*="bg-green-7"], [class*="bg-emerald-5"], [class*="bg-emerald-6"],
+  [class*="bg-blue-5"], [class*="bg-blue-6"], [class*="bg-purple-5"], [class*="bg-purple-6"], [class*="bg-orange-5"], [class*="bg-orange-6"],
+  [class*="bg-yellow-5"], [class*="bg-yellow-6"], [class*="bg-gray-5"], [class*="bg-gray-7"], [class*="bg-black"], [class*="bg-neutral-9"],
+  [class*="bg-[var(--a-accent"], [class*="bg-gradient"], [class*="bg-teal-"], [class*="bg-indigo-"], [class*="bg-pink-"], [class*="bg-amber-5"], [class*="bg-amber-6"]
+) *):not(:is(
+  .bg-\[\#EAB308\], .bg-primary, .bg-\[\#E40000\], [class*="bg-red-5"], [class*="bg-red-6"], [class*="bg-red-7"],
+  [class*="bg-green-5"], [class*="bg-green-6"], [class*="bg-green-7"], [class*="bg-emerald-5"], [class*="bg-emerald-6"],
+  [class*="bg-blue-5"], [class*="bg-blue-6"], [class*="bg-purple-5"], [class*="bg-purple-6"], [class*="bg-orange-5"], [class*="bg-orange-6"],
+  [class*="bg-yellow-5"], [class*="bg-yellow-6"], [class*="bg-gray-5"], [class*="bg-gray-7"], [class*="bg-black"], [class*="bg-neutral-9"],
+  [class*="bg-[var(--a-accent"], [class*="bg-gradient"], [class*="bg-teal-"], [class*="bg-indigo-"], [class*="bg-pink-"], [class*="bg-amber-5"], [class*="bg-amber-6"]
+)) {
+  color: var(--a-text) !important;
+}
+
+:is(.admin-theme-light, .admin-theme-dark) :is(.text-gray-100, .text-gray-200, .text-gray-300) { color: var(--a-text) !important; }
+:is(.admin-theme-light, .admin-theme-dark) .text-gray-400 { color: var(--a-text-2) !important; }
+:is(.admin-theme-light, .admin-theme-dark) :is(.text-gray-500, .text-gray-600) { color: var(--a-text-3) !important; }
+
+:is(.admin-theme-light, .admin-theme-dark) :is(.placeholder-gray-400, .placeholder-gray-500)::placeholder { color: var(--a-text-3) !important; }
+
+/* Remove decorative coloured glows from legacy screens */
+:is(.admin-theme-light, .admin-theme-dark) [class*="shadow-[0_0_"],
+:is(.admin-theme-light, .admin-theme-dark) [class*="shadow-[0_4px_16px_rgba(228"],
+:is(.admin-theme-light, .admin-theme-dark) [class*="shadow-red-"],
+:is(.admin-theme-light, .admin-theme-dark) [class*="shadow-amber-"],
+:is(.admin-theme-light, .admin-theme-dark) [class*="shadow-emerald-"],
+:is(.admin-theme-light, .admin-theme-dark) [class*="shadow-yellow-"] {
+  box-shadow: var(--a-shadow) !important;
+}
+
+/* Translucent white/black layers from dark-only legacy screens (overlays excluded) */
+:is(.admin-theme-light, .admin-theme-dark) :is(.bg-white\/5, .bg-white\/10, .bg-white\/15, .bg-black\/20, .bg-black\/30, .bg-black\/40, .bg-black\/50, .bg-black\/60, .bg-gray-800, .bg-\[\#102430\], .bg-\[\#0f2933\]\/40):not(.fixed):not(.absolute.inset-0) {
+  background-color: var(--a-fill) !important;
+}
+:is(.admin-theme-light, .admin-theme-dark) :is(.hover\:bg-white\/10:hover, .hover\:bg-white\/15:hover, .hover\:bg-white\/20:hover) {
+  background-color: var(--a-fill-2) !important;
+}
+:is(.admin-theme-light, .admin-theme-dark) [class*="text-white/"] {
+  color: var(--a-text-2) !important;
+}
+:is(.admin-theme-light, .admin-theme-dark) :is([class*="from-[#0d222d]"], [class*="from-[#122c3b]"], [class*="from-[#0a1e24]"], [class*="from-[#0f2933]"], [class*="from-[#1a4855]"]) {
+  background-image: none !important;
+  background-color: var(--a-card) !important;
+}
+:is(.admin-theme-light, .admin-theme-dark) .font-extrabold { font-weight: 700; }
+:is(.admin-theme-light, .admin-theme-dark) ::selection { background: var(--a-accent); color: #FFFFFF; }

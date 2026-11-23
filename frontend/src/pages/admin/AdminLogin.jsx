@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { LogIn } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
-import logoImg from "../../assets/logo.png";
 import API_BASE from "../../lib/config";
+import { Button } from "./ui";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
@@ -89,93 +89,61 @@ const AdminLogin = () => {
     }
   };
 
+  const theme = (() => { try { return localStorage.getItem("admin_theme") || "dark"; } catch { return "dark"; } })();
+
   return (
-    <div className="min-h-screen bg-[#0B0F15] flex items-center justify-center px-4 relative overflow-hidden font-sans">
-      {/* Background Ambient Glows */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-red-600/10 blur-[140px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-10 right-10 w-[300px] h-[300px] bg-amber-500/10 blur-[100px] rounded-full pointer-events-none" />
+    <div className={`admin-theme-${theme} min-h-screen flex items-center justify-center px-4 py-10`}>
+      <div className="w-full max-w-[380px] space-y-6">
+        <div className="text-center">
+          <img
+            src="/app-icon.png"
+            alt="Persian Darbar"
+            className="h-16 w-16 rounded-[16px] object-contain mx-auto border border-[var(--a-line)] shadow-[var(--a-shadow)]"
+          />
+          <h1 className="mt-4 text-[24px] leading-[30px] font-semibold tracking-[-0.01em] text-[var(--a-text)]">Persian Darbar Admin</h1>
+          <p className="mt-1 text-[14px] text-[var(--a-text-2)]">Sign in to manage orders, menu and outlets</p>
+        </div>
 
-      <div className="max-w-md w-full relative z-10 space-y-6">
-        {/* macOS Window Card */}
-        <div className="bg-[#101721]/90 backdrop-blur-2xl border border-white/[0.08] rounded-3xl p-7 sm:p-9 shadow-2xl space-y-6">
-          {/* macOS Window Controls */}
-          <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
-            <div className="flex items-center space-x-2">
-              <span className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E] shadow-inner inline-block" />
-              <span className="w-3 h-3 rounded-full bg-[#FFBD2E] border-[#DEA123] shadow-inner inline-block" />
-              <span className="w-3 h-3 rounded-full bg-[#27C93F] border-[#1AAB29] shadow-inner inline-block" />
-            </div>
-            <span className="text-[10px] font-black uppercase tracking-wider text-neutral-400">
-              macOS Master Portal
-            </span>
-          </div>
-
-          <div className="text-center pt-2">
-            <img
-              src={logoImg}
-              alt="Persian Darbar"
-              className="h-14 w-auto object-contain mx-auto mb-3"
-              style={{ mixBlendMode: 'screen' }}
-            />
-            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-              Admin Master Suite
-            </h1>
-            <p className="text-neutral-400 font-semibold tracking-wider text-[10px] uppercase mt-1">
-              Persian Darbar · Executive Access
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-            <div>
-              <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-wider mb-1.5">
-                Admin Username
-              </label>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="rounded-[12px] border border-[var(--a-line)] bg-[var(--a-card)] divide-y divide-[var(--a-line)] overflow-hidden shadow-[var(--a-shadow)]">
+            <label className="flex items-center gap-3 px-4 h-12">
+              <span className="w-24 shrink-0 text-[15px] text-[var(--a-text)]">Username</span>
               <input
                 type="text"
                 required
+                autoComplete="username"
                 value={credentials.username}
                 onChange={(e) =>
                   setCredentials({ ...credentials, username: e.target.value })
                 }
-                placeholder="Enter admin username"
-                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-2xl px-4 py-3.5 text-xs font-semibold text-white outline-none focus:border-amber-400/60 focus:ring-2 focus:ring-amber-400/20 transition-all placeholder:text-neutral-500 shadow-inner"
+                placeholder="admin username"
+                className="flex-1 min-w-0 bg-transparent text-[15px] text-[var(--a-text)] placeholder:text-[var(--a-text-3)] outline-none !shadow-none"
               />
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-black text-neutral-400 uppercase tracking-wider mb-1.5">
-                Master Password
-              </label>
+            </label>
+            <label className="flex items-center gap-3 px-4 h-12">
+              <span className="w-24 shrink-0 text-[15px] text-[var(--a-text)]">Password</span>
               <input
                 type="password"
                 required
+                autoComplete="current-password"
                 value={credentials.password}
                 onChange={(e) =>
                   setCredentials({ ...credentials, password: e.target.value })
                 }
-                placeholder="••••••••••••"
-                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-2xl px-4 py-3.5 text-xs font-semibold text-white outline-none focus:border-amber-400/60 focus:ring-2 focus:ring-amber-400/20 transition-all placeholder:text-neutral-500 shadow-inner"
+                placeholder="required"
+                className="flex-1 min-w-0 bg-transparent text-[15px] text-[var(--a-text)] placeholder:text-[var(--a-text-3)] outline-none !shadow-none"
               />
-            </div>
+            </label>
+          </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-[#E40000] via-[#D31027] to-[#B91C1C] text-white py-4 rounded-2xl font-black text-xs uppercase tracking-wider shadow-[0_6px_20px_-2px_rgba(228,0,0,0.4)] ios-press transition-all cursor-pointer border border-white/20 active:scale-95 disabled:opacity-50 mt-2"
-            >
-              {loading ? "Authenticating Master Session..." : "Secure Studio Login ›"}
-            </button>
+          <Button type="submit" variant="primary" size="lg" icon={LogIn} className="w-full" disabled={loading}>
+            {loading ? "Signing in…" : "Sign In"}
+          </Button>
 
-            <button
-              type="button"
-              onClick={() => navigate("/staff-entry")}
-              className="w-full text-center text-xs font-semibold text-neutral-400 hover:text-white transition-colors py-2 flex items-center justify-center gap-1.5 ios-press cursor-pointer"
-            >
-              <span>&larr;</span>
-              <span>Back to Staff Portals</span>
-            </button>
-          </form>
-        </div>
+          <Button type="button" variant="plain" className="w-full" onClick={() => navigate("/staff-entry")}>
+            Back to Staff Portals
+          </Button>
+        </form>
       </div>
     </div>
   );
