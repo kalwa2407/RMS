@@ -79,13 +79,13 @@ const OrdersManagement = () => {
     localStorage.setItem("pd_online_billing_mode", next);
     if (next === "auto" && !isSerialPrinterConnected()) {
       toast({
-        title: "⚠️ Auto Bill Mode Enabled",
+        title: "Auto Bill Mode Enabled",
         description: "No printer connected. Connect a thermal printer first.",
         variant: "destructive",
         duration: 6000,
       });
     } else if (next === "auto") {
-      toast({ title: "✅ Auto Bill Mode", description: "Bills will print automatically on order accept.", duration: 4000 });
+      toast({ title: "Auto Bill Mode", description: "Bills will print automatically on order accept.", duration: 4000 });
     }
   };
 
@@ -93,7 +93,7 @@ const OrdersManagement = () => {
     const result = await connectSerialPrinter();
     if (result.success) {
       setPrinterConnected(true);
-      toast({ title: "🖨️ Printer Connected!", description: "Thermal printer is ready.", duration: 4000 });
+      toast({ title: "Printer Connected!", description: "Thermal printer is ready.", duration: 4000 });
     } else {
       toast({ title: "Connection Failed", description: result.error || "Could not connect to printer.", variant: "destructive" });
     }
@@ -153,13 +153,13 @@ const OrdersManagement = () => {
       });
       if (next === "auto") {
         toast({
-          title: "⚡ Auto Acceptance Mode Enabled",
+          title: "Auto Acceptance Mode Enabled",
           description: `Orders will auto-accept in ${autoAcceptDelaySeconds}s. KOT dispatched to kitchen & Porter rider auto-assigned (Mock).`,
           duration: 5000
         });
       } else {
         toast({
-          title: "🖐️ Manual Acceptance Mode Enabled",
+          title: "Manual Acceptance Mode Enabled",
           description: "Incoming orders require staff/admin manual acceptance.",
           duration: 4000
         });
@@ -192,7 +192,7 @@ const OrdersManagement = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast({
-        title: "⚡ Order Auto-Accepted!",
+        title: "Order Auto-Accepted!",
         description: `Order #${order.bill_number || order.order_id.slice(-6)} accepted automatically. KOT sent to kitchen${data?.porter_rider_name ? ` & Porter rider ${data.porter_rider_name} assigned!` : '!'}`
       });
       fetchOrders();
@@ -286,7 +286,7 @@ const OrdersManagement = () => {
       const newPlacedCount = newOrders.filter(o => o.status === "placed").length;
       if (silent && newPlacedCount > lastPlacedCount) {
         playNotificationSound();
-        toast({ title: "🔔 New Order!", description: `${newPlacedCount} new order(s) received`, duration: 5000 });
+        toast({ title: "New Order!", description: `${newPlacedCount} new order(s) received`, duration: 5000 });
       }
       setOrders(newOrders);
       setLastPlacedCount(newPlacedCount);
@@ -435,7 +435,7 @@ const OrdersManagement = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (newStatus === "accepted") {
-        toast({ title: "✅ Order Accepted & WhatsApp Dispatched!", description: "Confirmation details sent directly to customer's WhatsApp" });
+        toast({ title: "Order Accepted & WhatsApp Dispatched!", description: "Confirmation details sent directly to customer's WhatsApp" });
       } else {
         toast({ title: "Updated!", description: `Order is now ${newStatus}` });
       }
@@ -458,11 +458,11 @@ const OrdersManagement = () => {
               // AUTO mode: check printer connected
               if (isSerialPrinterConnected()) {
                 await printOrder(updatedOrder || order, billNo, "auto");
-                toast({ title: `🖨️ Bill Printed: ${billNo}`, description: "Auto-printed to thermal printer", duration: 4000 });
+                toast({ title: `Bill Printed: ${billNo}`, description: "Auto-printed to thermal printer", duration: 4000 });
               } else {
                 // Auto mode but printer not connected — show alert
                 toast({
-                  title: `⚠️ Printer Not Connected`,
+                  title: `Printer Not Connected`,
                   description: `Bill ${billNo} generated but printer is not connected. Connect printer and print manually.`,
                   variant: "destructive",
                   duration: 8000,
@@ -471,7 +471,7 @@ const OrdersManagement = () => {
             } else {
               // MANUAL mode: just notify, let admin click Print Bill
               toast({
-                title: `📄 Bill Ready: ${billNo}`,
+                title: `Bill Ready: ${billNo}`,
                 description: "Click Print Bill on the order to print",
                 duration: 6000
               });

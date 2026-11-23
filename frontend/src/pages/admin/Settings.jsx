@@ -432,7 +432,7 @@ const Settings = () => {
         { old_password: passwordData.old_password, new_password: passwordData.new_password },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast({ title: "✅ Password Changed", description: "Admin password updated successfully" });
+      toast({ title: "Password Changed", description: "Admin password updated successfully" });
       setPasswordData({ old_password: "", new_password: "", confirm_password: "" });
       setPwSaved(true);
       setTimeout(() => setPwSaved(false), 4000);
@@ -460,7 +460,7 @@ const Settings = () => {
         axios.put(`${API_BASE}/api/admin/settings`, { key: "contact_email", value: contactInfo.email }, { headers }),
         axios.put(`${API_BASE}/api/admin/settings`, { key: "opening_hours", value: contactInfo.opening_hours }, { headers })
       ]);
-      toast({ title: "✅ Saved!", description: "Restaurant information updated successfully" });
+      toast({ title: "Saved!", description: "Restaurant information updated successfully" });
       setContactSaved(true);
       setTimeout(() => setContactSaved(false), 4000);
     } catch (error) {
@@ -481,7 +481,7 @@ const Settings = () => {
         { key: "upi_qr_code", value: upiQRCode },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast({ title: "✅ Saved!", description: "UPI QR code saved successfully" });
+      toast({ title: "Saved!", description: "UPI QR code saved successfully" });
       setUpiSaved(true);
       setTimeout(() => setUpiSaved(false), 4000);
     } catch (error) {
@@ -515,7 +515,7 @@ const Settings = () => {
           { key: "upi_qr_code", value: fullUrl },
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        toast({ title: "🎉 UPI QR Uploaded & Saved!", description: "QR code is now live on table checkout" });
+        toast({ title: "UPI QR Uploaded & Saved!", description: "QR code is now live on table checkout" });
         setUpiSaved(true);
         setTimeout(() => setUpiSaved(false), 4000);
       }
@@ -558,7 +558,7 @@ const Settings = () => {
         else setOnlineSoundUrl(fullUrl);
 
         toast({
-          title: "🎉 Sound Uploaded!",
+          title: "Sound Uploaded!",
           description: `${type === "dinein" ? "Dine-In" : "Online"} notification sound updated successfully`
         });
 

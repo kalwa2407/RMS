@@ -104,9 +104,9 @@ const TableSessions = () => {
         
         // Show toast if new orders arrived
         if (newPending.length > pendingCount && pendingCount > 0) {
-          toast({ title: "🔔 New Dine-In Order!", description: `Table order waiting for approval` });
+          toast({ title: "New Dine-In Order!", description: `Table order waiting for approval` });
         } else if (newPending.length > 0 && pendingCount === 0) {
-          toast({ title: "🔔 Pending Dine-In Orders!", description: `${newPending.length} order(s) waiting for approval` });
+          toast({ title: "Pending Dine-In Orders!", description: `${newPending.length} order(s) waiting for approval` });
         }
         
         setPendingCount(newPending.length);

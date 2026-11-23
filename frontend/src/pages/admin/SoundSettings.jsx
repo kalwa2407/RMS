@@ -93,7 +93,7 @@ const SoundSettings = () => {
           setOnlineSoundUrl(fullUrl);
         }
         toast({
-          title: "🎉 Sound Updated!",
+          title: "Sound Updated!",
           description: `${type === "dinein" ? "Dine-In" : "Online"} order notification sound saved successfully`,
         });
 
