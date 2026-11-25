@@ -5474,39 +5474,33 @@ async def get_customer_profile(
     if clean_token_phone.startswith("91") and len(clean_token_phone) == 12:
         clean_token_phone = clean_token_phone[2:]
 
-    # Check if this uid/email/phone was permanently deleted (in-memory cache + Firestore fallback)
-    is_deleted = (
-        uid in DELETED_CUSTOMER_UIDS
-        or email in DELETED_CUSTOMER_EMAILS
-        or (clean_token_phone and clean_token_phone in DELETED_CUSTOMER_PHONES)
-    )
+    # Only the exact deleted account (its Firebase UID) is blocked. Deleting an account also deletes the
+    # Firebase user, so signing in again with the same Google/Apple ID creates a NEW uid — that is a fresh
+    # sign-up and must be allowed (App Review tests delete -> sign in again). Blocking by email/phone here
+    # used to lock such users out silently (403 -> forced logout).
+    is_deleted = uid in DELETED_CUSTOMER_UIDS
     if not is_deleted and hasattr(manager, "db") and manager.db:
         try:
-            del_doc = manager.db.collection("deleted_customers").document(uid).get()
-            if del_doc.exists:
+            if manager.db.collection("deleted_customers").document(uid).get().exists:
                 DELETED_CUSTOMER_UIDS.add(uid)
-                if email:
-                    DELETED_CUSTOMER_EMAILS.add(email)
-                if clean_token_phone:
-                    DELETED_CUSTOMER_PHONES.add(clean_token_phone)
                 is_deleted = True
-            elif email:
-                for doc in manager.db.collection("deleted_customers").where("email", "==", email).limit(1).stream():
-                    DELETED_CUSTOMER_UIDS.add(uid)
-                    DELETED_CUSTOMER_EMAILS.add(email)
-                    if clean_token_phone:
-                        DELETED_CUSTOMER_PHONES.add(clean_token_phone)
-                    is_deleted = True
-                    break
-            # Also check by phone — covers phone-based re-login with new UID after deletion
-            if not is_deleted and clean_token_phone:
-                phone_del_doc = manager.db.collection("deleted_customers").document(clean_token_phone).get()
-                if phone_del_doc.exists:
-                    DELETED_CUSTOMER_UIDS.add(uid)
-                    DELETED_CUSTOMER_PHONES.add(clean_token_phone)
-                    is_deleted = True
         except Exception:
             pass
+
+    # Fresh sign-up after deletion: clear email/phone tombstones (mirrors the phone OTP re-signup path)
+    if not is_deleted:
+        if email:
+            DELETED_CUSTOMER_EMAILS.discard(email)
+        if clean_token_phone:
+            DELETED_CUSTOMER_PHONES.discard(clean_token_phone)
+        if hasattr(manager, "db") and manager.db:
+            try:
+                if email and manager.db.collection("deleted_customers").document(email).get().exists:
+                    manager.db.collection("deleted_customers").document(email).delete()
+                if clean_token_phone and manager.db.collection("deleted_customers").document(clean_token_phone).get().exists:
+                    manager.db.collection("deleted_customers").document(clean_token_phone).delete()
+            except Exception:
+                pass
 
     # ── Block deleted users from getting/creating a profile ──
     if is_deleted:
