@@ -266,7 +266,7 @@ export const REWARD_TIERS = [
     name: 'Gold Patron',
     minCoins: 251,
     maxCoins: 750,
-    perk: '10% Cashback + VIP Table Priority',
+    perk: '5% Cashback + VIP Table Priority',
     badge: 'GOLD VIP',
     color: '#F59E0B'
   },
@@ -414,7 +414,7 @@ export const DEFAULT_PERSIAN_DARBAR_OFFERS = [
 // Royal PD Membership Privileges (Zomato Gold style!)
 export const ROYAL_MEMBERSHIP_PRIVILEGES = [
   {
-    title: '10% PD Coins on Every Bill',
+    title: '5% PD Coins on Every Bill',
     desc: 'Redeem coins directly like real cash at checkout.',
     icon: 'Coins'
   },

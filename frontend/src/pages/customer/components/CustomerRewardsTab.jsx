@@ -62,7 +62,7 @@ const CustomerRewardsTab = ({
     {
       title: 'Welcome to Royalty Club Bonus',
       time: 'Persian Darbar Patron Sign-up',
-      amount: '+100 Coins'
+      amount: '+50 Coins'
     },
     {
       title: 'Royal Table Dining at Camp Pune',
@@ -473,7 +473,7 @@ const CustomerRewardsTab = ({
         </h3>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 text-xs">
-          {/* Card 1: 10% on Delivery */}
+          {/* Card 1: 5% on Delivery */}
           <div
             onClick={onGoToOrder}
             className="p-3.5 rounded-2xl bg-white border border-neutral-200/80 hover:border-red-300 hover:shadow-xs cursor-pointer active:scale-98 transition-all flex flex-col justify-between"
@@ -482,7 +482,7 @@ const CustomerRewardsTab = ({
               <div className="w-8 h-8 rounded-xl bg-red-50 text-[#E40000] flex items-center justify-center mb-2 border border-red-100">
                 <Bike className="w-4 h-4" />
               </div>
-              <h5 className="font-bold text-neutral-900">10% On Delivery</h5>
+              <h5 className="font-bold text-neutral-900">5% On Delivery</h5>
               <p className="text-[10px] text-neutral-500 mt-0.5">Instant cashback on orders</p>
             </div>
             <span className="text-[10px] font-black text-[#E40000] mt-2 flex items-center gap-0.5">
@@ -491,7 +491,7 @@ const CustomerRewardsTab = ({
             </span>
           </div>
 
-          {/* Card 2: 10% on Dine-In */}
+          {/* Card 2: 5% on Dine-In */}
           <div
             onClick={onGoToReserve}
             className="p-3.5 rounded-2xl bg-white border border-neutral-200/80 hover:border-red-300 hover:shadow-xs cursor-pointer active:scale-98 transition-all flex flex-col justify-between"
@@ -500,7 +500,7 @@ const CustomerRewardsTab = ({
               <div className="w-8 h-8 rounded-xl bg-red-50 text-[#E40000] flex items-center justify-center mb-2 border border-red-100">
                 <UtensilsCrossed className="w-4 h-4" />
               </div>
-              <h5 className="font-bold text-neutral-900">10% On Dine-In</h5>
+              <h5 className="font-bold text-neutral-900">5% On Dine-In</h5>
               <p className="text-[10px] text-neutral-500 mt-0.5">Pay bill at all 4 branches</p>
             </div>
             <span className="text-[10px] font-black text-[#E40000] mt-2 flex items-center gap-0.5">

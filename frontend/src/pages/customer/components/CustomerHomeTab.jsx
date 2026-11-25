@@ -469,7 +469,7 @@ const CustomerHomeTab = ({
               Book Your Royal Table
             </h3>
             <p className="text-[11px] text-neutral-300 font-medium">
-              Guaranteed seating across all 4 Persian Darbar outlets with 10% PD Coins on bill.
+              Guaranteed seating across all 4 Persian Darbar outlets with 5% PD Coins on bill.
             </p>
           </div>
           <button className="bg-[#E40000] hover:bg-[#CC0000] text-white text-xs font-black px-4 py-2.5 rounded-2xl shadow-md shrink-0">

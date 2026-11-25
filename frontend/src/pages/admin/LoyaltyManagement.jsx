@@ -149,7 +149,7 @@ export default function LoyaltyManagement() {
       return;
     }
 
-    const calculatedCoins = Math.floor(amount * 0.10);
+    const calculatedCoins = Math.floor(amount * 0.05);
     if (calculatedCoins <= 0) {
       toast({
         title: "Amount Too Small",
@@ -247,7 +247,7 @@ export default function LoyaltyManagement() {
     }
   };
 
-  const calculatedAward = Math.floor((parseFloat(billAmount) || 0) * 0.10);
+  const calculatedAward = Math.floor((parseFloat(billAmount) || 0) * 0.05);
   const redeemDiscount = parseInt(redeemCoins, 10) || 0;
 
   return (
@@ -269,11 +269,11 @@ export default function LoyaltyManagement() {
                 PD Coins Loyalty Program
               </h1>
               <span className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-full bg-amber-400/10 text-amber-400 border border-amber-400/30">
-                10% Cashback
+                5% Cashback
               </span>
             </div>
             <p className="text-xs sm:text-sm text-white/60 mt-1">
-              Look up customer profile by phone/name, credit 10% of bill amount as PD Coins, or redeem coins as bill discounts.
+              Look up customer profile by phone/name, credit 5% of bill amount as PD Coins, or redeem coins as bill discounts.
             </p>
           </div>
         </div>
@@ -561,7 +561,7 @@ export default function LoyaltyManagement() {
                       className="flex items-center justify-center gap-2.5 py-3.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-sm uppercase tracking-wider transition-all shadow-lg shadow-amber-500/20 active:scale-[0.98]"
                     >
                       <PlusCircle className="w-5 h-5" />
-                      Award PD Coins (10% of Bill)
+                      Award PD Coins (5% of Bill)
                     </button>
 
                     <button
@@ -598,7 +598,7 @@ export default function LoyaltyManagement() {
                       <img src="/pd_coin.png" alt="" className="w-10 h-10 mx-auto opacity-30 grayscale" />
                       <p className="text-xs font-semibold">No loyalty transactions recorded yet</p>
                       <p className="text-[11px] text-white/30">
-                        When this customer dines in, award 10% coins using the button above.
+                        When this customer dines in, award 5% coins using the button above.
                       </p>
                     </div>
                   ) : (
@@ -632,7 +632,7 @@ export default function LoyaltyManagement() {
                               <div>
                                 <p className="text-sm font-bold text-white">
                                   {isEarned
-                                    ? (item.note?.includes("online") ? "Online Order Cashback (10%)" : "Dine-In Cashback (10%)")
+                                    ? (item.note?.includes("online") ? "Online Order Cashback (5%)" : "Dine-In Cashback (5%)")
                                     : isExpired
                                     ? "Expired (45-Day Policy)"
                                     : "Bill Discount Redemption"}
@@ -675,7 +675,7 @@ export default function LoyaltyManagement() {
                 <div className="max-w-md mx-auto space-y-2">
                   <h3 className="text-lg font-bold text-white">Select a Customer to Begin</h3>
                   <p className="text-xs text-white/60 leading-relaxed">
-                    Search by mobile number on the left. Once selected, you can award 10% cashback coins on their dining bill, or redeem their accumulated coins as an instant discount.
+                    Search by mobile number on the left. Once selected, you can award 5% cashback coins on their dining bill, or redeem their accumulated coins as an instant discount.
                   </p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-lg mx-auto pt-4 text-left">
@@ -689,7 +689,7 @@ export default function LoyaltyManagement() {
                   </div>
                   <div className="p-3 rounded-xl bg-black/40 border border-white/10">
                     <p className="text-[10px] uppercase font-bold text-amber-400">Step 3</p>
-                    <p className="text-xs text-white/80 font-medium mt-1">10% auto-credited instantly</p>
+                    <p className="text-xs text-white/80 font-medium mt-1">5% auto-credited instantly</p>
                   </div>
                 </div>
               </div>
@@ -768,7 +768,7 @@ export default function LoyaltyManagement() {
                                 : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
                             }`}
                           >
-                            {isEarned ? "Awarded (10%)" : isExpired ? "Expired (45d)" : "Redeemed"}
+                            {isEarned ? "Awarded (5%)" : isExpired ? "Expired (45d)" : "Redeemed"}
                           </span>
                         </td>
                         <td className="py-3 px-3 font-black text-sm">
@@ -802,7 +802,7 @@ export default function LoyaltyManagement() {
       )}
 
       {/* ═════════════════════════════════════════════════════════════
-          MODAL: AWARD COINS (10% OF BILL)
+          MODAL: AWARD COINS (5% OF BILL)
          ═════════════════════════════════════════════════════════════ */}
       {showAwardModal && selectedCustomer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
@@ -815,7 +815,7 @@ export default function LoyaltyManagement() {
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-white">
-                    Award PD Coins (10% Cashback)
+                    Award PD Coins (5% Cashback)
                   </h3>
                   <p className="text-xs text-white/60">
                     To: <strong className="text-white">{selectedCustomer.name}</strong> ({selectedCustomer.phone || "No phone"})
@@ -869,7 +869,7 @@ export default function LoyaltyManagement() {
                 </div>
               </div>
 
-              {/* Dynamic 10% calculation preview card */}
+              {/* Dynamic 5% calculation preview card */}
               <div className="rounded-2xl bg-gradient-to-r from-amber-500/10 to-amber-600/10 border border-amber-500/30 p-4 space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-white/60">Bill Amount:</span>
@@ -879,7 +879,7 @@ export default function LoyaltyManagement() {
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-white/60">Reward Rate:</span>
-                  <span className="font-bold text-amber-400">10% of bill</span>
+                  <span className="font-bold text-amber-400">5% of bill</span>
                 </div>
                 <div className="h-px bg-white/10 my-1" />
                 <div className="flex items-center justify-between">
