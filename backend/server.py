@@ -174,6 +174,19 @@ def get_ist_now():
     return datetime.now(timezone(timedelta(hours=5, minutes=30)))
 
 
+# PD Coins loyalty rules
+WELCOME_BONUS_COINS = 50      # one-time joining bonus for every new customer
+ORDER_CASHBACK_RATE = 0.05    # 5% of the bill credited as PD Coins on every order
+
+
+def order_cashback_coins(bill_amount) -> int:
+    """5% of the bill in whole PD Coins (1 coin = Rs 1), rounded down."""
+    try:
+        return max(0, int(float(bill_amount) * ORDER_CASHBACK_RATE))
+    except (TypeError, ValueError):
+        return 0
+
+
 def apply_coin_expiry(customer: dict) -> dict:
     """
     Auto-expire PD Coins that were earned more than 45 days ago.
@@ -784,7 +797,7 @@ async def create_order(
                 new_total    = max(1.0, round(new_total, 2))  # Never go below â‚¹1
 
                 # Auto-award 5% PD Coins on Total Bill
-                coins_earned_back = max(1, round(new_total * 0.05))
+                coins_earned_back = order_cashback_coins(new_total)
 
                 redemption_txn = {
                     "type": "redeemed",
@@ -825,8 +838,8 @@ async def create_order(
             else:
                 # No coins redeemed, award 5% PD Coins on total bill
                 total_bill = float(order_dict.get("total") or order.subtotal)
-                if total_bill >= 100:
-                    coins_earned_back = max(1, round(total_bill * 0.05))
+                if order_cashback_coins(total_bill) > 0:
+                    coins_earned_back = order_cashback_coins(total_bill)
                     if coins_earned_back > 0:
                         earn_balance_after = new_coin_balance + coins_earned_back
                         earn_txn = {
@@ -1406,7 +1419,7 @@ App Features (Persian Darbar RMS):
 - Gallery page at /gallery â€” view restaurant photos
 - Events page at /events â€” special events, contact us to book
 - Order Tracking â€” real-time tracking after placing order
-- PD Coins Loyalty: Earn 10% cashback in PD Coins. Redeem up to 25% of order value on orders Rs.300+
+- PD Coins Loyalty: 50 PD Coins welcome bonus, plus 5% of every order back as PD Coins (1 coin = Rs.1, valid 45 days). Redeem up to 50% of order value on orders Rs.100+
 - Payment: Cash on Delivery (COD) or Online payment
 - WhatsApp Notifications: Order confirmation and delivery bill sent to customer WhatsApp
 - Customer Login: Sign up to track orders, earn PD Coins, manage reservations
@@ -4048,9 +4061,9 @@ async def admin_close_session(session_id: str, payment_method: str = "cash", use
                 if o.get("order_id") in session_order_ids and o.get("phone"):
                     cust_phone = o.get("phone")
                     break
-        if cust_phone and table_bill_total >= 100:
+        if cust_phone and order_cashback_coins(table_bill_total) > 0:
             clean_digits = "".join(ch for ch in str(cust_phone) if ch.isdigit())[-10:]
-            coins_earned = max(1, int(table_bill_total * 0.05))
+            coins_earned = order_cashback_coins(table_bill_total)
             customers = await manager._read("customers")
             for c in customers:
                 c_p = "".join(ch for ch in str(c.get("phone", "")) if ch.isdigit())
@@ -4739,7 +4752,7 @@ async def admin_loyalty_award(
     username: str = Depends(verify_token),
     manager: BaseDataManager = Depends(get_data_manager)
 ):
-    """Award PD Coins to customer (10% of bill amount)"""
+    """Award PD Coins to customer (5% of bill amount)"""
     if data.bill_amount <= 0:
         raise HTTPException(status_code=400, detail="Bill amount must be positive")
 
@@ -4749,7 +4762,7 @@ async def admin_loyalty_award(
     if idx is None:
         raise HTTPException(status_code=404, detail="Customer not found")
 
-    coins_to_award = int(data.bill_amount * 0.10)  # 10% of bill
+    coins_to_award = order_cashback_coins(data.bill_amount)  # 5% of bill
     if coins_to_award <= 0:
         raise HTTPException(status_code=400, detail="Bill amount too small to earn coins")
 
@@ -4766,7 +4779,7 @@ async def admin_loyalty_award(
         "coins": coins_to_award,
         "bill_amount": data.bill_amount,
         "balance_after": new_balance,
-        "note": data.note or f"10% of â‚¹{data.bill_amount:,.0f} bill",
+        "note": data.note or f"5% of ₹{data.bill_amount:,.0f} bill",
         "awarded_by": username,
         "timestamp": now,
     }
@@ -5413,10 +5426,10 @@ async def customer_verify_otp(
             "picture": "",
             "address": "",
             "addresses": [],
-            "pd_coins": 100,  # 100 welcome joining bonus coins
+            "pd_coins": WELCOME_BONUS_COINS,  # welcome joining bonus coins
             "coins_history": [
                 {
-                    "amount": 100,
+                    "amount": WELCOME_BONUS_COINS,
                     "type": "credit",
                     "reason": "Welcome Joining Bonus",
                     "timestamp": now_ist
@@ -5522,10 +5535,10 @@ async def get_customer_profile(
             "picture": user.get("picture", ""),
             "address": "",
             "addresses": [],
-            "pd_coins": 100,  # 100 welcome joining bonus coins
+            "pd_coins": WELCOME_BONUS_COINS,  # welcome joining bonus coins
             "coins_history": [
                 {
-                    "amount": 100,
+                    "amount": WELCOME_BONUS_COINS,
                     "type": "credit",
                     "reason": "Welcome Joining Bonus",
                     "timestamp": now
@@ -5572,10 +5585,10 @@ async def update_customer_profile(
             "picture": user.get("picture", ""),
             "address": addr,
             "addresses": update_data.addresses or ([addr] if addr else []),
-            "pd_coins": 100,  # 100 welcome joining bonus coins
+            "pd_coins": WELCOME_BONUS_COINS,  # welcome joining bonus coins
             "coins_history": [
                 {
-                    "amount": 100,
+                    "amount": WELCOME_BONUS_COINS,
                     "type": "credit",
                     "reason": "Welcome Joining Bonus",
                     "timestamp": now
