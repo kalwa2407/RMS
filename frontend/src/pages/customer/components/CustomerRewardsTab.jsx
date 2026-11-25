@@ -12,64 +12,63 @@ import {
   Zap,
   ArrowRight,
   Clock,
-  Tag,
   MessageCircle,
   Bike,
   UtensilsCrossed,
   Users,
   X,
-  Copy,
   Check,
   MessageSquare
 } from 'lucide-react';
-import { REWARD_TIERS, REWARD_VOUCHERS, ROYAL_MEMBERSHIP_PRIVILEGES } from '../customerAssets';
+import { REWARD_TIERS, ROYAL_MEMBERSHIP_PRIVILEGES } from '../customerAssets';
+import API_BASE from '../../../lib/config';
+
+// Real PD Coins transactions from the backend profile (coins_history), newest first.
+// Coins are only credited/debited by the server (welcome bonus, 5% order cashback, checkout redemption).
+const buildPassbook = (history) => {
+  if (!Array.isArray(history)) return [];
+  return history
+    .map((entry) => {
+      const coins = Number(entry?.coins ?? entry?.amount ?? 0);
+      if (!coins) return null;
+      const isDebit = entry?.type === 'redeemed' || entry?.type === 'expired';
+      const ts = entry?.timestamp ? new Date(entry.timestamp) : null;
+      const time = ts && !Number.isNaN(ts.getTime())
+        ? ts.toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+        : '';
+      return {
+        title: entry?.note || entry?.reason || (isDebit ? 'Coins used' : 'Coins earned'),
+        time,
+        sortKey: ts && !Number.isNaN(ts.getTime()) ? ts.getTime() : 0,
+        amount: `${isDebit ? '-' : '+'}${Math.abs(coins)} Coins`,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.sortKey - a.sortKey);
+};
 
 const CustomerRewardsTab = ({
   currentUser,
   customerProfile,
-  pdCoins = 100,
+  pdCoins = 0,
   onGoToOrder,
-  onGoToReserve,
-  onApplyVoucher
+  onGoToReserve
 }) => {
-  // Scratch card / daily reward state
-  const [dailyClaimed, setDailyClaimed] = useState(false);
-  const [coinsBalance, setCoinsBalance] = useState(pdCoins);
+  // Balance always comes from the server profile — never modified locally
+  const coinsBalance = Number(pdCoins) || 0;
+  const [activeTab, setActiveTab] = useState('perks'); // 'perks' | 'passbook'
 
-  // Sync with live profile balance
-  React.useEffect(() => {
-    setCoinsBalance(pdCoins);
-  }, [pdCoins]);
-  const [activeTab, setActiveTab] = useState('perks'); // 'perks' | 'vouchers' | 'passbook'
-  const [redeemedCode, setRedeemedCode] = useState(null);
-
-  // Interactive Earn Modals
+  // Invite / review modals (no coins are awarded for these)
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [copiedInvite, setCopiedInvite] = useState(false);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewText, setReviewText] = useState('');
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
-  const [inviteClaimed, setInviteClaimed] = useState(false);
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewError, setReviewError] = useState(null);
 
-  // Passbook history state
-  const [passbookItems, setPassbookItems] = useState([
-    {
-      title: 'Mutton Biryani Order Cash Back',
-      time: 'Yesterday, 8:45 PM · Order #PD-88214',
-      amount: '+57 Coins'
-    },
-    {
-      title: 'Welcome to Royalty Club Bonus',
-      time: 'Persian Darbar Patron Sign-up',
-      amount: '+50 Coins'
-    },
-    {
-      title: 'Royal Table Dining at Camp Pune',
-      time: '12 Oct 2026 · Dine-In Cashback',
-      amount: '+45 Coins'
-    }
-  ]);
+  const passbookItems = buildPassbook(customerProfile?.coins_history);
 
   // Real user display data without dummy email
   const patronName = currentUser?.displayName || customerProfile?.name || 'Valued Guest';
@@ -77,83 +76,58 @@ const CustomerRewardsTab = ({
   const patronEmail = customerProfile?.email || currentUser?.email || localStorage.getItem('customer_email');
   const patronInitial = (patronName?.[0] || 'A').toUpperCase();
 
-  const handleClaimDailyCoins = () => {
-    if (dailyClaimed) return;
-    setDailyClaimed(true);
-    setCoinsBalance((prev) => prev + 25);
-    setPassbookItems((prev) => [
-      {
-        title: 'Daily Shahi Loyalty Check-In',
-        time: 'Just now · Free Daily Bonus',
-        amount: '+25 Coins'
-      },
-      ...prev
-    ]);
-  };
-
-  const handleRedeemVoucher = (voucher) => {
-    if (coinsBalance < voucher.requiredCoins) {
-      alert(`You need ${voucher.requiredCoins} PD Coins to redeem this voucher. Place an order to earn more coins!`);
-      return;
-    }
-    setCoinsBalance((prev) => prev - voucher.requiredCoins);
-    setRedeemedCode(voucher.code);
-    setPassbookItems((prev) => [
-      {
-        title: `Voucher Redeemed: ${voucher.title}`,
-        time: 'Just now · Coupon Unlocked',
-        amount: `-${voucher.requiredCoins} Coins`
-      },
-      ...prev
-    ]);
-    if (onApplyVoucher) onApplyVoucher(voucher.code);
-  };
-
   const handleShareInvite = () => {
-    const shareText = `Order royal Mughlai feasts on Persian Darbar with my exclusive invite code DARBAR-ROYAL-100 to get Flat ₹150 OFF & 100 PD Coins! https://persiandarbar.in?ref=ROYAL100`;
+    const shareText = 'Order royal Mughlai feasts from Persian Darbar — biryani, kebabs and more delivered to your door. https://persiandarbar.in';
     if (navigator.share) {
       navigator.share({
-        title: 'Persian Darbar Royalty Club',
+        title: 'Persian Darbar',
         text: shareText,
         url: 'https://persiandarbar.in'
       }).catch(() => {});
-    } else {
-      navigator.clipboard.writeText(shareText);
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(shareText).catch(() => {});
     }
     setCopiedInvite(true);
     setTimeout(() => setCopiedInvite(false), 2500);
-
-    if (!inviteClaimed) {
-      setInviteClaimed(true);
-      setCoinsBalance((prev) => prev + 100);
-      setPassbookItems((prev) => [
-        {
-          title: 'Patron Referral Link Shared',
-          time: 'Just now · Invite Bonus Credited',
-          amount: '+100 Coins'
-        },
-        ...prev
-      ]);
-    }
   };
 
-  const handleSubmitReview = (e) => {
+  // Submits a real review to the backend (published after admin approval). No coins are credited.
+  const handleSubmitReview = async (e) => {
     e.preventDefault();
-    setReviewSubmitted(true);
-    setCoinsBalance((prev) => prev + 50);
-    setPassbookItems((prev) => [
-      {
-        title: `Patron Review (${reviewRating} Stars)`,
-        time: 'Just now · Review Feedback Reward',
-        amount: '+50 Coins'
-      },
-      ...prev
-    ]);
-    setTimeout(() => {
-      setIsReviewOpen(false);
-      setReviewSubmitted(false);
-      setReviewText('');
-    }, 1500);
+    setReviewError(null);
+    const text = reviewText.trim();
+    if (text.length < 10) {
+      setReviewError('Please write at least 10 characters.');
+      return;
+    }
+    setReviewSubmitting(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: patronName,
+          text,
+          rating: reviewRating,
+          customer_uid: currentUser?.uid || customerProfile?.uid || ''
+        })
+      });
+      if (!res.ok) {
+        let detail = '';
+        try { detail = (await res.json())?.detail || ''; } catch (err) { /* ignore */ }
+        throw new Error(typeof detail === 'string' && detail ? detail : 'Could not submit your review. Please try again.');
+      }
+      setReviewSubmitted(true);
+      setTimeout(() => {
+        setIsReviewOpen(false);
+        setReviewSubmitted(false);
+        setReviewText('');
+      }, 1800);
+    } catch (err) {
+      setReviewError(err?.message || 'Could not submit your review. Please try again.');
+    } finally {
+      setReviewSubmitting(false);
+    }
   };
 
   const renderPrivIcon = (name) => {
@@ -258,46 +232,23 @@ const CustomerRewardsTab = ({
         </div>
       </section>
 
-      {/* ── 2. DAILY ROYAL REWARD / CLAIM COINS (Apple Frosted Card) ── */}
-      <section className="ios-card p-4 flex items-center justify-between border border-black/[0.06] hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all">
-        <div className="flex items-center space-x-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400/20 to-amber-500/10 border border-amber-400/30 text-amber-600 flex items-center justify-center shrink-0 shadow-xs">
-            <Gift className="w-6 h-6 text-amber-600" />
-          </div>
-          <div>
-            <div className="flex items-center space-x-1.5">
-              <span className="text-[10px] font-black uppercase text-amber-700 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-full">
-                Daily Check-in
-              </span>
-            </div>
-            <h4 className="text-xs font-black text-neutral-900 mt-1">
-              {dailyClaimed ? '25 Coins Added Today!' : 'Claim Free 25 PD Coins'}
-            </h4>
-            <p className="text-[10px] text-neutral-500 font-medium">
-              {dailyClaimed ? 'Come back tomorrow for your next royal bonus' : 'Free daily loyalty reward for active patrons'}
-            </p>
-          </div>
+      {/* ── 2. HOW COINS WORK (real rules, applied by the server) ── */}
+      <section className="ios-card p-4 flex items-center space-x-3.5 border border-black/[0.06]">
+        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400/20 to-amber-500/10 border border-amber-400/30 text-amber-600 flex items-center justify-center shrink-0 shadow-xs">
+          <Gift className="w-6 h-6 text-amber-600" />
         </div>
-
-        <button
-          type="button"
-          onClick={handleClaimDailyCoins}
-          disabled={dailyClaimed}
-          className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all ios-press cursor-pointer shadow-xs ${
-            dailyClaimed
-              ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed border border-neutral-200/60'
-              : 'bg-[#E40000] hover:bg-[#CC0000] text-white active:scale-95 shadow-[0_4px_14px_rgba(228,0,0,0.25)] border border-white/20'
-          }`}
-        >
-          {dailyClaimed ? 'Claimed ✓' : 'Claim +25'}
-        </button>
+        <div>
+          <h4 className="text-xs font-black text-neutral-900">5% back as PD Coins on every order</h4>
+          <p className="text-[10px] text-neutral-500 font-medium mt-0.5">
+            50 coins welcome bonus · 1 coin = ₹1 · use up to 50% of your bill at checkout · coins valid 45 days
+          </p>
+        </div>
       </section>
 
-      {/* ── 3. SEGMENTED VIEWS: Perks | Vouchers | Passbook (Apple iOS Segmented Control) ── */}
+      {/* ── 3. SEGMENTED VIEWS: Perks | Passbook (Apple iOS Segmented Control) ── */}
       <div className="w-full bg-[#E5E5EA] p-1 rounded-2xl flex items-center gap-1 border border-black/[0.04]">
         {[
           { id: 'perks', label: 'Privileges', icon: Crown },
-          { id: 'vouchers', label: 'Vouchers', icon: Tag },
           { id: 'passbook', label: 'Passbook', icon: Clock }
         ].map((tab) => {
           const isActive = activeTab === tab.id;
@@ -384,60 +335,7 @@ const CustomerRewardsTab = ({
         </div>
       )}
 
-      {/* ── TAB 2: REDEEM VOUCHERS ── */}
-      {activeTab === 'vouchers' && (
-        <div className="space-y-3">
-          {redeemedCode && (
-            <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center justify-between">
-              <span>Code <strong>{redeemedCode}</strong> copied & ready to apply at checkout!</span>
-              <button
-                onClick={onGoToOrder}
-                className="underline text-emerald-950 font-black ml-2"
-              >
-                Order Now
-              </button>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-            {REWARD_VOUCHERS.map((vouch) => {
-              const canRedeem = coinsBalance >= vouch.requiredCoins;
-              return (
-                <div
-                  key={vouch.id}
-                  className="bg-white rounded-2xl p-4 border border-neutral-200/80 shadow-xs flex items-center justify-between space-x-3"
-                >
-                  <div>
-                    <span className="text-[9px] font-black uppercase text-[#E40000] bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
-                      {vouch.category}
-                    </span>
-                    <h4 className="text-xs font-black text-neutral-900 mt-1">
-                      {vouch.title}
-                    </h4>
-                    <p className="text-[10px] text-neutral-500 mt-0.5">
-                      {vouch.validity} · Code: <span className="font-mono font-bold text-neutral-800">{vouch.code}</span>
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() => handleRedeemVoucher(vouch)}
-                    disabled={!canRedeem}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all shrink-0 ${
-                      canRedeem
-                        ? 'bg-[#E40000] hover:bg-[#CC0000] text-white active:scale-95 shadow-sm cursor-pointer'
-                        : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
-                    }`}
-                  >
-                    {vouch.requiredCoins} Coins
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* ── TAB 3: COINS PASSBOOK / RECENT ACTIVITY ── */}
+      {/* ── TAB 2: COINS PASSBOOK / RECENT ACTIVITY ── */}
       {activeTab === 'passbook' && (
         <div className="bg-white rounded-2xl p-4 border border-neutral-200/80 shadow-xs space-y-3">
           <h3 className="text-xs font-black uppercase tracking-wider text-neutral-500">
@@ -445,6 +343,11 @@ const CustomerRewardsTab = ({
           </h3>
 
           <div className="space-y-2.5 text-xs">
+            {passbookItems.length === 0 && (
+              <p className="text-[11px] text-neutral-500 py-2">
+                No coin activity yet. Place an order to earn 5% back as PD Coins.
+              </p>
+            )}
             {passbookItems.map((item, idx) => (
               <div key={idx} className="flex items-center justify-between pb-2 border-b border-neutral-100">
                 <div className="flex items-center space-x-2">
@@ -509,7 +412,7 @@ const CustomerRewardsTab = ({
             </span>
           </div>
 
-          {/* Card 3: 100 Coins / Invite */}
+          {/* Card 3: Invite friends (sharing only, no coin reward) */}
           <div
             onClick={() => setIsInviteOpen(true)}
             className="p-3.5 rounded-2xl bg-white border border-neutral-200/80 hover:border-red-300 hover:shadow-xs cursor-pointer active:scale-98 transition-all flex flex-col justify-between"
@@ -518,16 +421,16 @@ const CustomerRewardsTab = ({
               <div className="w-8 h-8 rounded-xl bg-red-50 text-[#E40000] flex items-center justify-center mb-2 border border-red-100">
                 <Users className="w-4 h-4" />
               </div>
-              <h5 className="font-bold text-neutral-900">100 Coins / Invite</h5>
-              <p className="text-[10px] text-neutral-500 mt-0.5">When friend signs up</p>
+              <h5 className="font-bold text-neutral-900">Invite Friends</h5>
+              <p className="text-[10px] text-neutral-500 mt-0.5">Share Persian Darbar</p>
             </div>
             <span className="text-[10px] font-black text-[#E40000] mt-2 flex items-center gap-0.5">
-              <span>Invite Friends</span>
+              <span>Share</span>
               <ChevronRight className="w-3 h-3" />
             </span>
           </div>
 
-          {/* Card 4: 50 Coins / Review */}
+          {/* Card 4: Rate us (real review, no coin reward) */}
           <div
             onClick={() => setIsReviewOpen(true)}
             className="p-3.5 rounded-2xl bg-white border border-neutral-200/80 hover:border-red-300 hover:shadow-xs cursor-pointer active:scale-98 transition-all flex flex-col justify-between"
@@ -536,7 +439,7 @@ const CustomerRewardsTab = ({
               <div className="w-8 h-8 rounded-xl bg-red-50 text-[#E40000] flex items-center justify-center mb-2 border border-red-100">
                 <Star className="w-4 h-4 fill-[#E40000] text-[#E40000]" />
               </div>
-              <h5 className="font-bold text-neutral-900">50 Coins / Review</h5>
+              <h5 className="font-bold text-neutral-900">Rate Us</h5>
               <p className="text-[10px] text-neutral-500 mt-0.5">Share dining experience</p>
             </div>
             <span className="text-[10px] font-black text-[#E40000] mt-2 flex items-center gap-0.5">
@@ -567,7 +470,7 @@ const CustomerRewardsTab = ({
                 <div className="w-8 h-8 rounded-xl bg-red-50 text-[#E40000] flex items-center justify-center border border-red-100">
                   <Users className="w-4 h-4" />
                 </div>
-                <h3 className="font-black text-sm text-neutral-900">Invite & Earn 100 Coins</h3>
+                <h3 className="font-black text-sm text-neutral-900">Invite Friends</h3>
               </div>
               <button
                 onClick={() => setIsInviteOpen(false)}
@@ -578,35 +481,15 @@ const CustomerRewardsTab = ({
             </div>
 
             <p className="text-xs text-neutral-600 leading-relaxed">
-              Share your royal referral link with your family and friends. When they place their first order, they get ₹150 OFF and you instantly receive 100 PD Coins!
+              Love our biryani? Share Persian Darbar with your family and friends.
             </p>
-
-            <div className="p-3 rounded-2xl bg-neutral-50 border border-neutral-200 flex items-center justify-between">
-              <span className="font-mono font-black text-neutral-800 text-sm">DARBAR-ROYAL-100</span>
-              <button
-                onClick={handleShareInvite}
-                className="px-3 py-1.5 rounded-xl bg-[#E40000] text-white text-xs font-bold flex items-center gap-1 active:scale-95"
-              >
-                {copiedInvite ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-white" />
-                    <span>Copied!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>Copy</span>
-                  </>
-                )}
-              </button>
-            </div>
 
             <button
               onClick={handleShareInvite}
               className="w-full py-3 rounded-2xl bg-[#25D366] hover:bg-[#20BD5A] text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm active:scale-98"
             >
-              <Share2 className="w-4 h-4" />
-              <span>Share via WhatsApp</span>
+              {copiedInvite ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
+              <span>{copiedInvite ? 'Shared!' : 'Share Persian Darbar'}</span>
             </button>
           </div>
         </div>
@@ -621,7 +504,7 @@ const CustomerRewardsTab = ({
                 <div className="w-8 h-8 rounded-xl bg-red-50 text-[#E40000] flex items-center justify-center border border-red-100">
                   <Star className="w-4 h-4 fill-[#E40000] text-[#E40000]" />
                 </div>
-                <h3 className="font-black text-sm text-neutral-900">Review & Earn 50 Coins</h3>
+                <h3 className="font-black text-sm text-neutral-900">Rate Your Experience</h3>
               </div>
               <button
                 onClick={() => setIsReviewOpen(false)}
@@ -637,7 +520,7 @@ const CustomerRewardsTab = ({
                   <CheckCircle2 className="w-7 h-7" />
                 </div>
                 <h4 className="font-black text-sm text-neutral-900">Thank You, Patron!</h4>
-                <p className="text-xs text-neutral-500">50 PD Coins have been credited to your royalty balance.</p>
+                <p className="text-xs text-neutral-500">Your review has been submitted and will appear after approval.</p>
               </div>
             ) : (
               <form onSubmit={handleSubmitReview} className="space-y-3">
@@ -672,11 +555,16 @@ const CustomerRewardsTab = ({
                   className="w-full text-xs p-3 rounded-2xl border border-neutral-200 focus:outline-none focus:border-[#E40000] resize-none"
                 />
 
+                {reviewError && (
+                  <p className="text-[11px] font-semibold text-rose-600">{reviewError}</p>
+                )}
+
                 <button
                   type="submit"
-                  className="w-full py-3 rounded-2xl bg-[#E40000] hover:bg-[#CC0000] text-white text-xs font-black shadow-md active:scale-98"
+                  disabled={reviewSubmitting}
+                  className="w-full py-3 rounded-2xl bg-[#E40000] hover:bg-[#CC0000] text-white text-xs font-black shadow-md active:scale-98 disabled:opacity-60"
                 >
-                  Submit & Claim +50 Coins
+                  {reviewSubmitting ? 'Submitting...' : 'Submit Review'}
                 </button>
               </form>
             )}
