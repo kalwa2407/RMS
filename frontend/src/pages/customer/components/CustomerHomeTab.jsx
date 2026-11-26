@@ -155,11 +155,11 @@ const CustomerHomeTab = ({
                 </span>
                 <span className="flex items-center gap-2">
                   {offer.coupon_code && (
-                    <span className="h-7 px-2.5 rounded-[8px] border border-dashed border-white/50 text-[12px] font-semibold tracking-wide text-white flex items-center">
+                    <span className="h-7 px-2.5 rounded-[8px] border border-dashed border-white/50 text-[12px] font-semibold tracking-wide text-white flex items-center min-w-0 truncate">
                       {offer.coupon_code}
                     </span>
                   )}
-                  <span className="h-7 pl-3 pr-2 rounded-full bg-white text-pd-ink text-[12px] font-semibold flex items-center gap-0.5">
+                  <span className="h-7 pl-3 pr-2 rounded-full bg-white text-pd-ink text-[12px] font-semibold flex items-center gap-0.5 shrink-0 whitespace-nowrap">
                     {offer.action === 'reserve' ? 'Book table' : 'Order now'}
                     <ChevronRight className="w-3.5 h-3.5" strokeWidth={2.5} />
                   </span>
