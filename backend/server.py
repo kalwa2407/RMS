@@ -958,6 +958,16 @@ async def create_order(
         order_dict["estimated_delivery_time"] = (now + timedelta(minutes=35)).isoformat()
 
     created_order = await manager.create_order(order_dict)
+
+    # Auto-dispatch starts the moment the customer places a delivery order:
+    # > 5 km -> Porter now; else 30 s for an in-house rider (or the admin) to take it, then Porter.
+    if order_dict.get("order_type") not in ("DINE_IN", "TAKEAWAY"):
+        try:
+            from dispatch_service import start_dispatch
+            await start_dispatch(manager, order_id)
+            created_order = await manager.get_order_by_id(order_id) or created_order
+        except Exception as dispatch_err:
+            logger.warning(f"[Dispatch] start on placement failed for {order_id}: {dispatch_err}")
     return created_order
 
 
@@ -1189,6 +1199,11 @@ async def request_order_cancellation(order_id: str, cancellation: OrderCancellat
     }
     
     await manager.update_order_status(order_id, "cancelled", status_update)
+    try:
+        from dispatch_service import release_on_cancel
+        await release_on_cancel(manager, order_id, reason="Order cancelled by customer")
+    except Exception as release_err:
+        logger.warning(f"[Dispatch] release on customer cancel failed for {order_id}: {release_err}")
     return {"message": "Order cancellation requested", "status": "cancelled"}
 
 @api_router.get("/orders/customer/{phone}")
@@ -1926,13 +1941,20 @@ async def admin_update_order_status(
 
     await manager.update_order(order_id, update_data)
 
-    # Auto-dispatch: > 5 km -> Porter now; else offer to in-house riders for 30 s, then Porter
+    # Auto-dispatch normally started at placement; on accept this is only a fallback (runs once per order)
     if status_update.status == "accepted":
         try:
             from dispatch_service import start_dispatch
             await start_dispatch(manager, order_id)
         except Exception as dispatch_err:
             logger.warning(f"[Dispatch] start failed for {order_id}: {dispatch_err}")
+    # Rejected / cancelled: close the rider offer and cancel any Porter booking (avoid Porter charges)
+    if status_update.status in ("rejected", "cancelled"):
+        try:
+            from dispatch_service import release_on_cancel
+            await release_on_cancel(manager, order_id, reason=f"Order {status_update.status} by restaurant")
+        except Exception as release_err:
+            logger.warning(f"[Dispatch] release on {status_update.status} failed for {order_id}: {release_err}")
 
     return await manager.get_order_by_id(order_id)
 
@@ -4206,7 +4228,8 @@ async def delivery_get_assigned_orders(
     orders = await manager.get_orders_by_partner(partner_id)
 
     # Include all relevant statuses â€” active AND completed
-    visible_statuses = {"accepted", "preparing", "ready", "out_for_delivery", "delivered", "cancelled"}
+    # "placed": a rider can take a delivery (auto-dispatch) before the kitchen has accepted it
+    visible_statuses = {"placed", "accepted", "preparing", "ready", "out_for_delivery", "delivered", "cancelled"}
     return sorted(
         [o for o in orders if o.get("status") in visible_statuses],
         key=lambda x: x.get("created_at", ""),

@@ -59,7 +59,11 @@ const OfferCard = ({ offer, secondsLeft, windowSeconds, busy, onAccept, onDeclin
           <span className="flex items-center gap-1"><Package className="h-3.5 w-3.5"/>{offer.items_count} item{offer.items_count === 1 ? "" : "s"}</span>
           <span className="flex items-center gap-1"><CreditCard className="h-3.5 w-3.5"/>{offer.payment_method === "cod" ? `Collect ${fmt(offer.total)}` : "Prepaid"}</span>
         </div>
-        {offer.branch_name && <p className="text-[11px] text-gray-500">Pickup: {offer.branch_name}</p>}
+        {offer.branch_name && (
+          <p className="text-[11px] text-gray-500">
+            Pickup: {offer.branch_name}{offer.status === "placed" ? " · kitchen hasn't accepted yet" : ""}
+          </p>
+        )}
         <div className="flex gap-2.5 pt-1">
           <button disabled={busy} onClick={onDecline}
             className="flex-1 py-3 rounded-2xl text-sm font-bold active:scale-95 transition-transform disabled:opacity-50"

@@ -2,7 +2,9 @@
 Auto-dispatch for delivery orders.
 
 Rules (when AUTO_DISPATCH_ENABLED=true):
-  * As soon as a delivery order is ACCEPTED by the restaurant:
+  * As soon as a delivery order is PLACED by the customer (the restaurant can still accept it and
+    assign a rider by hand during the window; if it is rejected/cancelled, any Porter booking is
+    cancelled automatically):
       - distance > DISPATCH_PORTER_KM (default 5 km)  -> book a Porter rider immediately.
       - otherwise -> offer the order to the active in-house riders for
         DISPATCH_RIDER_WINDOW_SECONDS (default 30 s). The first rider to tap
@@ -90,15 +92,22 @@ def has_rider(order: Dict[str, Any]) -> bool:
     return bool(order.get("delivery_partner_id") or order.get("porter_order_id"))
 
 
+CLOSED_ORDER_STATUSES = ("rejected", "cancelled", "delivered")
+
+
+def is_order_live(order: Dict[str, Any]) -> bool:
+    return order.get("status") not in CLOSED_ORDER_STATUSES
+
+
 def offer_is_open(order: Dict[str, Any], now: Optional[datetime] = None) -> bool:
-    if order.get("dispatch_status") != OFFERED or has_rider(order):
+    if order.get("dispatch_status") != OFFERED or has_rider(order) or not is_order_live(order):
         return False
     exp = _parse(order.get("dispatch_expires_at"))
     return bool(exp and (now or _now()) < exp)
 
 
 def offer_is_expired(order: Dict[str, Any], now: Optional[datetime] = None) -> bool:
-    if order.get("dispatch_status") != OFFERED or has_rider(order):
+    if order.get("dispatch_status") != OFFERED or has_rider(order) or not is_order_live(order):
         return False
     exp = _parse(order.get("dispatch_expires_at"))
     return bool(exp and (now or _now()) >= exp)
@@ -174,11 +183,13 @@ async def _add_to_rider_current_orders(manager, partner_id: str, order_id: str) 
 # ── Entry point: order accepted ───────────────────────────────────────────────
 
 async def start_dispatch(manager, order_id: str) -> Optional[str]:
-    """Called right after a delivery order is accepted. Returns the resulting dispatch_status."""
+    """Called right after a delivery order is PLACED (and again on accept as a fallback; it only
+    ever runs once per order). Returns the resulting dispatch_status."""
     if not dispatch_enabled():
         return None
     order = await manager.get_order_by_id(order_id)
-    if not order or not is_delivery_order(order) or has_rider(order) or order.get("dispatch_status"):
+    if (not order or not is_delivery_order(order) or not is_order_live(order)
+            or has_rider(order) or order.get("dispatch_status")):
         return None
 
     km = order.get("distance_km")
@@ -291,6 +302,7 @@ async def offers_for_rider(manager, partner: Dict[str, Any]) -> List[Dict[str, A
         exp = _parse(o.get("dispatch_expires_at"))
         result.append({
             "order_id": o.get("order_id"),
+            "status": o.get("status"),
             "branch_name": o.get("branch_name"),
             "address": o.get("address"),
             "distance_km": o.get("distance_km"),
@@ -335,6 +347,60 @@ async def sweep_expired(manager) -> int:
     return count
 
 
+# ── Order rejected / cancelled ────────────────────────────────────────────────
+
+PORTER_PICKED_UP = ("order_picked_up", "started_for_delivery", "delivered")
+
+
+async def release_on_cancel(manager, order_id: str, reason: str = "Order cancelled") -> Optional[str]:
+    """
+    Dispatch now starts at order placement, so Porter can already be booked when the restaurant
+    rejects or the customer cancels. Close any open rider offer and cancel the Porter booking
+    (unless the Porter rider has already picked the food up). Returns what was done, if anything.
+    """
+    order = await manager.get_order_by_id(order_id)
+    if not order:
+        return None
+
+    if order.get("dispatch_status") == OFFERED and not has_rider(order):
+        await manager.update_order(order_id, {"dispatch_status": "closed", "dispatch_reason": reason})
+        return "offer_closed"
+
+    porter_id = order.get("porter_order_id")
+    if not porter_id:
+        return None
+    if order.get("porter_status") in PORTER_PICKED_UP:
+        logger.warning(f"[Dispatch] {order_id} cancelled after Porter pickup - Porter booking left as is")
+        return "porter_already_picked_up"
+
+    try:
+        from porter_service import cancel_porter_order
+        res = await cancel_porter_order(porter_id, reason)
+    except Exception as e:
+        res = {"success": False, "error": str(e)}
+
+    if res.get("success"):
+        await manager.update_order(order_id, {
+            "porter_order_id": None,
+            "porter_status": "cancelled",
+            "porter_tracking_url": None,
+            "porter_rider_name": None,
+            "porter_rider_phone": None,
+            "dispatch_status": "closed",
+            "dispatch_reason": f"{reason}; Porter booking {porter_id} cancelled",
+            "status_history": _history(order, f"Porter booking {porter_id} cancelled automatically ({reason})"),
+        })
+        logger.info(f"[Dispatch] Porter {porter_id} cancelled for {order_id} ({reason})")
+        return "porter_cancelled"
+
+    await manager.update_order(order_id, {
+        "dispatch_reason": f"{reason}; Porter cancel FAILED for {porter_id}: {res.get('error')} - cancel it in the Porter dashboard",
+        "status_history": _history(order, f"Porter cancel failed ({res.get('error')}) - cancel {porter_id} manually"),
+    })
+    logger.warning(f"[Dispatch] Porter cancel failed for {order_id}: {res.get('error')}")
+    return "porter_cancel_failed"
+
+
 # ── Porter booking ────────────────────────────────────────────────────────────
 
 async def book_porter(manager, order_id: str, reason: str, from_offer: bool = False) -> Optional[str]:
@@ -342,7 +408,7 @@ async def book_porter(manager, order_id: str, reason: str, from_offer: bool = Fa
     now = _now()
 
     def can_claim(o: Dict[str, Any]) -> bool:
-        if has_rider(o):
+        if has_rider(o) or not is_order_live(o):
             return False
         if from_offer:
             return o.get("dispatch_status") == OFFERED
