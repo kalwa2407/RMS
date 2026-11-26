@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { ChefHat, Clock, RefreshCw, CheckCircle, AlertCircle, Printer } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import API_BASE from "../../lib/config";
+import { Page, PageHeader, Card, Button, StatusPill, EmptyState, LoadingState } from "./ui";
 import { printKOT } from "../../lib/PrintService";
 
 const KitchenView = () => {
@@ -73,158 +74,89 @@ const KitchenView = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <RefreshCw className="h-8 w-8 text-primary animate-spin" />
-      </div>
-    );
+    return <LoadingState rows={4} label="Loading kitchen orders" />;
   }
 
   return (
-    <div>
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
-        <div>
-          <h1 className="text-2xl font-bold text-[#EAB308]" style={{ fontFamily: "'Playfair Display', serif" }}>Kitchen View</h1>
-          <p className="text-gray-500 text-xs">Updated: {lastRefresh.toLocaleTimeString()} · Auto-refresh every 10s</p>
-        </div>
-        <button
-          onClick={fetchKitchenOrders}
-          className="flex items-center gap-2 bg-[#1a4855] px-3 py-2 rounded-lg text-[#EAB308] text-sm hover:bg-[#254a58] transition"
-        >
-          <RefreshCw className="h-4 w-4" />
-          <span className="hidden sm:inline">Refresh</span>
-        </button>
-      </div>
+    <Page>
+      <PageHeader
+        title="Kitchen"
+        subtitle={<span>Updated <span className="pd-tabular">{lastRefresh.toLocaleTimeString()}</span> · refreshes every 10 s</span>}
+        actions={<Button icon={RefreshCw} onClick={fetchKitchenOrders}>Refresh</Button>}
+      />
 
-      {/* Orders Grid */}
       {orders.length === 0 ? (
-        <div className="bg-[#1a4855] rounded-xl p-12 text-center">
-          <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-          <h2 className="text-xl text-white mb-2">All Caught Up!</h2>
-          <p className="text-gray-400">No pending orders in the kitchen</p>
-        </div>
+        <Card>
+          <EmptyState icon={CheckCircle} title="All caught up" description="No pending orders in the kitchen." />
+        </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {orders.map((order) => (
-            <div
-              key={order.order_id}
-              className={`bg-[#1a4855] rounded-xl p-5 border-2 ${
-                order.status === "accepted"
-                  ? "border-yellow-500"
-                  : "border-orange-500"
-              }`}
-            >
-              {/* Order Header */}
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-primary font-bold text-lg">
-                      {order.kot_number || order.order_id}
-                    </span>
-                    {order.order_type === "DINE_IN" && order.table_number && (
-                      <span className="bg-primary text-black px-2 py-1 rounded text-sm font-bold">
-                        Table {order.table_number}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-gray-400 text-sm mt-1">
-                    {order.customer_name}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <span
-                    className={`px-2 py-1 rounded text-xs font-bold ${
-                      order.status === "accepted"
-                        ? "bg-yellow-500/20 text-yellow-500"
-                        : "bg-orange-500/20 text-orange-500"
-                    }`}
-                  >
-                    {order.status.toUpperCase()}
-                  </span>
-                </div>
-              </div>
-
-              {/* Order Time */}
-              <div className="flex items-center space-x-2 text-gray-400 text-sm mb-1">
-                <Clock className="h-4 w-4" />
-                <span>{getTimeSinceOrder(order.created_at)}</span>
-              </div>
-              {order.created_at && (
-                <p className="text-gray-600 text-xs mb-3">
-                  {new Date(order.created_at).toLocaleString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true, day: "2-digit", month: "short" })}
-                </p>
-              )}
-
-              {/* Items */}
-              <div className="bg-[#0f2933] rounded-lg p-3 mb-4">
-                <h4 className="text-white font-bold mb-2">Items:</h4>
-                <ul className="space-y-2">
-                  {(order.items || []).map((item, idx) => (
-                    <li key={idx} className="text-gray-300">
-                      <div className="flex justify-between">
-                        <span>
-                          <span className="text-primary font-bold mr-2">
-                            {item.quantity}x
-                          </span>
-                          {item.name}
-                        </span>
-                      </div>
-                      {item.variant && (
-                        <span className="text-gray-500 text-sm ml-6">({item.variant})</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          {orders.map((order) => {
+            const preparing = order.status === "preparing";
+            return (
+              <Card key={order.order_id} padded={false} className="flex flex-col">
+                <div className="flex items-start justify-between gap-3 px-4 pt-4">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[17px] font-semibold pd-tabular text-[var(--a-text)]">{order.kot_number || order.order_id}</span>
+                      {order.order_type === "DINE_IN" && order.table_number && (
+                        <StatusPill tone="neutral">Table {order.table_number}</StatusPill>
                       )}
+                    </div>
+                    <div className="text-[13px] text-[var(--a-text-2)] truncate">{order.customer_name}</div>
+                  </div>
+                  <StatusPill tone={preparing ? "warn" : "info"} dot>
+                    <span className="capitalize">{order.status}</span>
+                  </StatusPill>
+                </div>
+
+                <div className="px-4 pt-1 flex items-center gap-1.5 text-[13px] text-[var(--a-text-2)]">
+                  <Clock className="h-3.5 w-3.5" />
+                  <span className="pd-tabular">{getTimeSinceOrder(order.created_at)}</span>
+                  {order.created_at && (
+                    <span className="text-[var(--a-text-3)] pd-tabular">
+                      · {new Date(order.created_at).toLocaleString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true, day: "2-digit", month: "short" })}
+                    </span>
+                  )}
+                </div>
+
+                <div className="mx-4 mt-3 rounded-[12px] bg-[var(--a-inset)] divide-y divide-[var(--a-line)]">
+                  {(order.items || []).map((item, idx) => (
+                    <div key={idx} className="px-3 py-2 text-[15px]">
+                      <div className="text-[var(--a-text)]">
+                        <span className="pd-tabular font-semibold mr-2">{item.quantity}×</span>
+                        {item.name}
+                      </div>
+                      {item.variant && <div className="pl-7 text-[13px] text-[var(--a-text-2)]">{item.variant}</div>}
                       {item.addons && item.addons.length > 0 && (
-                        <span className="text-gray-500 text-sm ml-6 block">
-                          + {item.addons.join(", ")}
-                        </span>
+                        <div className="pl-7 text-[13px] text-[var(--a-text-2)]">+ {item.addons.join(", ")}</div>
                       )}
                       {item.special_instructions && (
-                        <div className="ml-6 mt-1 text-yellow-500 text-sm flex items-center">
-                          <AlertCircle className="h-3 w-3 mr-1" />
+                        <div className="pl-7 mt-0.5 flex items-center gap-1 text-[13px] text-[var(--a-warn)]">
+                          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                           {item.special_instructions}
                         </div>
                       )}
-                    </li>
+                    </div>
                   ))}
-                </ul>
-              </div>
+                </div>
 
-              {/* Action Buttons */}
-              <div className="flex space-x-2">
-                <button
-                  type="button"
-                  onClick={() => printKOT(order)}
-                  className="px-3 bg-amber-500/20 text-yellow-400 border border-yellow-500/30 py-2 rounded-lg font-bold hover:bg-yellow-500/30 transition flex items-center justify-center gap-1.5"
-                  title="Print Kitchen Order Ticket (80mm Thermal)"
-                >
-                  <Printer className="h-4 w-4" />
-                  <span>KOT</span>
-                </button>
-                {order.status === "accepted" && (
-                  <button
-                    onClick={() => updateOrderStatus(order.order_id, "preparing")}
-                    className="flex-1 bg-orange-500 text-white py-2 rounded-lg font-bold hover:bg-orange-600 transition"
-                  >
-                    Start Preparing
-                  </button>
-                )}
-                {order.status === "preparing" && (
-                  <button
-                    onClick={() => updateOrderStatus(order.order_id, "ready")}
-                    className="flex-1 bg-green-500 text-white py-2 rounded-lg font-bold hover:bg-green-600 transition"
-                  >
-                    Mark Ready
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
+                <div className="mt-auto p-4 flex gap-2">
+                  <Button variant="tinted" icon={Printer} onClick={() => printKOT(order)} title="Print Kitchen Order Ticket (80mm Thermal)">KOT</Button>
+                  {order.status === "accepted" && (
+                    <Button variant="primary" className="flex-1" onClick={() => updateOrderStatus(order.order_id, "preparing")}>Start Preparing</Button>
+                  )}
+                  {preparing && (
+                    <Button variant="success" className="flex-1" onClick={() => updateOrderStatus(order.order_id, "ready")}>Mark Ready</Button>
+                  )}
+                </div>
+              </Card>
+            );
+          })}
         </div>
       )}
-    </div>
+    </Page>
   );
 };
 
 export default KitchenView;
-
-

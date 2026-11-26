@@ -220,34 +220,27 @@ export const DINING_MOODS = [
   }
 ];
 
-// Helper to generate varied, realistic ratings and order counts per dish (never identical 1.4k or 4.8)
+// Real dish metrics only. Ratings and order counts are shown only when the
+// backend actually provides them; we never invent social proof.
 export const getDishMetrics = (dish) => {
-  if (!dish) return { rating: '4.8', orderCount: '1.6k+ ordered' };
-  if (dish.rating && dish.order_count) {
-    return { rating: Number(dish.rating).toFixed(1), orderCount: dish.order_count };
-  }
-  const idStr = String(dish._id || dish.id || dish.name || 'darbar_dish');
-  let hash = 0;
-  for (let i = 0; i < idStr.length; i++) {
-    hash = (hash << 5) - hash + idStr.charCodeAt(i);
-    hash |= 0;
-  }
-  const positiveHash = Math.abs(hash);
-  const ratingVariations = ['4.8', '4.9', '4.7', '4.8', '4.9', '4.6', '4.8', '4.9'];
-  const countVariations = [
-    '950+ ordered',
-    '1.8k+ ordered',
-    '2.6k+ ordered',
-    '3.2k+ ordered',
-    '820+ ordered',
-    '1.5k+ ordered',
-    '4.1k+ ordered',
-    '2.2k+ ordered',
-    '1.1k+ ordered'
-  ];
-  const rating = dish.rating ? Number(dish.rating).toFixed(1) : ratingVariations[positiveHash % ratingVariations.length];
-  const orderCount = countVariations[positiveHash % countVariations.length];
+  if (!dish) return { rating: null, orderCount: null };
+  const ratingNum = Number(dish.rating);
+  const rating = dish.rating && !Number.isNaN(ratingNum) ? ratingNum.toFixed(1) : null;
+  const orderCount = dish.order_count ? String(dish.order_count) : null;
   return { rating, orderCount };
+};
+
+// Veg detection. Prefer explicit backend flags; fall back to name/category
+// keywords. "Non-Veg" categories must never count as veg.
+const NON_VEG_KEYWORDS = /(non[\s-]?veg|chicken|mutton|lamb|gosht|keema|fish|prawn|pomfret|egg|anda|beef|kebab|seekh)/i;
+const VEG_KEYWORDS = /(\bveg\b|vegetable|vegetarian|paneer|\bdal\b|daal|aloo|gobi|mushroom|subz|sabz|kulfi|phirni|firni|naan|roti|lassi)/i;
+export const isVegDish = (dish) => {
+  if (!dish) return false;
+  if (typeof dish.is_veg === 'boolean') return dish.is_veg;
+  if (typeof dish.veg === 'boolean') return dish.veg;
+  const text = `${dish.category || ''} ${dish.name || ''}`;
+  if (NON_VEG_KEYWORDS.test(text)) return false;
+  return VEG_KEYWORDS.test(text);
 };
 
 // Royalty Club Tiers & Milestones for Dedicated Rewards Page
@@ -406,7 +399,7 @@ export const DEFAULT_PERSIAN_DARBAR_OFFERS = [
     badge_text: 'TABLE PRIVILEGE',
     image_url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?crop=entropy&cs=srgb&fm=jpg&w=600&q=80',
     bg_gradient: 'linear-gradient(135deg, #FFF1F2 0%, #FFE4E6 50%, #FECDD3 100%)',
-    accent_color: '#E40000',
+    accent_color: '#B4232F',
     action: 'reserve'
   }
 ];

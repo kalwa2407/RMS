@@ -1,38 +1,81 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  User,
-  Phone,
-  MapPin,
-  Crown,
-  Star,
-  Clock,
-  ShoppingBag,
-  Calendar,
-  Share2,
-  LogOut,
-  Check,
-  ChevronRight,
-  Award,
-  Sparkles,
-  MessageSquare,
-  Gift,
-  ShieldCheck,
-  Edit2,
-  X,
-  CreditCard,
-  MessageCircle,
-  HelpCircle,
-  Heart,
-  Settings,
-  Bell,
-  UtensilsCrossed,
-  Printer,
-  Copy,
-  Plus,
-  Trash2
+  Phone, MapPin, Crown, ShoppingBag, Calendar, LogOut, Check, ChevronRight, ChevronLeft,
+  Sparkles, X, MessageCircle, Plus, Trash2, Pencil, Coins, Store, Bike, Gift
 } from 'lucide-react';
 import { ROYAL_MEMBERSHIP_PRIVILEGES, PERSIAN_DARBAR_BRANCHES } from '../customerAssets';
+import { cx, EmptyState, formatINR } from '../ui';
+
+const PRIV_ICONS = { Coins, Bike, Crown, Gift };
+
+const STATUS_STYLE = {
+  placed: ['Placed', 'bg-pd-surface text-pd-ink'],
+  accepted: ['Accepted', 'bg-[#FFF5E5] text-pd-warn'],
+  preparing: ['Preparing', 'bg-[#FFF5E5] text-pd-warn'],
+  ready: ['Ready', 'bg-[#EAF2FD] text-[#1A5FB4]'],
+  out_for_delivery: ['On the way', 'bg-[#EAF2FD] text-[#1A5FB4]'],
+  delivered: ['Delivered', 'bg-[#EAF6EE] text-pd-success'],
+  cancelled: ['Cancelled', 'bg-[#FDECEC] text-pd-error'],
+  rejected: ['Cancelled', 'bg-[#FDECEC] text-pd-error'],
+};
+
+/* Grouped list (iOS settings style) */
+const Group = ({ title, children, className = '' }) => (
+  <section className={cx('px-4 pt-6', className)}>
+    {title && <h3 className="px-1 mb-2 text-[13px] font-semibold uppercase tracking-[0.06em] text-pd-ink-3">{title}</h3>}
+    <div className="rounded-[16px] border border-[color:var(--pd-line)] divide-y divide-[color:var(--pd-line)] overflow-hidden">
+      {children}
+    </div>
+  </section>
+);
+
+const Row = ({ icon: Icon, label, detail, onClick, href, danger = false, id, trailing, external }) => {
+  const inner = (
+    <>
+      {Icon && (
+        <span className={cx('w-9 h-9 rounded-full flex items-center justify-center shrink-0', danger ? 'bg-[#FDECEC]' : 'bg-pd-surface')}>
+          <Icon className={cx('w-[18px] h-[18px]', danger ? 'text-pd-error' : 'text-pd-ink')} strokeWidth={1.75} />
+        </span>
+      )}
+      <span className={cx('flex-1 min-w-0 text-[16px]', danger ? 'text-pd-error font-medium' : 'text-pd-ink')}>{label}</span>
+      {detail != null && <span className="text-[15px] text-pd-ink-3 pd-tabular shrink-0">{detail}</span>}
+      {trailing !== undefined ? trailing : !danger && <ChevronRight className="w-5 h-5 text-pd-ink-3 shrink-0" />}
+    </>
+  );
+  const cls = 'w-full min-h-[56px] flex items-center gap-3 px-4 py-2 text-left pd-press bg-white';
+  if (href) {
+    return <a href={href} id={id} className={cls} {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}>{inner}</a>;
+  }
+  return <button type="button" id={id} onClick={onClick} className={cls}>{inner}</button>;
+};
+
+/* Bottom sheet dialog */
+const Sheet = ({ title, onClose, children, center = false }) => (
+  <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center animate-in fade-in duration-200">
+    <button type="button" aria-label="Close" className="absolute inset-0 cursor-default" onClick={onClose} />
+    <div
+      role="dialog"
+      aria-modal="true"
+      className={cx('relative w-full max-w-md bg-white rounded-t-[24px] sm:rounded-[24px] px-5 pt-5 animate-in slide-in-from-bottom duration-300 ease-pd-out', center && 'text-center')}
+      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 20px)' }}
+    >
+      {title && (
+        <div className={cx('flex items-center', center ? 'justify-center' : 'justify-between')}>
+          <h3 className="text-[20px] font-bold text-pd-ink">{title}</h3>
+          {!center && (
+            <button type="button" onClick={onClose} aria-label="Close" className="w-9 h-9 rounded-full bg-pd-surface flex items-center justify-center pd-press">
+              <X className="w-[18px] h-[18px] text-pd-ink-2" />
+            </button>
+          )}
+        </div>
+      )}
+      {children}
+    </div>
+  </div>
+);
+
+const fieldCls = 'w-full bg-pd-surface rounded-[12px] px-3.5 text-[16px] text-pd-ink placeholder:text-pd-ink-3 focus:outline-none focus:ring-2 focus:ring-pd-action/30';
 
 const CustomerProfileTab = ({
   currentUser,
@@ -90,7 +133,7 @@ const CustomerProfileTab = ({
   const [newAddressText, setNewAddressText] = useState('');
 
   const isLoggedIn = !!currentUser || !!customerProfile?.phone || !!localStorage.getItem('customer_phone') || !!localStorage.getItem('customer_jwt');
-  const patronName = nameVal || (isLoggedIn ? 'Valued Patron' : 'Guest');
+  const patronName = nameVal || (isLoggedIn ? 'Persian Darbar member' : 'Guest');
   const patronPhone = phoneVal;
   const patronEmail = customerProfile?.email || currentUser?.email || localStorage.getItem('customer_email') || '';
   const patronInitial = (patronName?.[0] || 'P').toUpperCase();
@@ -124,889 +167,441 @@ const CustomerProfileTab = ({
     setIsAddAddressOpen(false);
   };
 
+  const SubHeader = ({ title, action, onAction }) => (
+    <div className="px-2 pt-2 flex items-center justify-between">
+      <button type="button" onClick={() => setSection('overview')} className="h-11 pl-1 pr-3 flex items-center gap-0.5 text-[16px] text-pd-action pd-press">
+        <ChevronLeft className="w-5 h-5" strokeWidth={2.25} />
+        Account
+      </button>
+      {action && (
+        <button type="button" onClick={onAction} className="h-11 px-3 text-[15px] font-semibold text-pd-action flex items-center gap-1 pd-press">
+          {action}
+        </button>
+      )}
+      <h2 className="sr-only">{title}</h2>
+    </div>
+  );
+
   return (
-    <div className="flex-1 w-full max-w-full overflow-x-hidden pb-44 pt-2 px-4 space-y-4">
-      {/* ── 1. APPLE HIG PATRON HEADER CARD OR GUEST STATE ── */}
-      {!isLoggedIn ? (
-        <section className="bg-white/95 backdrop-blur-md rounded-3xl p-6 border border-black/[0.06] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.05)] relative overflow-hidden text-center space-y-4">
-          <div className="absolute top-0 right-0 w-36 h-36 bg-gradient-to-bl from-amber-400/10 via-amber-200/5 to-transparent rounded-bl-full pointer-events-none" />
-          
-          <img
-            src="/app-icon.png"
-            alt="Persian Darbar"
-            className="w-16 h-16 rounded-2xl shadow-md border border-amber-400/70 object-contain mx-auto"
-          />
-
-          <div>
-            <h2 className="text-lg font-black text-neutral-900 leading-tight">
-              Welcome to Persian Darbar
-            </h2>
-            <p className="text-xs text-neutral-500 mt-1.5 max-w-xs mx-auto leading-relaxed font-medium">
-              Log in to track live biryani orders, redeem your Royalty PD Coins, and view saved delivery addresses.
-            </p>
-          </div>
-
-          <div className="pt-1 space-y-2">
-            <button
-              onClick={() => navigate('/customer/login')}
-              className="w-full py-4 px-4 rounded-2xl bg-gradient-to-r from-[#E40000] via-[#D31027] to-[#B91C1C] text-white font-black text-xs uppercase tracking-wider shadow-[0_6px_20px_-2px_rgba(228,0,0,0.38)] ios-press transition-all flex items-center justify-center space-x-1.5 cursor-pointer border border-white/20 active:scale-95"
-            >
-              <span>Log in or Sign up</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </section>
-      ) : (
-        <section className="bg-white/95 backdrop-blur-md rounded-3xl p-5 border border-black/[0.06] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.05)] relative overflow-hidden">
-          {/* Subtle royal background glow */}
-          <div className="absolute top-0 right-0 w-36 h-36 bg-gradient-to-bl from-amber-400/10 via-amber-200/5 to-transparent rounded-bl-full pointer-events-none" />
-
-          <div className="flex items-start justify-between relative z-10">
-            <div className="flex items-center space-x-3.5">
-              <div className="relative">
-                {currentUser?.photoURL ? (
-                  <img
-                    src={currentUser.photoURL}
-                    alt={patronName}
-                    className="w-16 h-16 rounded-2xl object-cover shadow-md border-2 border-amber-400/70"
-                  />
-                ) : (
-                  <div className="w-16 h-16 rounded-2xl bg-[#1C1917] text-amber-300 flex items-center justify-center font-black text-2xl shadow-md border-2 border-amber-400/70">
-                    {patronInitial}
-                  </div>
-                )}
-                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-amber-400 border-2 border-white flex items-center justify-center shadow-xs">
-                  <Crown className="w-3 h-3 text-neutral-950 fill-neutral-950" />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center space-x-1.5">
-                  <h2 className="text-base font-black text-neutral-900 leading-tight">
-                    {patronName}
-                  </h2>
-                  <div className="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[9px] font-black" title="Verified Patron">
-                    ✓
-                  </div>
-                </div>
-                {patronPhone && (
-                  <p className="text-xs font-semibold text-neutral-500 mt-0.5">
-                    +91 {patronPhone}
-                  </p>
-                )}
-                {patronEmail && (
-                  <p className="text-[11px] text-neutral-400 truncate max-w-[200px]">
-                    {patronEmail}
-                  </p>
-                )}
-                <div className="mt-1.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-400/20 text-amber-800 border border-amber-400/40 shadow-xs">
-                  <Sparkles className="w-2.5 h-2.5" />
-                  <span>GOLD VIP PATRON</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1.5 shrink-0">
-              <button
-                onClick={() => setIsEditModalOpen(true)}
-                className="p-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 ios-press transition-all shrink-0 cursor-pointer border border-black/[0.04]"
-                title="Edit Profile Details"
-              >
-                <Edit2 className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setShowLogoutModal(true)}
-                className="p-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-[#E40000] border border-red-200/80 ios-press transition-all shrink-0 cursor-pointer flex items-center justify-center shadow-xs"
-                title="Sign Out"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* ── 2. APPLE 4-CARD QUICK STATS ── */}
-          <div className="grid grid-cols-4 gap-2 mt-5 pt-4 border-t border-black/[0.05] text-center">
-            <div
-              onClick={() => setSection('orders')}
-              className={`p-2.5 rounded-2xl cursor-pointer transition-all ios-press ${
-                section === 'orders'
-                  ? 'bg-gradient-to-b from-red-50 to-white border border-red-300 text-[#E40000] shadow-[0_4px_12px_rgba(228,0,0,0.12)]'
-                  : 'bg-neutral-100/70 text-neutral-800 hover:bg-neutral-200/70 border border-black/[0.04]'
-              }`}
-            >
-              <span className="block text-base font-black">{orders.length}</span>
-              <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-tight block">Orders</span>
-            </div>
-
-            <div
-              onClick={() => setSection('reservations')}
-              className={`p-2.5 rounded-2xl cursor-pointer transition-all ios-press ${
-                section === 'reservations'
-                  ? 'bg-gradient-to-b from-red-50 to-white border border-red-300 text-[#E40000] shadow-[0_4px_12px_rgba(228,0,0,0.12)]'
-                  : 'bg-neutral-100/70 text-neutral-800 hover:bg-neutral-200/70 border border-black/[0.04]'
-              }`}
-            >
-              <span className="block text-base font-black">{reservations.length}</span>
-              <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-tight block">Tables</span>
-            </div>
-
-            <div
-              onClick={() => setSection('rewards')}
-              className={`p-2.5 rounded-2xl cursor-pointer transition-all ios-press ${
-                section === 'rewards'
-                  ? 'bg-gradient-to-b from-amber-50 to-white border border-amber-300 text-amber-800 shadow-[0_4px_12px_rgba(245,158,11,0.15)]'
-                  : 'bg-neutral-100/70 text-neutral-800 hover:bg-neutral-200/70 border border-black/[0.04]'
-              }`}
-            >
-              <span className="block text-base font-black text-amber-700">{pdCoins}</span>
-              <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-tight block">Coins</span>
-            </div>
-
-            <div
-              onClick={() => setSection('addresses')}
-              className={`p-2.5 rounded-2xl cursor-pointer transition-all ios-press ${
-                section === 'addresses'
-                  ? 'bg-gradient-to-b from-red-50 to-white border border-red-300 text-[#E40000] shadow-[0_4px_12px_rgba(228,0,0,0.12)]'
-                  : 'bg-neutral-100/70 text-neutral-800 hover:bg-neutral-200/70 border border-black/[0.04]'
-              }`}
-            >
-              <span className="block text-base font-black">{savedAddresses.length}</span>
-              <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-tight block">Saved</span>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ── 3. SECTION SELECTOR PILLS (Apple Tactile Pills) ── */}
-      <div className="flex space-x-1.5 overflow-x-auto no-scrollbar pb-1">
-        {[
-          { id: 'overview', label: 'All Services', icon: Sparkles },
-          { id: 'orders', label: `My Orders (${orders.length})`, icon: ShoppingBag },
-          { id: 'reservations', label: `My Tables (${reservations.length})`, icon: Calendar },
-          { id: 'addresses', label: 'Address Book', icon: MapPin },
-          { id: 'rewards', label: 'Royalty Club', icon: Award }
-        ].map((tab) => {
-          const isActive = section === tab.id;
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setSection(tab.id)}
-              className={`py-2 px-3.5 rounded-2xl text-xs font-bold transition-all flex items-center space-x-1.5 shrink-0 whitespace-nowrap cursor-pointer ios-press ${
-                isActive
-                  ? 'bg-neutral-900 text-white shadow-sm'
-                  : 'bg-white text-neutral-600 border border-black/[0.06] hover:bg-neutral-50 shadow-xs'
-              }`}
-            >
-              <Icon className="w-3.5 h-3.5 shrink-0" />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
-
-      {/* ══════════════════════════════════════════════════════════════════
-          SECTION 1: OVERVIEW (Hub of All Zomato-style Features)
-         ══════════════════════════════════════════════════════════════════ */}
+    <div className="flex-1 w-full max-w-full overflow-x-clip pb-44 bg-white min-h-screen">
       {section === 'overview' && (
-        <div className="space-y-4">
-          {/* Sovereign Obsidian & Gold Royal Pass */}
-          <div className="rounded-3xl p-5 text-white bg-gradient-to-br from-[#0B131B] via-[#141F2D] to-[#0A1017] border border-amber-400/40 shadow-[0_8px_30px_-6px_rgba(0,0,0,0.25)] relative overflow-hidden">
-            <div className="absolute -top-12 -right-12 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
-            <div className="flex items-center justify-between relative z-10">
-              <div className="flex items-center space-x-2">
-                <img src="/persian_darbar_crown_logo.png" alt="" className="w-6 h-6 rounded-lg object-contain shadow-xs border border-amber-400/30" />
-                <span className="text-xs font-black uppercase tracking-wider text-amber-300">
-                  PERSIAN DARBAR ROYAL PASS
-                </span>
-              </div>
-              <span className="text-[10px] font-black uppercase bg-amber-400/20 text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-400/40 shadow-xs">
-                ACTIVE PATRON
-              </span>
-            </div>
-
-            <p className="text-sm font-black text-white mt-3 relative z-10">
-              5% Instant PD Coins on every order + Free Delivery within 10 km
-            </p>
-            <p className="text-[11px] text-neutral-300 mt-1 relative z-10 font-medium">
-              Priority table reservation across Bandra, Andheri, Kurla &amp; Camp Pune outlets.
-            </p>
-
-            <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs relative z-10">
-              <span className="text-neutral-300 font-medium">Available Balance: <strong className="text-amber-300 font-black">{pdCoins} Coins</strong></span>
-              <button
-                onClick={() => setSection('rewards')}
-                className="text-amber-400 hover:text-amber-300 font-black flex items-center gap-0.5 ios-press cursor-pointer"
-              >
-                <span>Passbook</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Quick Shortcuts Section */}
-          <div className="bg-white rounded-3xl p-4 border border-neutral-200/80 shadow-xs space-y-1">
-            <h3 className="text-xs font-black uppercase tracking-wider text-neutral-400 px-2 py-1">
-              FOOD ORDERS & BOOKINGS
-            </h3>
-
-            <div
-              onClick={() => setSection('orders')}
-              className="p-3 rounded-2xl hover:bg-neutral-50 flex items-center justify-between cursor-pointer transition-colors"
-            >
-              <div className="flex items-center space-x-3">
-                <div className="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">
-                  <ShoppingBag className="w-4.5 h-4.5" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-neutral-900">Your Online Orders</h4>
-                  <p className="text-[10px] text-neutral-500">{orders.length} orders placed</p>
-                </div>
-              </div>
-              <ChevronRight className="w-4 h-4 text-neutral-400" />
-            </div>
-
-            <div
-              onClick={() => setSection('reservations')}
-              className="p-3 rounded-2xl hover:bg-neutral-50 flex items-center justify-between cursor-pointer transition-colors"
-            >
-              <div className="flex items-center space-x-3">
-                <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center">
-                  <Calendar className="w-4.5 h-4.5" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-neutral-900">Table Reservations</h4>
-                  <p className="text-[10px] text-neutral-500">{reservations.length} table bookings</p>
-                </div>
-              </div>
-              <ChevronRight className="w-4 h-4 text-neutral-400" />
-            </div>
-
-            <div
-              onClick={() => setSection('addresses')}
-              className="p-3 rounded-2xl hover:bg-neutral-50 flex items-center justify-between cursor-pointer transition-colors"
-            >
-              <div className="flex items-center space-x-3">
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                  <MapPin className="w-4.5 h-4.5" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-neutral-900">Saved Delivery Addresses</h4>
-                  <p className="text-[10px] text-neutral-500">{savedAddresses.length} saved locations</p>
-                </div>
-              </div>
-              <ChevronRight className="w-4 h-4 text-neutral-400" />
-            </div>
-          </div>
-
-          {/* Persian Darbar Official Outlets Direct Contact */}
-          <div className="bg-white rounded-3xl p-4 border border-neutral-200/80 shadow-xs space-y-2">
-            <h3 className="text-xs font-black uppercase tracking-wider text-neutral-400 px-2">
-              PERSIAN DARBAR OUTLETS & DIRECT PHONES
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-              {PERSIAN_DARBAR_BRANCHES.map((b) => (
-                <div key={b.id} className="p-3 rounded-2xl bg-[#FAF8F5] border border-neutral-100 flex items-center justify-between">
-                  <div>
-                    <h5 className="font-black text-neutral-900">{b.name}</h5>
-                    <p className="text-[10px] text-neutral-500">{b.shortAddress}</p>
-                    <span className="text-[10px] font-mono text-amber-800 font-bold">{b.phones[0]}</span>
-                  </div>
-                  <a
-                    href={`tel:${b.phones[0].replace(/\s/g, '')}`}
-                    className="p-2 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold text-[11px] flex items-center gap-1 shrink-0"
-                  >
-                    <Phone className="w-3.5 h-3.5" />
-                    <span>Call</span>
-                  </a>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 24x7 WhatsApp Royal Concierge */}
-          <a
-            href="https://wa.me/917028033763?text=Hello%20Persian%20Darbar%20Concierge,%20I%20need%20assistance%20with%20my%20order."
-            target="_blank"
-            rel="noreferrer"
-            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white font-black text-xs flex items-center justify-center space-x-2 shadow-sm ios-press transition-all border border-white/20"
-          >
-            <MessageCircle className="w-4 h-4 text-white" />
-            <span>24x7 Royal WhatsApp Concierge</span>
-          </a>
-
-          {/* Logout Action */}
-          {currentUser && (
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => setShowLogoutModal(true)}
-                className="w-full py-3.5 rounded-2xl bg-red-50/80 hover:bg-red-100 text-[#E40000] font-black text-xs flex items-center justify-center space-x-2 border border-red-200 ios-press transition-all cursor-pointer shadow-xs"
-              >
-                <LogOut className="w-4 h-4 text-[#E40000]" />
-                <span>Log Out from Persian Darbar</span>
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ══════════════════════════════════════════════════════════════════
-          SECTION 2: MY ORDERS (Zomato-style Order History & Reorder)
-         ══════════════════════════════════════════════════════════════════ */}
-      {section === 'orders' && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <h3 className="text-xs font-black uppercase tracking-wider text-neutral-400">
-              YOUR ORDER HISTORY ({orders.length})
-            </h3>
-            <button
-              onClick={onGoToOrder}
-              className="text-xs font-black text-[#E40000] hover:underline flex items-center gap-0.5"
-            >
-              <span>+ Order Now</span>
-            </button>
-          </div>
-
-          {orders.length === 0 ? (
-            <div className="bg-white rounded-3xl p-8 border border-neutral-200/80 text-center space-y-3 shadow-xs">
-              <div className="w-14 h-14 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center mx-auto">
-                <ShoppingBag className="w-7 h-7" />
-              </div>
-              <h4 className="font-black text-sm text-neutral-900">No Orders Placed Yet</h4>
-              <p className="text-xs text-neutral-500 max-w-xs mx-auto">
-                Treat yourself to authentic Persian Darbar Dum Biryanis & succulent Raan.
+        <>
+          {/* ── Header ── */}
+          {!isLoggedIn ? (
+            <section className="px-6 pt-10 pb-4 text-center">
+              <img src="/app-icon.png" alt="" className="w-16 h-16 rounded-[18px] object-contain mx-auto shadow-pd-1" />
+              <h2 className="mt-4 text-[24px] font-bold text-pd-ink tracking-[-0.01em]">Welcome to Persian Darbar</h2>
+              <p className="mt-1.5 text-[15px] text-pd-ink-2 max-w-xs mx-auto">
+                Log in to track orders, use your PD Coins and save addresses.
               </p>
               <button
-                onClick={onGoToOrder}
-                className="px-5 py-2.5 rounded-2xl bg-[#E40000] hover:bg-[#CC0000] text-white text-xs font-black shadow-md active:scale-95 transition-all"
+                type="button"
+                onClick={() => navigate('/customer/login')}
+                className="mt-6 w-full h-[52px] rounded-[14px] bg-pd-action text-white text-[16px] font-semibold pd-press"
               >
-                Explore Menu ›
+                Log in or sign up
               </button>
-            </div>
+            </section>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {orders.map((ord) => {
-              const orderId = ord.order_id || ord.id || ord._id;
-              const dateStr = ord.created_at ? new Date(ord.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recent';
-              const itemsList = ord.items || [];
-              const statusColors = {
-                placed: 'bg-blue-50 text-blue-700 border-blue-200',
-                accepted: 'bg-amber-50 text-amber-700 border-amber-200',
-                preparing: 'bg-yellow-50 text-yellow-800 border-yellow-200',
-                ready: 'bg-purple-50 text-purple-700 border-purple-200',
-                out_for_delivery: 'bg-orange-50 text-orange-700 border-orange-200',
-                delivered: 'bg-emerald-50 text-emerald-700 border-emerald-200'
-              };
+            <section className="px-4 pt-6">
+              <div className="flex items-center gap-4">
+                {currentUser?.photoURL ? (
+                  <img src={currentUser.photoURL} alt="" className="w-16 h-16 rounded-full object-cover" />
+                ) : (
+                  <span className="w-16 h-16 rounded-full bg-pd-teal text-white flex items-center justify-center text-[26px] font-semibold">
+                    {patronInitial}
+                  </span>
+                )}
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-[22px] leading-7 font-bold text-pd-ink truncate tracking-[-0.01em]">{patronName}</h2>
+                  {patronPhone && <p className="text-[14px] text-pd-ink-2 pd-tabular">+91 {patronPhone}</p>}
+                  {patronEmail && <p className="text-[13px] text-pd-ink-3 truncate">{patronEmail}</p>}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(true)}
+                  aria-label="Edit profile"
+                  className="w-10 h-10 rounded-full bg-pd-surface flex items-center justify-center text-pd-ink pd-press shrink-0"
+                >
+                  <Pencil className="w-[18px] h-[18px]" strokeWidth={1.75} />
+                </button>
+              </div>
 
-              return (
-                <div key={orderId} className="bg-white rounded-3xl p-4 border border-neutral-200/80 shadow-xs space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-mono font-bold text-xs text-neutral-900">
-                          #{String(orderId).slice(-8).toUpperCase()}
-                        </span>
-                        <span className="text-[10px] font-bold text-neutral-400">· {dateStr}</span>
+              {/* Stats */}
+              <div className="mt-5 grid grid-cols-3 gap-2.5">
+                {[
+                  { id: 'orders', label: 'Orders', value: orders.length },
+                  { id: 'reservations', label: 'Bookings', value: reservations.length },
+                  { id: 'rewards', label: 'PD Coins', value: pdCoins, gold: true },
+                ].map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setSection(s.id)}
+                    className={cx('rounded-[14px] py-3 text-center pd-press', s.gold ? 'bg-pd-gold-tint' : 'bg-pd-surface')}
+                  >
+                    <span className={cx('block text-[20px] font-bold pd-tabular', s.gold ? 'text-pd-gold' : 'text-pd-ink')}>{s.value}</span>
+                    <span className="block text-[12px] text-pd-ink-2">{s.label}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* ── Your activity ── */}
+          <Group title="Your activity">
+            <Row icon={ShoppingBag} label="Orders" detail={orders.length || null} onClick={() => setSection('orders')} />
+            <Row icon={Calendar} label="Table reservations" detail={reservations.length || null} onClick={() => setSection('reservations')} />
+            <Row icon={MapPin} label="Saved addresses" detail={savedAddresses.length || null} onClick={() => setSection('addresses')} />
+            <Row icon={Crown} label="Royalty Club" detail={`${pdCoins} coins`} onClick={() => setSection('rewards')} />
+          </Group>
+
+          {/* ── Help ── */}
+          <Group title="Help">
+            <Row
+              icon={MessageCircle}
+              label="Chat on WhatsApp"
+              href="https://wa.me/917028033763?text=Hello%20Persian%20Darbar%20Concierge,%20I%20need%20assistance%20with%20my%20order."
+              external
+            />
+            {PERSIAN_DARBAR_BRANCHES.map((b) => (
+              <Row
+                key={b.id}
+                icon={Store}
+                label={
+                  <span className="block">
+                    <span className="block text-[16px] text-pd-ink">{b.name}</span>
+                    <span className="block text-[13px] text-pd-ink-3 truncate">{b.shortAddress}</span>
+                  </span>
+                }
+                href={`tel:${b.phones[0].replace(/\s/g, '')}`}
+                trailing={
+                  <span className="w-9 h-9 rounded-full bg-[#EAF6EE] flex items-center justify-center shrink-0">
+                    <Phone className="w-4 h-4 text-pd-success" strokeWidth={2} />
+                  </span>
+                }
+              />
+            ))}
+          </Group>
+
+          {/* ── Account (sign out + delete: App Store 5.1.1(v)) ── */}
+          {isLoggedIn && (
+            <>
+              <Group title="Account">
+                <Row icon={LogOut} label="Sign out" onClick={() => setShowLogoutModal(true)} trailing={null} />
+                <Row icon={Trash2} label="Delete account" danger id="delete-account-btn" onClick={() => setShowDeleteModal(true)} trailing={null} />
+              </Group>
+              <p className="px-6 pt-3 text-[12px] text-pd-ink-3">
+                Deleting your account permanently removes your profile, saved addresses and PD Coins.
+              </p>
+              <p className="px-6 pt-4 text-[12px] text-pd-ink-3 text-center">
+                Logged in as {patronName} {patronPhone ? `(+91 ${patronPhone})` : ''}
+              </p>
+            </>
+          )}
+        </>
+      )}
+
+      {/* ── Orders ── */}
+      {section === 'orders' && (
+        <>
+          <SubHeader title="Orders" action="Order food" onAction={onGoToOrder} />
+          <h2 className="px-4 pt-1 text-[28px] font-bold text-pd-ink tracking-[-0.015em]">Orders</h2>
+          {orders.length === 0 ? (
+            <EmptyState icon={ShoppingBag} title="No orders yet" message="Your past and live orders will appear here." actionLabel="Browse menu" onAction={onGoToOrder} />
+          ) : (
+            <div className="px-4 pt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+              {orders.map((ord) => {
+                const orderId = ord.order_id || ord.id || ord._id;
+                const dateStr = ord.created_at ? new Date(ord.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recent';
+                const itemsList = ord.items || [];
+                const [statusLabel, statusCls] = STATUS_STYLE[ord.status] || [ord.status || 'Placed', 'bg-pd-surface text-pd-ink'];
+                const isActive = !['delivered', 'cancelled', 'rejected'].includes(ord.status);
+                return (
+                  <article key={orderId} className="rounded-[16px] border border-[color:var(--pd-line)] p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[15px] font-semibold text-pd-ink pd-tabular">#{String(orderId).slice(-8).toUpperCase()}</p>
+                        <p className="text-[12px] text-pd-ink-3">{dateStr} · {(ord.order_type || 'DELIVERY') === 'TAKEAWAY' ? 'Pickup' : 'Delivery'} · {(ord.payment_method || 'cod').toUpperCase()}</p>
                       </div>
-                      <span className="text-[10px] uppercase font-bold text-neutral-500 block mt-0.5">
-                        {ord.order_type || 'DELIVERY'} · {ord.payment_method?.toUpperCase() || 'COD'}
+                      <span className={cx('h-7 px-2.5 rounded-full text-[12px] font-semibold flex items-center shrink-0', statusCls)}>{statusLabel}</span>
+                    </div>
+                    <ul className="mt-3 space-y-1">
+                      {itemsList.map((item, idx) => (
+                        <li key={idx} className="flex justify-between gap-3 text-[14px]">
+                          <span className="text-pd-ink-2 truncate"><span className="text-pd-ink pd-tabular">{item.quantity} ×</span> {item.name}</span>
+                          <span className="text-pd-ink pd-tabular shrink-0">{formatINR((item.price || 0) * (item.quantity || 1))}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    {(ord.cooking_instructions || ord.delivery_instructions) && (
+                      <div className="mt-3 rounded-[10px] bg-pd-surface px-3 py-2 text-[13px] text-pd-ink-2 space-y-0.5">
+                        {ord.cooking_instructions && <p>Kitchen: {ord.cooking_instructions}</p>}
+                        {ord.delivery_instructions && <p>Rider: {ord.delivery_instructions}</p>}
+                      </div>
+                    )}
+                    <div className="mt-3 pt-3 border-t border-[color:var(--pd-line)] flex items-center justify-between gap-2">
+                      <span className="text-[16px] font-bold text-pd-ink pd-tabular">{formatINR(ord.total || 0)}</span>
+                      <div className="flex items-center gap-2">
+                        {isActive && onTrackOrder && (
+                          <button type="button" onClick={() => onTrackOrder(ord)} className="h-9 px-3.5 rounded-full bg-pd-ink text-white text-[14px] font-semibold flex items-center gap-1.5 pd-press">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#7EE2A0]" /> Track
+                          </button>
+                        )}
+                        <button type="button" onClick={() => onReorder && onReorder(ord)} className="h-9 px-3.5 rounded-full border border-[color:var(--pd-line)] text-pd-action text-[14px] font-semibold pd-press">
+                          Reorder
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── Reservations ── */}
+      {section === 'reservations' && (
+        <>
+          <SubHeader title="Reservations" action="Book" onAction={onGoToReserve} />
+          <h2 className="px-4 pt-1 text-[28px] font-bold text-pd-ink tracking-[-0.015em]">Reservations</h2>
+          {reservations.length === 0 ? (
+            <EmptyState icon={Calendar} title="No reservations yet" message="Book a table at any Persian Darbar outlet." actionLabel="Book a table" onAction={onGoToReserve} />
+          ) : (
+            <div className="px-4 pt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+              {reservations.map((res, idx) => {
+                const mood = res.dining_mood || (res.special_requests && res.special_requests.match(/Mood:\s*([^|\]]+)/)?.[1]?.trim());
+                return (
+                  <article key={idx} className="rounded-[16px] border border-[color:var(--pd-line)] p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-[16px] font-semibold text-pd-ink">{res.date} · {res.time}</p>
+                        <p className="text-[13px] text-pd-ink-2">Table for {res.guests}</p>
+                      </div>
+                      <span className="h-7 px-2.5 rounded-full text-[12px] font-semibold flex items-center bg-[#EAF6EE] text-pd-success capitalize shrink-0">
+                        {res.status || 'Confirmed'}
                       </span>
                     </div>
+                    {mood && <p className="mt-2 text-[13px] text-pd-ink">{mood}</p>}
+                    {res.special_requests && (
+                      <p className="mt-2 text-[13px] text-pd-ink-2 bg-pd-surface rounded-[10px] px-3 py-2">{res.special_requests}</p>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
 
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border ${statusColors[ord.status] || 'bg-neutral-100 text-neutral-700 border-neutral-200'}`}>
-                      {ord.status || 'placed'}
-                    </span>
+      {/* ── Addresses ── */}
+      {section === 'addresses' && (
+        <>
+          <SubHeader title="Saved addresses" action={<><Plus className="w-4 h-4" strokeWidth={2.5} />Add</>} onAction={() => setIsAddAddressOpen(true)} />
+          <h2 className="px-4 pt-1 text-[28px] font-bold text-pd-ink tracking-[-0.015em]">Saved addresses</h2>
+          {savedAddresses.length === 0 ? (
+            <EmptyState icon={MapPin} title="No saved addresses" message="Add your home or work address for faster checkout." actionLabel="Add address" onAction={() => setIsAddAddressOpen(true)} />
+          ) : (
+            <div className="px-4 pt-4 space-y-3">
+              {savedAddresses.map((addr) => (
+                <article key={addr.id} className="rounded-[16px] border border-[color:var(--pd-line)] p-4 flex items-start gap-3">
+                  <span className="w-9 h-9 rounded-full bg-pd-surface flex items-center justify-center shrink-0">
+                    <MapPin className="w-[18px] h-[18px] text-pd-ink" strokeWidth={1.75} />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[16px] font-semibold text-pd-ink flex items-center gap-2">
+                      {addr.tag}
+                      {addr.isDefault && <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-pd-success">Default</span>}
+                    </p>
+                    <p className="mt-0.5 text-[14px] text-pd-ink-2 leading-5">{addr.address}</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (onSaveAddress) onSaveAddress(addr.address);
+                        localStorage.setItem('customer_address', addr.address);
+                        alert(`Selected ${addr.tag} as your active delivery address.`);
+                      }}
+                      className="mt-2 text-[14px] font-semibold text-pd-action pd-press"
+                    >
+                      Deliver here
+                    </button>
                   </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </>
+      )}
 
-                  {/* Items Summary */}
-                  <div className="py-2 border-y border-neutral-100 space-y-1">
-                    {itemsList.map((item, idx) => (
-                      <div key={idx} className="flex justify-between text-xs">
-                        <span className="text-neutral-700 font-medium">
-                          {item.name} <strong className="text-neutral-900">×{item.quantity}</strong>
-                        </span>
-                        <span className="text-neutral-900 font-bold">
-                          ₹{((item.price || 0) * (item.quantity || 1)).toFixed(0)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Cooking & Delivery Notes if present */}
-                  {(ord.cooking_instructions || ord.delivery_instructions) && (
-                    <div className="p-2 rounded-xl bg-[#FAF8F5] border border-amber-900/5 text-[10px] space-y-0.5">
-                      {ord.cooking_instructions && (
-                        <p className="text-amber-900 font-medium">Chef note: {ord.cooking_instructions}</p>
-                      )}
-                      {ord.delivery_instructions && (
-                        <p className="text-neutral-600 font-medium">Delivery note: {ord.delivery_instructions}</p>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Footer: Track Order + Reorder Buttons */}
-                  <div className="flex items-center justify-between pt-1">
-                    <div>
-                      <span className="text-[10px] text-neutral-400 uppercase font-bold block">Bill Total</span>
-                      <span className="text-sm font-black text-neutral-900">₹{(ord.total || 0).toFixed(0)}</span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {/* Show Track button for active orders */}
-                      {!['delivered', 'cancelled', 'rejected'].includes(ord.status) && onTrackOrder && (
-                        <button
-                          onClick={() => onTrackOrder(ord)}
-                          className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 border border-blue-200 text-xs font-black transition-colors active:scale-95 flex items-center gap-1"
-                        >
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                          Track
-                        </button>
-                      )}
-
-                      <button
-                        onClick={() => onReorder && onReorder(ord)}
-                        className="px-3.5 py-1.5 rounded-xl bg-red-50 hover:bg-[#E40000] hover:text-white text-[#E40000] border border-red-200 text-xs font-black transition-colors active:scale-95"
-                      >
-                        Reorder
-                      </button>
-                    </div>
+      {/* ── Rewards ── */}
+      {section === 'rewards' && (
+        <>
+          <SubHeader title="Royalty Club" />
+          <h2 className="px-4 pt-1 text-[28px] font-bold text-pd-ink tracking-[-0.015em]">Royalty Club</h2>
+          <section className="px-4 pt-4">
+            <div className="rounded-[20px] bg-pd-teal text-white p-5 flex items-end justify-between gap-3">
+              <div>
+                <p className="text-[13px] text-white/70">PD Coins balance</p>
+                <p className="mt-0.5 text-[36px] leading-none font-bold pd-tabular">{pdCoins}</p>
+                <p className="mt-1.5 text-[13px] text-white/70 pd-tabular">Worth ₹{pdCoins} at checkout</p>
+              </div>
+              <button type="button" onClick={onGoToOrder} className="h-10 px-4 rounded-full bg-[#E9C67A] text-pd-ink text-[14px] font-semibold pd-press">
+                Use coins
+              </button>
+            </div>
+          </section>
+          <Group title="Member benefits">
+            {ROYAL_MEMBERSHIP_PRIVILEGES.map((priv, idx) => {
+              const Icon = PRIV_ICONS[priv.icon] || Sparkles;
+              return (
+                <div key={idx} className="flex items-start gap-3 px-4 py-3.5 bg-white">
+                  <span className="w-9 h-9 rounded-full bg-pd-surface flex items-center justify-center shrink-0">
+                    <Icon className="w-[18px] h-[18px] text-pd-ink" strokeWidth={1.75} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[15px] font-semibold text-pd-ink">{priv.title}</p>
+                    <p className="text-[13px] text-pd-ink-2">{priv.desc}</p>
                   </div>
                 </div>
               );
             })}
-            </div>
-          )}
-        </div>
+          </Group>
+        </>
       )}
 
-      {/* ══════════════════════════════════════════════════════════════════
-          SECTION 3: MY RESERVATIONS
-         ══════════════════════════════════════════════════════════════════ */}
-      {section === 'reservations' && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <h3 className="text-xs font-black uppercase tracking-wider text-neutral-400">
-              YOUR TABLE RESERVATIONS ({reservations.length})
-            </h3>
-            <button
-              onClick={onGoToReserve}
-              className="text-xs font-black text-[#E40000] hover:underline flex items-center gap-0.5"
-            >
-              <span>+ Book Table</span>
+      {/* ── Add address ── */}
+      {isAddAddressOpen && (
+        <Sheet title="Add address" onClose={() => setIsAddAddressOpen(false)}>
+          <form onSubmit={handleAddNewAddress} className="mt-4 space-y-4">
+            <div className="flex gap-2">
+              {['Home', 'Work', 'Other'].map(tag => (
+                <button
+                  key={tag}
+                  type="button"
+                  aria-pressed={newAddressTag === tag}
+                  onClick={() => setNewAddressTag(tag)}
+                  className={cx(
+                    'flex-1 h-10 rounded-[10px] text-[14px] font-semibold border transition-colors',
+                    newAddressTag === tag ? 'bg-pd-ink text-white border-pd-ink' : 'bg-white text-pd-ink border-[color:var(--pd-line)]'
+                  )}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+            <textarea
+              rows={3}
+              value={newAddressText}
+              onChange={(e) => setNewAddressText(e.target.value)}
+              placeholder="Flat / house no., building, street, area, PIN code"
+              className={cx(fieldCls, 'py-3 resize-none')}
+              required
+            />
+            <button type="submit" className="w-full h-12 rounded-[14px] bg-pd-ink text-white text-[16px] font-semibold pd-press">
+              Save address
             </button>
-          </div>
+          </form>
+        </Sheet>
+      )}
 
-          {reservations.length === 0 ? (
-            <div className="bg-white rounded-3xl p-8 border border-neutral-200/80 text-center space-y-3 shadow-xs">
-              <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
-                <Calendar className="w-7 h-7" />
-              </div>
-              <h4 className="font-black text-sm text-neutral-900">No Reservations Yet</h4>
-              <p className="text-xs text-neutral-500 max-w-xs mx-auto">
-                Reserve your royal table in advance with preferred dining mood across any of our 4 Persian Darbar outlets.
-              </p>
-              <button
-                onClick={onGoToReserve}
-                className="px-5 py-2.5 rounded-2xl bg-[#E40000] hover:bg-[#CC0000] text-white text-xs font-black shadow-md active:scale-95 transition-all"
-              >
-                Book a Table ›
-              </button>
+      {/* ── Edit profile ── */}
+      {isEditModalOpen && (
+        <Sheet title="Edit profile" onClose={() => setIsEditModalOpen(false)}>
+          {savedSuccess ? (
+            <div className="py-10 text-center">
+              <span className="w-12 h-12 rounded-full bg-[#EAF6EE] flex items-center justify-center mx-auto">
+                <Check className="w-6 h-6 text-pd-success" strokeWidth={2.5} />
+              </span>
+              <p className="mt-3 text-[16px] font-semibold text-pd-ink">Profile updated</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {reservations.map((res, idx) => (
-                <div key={idx} className="bg-white rounded-3xl p-4 border border-neutral-200/80 shadow-xs space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] font-black uppercase text-neutral-400">
-                        Table for {res.guests} Guests
-                      </span>
-                      <h4 className="font-black text-sm text-neutral-900">
-                        {res.date} at {res.time}
-                      </h4>
-                    </div>
-
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      {res.status || 'Confirmed'}
-                    </span>
-                  </div>
-
-                  {/* Dining Mood Badge */}
-                  {(res.dining_mood || (res.special_requests && res.special_requests.includes('Mood:'))) && (
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-black uppercase text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full">
-                        Mood: {res.dining_mood || (res.special_requests.match(/Mood:\s*([^|\]]+)/)?.[1]?.trim()) || 'Royal Dastarkhwan'}
-                      </span>
-                    </div>
-                  )}
-
-                  {res.special_requests && (
-                    <p className="text-[11px] text-neutral-500 bg-[#FAF8F5] p-2.5 rounded-2xl border border-neutral-100">
-                      {res.special_requests}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ══════════════════════════════════════════════════════════════════
-          SECTION 4: ADDRESS BOOK (Zomato-style Saved Addresses)
-         ══════════════════════════════════════════════════════════════════ */}
-      {section === 'addresses' && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <h3 className="text-xs font-black uppercase tracking-wider text-neutral-400">
-              SAVED DELIVERY ADDRESSES
-            </h3>
-            <button
-              onClick={() => setIsAddAddressOpen(true)}
-              className="text-xs font-black text-[#E40000] hover:underline flex items-center gap-1"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add New</span>
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 space-y-0">
-            {savedAddresses.map((addr) => (
-              <div key={addr.id} className="bg-white rounded-3xl p-4 border border-neutral-200/80 shadow-xs flex items-start justify-between space-x-3">
-                <div className="flex items-start space-x-3">
-                  <div className="w-9 h-9 rounded-xl bg-neutral-100 text-neutral-700 flex items-center justify-center shrink-0 mt-0.5">
-                    <MapPin className="w-4.5 h-4.5" />
-                  </div>
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <h4 className="font-black text-xs text-neutral-900">{addr.tag}</h4>
-                      {addr.isDefault && (
-                        <span className="text-[9px] font-black uppercase bg-emerald-100 text-emerald-800 px-2 py-0.2 rounded-full">
-                          Default
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-neutral-600 mt-1 leading-relaxed">
-                      {addr.address}
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => {
-                    if (onSaveAddress) onSaveAddress(addr.address);
-                    localStorage.setItem('customer_address', addr.address);
-                    alert(`Selected ${addr.tag} as your active delivery address.`);
-                  }}
-                  className="px-3 py-1.5 rounded-xl bg-neutral-100 hover:bg-neutral-900 hover:text-white text-neutral-700 text-xs font-bold transition-colors shrink-0"
-                >
-                  Deliver Here
-                </button>
-              </div>
-            ))}
-          </div>
-
-          {/* Add New Address Form Modal */}
-          {isAddAddressOpen && (
-            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-              <div className="bg-white rounded-3xl p-5 max-w-sm w-full space-y-4 shadow-2xl border border-neutral-200">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-black text-sm text-neutral-900">Add New Address</h3>
-                  <button onClick={() => setIsAddAddressOpen(false)} className="w-7 h-7 rounded-full bg-neutral-100 flex items-center justify-center">
-                    <X className="w-4 h-4 text-neutral-500" />
-                  </button>
-                </div>
-
-                <form onSubmit={handleAddNewAddress} className="space-y-3">
-                  <div>
-                    <label className="text-[10px] font-black uppercase text-neutral-400 block mb-1">Tag Location</label>
-                    <div className="flex gap-2">
-                      {['Home', 'Work', 'Other'].map(tag => (
-                        <button
-                          key={tag}
-                          type="button"
-                          onClick={() => setNewAddressTag(tag)}
-                          className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all ${
-                            newAddressTag === tag ? 'bg-neutral-900 text-white border-neutral-900' : 'bg-neutral-50 text-neutral-700 border-neutral-200'
-                          }`}
-                        >
-                          {tag}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-[10px] font-black uppercase text-neutral-400 block mb-1">Complete Address</label>
-                    <textarea
-                      rows={3}
-                      value={newAddressText}
-                      onChange={(e) => setNewAddressText(e.target.value)}
-                      placeholder="Flat/House No, Building, Street, Area, Pin code..."
-                      className="w-full text-xs p-3 rounded-2xl border border-neutral-200 focus:outline-none focus:border-amber-500 resize-none"
-                      required
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full py-3 rounded-2xl bg-neutral-900 text-white text-xs font-black shadow-md active:scale-98"
-                  >
-                    Save Address
-                  </button>
-                </form>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ══════════════════════════════════════════════════════════════════
-          SECTION 5: ROYALTY REWARDS HUB
-         ══════════════════════════════════════════════════════════════════ */}
-      {section === 'rewards' && (
-        <div className="space-y-3">
-          <div className="bg-white rounded-3xl p-5 border border-neutral-200/80 shadow-xs space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-[10px] font-black uppercase text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
-                  ROYALTY BALANCE
-                </span>
-                <div className="flex items-baseline space-x-2 mt-1">
-                  <span className="text-3xl font-black text-amber-800">{pdCoins}</span>
-                  <span className="text-xs font-bold text-neutral-500">PD Coins</span>
-                </div>
-                <p className="text-xs text-neutral-600 mt-0.5">
-                  Worth <strong>₹{pdCoins}</strong> instant deduction at checkout.
-                </p>
-              </div>
-
-              <button
-                onClick={onGoToOrder}
-                className="px-4 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-500 text-neutral-950 text-xs font-black shadow-xs active:scale-95"
-              >
-                Use in Cart ›
+            <form onSubmit={handleSaveProfile} className="mt-4 space-y-4">
+              <label className="block">
+                <span className="block text-[13px] font-medium text-pd-ink-2 mb-1.5">Full name</span>
+                <input type="text" value={nameVal} onChange={(e) => setNameVal(e.target.value)} autoComplete="name" className={cx(fieldCls, 'h-12')} required />
+              </label>
+              <label className="block">
+                <span className="block text-[13px] font-medium text-pd-ink-2 mb-1.5">Phone number</span>
+                <input type="tel" inputMode="tel" value={phoneVal} onChange={(e) => setPhoneVal(e.target.value)} autoComplete="tel-national" className={cx(fieldCls, 'h-12 pd-tabular')} required />
+              </label>
+              <label className="block">
+                <span className="block text-[13px] font-medium text-pd-ink-2 mb-1.5">Default address</span>
+                <textarea rows={2} value={addressVal} onChange={(e) => setAddressVal(e.target.value)} autoComplete="street-address" className={cx(fieldCls, 'py-3 resize-none')} required />
+              </label>
+              <button type="submit" className="w-full h-12 rounded-[14px] bg-pd-ink text-white text-[16px] font-semibold pd-press">
+                Save changes
               </button>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-3xl p-4 border border-neutral-200/80 shadow-xs space-y-3">
-            <h3 className="text-xs font-black uppercase tracking-wider text-neutral-400 px-1">
-              VIP MEMBERSHIP PRIVILEGES
-            </h3>
-            <div className="space-y-2.5">
-              {ROYAL_MEMBERSHIP_PRIVILEGES.map((priv, idx) => (
-                <div key={idx} className="p-3 rounded-2xl bg-[#FAF8F5] border border-neutral-100 flex items-start space-x-3">
-                  <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
-                    <Sparkles className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h5 className="font-bold text-xs text-neutral-900">{priv.title}</h5>
-                    <p className="text-[10px] text-neutral-500 mt-0.5">{priv.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+            </form>
+          )}
+        </Sheet>
       )}
 
-      {/* ── 6. PROMINENT SIGN OUT & ACCOUNT DELETION (Guideline 5.1.1(v) Compliance) ── */}
-      {isLoggedIn && (
-        <section className="pt-2 space-y-3">
-          {/* Sign Out Button */}
-          <button
-            type="button"
-            onClick={() => setShowLogoutModal(true)}
-            className="w-full py-3.5 px-4 rounded-2xl bg-white border border-black/[0.08] hover:bg-neutral-50 text-neutral-800 font-black text-xs uppercase tracking-wider shadow-xs ios-press transition-all flex items-center justify-center space-x-2 cursor-pointer active:scale-98"
-          >
-            <LogOut className="w-4 h-4 text-neutral-600" />
-            <span>Sign Out of Persian Darbar</span>
-          </button>
-
-          {/* Delete Account Danger Card (App Store Guideline 5.1.1(v)) */}
-          <div className="p-4 rounded-3xl bg-red-50/70 border border-red-200/80 space-y-2.5 shadow-xs">
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 rounded-lg bg-red-100 flex items-center justify-center text-red-600 shrink-0">
-                <Trash2 className="w-3.5 h-3.5 text-red-600" />
-              </div>
-              <span className="text-xs font-black text-red-900 uppercase tracking-wide">
-                Account Privacy &amp; Data Deletion
-              </span>
-            </div>
-            <p className="text-[11px] text-red-800/80 leading-relaxed font-medium">
-              Permanently erase your account, login credentials, saved delivery addresses, and loyalty PD coins from Persian Darbar.
-            </p>
+      {/* ── Sign out ── */}
+      {showLogoutModal && (
+        <Sheet onClose={() => setShowLogoutModal(false)} center>
+          <span className="w-14 h-14 rounded-full bg-pd-surface flex items-center justify-center mx-auto">
+            <LogOut className="w-6 h-6 text-pd-ink" strokeWidth={1.75} />
+          </span>
+          <h3 className="mt-4 text-[20px] font-bold text-pd-ink">Sign out?</h3>
+          <p className="mt-1.5 text-[15px] text-pd-ink-2">You can sign back in any time to see your orders and coins.</p>
+          <div className="mt-6 grid grid-cols-2 gap-3">
+            <button type="button" onClick={() => setShowLogoutModal(false)} className="h-12 rounded-[12px] bg-pd-surface text-pd-ink text-[15px] font-semibold pd-press">
+              Cancel
+            </button>
             <button
               type="button"
-              id="delete-account-btn"
-              onClick={() => setShowDeleteModal(true)}
-              className="w-full py-2.5 px-3 rounded-xl bg-white hover:bg-red-600 text-red-600 hover:text-white border border-red-300 font-bold text-xs ios-press transition-all flex items-center justify-center space-x-2 cursor-pointer shadow-xs active:scale-95"
+              onClick={async () => {
+                setShowLogoutModal(false);
+                if (onSignOut) await onSignOut();
+              }}
+              className="h-12 rounded-[12px] bg-pd-ink text-white text-[15px] font-semibold pd-press"
             >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Delete My Account</span>
+              Sign out
             </button>
           </div>
-
-          <p className="text-[10px] text-neutral-400 text-center mt-2 font-medium">
-            Logged in as {patronName} {patronPhone ? `(+91 ${patronPhone})` : ''}
-          </p>
-        </section>
+        </Sheet>
       )}
 
-      {/* ── EDIT PROFILE MODAL ── */}
-      {isEditModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-5 max-w-sm w-full space-y-4 shadow-2xl border border-neutral-200">
-            <div className="flex items-center justify-between">
-              <h3 className="font-black text-sm text-neutral-900">Edit Patron Profile</h3>
-              <button onClick={() => setIsEditModalOpen(false)} className="w-7 h-7 rounded-full bg-neutral-100 flex items-center justify-center">
-                <X className="w-4 h-4 text-neutral-500" />
-              </button>
-            </div>
-
-            {savedSuccess ? (
-              <div className="py-6 text-center space-y-2">
-                <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
-                  <Check className="w-6 h-6" />
-                </div>
-                <h4 className="font-black text-sm text-neutral-900">Profile Updated Successfully</h4>
-              </div>
-            ) : (
-              <form onSubmit={handleSaveProfile} className="space-y-3">
-                <div>
-                  <label className="text-[10px] font-black uppercase text-neutral-400 block mb-1">Full Name</label>
-                  <input
-                    type="text"
-                    value={nameVal}
-                    onChange={(e) => setNameVal(e.target.value)}
-                    className="w-full text-xs p-3 rounded-2xl border border-neutral-200 focus:outline-none focus:border-amber-500 font-bold"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-black uppercase text-neutral-400 block mb-1">Phone Number</label>
-                  <input
-                    type="tel"
-                    value={phoneVal}
-                    onChange={(e) => setPhoneVal(e.target.value)}
-                    className="w-full text-xs p-3 rounded-2xl border border-neutral-200 focus:outline-none focus:border-amber-500 font-bold"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-black uppercase text-neutral-400 block mb-1">Default Address</label>
-                  <textarea
-                    rows={2}
-                    value={addressVal}
-                    onChange={(e) => setAddressVal(e.target.value)}
-                    className="w-full text-xs p-3 rounded-2xl border border-neutral-200 focus:outline-none focus:border-amber-500 resize-none"
-                    required
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-3 rounded-2xl bg-neutral-900 hover:bg-neutral-800 text-amber-300 text-xs font-black shadow-md active:scale-98"
-                >
-                  Save Profile Changes
-                </button>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── CUSTOM IN-APP LOGOUT CONFIRMATION MODAL ── */}
-      {showLogoutModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl border border-neutral-200 text-center animate-in zoom-in-95 duration-200">
-            <div className="w-14 h-14 rounded-2xl bg-neutral-100 text-neutral-800 flex items-center justify-center mx-auto border border-neutral-200">
-              <LogOut className="w-7 h-7 text-neutral-700" />
-            </div>
-            <div>
-              <h3 className="font-black text-base text-neutral-900">Sign Out of Persian Darbar?</h3>
-              <p className="text-xs text-neutral-500 mt-1 leading-relaxed">
-                You will need to sign in again to view your past orders, track live food delivery, and redeem your royalty coins.
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-2.5 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowLogoutModal(false)}
-                className="py-3 rounded-2xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-bold text-xs active:scale-98 transition-all cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={async () => {
-                  setShowLogoutModal(false);
-                  if (onSignOut) await onSignOut();
-                }}
-                className="py-3 rounded-2xl bg-[#E40000] hover:bg-[#CC0000] text-white font-black text-xs shadow-md active:scale-98 transition-all cursor-pointer"
-              >
-                Yes, Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── CUSTOM IN-APP ACCOUNT DELETION CONFIRMATION MODAL (Guideline 5.1.1(v)) ── */}
+      {/* ── Delete account (Guideline 5.1.1(v)) ── */}
       {showDeleteModal && (
-        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl border border-red-200 text-center animate-in zoom-in-95 duration-200">
-            <div className="w-14 h-14 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mx-auto border border-red-200">
-              <Trash2 className="w-7 h-7 text-red-600" />
-            </div>
-            <div>
-              <h3 className="font-black text-base text-neutral-900">Delete Account Permanently?</h3>
-              <p className="text-xs text-neutral-600 mt-1.5 leading-relaxed">
-                This will permanently delete your Persian Darbar profile, remove all saved delivery addresses, and forfeit your <strong className="text-red-600 font-black">{pdCoins} PD Coins</strong>.
-              </p>
-              <p className="text-[11px] text-neutral-400 mt-2">
-                This action is irreversible and takes effect immediately.
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-2.5 pt-2">
-              <button
-                type="button"
-                disabled={deletingAccount}
-                onClick={() => setShowDeleteModal(false)}
-                className="py-3 rounded-2xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-bold text-xs active:scale-98 transition-all cursor-pointer disabled:opacity-50"
-              >
-                Keep Account
-              </button>
-              <button
-                type="button"
-                id="confirm-delete-account-btn"
-                disabled={deletingAccount}
-                onClick={async () => {
-                  setDeletingAccount(true);
-                  try {
-                    if (onDeleteAccount) await onDeleteAccount();
-                  } finally {
-                    setDeletingAccount(false);
-                    setShowDeleteModal(false);
-                  }
-                }}
-                className="py-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black text-xs shadow-md active:scale-98 transition-all cursor-pointer flex items-center justify-center space-x-1.5 disabled:opacity-50"
-              >
-                {deletingAccount ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <span>Yes, Delete</span>
-                )}
-              </button>
-            </div>
+        <Sheet onClose={() => { if (!deletingAccount) setShowDeleteModal(false); }} center>
+          <span className="w-14 h-14 rounded-full bg-[#FDECEC] flex items-center justify-center mx-auto">
+            <Trash2 className="w-6 h-6 text-pd-error" strokeWidth={1.75} />
+          </span>
+          <h3 className="mt-4 text-[20px] font-bold text-pd-ink">Delete account permanently?</h3>
+          <p className="mt-1.5 text-[15px] text-pd-ink-2">
+            Your profile and saved addresses will be deleted and your <span className="font-semibold text-pd-ink pd-tabular">{pdCoins} PD Coins</span> will be lost.
+          </p>
+          <p className="mt-2 text-[13px] text-pd-ink-3">This cannot be undone.</p>
+          <div className="mt-6 grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              disabled={deletingAccount}
+              onClick={() => setShowDeleteModal(false)}
+              className="h-12 rounded-[12px] bg-pd-surface text-pd-ink text-[15px] font-semibold pd-press disabled:opacity-50"
+            >
+              Keep account
+            </button>
+            <button
+              type="button"
+              id="confirm-delete-account-btn"
+              disabled={deletingAccount}
+              onClick={async () => {
+                setDeletingAccount(true);
+                try {
+                  if (onDeleteAccount) await onDeleteAccount();
+                } finally {
+                  setDeletingAccount(false);
+                  setShowDeleteModal(false);
+                }
+              }}
+              className="h-12 rounded-[12px] bg-pd-error text-white text-[15px] font-semibold flex items-center justify-center pd-press disabled:opacity-60"
+            >
+              {deletingAccount ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Delete'}
+            </button>
           </div>
-        </div>
+        </Sheet>
       )}
     </div>
   );

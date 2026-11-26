@@ -3,6 +3,7 @@ import { Upload, Volume2, Check, ShoppingBag, UtensilsCrossed, Loader2, Play, Mu
 import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
 import API_BASE from "../../lib/config";
+import { cx, Page, PageHeader, Button, StatusPill, FormGroup, FormRow } from "./ui";
 
 const SoundSettings = () => {
   const { toast } = useToast();
@@ -93,7 +94,7 @@ const SoundSettings = () => {
           setOnlineSoundUrl(fullUrl);
         }
         toast({
-          title: "🎉 Sound Updated!",
+          title: "Sound Updated!",
           description: `${type === "dinein" ? "Dine-In" : "Online"} order notification sound saved successfully`,
         });
 
@@ -144,50 +145,36 @@ const SoundSettings = () => {
     }
   };
 
-  const SoundCard = ({ type, title, subtitle, icon: Icon, soundUrl, accentColor }) => (
-    <div className="bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl p-6 flex flex-col justify-between shadow-xl">
-      <div>
-        <div className="flex items-center space-x-3 mb-6">
-          <div className="p-3 rounded-xl" style={{ background: `${accentColor}20`, border: `1px solid ${accentColor}40` }}>
-            <Icon className="h-6 w-6" style={{ color: accentColor }} />
-          </div>
-          <div>
-            <h3 className="text-xl font-bold text-white">{title}</h3>
-            <p className="text-gray-400 text-xs">{subtitle}</p>
-          </div>
-        </div>
-
-        {/* Current Sound Status */}
-        <div className="mb-5 bg-[#0f2933] border border-[#EAB308]/10 rounded-xl p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-              {soundUrl ? (
-                <>
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span className="text-xs text-gray-200 font-medium truncate">Custom sound active</span>
-                </>
-              ) : (
-                <>
-                  <Music className="w-4 h-4 text-[#EAB308] shrink-0" />
-                  <span className="text-xs text-gray-400">Using default royal chime</span>
-                </>
-              )}
+  const SoundCard = ({ type, title, subtitle, icon: Icon, soundUrl }) => (
+    <section className="space-y-1.5">
+      <h4 className="px-1 text-[12px] leading-4 font-medium uppercase tracking-[0.04em] text-[var(--a-text-3)]">{title}</h4>
+      <div className="rounded-[12px] border border-[var(--a-line)] bg-[var(--a-card)] divide-y divide-[var(--a-line)] overflow-hidden">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <span className="h-8 w-8 rounded-[8px] bg-[var(--a-fill)] flex items-center justify-center shrink-0">
+            <Icon className="h-4 w-4 text-[var(--a-text-2)]" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="text-[15px] text-[var(--a-text)]">{subtitle}</div>
+            <div className="mt-0.5">
+              {soundUrl
+                ? <StatusPill tone="success" icon={Check}>Custom sound active</StatusPill>
+                : <StatusPill tone="neutral" icon={Music}>Default chime</StatusPill>}
             </div>
-
-            <button
-              onClick={() => playSound(soundUrl, type)}
-              disabled={playing[type]}
-              className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-black flex items-center gap-1.5 transition-all active:scale-95 shadow shrink-0"
-              style={{ background: accentColor }}
-            >
-              {playing[type] ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5 fill-current" />}
-              <span>{playing[type] ? "Playing..." : "Test Sound"}</span>
-            </button>
           </div>
+          <Button
+            size="sm"
+            variant="tinted"
+            icon={playing[type] ? Loader2 : Play}
+            onClick={() => playSound(soundUrl, type)}
+            disabled={playing[type]}
+          >
+            {playing[type] ? "Playing…" : "Test Sound"}
+          </Button>
         </div>
-
-        {/* Upload Box */}
-        <div className="border-2 border-dashed border-[#EAB308]/25 rounded-xl p-6 text-center hover:border-[#EAB308]/60 transition-colors bg-[#07131a]/40">
+        <label
+          htmlFor={`sound-upload-${type}`}
+          className={cx("flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-[var(--a-fill)]", uploading[type] && "opacity-50 cursor-not-allowed")}
+        >
           <input
             type="file"
             id={`sound-upload-${type}`}
@@ -199,78 +186,33 @@ const SoundSettings = () => {
             className="hidden"
             disabled={uploading[type]}
           />
-          
-          <label
-            htmlFor={`sound-upload-${type}`}
-            className={`block cursor-pointer ${uploading[type] ? 'opacity-50 cursor-not-allowed' : ''}`}
-          >
-            {uploading[type] ? (
-              <Loader2 className="w-8 h-8 text-[#EAB308] mx-auto mb-2 animate-spin" />
-            ) : (
-              <Upload className="w-8 h-8 text-[#EAB308] mx-auto mb-2" />
-            )}
-            <p className="text-white font-semibold text-sm mb-0.5">
-              {uploading[type] ? "Uploading audio..." : "Click to upload custom sound"}
-            </p>
-            <p className="text-gray-400 text-[11px]">Supports MP3, WAV, OGG, WebM, M4A (Max 10MB)</p>
-          </label>
-        </div>
+          <span className="h-8 w-8 rounded-[8px] bg-[var(--a-fill)] flex items-center justify-center shrink-0">
+            {uploading[type] ? <Loader2 className="h-4 w-4 animate-spin text-[var(--a-text-2)]" /> : <Upload className="h-4 w-4 text-[var(--a-text-2)]" />}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="text-[15px] text-[var(--a-accent)]">{uploading[type] ? "Uploading audio…" : "Upload custom sound"}</div>
+            <div className="text-[12px] text-[var(--a-text-3)]">MP3, WAV, OGG, WebM or M4A, up to 10 MB</div>
+          </div>
+        </label>
       </div>
-    </div>
+    </section>
   );
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      {/* Page Title */}
-      <div>
-        <h2 className="text-3xl font-bold text-[#EAB308]" style={{ fontFamily: "Playfair Display, serif" }}>
-          Notification Sound Settings
-        </h2>
-        <p className="text-gray-300 text-sm mt-1">Configure audio alerts for new online orders and dine-in table requests</p>
-      </div>
+    <Page className="max-w-3xl">
+      <PageHeader title="Sounds" subtitle="Audio alerts for new online orders and dine-in table requests" />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Online Orders Sound */}
-        <SoundCard
-          type="online"
-          title="Online Orders"
-          subtitle="Alert when online delivery order is placed"
-          icon={ShoppingBag}
-          soundUrl={onlineSoundUrl}
-          accentColor="#EAB308"
-        />
+      <SoundCard type="online" title="Online orders" subtitle="Plays when an online delivery order is placed" icon={ShoppingBag} soundUrl={onlineSoundUrl} />
+      <SoundCard type="dinein" title="Dine-in orders" subtitle="Plays when a QR table order is placed" icon={UtensilsCrossed} soundUrl={dineinSoundUrl} />
 
-        {/* Dine-In Orders Sound */}
-        <SoundCard
-          type="dinein"
-          title="Table Dine-In Orders"
-          subtitle="Alert when QR table order is placed"
-          icon={UtensilsCrossed}
-          soundUrl={dineinSoundUrl}
-          accentColor="#60A5FA"
-        />
-      </div>
-
-      {/* Default Chime & Tips Card */}
-      <div className="bg-[#1a4855]/60 border border-[#EAB308]/20 rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h4 className="text-white font-semibold text-sm flex items-center gap-2">
-            <span>🔊 Default System Sound</span>
-          </h4>
-          <p className="text-gray-400 text-xs mt-1">
-            If no custom sound is uploaded, our signature Persian chime plays automatically.
-          </p>
-        </div>
-        <button
-          onClick={() => playSound("/notification.wav", "default")}
-          disabled={playing.default}
-          className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold flex items-center gap-2 transition-all shrink-0 border border-white/10"
-        >
-          {playing.default ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[#EAB308]" /> : <Volume2 className="w-3.5 h-3.5 text-[#EAB308]" />}
-          <span>Test Default Chime</span>
-        </button>
-      </div>
-    </div>
+      <FormGroup title="Default" footer="If no custom sound is uploaded, the signature Persian chime plays.">
+        <FormRow label="Default system chime">
+          <Button size="sm" variant="tinted" icon={playing.default ? Loader2 : Volume2} onClick={() => playSound("/notification.wav", "default")} disabled={playing.default}>
+            Test Default Chime
+          </Button>
+        </FormRow>
+      </FormGroup>
+    </Page>
   );
 };
 

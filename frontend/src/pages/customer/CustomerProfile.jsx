@@ -214,7 +214,7 @@ const CustomerProfile = () => {
             <div>
               <div className="flex items-center space-x-1.5">
                 <Crown className="w-4 h-4 text-amber-500 fill-amber-400" />
-                <h1 className="text-base font-black text-neutral-900 tracking-tight">
+                <h1 className="text-base font-bold text-neutral-900 tracking-tight">
                   Royal Patron Profile
                 </h1>
               </div>
@@ -250,7 +250,7 @@ const CustomerProfile = () => {
           <div className="flex items-start justify-between relative z-10">
             <div className="flex items-center space-x-3.5">
               <div className="relative">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-400 via-amber-200 to-amber-500 text-neutral-950 flex items-center justify-center font-black text-2xl shadow-lg border-2 border-white/40">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-400 via-amber-200 to-amber-500 text-neutral-950 flex items-center justify-center font-bold text-2xl shadow-lg border-2 border-white/40">
                   {patronInitial}
                 </div>
                 <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-amber-400 border-2 border-[#1C1917] flex items-center justify-center shadow-xs">
@@ -259,8 +259,8 @@ const CustomerProfile = () => {
               </div>
               <div>
                 <div className="flex items-center space-x-2">
-                  <h2 className="text-lg font-black tracking-tight text-white">{name}</h2>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-400/20 text-amber-300 border border-amber-400/30 flex items-center gap-1">
+                  <h2 className="text-lg font-bold tracking-tight text-white">{name}</h2>
+                  <span className="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide bg-amber-400/20 text-amber-300 border border-amber-400/30 flex items-center gap-1">
                     <Sparkles className="w-2.5 h-2.5" />
                     VIP GOLD
                   </span>
@@ -272,7 +272,7 @@ const CustomerProfile = () => {
             </div>
 
             <div className="text-right">
-              <span className="text-[10px] uppercase font-bold tracking-widest text-amber-400/80 block">
+              <span className="text-[11px] uppercase font-bold tracking-wide text-amber-400/80 block">
                 Royalty Pass
               </span>
               <span className="text-xs font-mono font-bold text-stone-300">#PD-ROYAL-786</span>
@@ -282,12 +282,12 @@ const CustomerProfile = () => {
           {/* Card Body: PD Coins Live Balance & Value */}
           <div className="mt-6 pt-5 border-t border-white/10 flex items-end justify-between relative z-10">
             <div>
-              <div className="flex items-center space-x-1.5 text-amber-300 text-xs font-bold uppercase tracking-wider mb-1">
+              <div className="flex items-center space-x-1.5 text-amber-300 text-xs font-bold uppercase tracking-wide mb-1">
                 <Crown className="w-4 h-4 text-amber-400 fill-amber-400" />
                 <span>Available PD Coins</span>
               </div>
               <div className="flex items-baseline space-x-2">
-                <span className="text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-300 to-amber-400">
+                <span className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-300 to-amber-400">
                   {patronCoins}
                 </span>
                 <span className="text-xs font-semibold text-stone-300">
@@ -298,7 +298,7 @@ const CustomerProfile = () => {
 
             <Link
               to="/customer/dashboard"
-              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-neutral-950 text-xs font-black shadow-md flex items-center space-x-1 active:scale-95 transition-transform"
+              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-neutral-950 text-xs font-bold shadow-md flex items-center space-x-1 active:scale-95 transition-transform"
             >
               <span>Redeem Now</span>
               <ChevronRight className="w-3.5 h-3.5" />
@@ -325,11 +325,11 @@ const CustomerProfile = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Crown className="w-4 h-4 text-amber-500 fill-amber-400" />
-              <h3 className="text-xs font-black text-neutral-900 uppercase tracking-wider">
+              <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wide">
                 Your Persian Darbar Privileges
               </h3>
             </div>
-            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+            <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
               Active Member
             </span>
           </div>
@@ -345,7 +345,7 @@ const CustomerProfile = () => {
                   <h4 className="text-xs font-bold text-neutral-900 leading-tight">
                     {priv.title}
                   </h4>
-                  <p className="text-[10px] text-neutral-500 leading-tight mt-0.5">
+                  <p className="text-[11px] text-neutral-500 leading-tight mt-0.5">
                     {priv.desc}
                   </p>
                 </div>
@@ -402,13 +402,13 @@ const CustomerProfile = () => {
           <div className="space-y-4">
             {/* How to Earn & Redeem */}
             <div className="bg-white rounded-2xl p-5 border border-neutral-200/80 shadow-xs space-y-3">
-              <h3 className="text-sm font-black text-neutral-900 flex items-center space-x-2">
+              <h3 className="text-sm font-bold text-neutral-900 flex items-center space-x-2">
                 <Gift className="w-4 h-4 text-amber-500" />
                 <span>How Royalty Coins Work</span>
               </h3>
               <div className="space-y-2 text-xs text-neutral-600">
                 <div className="flex items-start space-x-2.5">
-                  <div className="w-5 h-5 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                  <div className="w-5 h-5 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">
                     1
                   </div>
                   <p>
@@ -416,7 +416,7 @@ const CustomerProfile = () => {
                   </p>
                 </div>
                 <div className="flex items-start space-x-2.5">
-                  <div className="w-5 h-5 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                  <div className="w-5 h-5 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">
                     2
                   </div>
                   <p>
@@ -424,7 +424,7 @@ const CustomerProfile = () => {
                   </p>
                 </div>
                 <div className="flex items-start space-x-2.5">
-                  <div className="w-5 h-5 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                  <div className="w-5 h-5 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">
                     3
                   </div>
                   <p>
@@ -437,7 +437,7 @@ const CustomerProfile = () => {
             {/* Refer a Friend Banner */}
             <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-50 via-[#FFF9ED] to-rose-50 border border-amber-200/80 flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 bg-amber-200/60 px-2 py-0.5 rounded-full">
+                <span className="text-[11px] font-bold uppercase tracking-wide text-amber-800 bg-amber-200/60 px-2 py-0.5 rounded-full">
                   Referral Privilege
                 </span>
                 <h4 className="text-sm font-bold text-neutral-900 mt-1">
@@ -488,10 +488,10 @@ const CustomerProfile = () => {
                     <div>
                       <div className="flex items-center space-x-2">
                         <ShoppingBag className="w-4 h-4 text-amber-500" />
-                        <h4 className="text-sm font-black text-neutral-900">
+                        <h4 className="text-sm font-bold text-neutral-900">
                           {ord.order_number || `Order #${ord._id?.slice(-5) || idx + 1}`}
                         </h4>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                           {ord.status || 'DELIVERED'}
                         </span>
                       </div>
@@ -499,7 +499,7 @@ const CustomerProfile = () => {
                         {ord.outlet || 'Persian Darbar, Camp'} · {ord.date || 'Recent Order'}
                       </p>
                     </div>
-                    <span className="text-sm font-black text-neutral-900">
+                    <span className="text-sm font-bold text-neutral-900">
                       ₹{ord.total || 0}
                     </span>
                   </div>
@@ -529,7 +529,7 @@ const CustomerProfile = () => {
                     </span>
                     <button
                       onClick={() => navigate('/customer/dashboard')}
-                      className="px-3.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-neutral-950 font-black text-xs transition-colors flex items-center space-x-1"
+                      className="px-3.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-neutral-950 font-bold text-xs transition-colors flex items-center space-x-1"
                     >
                       <span>Order Again</span>
                       <ChevronRight className="w-3.5 h-3.5" />
@@ -574,7 +574,7 @@ const CustomerProfile = () => {
                     <div className="flex items-center space-x-2">
                       <Calendar className="w-4 h-4 text-amber-500" />
                       <div>
-                        <h4 className="text-xs font-black text-neutral-900">
+                        <h4 className="text-xs font-bold text-neutral-900">
                           {res.branch_name || 'Persian Darbar, Camp Pune'}
                         </h4>
                         <p className="text-[11px] text-neutral-500 mt-0.5">
@@ -582,7 +582,7 @@ const CustomerProfile = () => {
                         </p>
                       </div>
                     </div>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                       {res.status || 'CONFIRMED'}
                     </span>
                   </div>
@@ -618,9 +618,9 @@ const CustomerProfile = () => {
             onSubmit={handleSaveProfile}
             className="bg-white rounded-2xl p-5 border border-neutral-200/80 shadow-xs space-y-4 text-left"
           >
-            <h3 className="text-sm font-black text-neutral-900 pb-2 border-b border-neutral-100 flex items-center justify-between">
+            <h3 className="text-sm font-bold text-neutral-900 pb-2 border-b border-neutral-100 flex items-center justify-between">
               <span>Account & Delivery Details</span>
-              <span className="text-[10px] font-bold text-emerald-600 flex items-center space-x-1">
+              <span className="text-[11px] font-bold text-emerald-600 flex items-center space-x-1">
                 <ShieldCheck className="w-3 h-3" />
                 <span>Google Verified</span>
               </span>
@@ -663,7 +663,7 @@ const CustomerProfile = () => {
                   <Phone className="w-3.5 h-3.5 text-amber-600" />
                   <span>Delivery Mobile Number</span>
                 </span>
-                <span className="text-[10px] text-amber-700 font-semibold">Pre-filled on Orders</span>
+                <span className="text-[11px] text-amber-700 font-semibold">Pre-filled on Orders</span>
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-neutral-500">
@@ -678,7 +678,7 @@ const CustomerProfile = () => {
                   className="w-full pl-12 pr-3.5 py-2 rounded-lg border border-amber-300 text-xs font-bold text-neutral-900 focus:outline-none focus:border-amber-500 bg-white font-mono"
                 />
               </div>
-              <p className="text-[10px] text-amber-800/80">
+              <p className="text-[11px] text-amber-800/80">
                 Captains and delivery valets will contact you on this number for order updates.
               </p>
             </div>
@@ -748,7 +748,7 @@ const CustomerProfile = () => {
               <button
                 type="submit"
                 disabled={saving}
-                className="w-full py-3 rounded-xl bg-amber-400 hover:bg-amber-500 active:scale-[0.99] text-neutral-950 font-black text-xs transition-all shadow-sm flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-60"
+                className="w-full py-3 rounded-xl bg-amber-400 hover:bg-amber-500 active:scale-[0.99] text-neutral-950 font-bold text-xs transition-all shadow-sm flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-60"
               >
                 {saving ? (
                   <div className="w-4 h-4 border-2 border-neutral-950 border-t-transparent rounded-full animate-spin" />

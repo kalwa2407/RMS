@@ -57,18 +57,32 @@ module.exports = {
   			'persian-gold': '#f0c419',
   			'persian-dark': '#0f2933',
   			'persian-light': '#234854',
-  			zomato: {
-  				red: '#E23744',
-  				redHover: '#EF4F5F',
-  				redDark: '#CB202D',
-  				gold: '#C59A3F',
-  				darkGold: '#291e0a',
-  				bgLight: '#FCFCFC',
-  				vegGreen: '#24963F',
-  				districtPurple: '#5925dc',
-  				healthyGreen: '#526E48',
-  				healthyDark: '#3A4D39'
+  			pd: {
+  				ink: '#0E1A20',
+  				'ink-2': '#4A5560',
+  				'ink-3': '#8A949C',
+  				canvas: '#FFFFFF',
+  				surface: '#F6F5F2',
+  				line: 'rgba(14, 26, 32, 0.08)',
+  				action: '#B4232F',
+  				'action-press': '#951B26',
+  				'action-tint': '#FBEDEE',
+  				gold: '#B8862B',
+  				'gold-tint': '#FBF4E4',
+  				teal: '#1A3D47',
+  				veg: '#1E8E3E',
+  				nonveg: '#A1341E',
+  				success: '#1E8E3E',
+  				warn: '#B26A00',
+  				error: '#C62828'
   			}
+  		},
+  		boxShadow: {
+  			'pd-1': '0 1px 2px rgba(14, 26, 32, 0.06), 0 2px 8px rgba(14, 26, 32, 0.04)',
+  			'pd-2': '0 8px 24px rgba(14, 26, 32, 0.12)'
+  		},
+  		transitionTimingFunction: {
+  			'pd-out': 'cubic-bezier(0.23, 1, 0.32, 1)'
   		},
   		keyframes: {
   			'accordion-down': {

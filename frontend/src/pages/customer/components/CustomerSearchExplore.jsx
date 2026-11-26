@@ -1,7 +1,9 @@
 import React, { useRef, useEffect } from 'react';
-import { ChevronLeft, Search, X, Mic, Plus, Minus, Sparkles, UtensilsCrossed } from 'lucide-react';
-import { SEARCH_CRAVINGS, SEARCH_ROUNDELS_GRID, findCartItem } from '../customerAssets';
+import { ChevronLeft, Search, X, Mic, SearchX, TrendingUp } from 'lucide-react';
+import { SEARCH_CRAVINGS, SEARCH_ROUNDELS_GRID, findCartItem, isVegDish } from '../customerAssets';
+import { AddStepper, EmptyState, Price, VegMark } from '../ui';
 
+const fallbackFor = (dish) => `/dynamic_images/img${(((dish._id || dish.id || 1) % 9) + 1)}.jpeg`;
 
 const CustomerSearchExplore = ({
   searchQuery,
@@ -19,204 +21,162 @@ const CustomerSearchExplore = ({
     inputRef.current?.focus();
   }, []);
 
-  const searchResults = searchQuery.trim()
+  const q = searchQuery.trim().toLowerCase();
+  const searchResults = q
     ? menu.filter(item =>
-        item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.category?.toLowerCase().includes(searchQuery.toLowerCase())
+        item.name?.toLowerCase().includes(q) ||
+        item.description?.toLowerCase().includes(q) ||
+        item.category?.toLowerCase().includes(q)
       )
     : [];
 
   return (
-    <div className="fixed inset-0 z-50 bg-white flex flex-col overflow-y-auto no-scrollbar w-full max-w-[430px] md:max-w-4xl mx-auto animate-in fade-in duration-200 md:border-x md:border-neutral-200/50">
-      {/* ── Search Header (Safe Area Padded for Dynamic Island & Notch) ── */}
+    <div className="fixed inset-0 z-50 bg-white flex flex-col overflow-y-auto no-scrollbar w-full max-w-[430px] md:max-w-4xl mx-auto animate-in fade-in duration-150">
+      {/* Header */}
       <div
-        className="sticky top-0 z-20 bg-white border-b border-neutral-100 px-4 pb-3"
-        style={{
-          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)'
-        }}
+        className="sticky top-0 z-20 bg-white/95 backdrop-blur-xl border-b border-[color:var(--pd-line)] px-3 pb-3"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)' }}
       >
-        <div className="flex items-center gap-2.5">
-          {/* Back Navigation Button */}
+        <div className="flex items-center gap-1.5">
           <button
+            type="button"
             onClick={onClose}
             aria-label="Back"
-            className="p-1 -ml-1 text-neutral-700 active:opacity-60 transition-opacity"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-pd-ink pd-press"
           >
-            <ChevronLeft className="w-6 h-6 stroke-[2.2]" />
+            <ChevronLeft className="w-6 h-6" strokeWidth={2} />
           </button>
-
-          {/* Search Input Bar */}
-          <div className="flex-1 flex items-center justify-between border border-neutral-200 bg-neutral-50/80 rounded-2xl px-3.5 py-2 shadow-xs">
+          <div className="flex-1 h-11 flex items-center gap-2.5 bg-pd-surface rounded-[12px] px-3.5">
+            <Search className="w-[18px] h-[18px] text-pd-ink-2 shrink-0" strokeWidth={2} />
             <input
               ref={inputRef}
-              type="text"
+              type="search"
+              enterKeyHint="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search dishes, biryani, curries, kebabs..."
-              className="w-full bg-transparent border-none p-0 text-sm font-bold text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-0"
+              placeholder="Search dishes and categories"
+              className="flex-1 min-w-0 bg-transparent border-none p-0 text-[16px] text-pd-ink placeholder:text-pd-ink-3 focus:outline-none focus:ring-0 [&::-webkit-search-cancel-button]:hidden"
             />
             {searchQuery ? (
               <button
+                type="button"
                 onClick={() => setSearchQuery('')}
-                className="p-1 text-neutral-400 hover:text-neutral-600"
+                aria-label="Clear search"
+                className="w-6 h-6 rounded-full bg-pd-ink-3/30 flex items-center justify-center text-white"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" strokeWidth={3} />
               </button>
             ) : (
-              <Mic className="w-4 h-4 text-[#E40000]" />
+              <Mic className="w-[18px] h-[18px] text-pd-action shrink-0" strokeWidth={2} />
             )}
           </div>
         </div>
       </div>
 
-      {/* ── If Searching: Show Live Results from real menu ── */}
-      {searchQuery.trim() ? (
-        <div className="p-4 flex-1 pb-24">
-          <p className="text-xs font-black text-neutral-400 uppercase tracking-wider mb-3">
-            {searchResults.length} {searchResults.length === 1 ? 'DISH FOUND' : 'DISHES FOUND'} FOR "{searchQuery}"
+      {q ? (
+        <div className="flex-1 pb-28">
+          <p className="px-4 pt-4 pb-1 text-[13px] text-pd-ink-2">
+            {searchResults.length} {searchResults.length === 1 ? 'result' : 'results'} for “{searchQuery.trim()}”
           </p>
 
           {searchResults.length === 0 ? (
-            <div className="text-center py-16 px-4">
-              <div className="w-16 h-16 rounded-full bg-red-50 text-[#E40000] mx-auto flex items-center justify-center mb-3">
-                <UtensilsCrossed className="w-7 h-7" />
-              </div>
-
-              <h3 className="font-extrabold text-base text-neutral-900">No dishes matched</h3>
-              <p className="text-xs text-neutral-500 mt-1 max-w-xs mx-auto">
-                Try searching for "Biryani", "Tandoori Mumtaz", "Mutton Barra", "Butter Chicken" or "Naan".
-              </p>
-            </div>
+            <EmptyState
+              icon={SearchX}
+              title="No matching dishes"
+              message="Try “biryani”, “kebab”, “butter chicken” or “naan”."
+            />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 space-y-0">
+            <ul className="grid grid-cols-1 md:grid-cols-2 md:gap-x-8 md:px-4">
               {searchResults.map((dish, sIdx) => {
                 const inCart = findCartItem(cart, dish);
+                const img = dish.image && !dish.image.includes('no-image.png') && !dish.image.includes('photo-1701579231305-d7d8af9a3fd') ? dish.image : fallbackFor(dish);
                 return (
-                  <div
+                  <li
                     key={dish._id || dish.id || sIdx}
-                    className="flex items-center justify-between p-3.5 rounded-2xl border border-neutral-200/80 bg-white shadow-xs gap-3"
+                    className="flex items-center gap-4 px-4 md:px-0 py-4 border-b border-[color:var(--pd-line)]"
                   >
-                    <div className="flex-1 pr-1">
-                      <div className="flex items-center space-x-1.5 mb-1">
-                        <span className="text-[10px] font-black text-[#E40000] bg-red-50 px-2 py-0.5 rounded-md uppercase tracking-wide">
-                          {dish.category}
-                        </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <VegMark veg={isVegDish(dish)} size={13} />
+                        {dish.category && <span className="text-[12px] text-pd-ink-3 truncate">{dish.category}</span>}
                       </div>
-                      <h4 className="font-extrabold text-sm text-neutral-900 leading-tight">
-                        {dish.name}
-                      </h4>
-                      <p className="text-xs font-black text-neutral-900 mt-1">
-                        ₹{dish.price}
-                      </p>
+                      <h4 className="mt-1 text-[16px] leading-[21px] font-semibold text-pd-ink">{dish.name}</h4>
+                      <Price value={dish.price} className="block mt-0.5 text-[15px] font-medium text-pd-ink" />
                       {dish.description && (
-                        <p className="text-[11px] text-neutral-500 line-clamp-1 mt-0.5">
-                          {dish.description}
-                        </p>
+                        <p className="mt-1 text-[13px] text-pd-ink-2 line-clamp-1">{dish.description}</p>
                       )}
                     </div>
-
-                    {/* Dish Image & Add to Cart button */}
-                    <div className="relative w-20 h-20 rounded-2xl overflow-hidden shrink-0 bg-neutral-100 border border-neutral-100">
-                      <img
-                        src={dish.image && !dish.image.includes('no-image.png') && !dish.image.includes('photo-1701579231305-d7d8af9a3fd') ? dish.image : `/dynamic_images/img${(((dish._id || dish.id || 1) % 9) + 1)}.jpeg`}
-                        alt={dish.name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = `/dynamic_images/img${(((dish._id || dish.id || 1) % 9) + 1)}.jpeg`;
-                        }}
-                      />
-                      <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-[88%]">
-                        {inCart ? (
-                          <div className="flex items-center justify-between bg-white text-[#E40000] border border-[#E40000] rounded-lg shadow-sm px-2 py-0.5 text-xs font-bold">
-                            <button
-                              type="button"
-                              onClick={() => onUpdateCartQty(dish._id || dish.id, -1)}
-                              className="p-0.5 active:scale-75 transition-transform"
-                            >
-                              <Minus className="w-3 h-3" />
-                            </button>
-                            <span className="font-black">{inCart.quantity}</span>
-                            <button
-                              type="button"
-                              onClick={() => onUpdateCartQty(dish._id || dish.id, 1)}
-                              className="p-0.5 active:scale-75 transition-transform"
-                            >
-                              <Plus className="w-3 h-3" />
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => onAddToCart(dish)}
-                            className="w-full bg-[#E40000] hover:bg-[#CC0000] text-white rounded-lg shadow-xs py-1 text-[11px] font-black uppercase tracking-wider active:scale-95 transition-all text-center"
-                          >
-                            + ADD
-                          </button>
-                        )}
+                    <div className="relative shrink-0 w-[96px] pb-3">
+                      <div className="w-[96px] h-[96px] rounded-[14px] overflow-hidden bg-pd-surface">
+                        <img
+                          src={img}
+                          alt={dish.name}
+                          loading="lazy"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = fallbackFor(dish);
+                          }}
+                        />
+                      </div>
+                      <div className="absolute left-1/2 -translate-x-1/2 bottom-0">
+                        <AddStepper
+                          size="sm"
+                          quantity={inCart?.quantity || 0}
+                          onAdd={() => onAddToCart(dish)}
+                          onIncrement={() => onUpdateCartQty(dish._id || dish.id, 1)}
+                          onDecrement={() => onUpdateCartQty(dish._id || dish.id, -1)}
+                        />
                       </div>
                     </div>
-                  </div>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
           )}
         </div>
       ) : (
-        /* ── If Not Searching: Regal Persian Darbar Cravings & Grid ── */
-        <div className="p-4 space-y-5 pb-24">
-          {/* Changed Quote: Regal Persian Darbar Header */}
-          <div>
-            <div className="flex items-center space-x-1.5">
-              <Sparkles className="w-4 h-4 text-amber-500 fill-amber-400" />
-              <h2 className="text-xl text-neutral-900 font-black tracking-tight">
-                Craving Royal Flavours?
-              </h2>
+        <div className="pb-28">
+          <section className="pt-5">
+            <h2 className="px-4 flex items-center gap-2 text-[17px] font-semibold text-pd-ink">
+              <TrendingUp className="w-[18px] h-[18px] text-pd-ink-2" strokeWidth={2} />
+              Popular searches
+            </h2>
+            <div className="mt-3 px-4 flex flex-wrap gap-2">
+              {SEARCH_CRAVINGS.map((craving, idx) => {
+                const label = craving.replace('✦ ', '');
+                return (
+                  <button
+                    type="button"
+                    key={idx}
+                    onClick={() => setSearchQuery(label)}
+                    className="h-9 px-3.5 rounded-full border border-[color:var(--pd-line)] text-[14px] text-pd-ink pd-press"
+                  >
+                    {label}
+                  </button>
+                );
+              })}
             </div>
-            <p className="text-[11px] font-semibold text-neutral-500 mt-0.5">
-              Fresh basmati biryanis, charcoal kebabs & Mughlai feasts
-            </p>
+          </section>
 
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2.5 mt-1">
-              {SEARCH_CRAVINGS.map((craving, idx) => (
+          <section className="pt-8">
+            <h2 className="px-4 text-[17px] font-semibold text-pd-ink">Browse by category</h2>
+            <div className="mt-4 px-4 grid grid-cols-3 md:grid-cols-6 gap-y-5 gap-x-3">
+              {SEARCH_ROUNDELS_GRID.map((item, idx) => (
                 <button
+                  type="button"
                   key={idx}
-                  onClick={() => setSearchQuery(craving.replace('✦ ', ''))}
-                  className="shrink-0 bg-white border border-neutral-200 hover:border-[#E40000] hover:text-[#E40000] px-3.5 py-1.5 rounded-full text-xs font-bold text-neutral-700 shadow-xs active:scale-95 transition-all whitespace-nowrap"
+                  onClick={() => setSearchQuery(item.title)}
+                  className="flex flex-col items-center pd-press"
                 >
-                  {craving}
+                  <span className="w-[84px] h-[84px] rounded-full overflow-hidden bg-pd-surface">
+                    <img src={item.image} alt="" loading="lazy" className="w-full h-full object-cover" />
+                  </span>
+                  <span className="mt-2 text-[13px] font-medium text-pd-ink text-center line-clamp-1">{item.title}</span>
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* WHAT'S ON YOUR MIND? Real dishes with beautiful circular roundels */}
-          <div>
-            <h3 className="text-xs font-black tracking-wider text-neutral-400 uppercase mb-3.5">
-              WHAT'S ON YOUR MIND?
-            </h3>
-            <div className="grid grid-cols-3 gap-y-4 gap-x-3">
-              {SEARCH_ROUNDELS_GRID.map((item, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => setSearchQuery(item.title)}
-                  className="flex flex-col items-center cursor-pointer group active:scale-95 transition-transform"
-                >
-                  <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-neutral-100 shadow-xs group-hover:border-[#E40000] transition-colors bg-neutral-100 p-0.5">
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="w-full h-full rounded-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                  <span className="text-xs font-bold text-neutral-900 mt-1.5 text-center line-clamp-1">
-                    {item.title}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+          </section>
         </div>
       )}
     </div>

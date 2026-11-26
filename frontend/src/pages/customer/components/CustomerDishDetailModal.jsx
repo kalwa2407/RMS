@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { X, Bookmark, Share2, Plus, Minus, Star, Check } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Drawer } from 'vaul';
+import { X, Bookmark, Share2, Star, Check } from 'lucide-react';
+import { isVegDish } from '../customerAssets';
+import { AddStepper, VegMark, Price, cx, formatINR } from '../ui';
 
 const ACCOMPANIMENTS = [
   {
@@ -45,7 +48,7 @@ const ACCOMPANIMENTS = [
 ];
 
 const CustomerDishDetailModal = ({
-  dish,
+  dish: dishProp,
   isOpen,
   onClose,
   onAddToCart
@@ -56,27 +59,29 @@ const CustomerDishDetailModal = ({
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Keep the last dish while the sheet animates closed.
+  const lastDishRef = useRef(dishProp);
+  if (dishProp) lastDishRef.current = dishProp;
+  const dish = dishProp || lastDishRef.current;
+
   useEffect(() => {
     if (isOpen) {
-      setQuantity(dish?.quantity ? Math.max(1, dish.quantity) : 1);
+      setQuantity(dishProp?.quantity ? Math.max(1, dishProp.quantity) : 1);
       setSelectedAddons([]);
       setIsBookmarked(false);
       setCopied(false);
     }
-  }, [isOpen, dish]);
+  }, [isOpen, dishProp]);
 
-  if (!isOpen || !dish) return null;
+  if (!dish) return null;
 
-  const isVeg = dish.is_veg === true ||
-    dish.veg === true ||
-    (dish.category || '').toLowerCase().includes('veg') ||
-    (dish.name || '').toLowerCase().includes('paneer') ||
-    (dish.name || '').toLowerCase().includes('dal');
+  const isVeg = isVegDish(dish);
 
   const fallbackImg = `/dynamic_images/img${(((dish.id || dish._id || 1) % 9) + 1)}.jpeg`;
   const dishImg = dish.image && !dish.image.includes('no-image.png') && !dish.image.includes('photo-1701579231305-d7d8af9a3fd')
     ? dish.image
     : fallbackImg;
+  const rating = dish.rating && !Number.isNaN(Number(dish.rating)) ? Number(dish.rating).toFixed(1) : null;
 
   // Add an addon with qty 1 (or increment if already present)
   const addAddon = (addon) => {
@@ -150,260 +155,180 @@ const CustomerDishDetailModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex flex-col justify-end md:justify-center items-center bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 p-0 md:p-6">
-      {/* ── Top Floating Close (X) Button (Matching Screenshot 4) ── */}
-      <button
-        onClick={onClose}
-        aria-label="Close"
-        className="mb-2 w-10 h-10 rounded-full bg-neutral-900/80 hover:bg-neutral-900 text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform cursor-pointer border border-white/20"
-      >
-        <X className="w-5 h-5 stroke-[2.5]" />
-      </button>
+    <Drawer.Root open={Boolean(isOpen && dishProp)} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <Drawer.Portal>
+        <Drawer.Overlay className="fixed inset-0 z-[70] bg-black/50" />
+        <Drawer.Content
+          aria-describedby={undefined}
+          className="fixed z-[71] bottom-0 left-0 right-0 mx-auto w-full max-w-[430px] md:max-w-xl max-h-[92vh] bg-white rounded-t-[24px] flex flex-col outline-none"
+        >
+          <Drawer.Title className="sr-only">{dish.name}</Drawer.Title>
 
-      {/* ── Modal Container (White Bottom Sheet / Centered Card on iPad) ── */}
-      <div className="w-full max-w-[430px] md:max-w-xl max-h-[85vh] bg-white rounded-t-[28px] md:rounded-3xl overflow-hidden flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-300">
-        
-        {/* Scrollable Content Body */}
-        <div className="flex-1 overflow-y-auto no-scrollbar pb-24">
-          
-          {/* 1. Large Hero Dish Photo (Screenshot 4) */}
-          <div className="relative w-full h-64 bg-neutral-100">
-            <img
-              src={dishImg}
-              alt={dish.name}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = fallbackImg;
-              }}
-            />
-            {/* Subtle Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+          {/* Grab handle */}
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 w-10 h-1.5 rounded-full bg-white/85 shadow-sm" />
 
-            {/* Rating Tag */}
-            <div className="absolute bottom-3 left-4 bg-black/70 backdrop-blur-xs text-white text-xs font-black px-2.5 py-1 rounded-lg flex items-center space-x-1 shadow-md">
-              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-              <span>{dish.rating ? Number(dish.rating).toFixed(1) : '4.8'}</span>
-              <span className="text-white/60 text-[10px] font-normal ml-0.5">· Persian Special</span>
+          {/* Close */}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-black/45 backdrop-blur-md text-white flex items-center justify-center pd-press"
+          >
+            <X className="w-5 h-5" strokeWidth={2.25} />
+          </button>
+
+          <div className="flex-1 overflow-y-auto no-scrollbar rounded-t-[24px]">
+            {/* Hero photo */}
+            <div className="relative w-full aspect-[4/3] max-h-72 bg-pd-surface">
+              <img
+                src={dishImg}
+                alt={dish.name}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = fallbackImg;
+                }}
+              />
             </div>
-          </div>
 
-          {/* 2. Dish Metadata & Action Row */}
-          <div className="p-4 space-y-3">
-            <div className="flex items-start justify-between gap-3">
-              <div className="space-y-1.5 flex-1">
-                {/* Veg / Non-Veg Icon */}
-                <div className={`w-4 h-4 rounded-[4px] border ${isVeg ? 'border-emerald-600' : 'border-[#8B2500]'} flex items-center justify-center p-[2px]`}>
-                  {isVeg ? (
-                    <div className="w-2 h-2 rounded-full bg-emerald-600" />
-                  ) : (
-                    <div className="w-0 h-0 border-l-[3.5px] border-l-transparent border-r-[3.5px] border-r-transparent border-b-[6px] border-b-[#8B2500]" />
-                  )}
+            {/* Title block */}
+            <div className="px-4 pt-4 pb-5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <VegMark veg={isVeg} />
+                    {dish.popular && (
+                      <span className="text-[11px] font-semibold text-pd-gold uppercase tracking-[0.04em]">Bestseller</span>
+                    )}
+                  </div>
+                  <h2 className="mt-2 text-[22px] leading-7 font-bold text-pd-ink tracking-[-0.01em]">
+                    {dish.name}
+                  </h2>
+                  <div className="mt-1 flex items-baseline gap-2">
+                    <Price value={dish.price} className="text-[17px] font-semibold text-pd-ink" />
+                    {dish.original_price && dish.original_price > dish.price && (
+                      <span className="text-[13px] text-pd-ink-3 line-through pd-tabular">
+                        {formatINR(dish.original_price)}
+                      </span>
+                    )}
+                    {rating && (
+                      <span className="inline-flex items-center gap-0.5 text-[13px] font-medium text-pd-ink-2">
+                        <Star className="w-3.5 h-3.5 fill-pd-gold text-pd-gold" />
+                        {rating}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                {/* Dish Name */}
-                <h2 className="text-xl font-black text-neutral-900 leading-tight">
-                  {dish.name}
-                </h2>
-
-                {/* Price */}
-                <div className="flex items-baseline space-x-2">
-                  <span className="text-lg font-black text-neutral-900">
-                    ₹{dish.price}
-                  </span>
-                  {dish.original_price && dish.original_price > dish.price && (
-                    <span className="text-xs text-neutral-400 line-through font-semibold">
-                      ₹{dish.original_price}
-                    </span>
-                  )}
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setIsBookmarked(!isBookmarked)}
+                    aria-label={isBookmarked ? 'Remove from saved' : 'Save dish'}
+                    aria-pressed={isBookmarked}
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-pd-ink-2 bg-pd-surface pd-press"
+                  >
+                    <Bookmark className={cx('w-[18px] h-[18px]', isBookmarked && 'fill-pd-gold text-pd-gold')} strokeWidth={1.75} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleShare}
+                    aria-label="Share"
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-pd-ink-2 bg-pd-surface pd-press"
+                  >
+                    {copied ? <Check className="w-[18px] h-[18px] text-pd-success" /> : <Share2 className="w-[18px] h-[18px]" strokeWidth={1.75} />}
+                  </button>
                 </div>
               </div>
 
-              {/* Action Buttons: Bookmark & Share (Screenshot 4) */}
-              <div className="flex items-center space-x-2 shrink-0 pt-1">
-                <button
-                  onClick={() => setIsBookmarked(!isBookmarked)}
-                  aria-label="Bookmark"
-                  className={`w-9 h-9 rounded-full border flex items-center justify-center transition-all active:scale-90 ${
-                    isBookmarked
-                      ? 'bg-amber-50 border-amber-400 text-amber-600'
-                      : 'border-neutral-200 text-neutral-600 hover:bg-neutral-50'
-                  }`}
-                >
-                  <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current' : ''}`} />
-                </button>
-
-                <button
-                  onClick={handleShare}
-                  aria-label="Share"
-                  className="w-9 h-9 rounded-full border border-neutral-200 text-neutral-600 hover:bg-neutral-50 flex items-center justify-center transition-all active:scale-90"
-                >
-                  {copied ? (
-                    <Check className="w-4 h-4 text-emerald-600" />
-                  ) : (
-                    <Share2 className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Social Proof: Highly Reordered Progress Pill (Screenshot 4) */}
-            <div className="flex items-center space-x-2 pt-0.5">
-              <div className="w-16 h-2 rounded-full bg-emerald-100 overflow-hidden flex">
-                <div className="w-4/5 h-full bg-emerald-600 rounded-full" />
-              </div>
-              <span className="text-xs font-bold text-neutral-700">
-                Highly reordered
-              </span>
-            </div>
-
-            {/* Description */}
-            <p className="text-xs text-neutral-600 leading-relaxed pt-1">
-              {dish.description ||
-                'Delicately seasoned authentic Persian recipe slow-cooked to culinary perfection using aromatic Persian Darbar spices.'}
-            </p>
-          </div>
-
-          <div className="h-2 bg-neutral-100 border-y border-neutral-200/60 my-1" />
-
-          {/* 3. Customization & Add-on Section: Beverages & Accompaniments (Screenshot 4) */}
-          <div className="p-4 space-y-3">
-            <div>
-              <h3 className="text-sm font-black text-neutral-900">
-                Beverages & Royal Accompaniments
-              </h3>
-              <p className="text-[11px] text-neutral-400">
-                Select options to pair with your dish
+              <p className="mt-3 text-[15px] leading-[22px] text-pd-ink-2">
+                {dish.description ||
+                  'Delicately seasoned authentic Persian recipe slow-cooked to culinary perfection using aromatic Persian Darbar spices.'}
               </p>
             </div>
 
-            <div className="space-y-3 pt-1">
-              {ACCOMPANIMENTS.map((addon) => {
-                const selected = selectedAddons.find((a) => a.id === addon.id);
-                return (
-                  <div
-                    key={addon.id}
-                    className={`flex items-center justify-between p-2.5 rounded-2xl border transition-all ${
-                      selected
-                        ? 'border-[#E40000] bg-red-50/40 shadow-xs'
-                        : 'border-neutral-200/80 bg-white hover:border-neutral-300'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-3 min-w-0 flex-1">
-                      {/* Image Thumbnail */}
+            <div className="h-2 bg-pd-surface" />
+
+            {/* Add-ons */}
+            <div className="px-4 pt-5 pb-6">
+              <div className="flex items-baseline justify-between">
+                <h3 className="text-[17px] font-semibold text-pd-ink">Pair it with</h3>
+                <span className="text-[12px] text-pd-ink-3">Optional</span>
+              </div>
+
+              <ul className="mt-2 divide-y divide-[color:var(--pd-line)]">
+                {ACCOMPANIMENTS.map((addon) => {
+                  const selected = selectedAddons.find((a) => a.id === addon.id);
+                  return (
+                    <li key={addon.id} className="flex items-center gap-3 py-3">
                       <img
                         src={addon.image}
-                        alt={addon.name}
-                        className="w-12 h-12 rounded-xl object-cover shrink-0 bg-neutral-100 border border-neutral-200"
+                        alt=""
+                        loading="lazy"
+                        className="w-14 h-14 rounded-[10px] object-cover shrink-0 bg-pd-surface"
                         onError={(e) => {
                           e.target.onerror = null;
                           e.target.src = '/dynamic_images/img1.jpeg';
                         }}
                       />
-
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center space-x-1.5">
-                          {/* Veg dot */}
-                          <div className="w-3 h-3 rounded-[3px] border border-emerald-600 flex items-center justify-center p-[1px]">
-                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-                          </div>
-                          <h4 className="text-xs font-bold text-neutral-900 truncate">
-                            {addon.name}
-                          </h4>
+                        <div className="flex items-center gap-1.5">
+                          <VegMark veg={addon.is_veg} size={12} />
+                          <h4 className="text-[15px] font-medium text-pd-ink truncate">{addon.name}</h4>
                         </div>
-                        <p className="text-[10px] text-neutral-500 truncate mt-0.5">
-                          {addon.description}
-                        </p>
-                        <p className="text-xs font-black text-neutral-900 mt-0.5">
-                          ₹{addon.price}
-                        </p>
+                        <p className="text-[12px] text-pd-ink-3 truncate mt-0.5">{addon.description}</p>
+                        <Price value={addon.price} className="block text-[14px] font-semibold text-pd-ink mt-0.5" />
                       </div>
-                    </div>
-
-                    {/* ADD Button / Quantity Stepper (Zomato style) */}
-                    {selected ? (
-                      <div className="ml-2 flex items-center space-x-2 bg-[#E40000] rounded-xl px-2.5 py-1.5 shrink-0">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            updateAddonQty(addon.id, -1);
-                          }}
-                          className="text-white p-0.5 active:scale-75 transition-transform"
-                        >
-                          <Minus className="w-3.5 h-3.5 stroke-[3]" />
-                        </button>
-                        <span className="text-white text-xs font-black w-4 text-center">
-                          {selected.qty}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            updateAddonQty(addon.id, 1);
-                          }}
-                          className="text-white p-0.5 active:scale-75 transition-transform"
-                        >
-                          <Plus className="w-3.5 h-3.5 stroke-[3]" />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          addAddon(addon);
-                        }}
-                        className="ml-2 px-3 py-1.5 rounded-full text-xs font-black transition-all ios-press shrink-0 bg-red-50 text-[#E40000] border border-red-200 hover:bg-[#E40000] hover:text-white"
-                      >
-                        + ADD
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
+                      <AddStepper
+                        size="sm"
+                        quantity={selected?.qty || 0}
+                        onAdd={() => addAddon(addon)}
+                        onIncrement={() => updateAddonQty(addon.id, 1)}
+                        onDecrement={() => updateAddonQty(addon.id, -1)}
+                        className="!shadow-none"
+                      />
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
           </div>
-        </div>
 
-        {/* ── 4. Sticky Bottom Action Bar ── */}
-        <div
-          className="p-3.5 bg-white/95 backdrop-blur-xl border-t border-neutral-200/80 flex items-center justify-between gap-3 shadow-lg"
-          style={{
-            paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)'
-          }}
-        >
-          {/* Quantity Selector: [- 1 +] in Apple styled rounded container */}
-          <div className="flex items-center justify-between w-28 px-3 py-2.5 rounded-2xl border border-neutral-200/80 bg-neutral-100/80 text-neutral-900 shadow-2xs">
+          {/* Sticky footer */}
+          <div
+            className="px-4 pt-3 bg-white border-t border-[color:var(--pd-line)] flex items-center gap-3"
+            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}
+          >
+            <div className="flex items-center justify-between h-12 w-[116px] rounded-[12px] border border-[color:var(--pd-line)] text-pd-ink">
+              <button
+                type="button"
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                aria-label="Decrease quantity"
+                className="h-full px-3.5 text-[20px] leading-none pd-press"
+              >
+                −
+              </button>
+              <span className="text-[16px] font-semibold pd-tabular" aria-live="polite">{quantity}</span>
+              <button
+                type="button"
+                onClick={() => setQuantity(quantity + 1)}
+                aria-label="Increase quantity"
+                className="h-full px-3.5 text-[20px] leading-none pd-press"
+              >
+                +
+              </button>
+            </div>
             <button
-              onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              aria-label="Decrease quantity"
-              className="p-0.5 ios-press cursor-pointer text-neutral-600 hover:text-black"
+              type="button"
+              onClick={handleAdd}
+              className="flex-1 h-12 rounded-[12px] bg-pd-action hover:bg-pd-action-press text-white text-[16px] font-semibold pd-press pd-tabular"
             >
-              <Minus className="w-4 h-4 stroke-[3]" />
-            </button>
-            <span className="text-base font-black text-neutral-900">
-              {quantity}
-            </span>
-            <button
-              onClick={() => setQuantity(quantity + 1)}
-              aria-label="Increase quantity"
-              className="p-0.5 ios-press cursor-pointer text-neutral-600 hover:text-black"
-            >
-              <Plus className="w-4 h-4 stroke-[3]" />
+              Add item · {formatINR(totalPrice)}
             </button>
           </div>
-
-          {/* Big Crimson CTA: Add item - ₹XXX */}
-          <button
-            onClick={handleAdd}
-            className="flex-1 bg-gradient-to-r from-[#E40000] via-[#D31027] to-[#B91C1C] text-white font-black text-sm py-3.5 px-4 rounded-2xl shadow-[0_6px_20px_-2px_rgba(228,0,0,0.4)] ios-press transition-all flex items-center justify-center space-x-1 cursor-pointer border border-white/20"
-          >
-            <span>Add to Feast · ₹{totalPrice}</span>
-          </button>
-        </div>
-      </div>
-    </div>
+        </Drawer.Content>
+      </Drawer.Portal>
+    </Drawer.Root>
   );
 };
 

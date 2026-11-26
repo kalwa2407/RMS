@@ -78,20 +78,20 @@ const CustomerUnder250Tab = ({
       <section className="bg-gradient-to-b from-[#E8F4FA]/70 to-white px-4 pt-2 pb-4">
         <div className="relative bg-[#FFF2D6] rounded-2xl p-4 shadow-xs border border-amber-200 text-center overflow-visible">
           {/* Decorative Floating Badges */}
-          <div className="absolute -left-2 top-2 bg-emerald-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded shadow-xs rotate-[-12deg]">
+          <div className="absolute -left-2 top-2 bg-emerald-500 text-white text-[11px] font-bold px-1.5 py-0.5 rounded shadow-xs rotate-[-12deg]">
             %
           </div>
-          <div className="absolute -right-2 top-2 bg-amber-400 text-black text-[12px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-xs">
+          <div className="absolute -right-2 top-2 bg-amber-400 text-black text-[12px] font-bold w-6 h-6 rounded-full flex items-center justify-center shadow-xs">
             ₹
           </div>
 
-          <h1 className="text-xl font-black text-[#1C1C1C] tracking-tight uppercase">
+          <h1 className="text-xl font-bold text-[#1C1C1C] tracking-tight uppercase">
             MEALS UNDER ₹250
           </h1>
 
           {/* Ribbon Folded Ends Banner */}
           <div className="mt-2.5 mx-auto max-w-[280px]">
-            <div className="ribbon-banner bg-[#E40000] text-white py-1 px-3 text-[11px] font-black uppercase tracking-wider shadow-sm">
+            <div className="ribbon-banner bg-pd-action text-white py-1 px-3 text-[11px] font-bold uppercase tracking-wide shadow-sm">
               FINAL PRICE, BEST OFFER APPLIED
             </div>
           </div>
@@ -113,7 +113,7 @@ const CustomerUnder250Tab = ({
                 <div
                   className={`w-16 h-16 rounded-full overflow-hidden border p-0.5 flex items-center justify-center shrink-0 ${
                     isActive
-                      ? 'border-[#E40000] ring-2 ring-red-100 bg-red-50/50'
+                      ? 'border-pd-action ring-2 ring-red-100 bg-red-50/50'
                       : 'border-amber-100 bg-amber-50/50'
                   }`}
                 >
@@ -131,7 +131,7 @@ const CustomerUnder250Tab = ({
                   {item.title}
                 </span>
                 {isActive && (
-                  <div className="absolute bottom-0 w-8 h-[2.5px] bg-[#E40000] rounded-full" />
+                  <div className="absolute bottom-0 w-8 h-[2.5px] bg-pd-action rounded-full" />
                 )}
               </div>
             );
@@ -173,7 +173,7 @@ const CustomerUnder250Tab = ({
       <section className="mt-4 px-4 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="font-extrabold text-base text-neutral-900">
+            <h2 className="font-bold text-base text-neutral-900">
               Irani Cafe &amp; Pocket Delights
             </h2>
             <p className="text-[11px] text-neutral-500 flex items-center mt-0.5">
@@ -206,7 +206,7 @@ const CustomerUnder250Tab = ({
                       e.target.src = `/dynamic_images/img${(((dish._id || dish.id || 1) % 9) + 1)}.jpeg`;
                     }}
                   />
-                  <span className="absolute bottom-2 left-2 bg-[#24963F] text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-xs">
+                  <span className="absolute bottom-2 left-2 bg-[#24963F] text-white text-[11px] font-bold px-1.5 py-0.5 rounded shadow-xs">
                     ★ {dish.rating || '4.5'}
                   </span>
                 </div>
@@ -231,16 +231,16 @@ const CustomerUnder250Tab = ({
 
                   <div className="flex items-center justify-between mt-2 pt-1 border-t border-neutral-50">
                     <div>
-                      <p className="text-sm font-extrabold text-neutral-900">
+                      <p className="text-sm font-bold text-neutral-900">
                         ₹{dish.price}
                       </p>
-                      <span className="text-[10px] text-neutral-500 font-medium">
+                      <span className="text-[11px] text-neutral-500 font-medium">
                         Best price
                       </span>
                     </div>
 
                     {inCart ? (
-                      <div className="flex items-center space-x-1.5 bg-white text-[#E40000] border border-[#E40000] rounded-lg px-2 py-1 text-xs font-bold">
+                      <div className="flex items-center space-x-1.5 bg-white text-pd-action border border-pd-action rounded-lg px-2 py-1 text-xs font-bold">
                         <button
                           type="button"
                           onClick={() => onUpdateCartQty(dish._id || dish.id, -1)}
@@ -261,7 +261,7 @@ const CustomerUnder250Tab = ({
                       <button
                         type="button"
                         onClick={() => onAddToCart(dish)}
-                        className="bg-red-50 hover:bg-red-100 text-[#E40000] border border-red-200 text-xs font-bold px-3 py-1.5 rounded-lg active:scale-95 transition-transform"
+                        className="bg-red-50 hover:bg-red-100 text-pd-action border border-red-200 text-xs font-bold px-3 py-1.5 rounded-lg active:scale-95 transition-transform"
                       >
                         ADD +
                       </button>
@@ -280,7 +280,7 @@ const CustomerUnder250Tab = ({
             className="inline-flex items-center justify-center bg-white border border-neutral-300 text-neutral-800 text-xs font-bold px-6 py-2.5 rounded-full shadow-xs active:scale-95 transition-all"
           >
             <span>View full menu</span>
-            <span className="ml-1 text-[#E40000]">›</span>
+            <span className="ml-1 text-pd-action">›</span>
           </button>
         </div>
       </section>

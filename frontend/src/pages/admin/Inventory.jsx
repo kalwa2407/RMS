@@ -3,21 +3,16 @@ import {
   Package,
   Plus,
   Minus,
-  Search,
   AlertTriangle,
   TrendingDown,
   TrendingUp,
-  RefreshCw,
-  Edit,
   Trash2,
-  Save,
-  X,
   History,
-  Filter,
 } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 
 import API_BASE from "../../lib/config";
+import { cx, Page, PageHeader, Card, StatCard, Table, Th, Td, Button, IconButton, StatusPill, SearchField, ChipRow, Notice, Sheet, FormField, FormGroup, Input, Select, EmptyState, LoadingState } from "./ui";
 
 const Inventory = () => {
   const { toast } = useToast();
@@ -166,358 +161,173 @@ const Inventory = () => {
   const totalValue = inventory.reduce((sum, item) => sum + item.current_stock * item.cost_per_unit, 0);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <RefreshCw className="h-8 w-8 text-primary animate-spin" />
-      </div>
-    );
+    return <LoadingState rows={5} label="Loading inventory" />;
   }
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center space-x-3">
-          <Package className="h-8 w-8 text-primary" />
-          <div>
-            <h1 className="text-2xl font-bold text-primary">Inventory Management</h1>
-            <p className="text-gray-400 text-sm">Track stock levels & supplies</p>
-          </div>
-        </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="bg-primary text-black px-4 py-2 rounded-lg font-bold flex items-center space-x-2 hover:bg-white transition"
-        >
-          <Plus className="h-5 w-5" />
-          <span>Add Item</span>
-        </button>
+    <Page>
+      <PageHeader
+        title="Inventory"
+        subtitle="Track stock levels and supplies"
+        actions={<Button variant="primary" icon={Plus} onClick={() => setShowAddModal(true)}>Add Item</Button>}
+      />
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard label="Items" value={inventory.length} icon={Package} />
+        <StatCard label="Low stock" value={lowStockItems.length} icon={TrendingDown} tone="warn" />
+        <StatCard label="Out of stock" value={outOfStockItems.length} icon={AlertTriangle} tone="error" />
+        <StatCard label="Stock value" value={`₹${totalValue.toLocaleString("en-IN")}`} icon={TrendingUp} tone="success" />
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-[#1a4855] rounded-xl p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm">Total Items</p>
-              <p className="text-2xl font-bold text-white">{inventory.length}</p>
-            </div>
-            <Package className="h-10 w-10 text-primary" />
-          </div>
-        </div>
-
-        <div className="bg-[#1a4855] rounded-xl p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm">Low Stock</p>
-              <p className="text-2xl font-bold text-yellow-500">{lowStockItems.length}</p>
-            </div>
-            <TrendingDown className="h-10 w-10 text-yellow-500" />
-          </div>
-        </div>
-
-        <div className="bg-[#1a4855] rounded-xl p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm">Out of Stock</p>
-              <p className="text-2xl font-bold text-red-500">{outOfStockItems.length}</p>
-            </div>
-            <AlertTriangle className="h-10 w-10 text-red-500" />
-          </div>
-        </div>
-
-        <div className="bg-[#1a4855] rounded-xl p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm">Total Value</p>
-              <p className="text-2xl font-bold text-green-500">₹{totalValue.toLocaleString()}</p>
-            </div>
-            <TrendingUp className="h-10 w-10 text-green-500" />
-          </div>
-        </div>
-      </div>
-
-      {/* Low Stock Alert */}
       {lowStockItems.length > 0 && (
-        <div className="bg-yellow-500/20 border border-yellow-500 rounded-xl p-4 mb-6">
-          <div className="flex items-center space-x-2 mb-2">
-            <AlertTriangle className="h-5 w-5 text-yellow-500" />
-            <span className="text-yellow-500 font-bold">Low Stock Alert!</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {lowStockItems.map((item) => (
-              <span key={item._id} className="bg-yellow-500/30 text-yellow-200 px-3 py-1 rounded-full text-sm">
-                {item.name}: {item.current_stock} {item.unit}
-              </span>
-            ))}
-          </div>
-        </div>
+        <Notice tone="warn" icon={AlertTriangle}>
+          <span className="font-semibold">Low stock: </span>
+          {lowStockItems.map((item, i) => (
+            <span key={item._id} className="pd-tabular">
+              {i > 0 && ", "}{item.name} ({item.current_stock} {item.unit})
+            </span>
+          ))}
+        </Notice>
       )}
 
-      {/* Search & Filter */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search inventory..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#1a4855] text-white pl-10 pr-4 py-2 rounded-lg border border-[#EAB308]/20 focus:border-primary/50 outline-none"
-          />
-        </div>
-        <div className="flex items-center space-x-2">
-          <Filter className="h-5 w-5 text-gray-400" />
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="bg-[#1a4855] text-white px-4 py-2 rounded-lg border border-[#EAB308]/20 focus:border-primary/50 outline-none"
-          >
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-        </div>
+      <div className="flex flex-col gap-3 md:flex-row md:items-center">
+        <SearchField value={searchQuery} onChange={setSearchQuery} placeholder="Search inventory" className="md:w-72" />
+        <ChipRow
+          value={filterCategory}
+          onChange={setFilterCategory}
+          options={categories.map((cat) => ({ value: cat, label: cat }))}
+        />
       </div>
 
-      {/* Inventory Table */}
-      <div className="bg-[#1a4855] rounded-xl overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-[#0f2933]">
+      {filteredInventory.length === 0 ? (
+        <Card><EmptyState icon={Package} title="No inventory items" description={inventory.length ? "Nothing matches this search or category." : "Add your first stock item."} /></Card>
+      ) : (
+        <Table>
+          <thead>
             <tr>
-              <th className="text-left py-4 px-4 text-primary font-bold">Item</th>
-              <th className="text-left py-4 px-4 text-primary font-bold">Category</th>
-              <th className="text-center py-4 px-4 text-primary font-bold">Stock</th>
-              <th className="text-center py-4 px-4 text-primary font-bold">Min Level</th>
-              <th className="text-right py-4 px-4 text-primary font-bold">Cost/Unit</th>
-              <th className="text-center py-4 px-4 text-primary font-bold">Status</th>
-              <th className="text-center py-4 px-4 text-primary font-bold">Actions</th>
+              <Th>Item</Th>
+              <Th className="hidden xl:table-cell">Category</Th>
+              <Th align="center">Stock</Th>
+              <Th align="right" className="hidden sm:table-cell">Min level</Th>
+              <Th align="right" className="hidden xl:table-cell">Cost / unit</Th>
+              <Th className="hidden sm:table-cell">Status</Th>
+              <Th align="right"> </Th>
             </tr>
           </thead>
           <tbody>
-            {filteredInventory.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="text-center py-8 text-gray-400">
-                  No inventory items found
-                </td>
-              </tr>
-            ) : (
-              filteredInventory.map((item) => (
-                <tr key={item._id} className="border-t border-[#EAB308]/20 hover:bg-[#0f2933]/50">
-                  <td className="py-3 px-4">
-                    <p className="text-white font-medium">{item.name}</p>
-                    <p className="text-gray-400 text-xs">{item.supplier || "No supplier"}</p>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="bg-[#0f2933] text-gray-300 px-2 py-1 rounded text-sm">
-                      {item.category}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center justify-center space-x-2">
-                      <button
-                        onClick={() => updateStock(item._id, -1, "Used")}
-                        className="w-7 h-7 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center hover:bg-red-500/30"
-                      >
-                        <Minus className="h-4 w-4" />
-                      </button>
-                      <span className="text-white font-bold w-16 text-center">
-                        {item.current_stock} {item.unit}
-                      </span>
-                      <button
-                        onClick={() => updateStock(item._id, 1, "Restocked")}
-                        className="w-7 h-7 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center hover:bg-green-500/30"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </button>
+            {filteredInventory.map((item) => {
+              const out = item.current_stock === 0;
+              const low = !out && item.current_stock <= item.min_stock;
+              return (
+                <tr key={item._id} className="hover:bg-[var(--a-fill)]">
+                  <Td>
+                    <div className="font-medium">{item.name}</div>
+                    <div className="text-[12px] text-[var(--a-text-3)]">{item.supplier || "No supplier"}</div>
+                    <div className="sm:hidden mt-1">{out ? <StatusPill tone="error" dot>Out</StatusPill> : low ? <StatusPill tone="warn" dot>Low</StatusPill> : <StatusPill tone="success" dot>In stock</StatusPill>}</div>
+                  </Td>
+                  <Td className="hidden xl:table-cell text-[var(--a-text-2)]">{item.category}</Td>
+                  <Td align="center">
+                    <div className="inline-flex items-center gap-1.5">
+                      <IconButton icon={Minus} label="Use one" className="h-7 w-7 rounded-full" onClick={() => updateStock(item._id, -1, "Used")} />
+                      <span className="min-w-[64px] text-center font-semibold">{item.current_stock} {item.unit}</span>
+                      <IconButton icon={Plus} label="Restock one" className="h-7 w-7 rounded-full" onClick={() => updateStock(item._id, 1, "Restocked")} />
                     </div>
-                  </td>
-                  <td className="py-3 px-4 text-center text-gray-400">
-                    {item.min_stock} {item.unit}
-                  </td>
-                  <td className="py-3 px-4 text-right text-white">
-                    ₹{item.cost_per_unit}
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    {item.current_stock === 0 ? (
-                      <span className="bg-red-500/20 text-red-500 px-2 py-1 rounded text-xs font-bold">
-                        OUT OF STOCK
-                      </span>
-                    ) : item.current_stock <= item.min_stock ? (
-                      <span className="bg-yellow-500/20 text-yellow-500 px-2 py-1 rounded text-xs font-bold">
-                        LOW STOCK
-                      </span>
-                    ) : (
-                      <span className="bg-green-500/20 text-green-500 px-2 py-1 rounded text-xs font-bold">
-                        IN STOCK
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center justify-center space-x-2">
-                      <button
-                        onClick={() => viewHistory(item)}
-                        className="text-blue-400 hover:text-blue-300"
-                        title="View History"
-                      >
-                        <History className="h-5 w-5" />
-                      </button>
-                      <button
-                        onClick={() => deleteItem(item._id)}
-                        className="text-red-400 hover:text-red-300"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-5 w-5" />
-                      </button>
+                  </Td>
+                  <Td align="right" className="hidden sm:table-cell text-[var(--a-text-2)]">{item.min_stock} {item.unit}</Td>
+                  <Td align="right" className="hidden xl:table-cell">₹{item.cost_per_unit}</Td>
+                  <Td className="hidden sm:table-cell">
+                    {out
+                      ? <StatusPill tone="error" dot>Out of stock</StatusPill>
+                      : low ? <StatusPill tone="warn" dot>Low stock</StatusPill>
+                      : <StatusPill tone="success" dot>In stock</StatusPill>}
+                  </Td>
+                  <Td align="right">
+                    <div className="inline-flex items-center gap-0.5">
+                      <IconButton icon={History} label="View History" variant="plain" className="!text-[var(--a-text-2)]" onClick={() => viewHistory(item)} />
+                      <IconButton icon={Trash2} label="Delete" variant="plain" className="!text-[var(--a-error)]" onClick={() => deleteItem(item._id)} />
                     </div>
-                  </td>
+                  </Td>
                 </tr>
-              ))
-            )}
+              );
+            })}
           </tbody>
-        </table>
-      </div>
-
-      {/* Add Item Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1a4855] rounded-xl p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-primary">Add Inventory Item</h2>
-              <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-white">
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="text-gray-300 text-sm block mb-1">Item Name *</label>
-                <input
-                  type="text"
-                  value={newItem.name}
-                  onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-                  className="w-full bg-[#0f2933] text-white px-4 py-2 rounded-lg border border-[#EAB308]/20 focus:border-primary/50 outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-gray-300 text-sm block mb-1">Category</label>
-                  <select
-                    value={newItem.category}
-                    onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
-                    className="w-full bg-[#0f2933] text-white px-4 py-2 rounded-lg border border-[#EAB308]/20 focus:border-primary/50 outline-none"
-                  >
-                    {categories.filter(c => c !== "All").map((cat) => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-gray-300 text-sm block mb-1">Unit</label>
-                  <select
-                    value={newItem.unit}
-                    onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })}
-                    className="w-full bg-[#0f2933] text-white px-4 py-2 rounded-lg border border-[#EAB308]/20 focus:border-primary/50 outline-none"
-                  >
-                    {units.map((u) => (
-                      <option key={u} value={u}>{u}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-gray-300 text-sm block mb-1">Current Stock</label>
-                  <input
-                    type="number"
-                    value={newItem.current_stock}
-                    onChange={(e) => setNewItem({ ...newItem, current_stock: Number(e.target.value) })}
-                    className="w-full bg-[#0f2933] text-white px-4 py-2 rounded-lg border border-[#EAB308]/20 focus:border-primary/50 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-gray-300 text-sm block mb-1">Min Stock Level</label>
-                  <input
-                    type="number"
-                    value={newItem.min_stock}
-                    onChange={(e) => setNewItem({ ...newItem, min_stock: Number(e.target.value) })}
-                    className="w-full bg-[#0f2933] text-white px-4 py-2 rounded-lg border border-[#EAB308]/20 focus:border-primary/50 outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-gray-300 text-sm block mb-1">Cost per Unit (₹)</label>
-                  <input
-                    type="number"
-                    value={newItem.cost_per_unit}
-                    onChange={(e) => setNewItem({ ...newItem, cost_per_unit: Number(e.target.value) })}
-                    className="w-full bg-[#0f2933] text-white px-4 py-2 rounded-lg border border-[#EAB308]/20 focus:border-primary/50 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-gray-300 text-sm block mb-1">Supplier</label>
-                  <input
-                    type="text"
-                    value={newItem.supplier}
-                    onChange={(e) => setNewItem({ ...newItem, supplier: e.target.value })}
-                    className="w-full bg-[#0f2933] text-white px-4 py-2 rounded-lg border border-[#EAB308]/20 focus:border-primary/50 outline-none"
-                  />
-                </div>
-              </div>
-
-              <button
-                onClick={addItem}
-                className="w-full bg-primary text-black py-3 rounded-lg font-bold hover:bg-white transition"
-              >
-                Add Item
-              </button>
-            </div>
-          </div>
-        </div>
+        </Table>
       )}
 
-      {/* History Modal */}
-      {showHistoryModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1a4855] rounded-xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-primary">
-                Stock History: {selectedItem?.name}
-              </h2>
-              <button onClick={() => setShowHistoryModal(false)} className="text-gray-400 hover:text-white">
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            {stockHistory.length === 0 ? (
-              <p className="text-gray-400 text-center py-8">No history available</p>
-            ) : (
-              <div className="space-y-2">
-                {stockHistory.map((entry, idx) => (
-                  <div key={idx} className="bg-[#0f2933] rounded-lg p-3 flex justify-between items-center">
-                    <div>
-                      <p className="text-white text-sm">{entry.reason}</p>
-                      <p className="text-gray-400 text-xs">
-                        {new Date(entry.timestamp).toLocaleString()}
-                      </p>
-                    </div>
-                    <span className={`font-bold ${entry.change > 0 ? "text-green-500" : "text-red-500"}`}>
-                      {entry.change > 0 ? "+" : ""}{entry.change}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
+      <Sheet
+        open={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        size="sm"
+        title="New inventory item"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowAddModal(false)}>Cancel</Button>
+            <Button variant="primary" icon={Plus} onClick={addItem}>Add Item</Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <FormField label="Item name">
+            <Input type="text" value={newItem.name} onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} />
+          </FormField>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Category">
+              <Select value={newItem.category} onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}>
+                {categories.filter(c => c !== "All").map((cat) => <option key={cat} value={cat}>{cat}</option>)}
+              </Select>
+            </FormField>
+            <FormField label="Unit">
+              <Select value={newItem.unit} onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })}>
+                {units.map((u) => <option key={u} value={u}>{u}</option>)}
+              </Select>
+            </FormField>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Current stock">
+              <Input type="number" value={newItem.current_stock} onChange={(e) => setNewItem({ ...newItem, current_stock: Number(e.target.value) })} className="pd-tabular" />
+            </FormField>
+            <FormField label="Minimum level">
+              <Input type="number" value={newItem.min_stock} onChange={(e) => setNewItem({ ...newItem, min_stock: Number(e.target.value) })} className="pd-tabular" />
+            </FormField>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Cost per unit (₹)">
+              <Input type="number" value={newItem.cost_per_unit} onChange={(e) => setNewItem({ ...newItem, cost_per_unit: Number(e.target.value) })} className="pd-tabular" />
+            </FormField>
+            <FormField label="Supplier">
+              <Input type="text" value={newItem.supplier} onChange={(e) => setNewItem({ ...newItem, supplier: e.target.value })} />
+            </FormField>
           </div>
         </div>
-      )}
-    </div>
+      </Sheet>
+
+      <Sheet
+        open={showHistoryModal}
+        onClose={() => setShowHistoryModal(false)}
+        size="sm"
+        title="Stock history"
+        subtitle={selectedItem?.name}
+      >
+        {stockHistory.length === 0 ? (
+          <EmptyState icon={History} title="No history yet" />
+        ) : (
+          <FormGroup>
+            {stockHistory.map((entry, idx) => (
+              <div key={idx} className="flex items-center justify-between gap-3 px-4 py-3">
+                <div>
+                  <div className="text-[15px]">{entry.reason}</div>
+                  <div className="text-[12px] text-[var(--a-text-3)] pd-tabular">{new Date(entry.timestamp).toLocaleString("en-IN")}</div>
+                </div>
+                <span className={cx("text-[15px] font-semibold pd-tabular", entry.change > 0 ? "text-[var(--a-success)]" : "text-[var(--a-error)]")}>
+                  {entry.change > 0 ? "+" : ""}{entry.change}
+                </span>
+              </div>
+            ))}
+          </FormGroup>
+        )}
+      </Sheet>
+    </Page>
   );
 };
 
 export default Inventory;
-
-

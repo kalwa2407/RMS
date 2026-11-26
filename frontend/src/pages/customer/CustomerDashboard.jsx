@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } from 'react';
+import { useBackHandler } from '../../lib/backStack';
 import { useNavigate } from 'react-router-dom';
 import { useCustomerAuth } from '../../context/CustomerAuthContext';
 import { useToast } from '../../hooks/use-toast';
@@ -65,7 +66,7 @@ const CustomerDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [profileInitialTab, setProfileInitialTab] = useState('orders');
+  const [profileInitialTab, setProfileInitialTab] = useState('overview');
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [selectedDishDetail, setSelectedDishDetail] = useState(null);
   // ── Order Tracking State ──
@@ -679,14 +680,8 @@ const CustomerDashboard = () => {
       // New item — preserve passed quantity (from detail modal or quick add), default to 1
       return [...prev, { ...item, quantity: item.quantity || 1 }];
     });
-    if (!item.silentToast) {
-      toast({
-        title: 'Added to Cart',
-        description: item.hasAddons
-          ? `${item.name} & accompaniments added to your feast.`
-          : `${item.name} added to your Persian feast.`,
-      });
-    }
+    // No toast here: the sticky cart bar and the ADD stepper already show
+    // the change, and a toast would cover the top bar on every tap.
   };
 
   const updateCartQty = (idOrItem, delta) => {
@@ -919,7 +914,7 @@ const CustomerDashboard = () => {
       }
 
       setProfileInitialTab('orders');
-      setActiveTab('profile');
+      goToTab('profile');
     } catch (err) {
 
       alert(err.message || 'Order failed. Please try again.');
@@ -1001,7 +996,7 @@ const CustomerDashboard = () => {
   // Offer click handler
   const handleOfferClick = (offer) => {
     if (offer.action === 'reserve') {
-      setActiveTab('reserve');
+      goToTab('reserve');
     } else if (offer.coupon_code) {
       navigator.clipboard?.writeText(offer.coupon_code);
       toast({
@@ -1011,22 +1006,56 @@ const CustomerDashboard = () => {
       applyCouponCode(offer.coupon_code);
       setIsCartOpen(true);
     } else {
-      setActiveTab('order');
+      goToTab('order');
     }
   };
 
-  // Bottom dock tab selector
+  // ── Tab navigation with per-tab scroll memory ──
+  // The page (window) is the scroller, so remember each tab's offset and
+  // restore it when the user comes back, like native tab bars do.
+  const tabScrollRef = useRef({});
+  const pendingScrollRef = useRef(null);
+  const goToTab = useCallback((tabId) => {
+    setActiveTab((current) => {
+      if (current === tabId) return current;
+      tabScrollRef.current[current] = window.scrollY;
+      pendingScrollRef.current = tabScrollRef.current[tabId] || 0;
+      return tabId;
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (pendingScrollRef.current === null) return;
+    window.scrollTo(0, pendingScrollRef.current);
+    pendingScrollRef.current = null;
+  }, [activeTab]);
+
+  // Bottom dock tab selector: tapping the active tab scrolls it to the top.
   const handleDockSelect = (tabId) => {
-    setActiveTab(tabId);
-    mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    if (tabId === activeTab) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    goToTab(tabId);
   };
+
+  // ── Android hardware back: close the top-most overlay first ──
+  useBackHandler(activeTab !== 'home', () => goToTab('home'));
+  useBackHandler(isLocationModalOpen, () => setIsLocationModalOpen(false));
+  useBackHandler(isProfileOpen, () => setIsProfileOpen(false));
+  useBackHandler(isSearchOpen, () => setIsSearchOpen(false));
+  useBackHandler(isCartOpen, () => setIsCartOpen(false));
+  useBackHandler(isNotifOpen, () => closeNotifications());
+  useBackHandler(Boolean(trackingOrderId), () => setTrackingOrderId(null));
+  useBackHandler(Boolean(selectedDishDetail), () => setSelectedDishDetail(null));
+  useBackHandler(showCompleteProfile, () => setShowCompleteProfile(false));
 
   // If unauthenticated, render minimal clean container while navigating to /customer/login
   const isGuestBrowse = sessionStorage.getItem('customer_guest_browse') === 'true';
   if (!localStorage.getItem('customer_jwt') && !currentUser && !isGuestBrowse) {
     return (
       <div className="fixed inset-0 bg-[#F8F9FA] flex items-center justify-center">
-        <div className="w-8 h-8 border-3 border-[#E40000] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-3 border-pd-action border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -1037,7 +1066,7 @@ const CustomerDashboard = () => {
       <CustomerAppSplash isReady={!offersLoading} minDurationMs={600} />
 
       {/* ── Main Responsive Shell Container (Mobile 430px, iPad/Tablet 4xl) ── */}
-      <div className="w-full max-w-[430px] md:max-w-4xl min-h-screen bg-[#F8F9FA] flex flex-col shadow-2xl md:shadow-xl relative overflow-x-hidden md:border-x md:border-black/[0.06]">
+      <div className="w-full max-w-[430px] md:max-w-4xl min-h-screen bg-[#F8F9FA] flex flex-col shadow-2xl md:shadow-xl relative overflow-x-clip md:border-x md:border-black/[0.06]">
 
         {/* ── Heads-Up Floating Alert (Zomato-style dropdown with chime) ── */}
         <HeadsUpNotificationBanner
@@ -1058,10 +1087,10 @@ const CustomerDashboard = () => {
           distanceKm={distanceKm}
           onOpenLocationModal={() => setIsLocationModalOpen(true)}
           onOpenProfile={() => {
-            setActiveTab('profile');
+            goToTab('profile');
             mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
           }}
-          onOpenWallet={() => setActiveTab('rewards')}
+          onOpenWallet={() => goToTab('rewards')}
           onOpenSearch={() => setIsSearchOpen(true)}
           onOpenNotifications={openNotifications}
           notificationCount={unreadCount}
@@ -1071,7 +1100,7 @@ const CustomerDashboard = () => {
         />
 
         {/* ── Live Activity Pill (auto-detects iOS Dynamic Island vs Android Material) ── */}
-        {activeOrder && !trackingOrderId && !isCartOpen && !isProfileOpen && (
+        {activeOrder && cart.length > 0 && !trackingOrderId && !isCartOpen && !isProfileOpen && (
           <CustomerDynamicIsland
             activeOrder={activeOrder}
             distanceKm={distanceKm}
@@ -1084,7 +1113,7 @@ const CustomerDashboard = () => {
 
 
         {/* ── Scrollable Body with smooth tab fade transition ── */}
-        <main ref={mainScrollRef} key={activeTab} className="flex-1 overflow-y-auto overflow-x-hidden w-full max-w-full no-scrollbar animate-in fade-in duration-300 ios-spring">
+        <main ref={mainScrollRef} className="flex-1 overflow-x-clip w-full max-w-full">
 
           {/* Tab 1: Home (Royal Discovery & Showcase) */}
           {activeTab === 'home' && (
@@ -1096,12 +1125,12 @@ const CustomerDashboard = () => {
               onAddToCart={addToCart}
               onUpdateCartQty={updateCartQty}
               onOpenCart={() => setIsCartOpen(true)}
-              onOpenWallet={() => setActiveTab('rewards')}
+              onOpenWallet={() => goToTab('rewards')}
               onOpenSearch={() => setIsSearchOpen(true)}
               offers={offers}
               onOfferClick={handleOfferClick}
-              onGoToOrder={() => setActiveTab('order')}
-              onGoToReserve={() => setActiveTab('reserve')}
+              onGoToOrder={() => goToTab('order')}
+              onGoToReserve={() => goToTab('reserve')}
               onSelectDishDetail={setSelectedDishDetail}
             />
           )}
@@ -1150,8 +1179,8 @@ const CustomerDashboard = () => {
               currentUser={currentUser}
               customerProfile={customerProfile}
               pdCoins={availableCoins}
-              onGoToOrder={() => setActiveTab('order')}
-              onGoToReserve={() => setActiveTab('reserve')}
+              onGoToOrder={() => goToTab('order')}
+              onGoToReserve={() => goToTab('reserve')}
               onApplyVoucher={(code) => {
                 applyCouponCode(code);
                 setIsCartOpen(true);
@@ -1218,8 +1247,8 @@ const CustomerDashboard = () => {
                   variant: 'destructive'
                 });
               }}
-              onGoToOrder={() => setActiveTab('order')}
-              onGoToReserve={() => setActiveTab('reserve')}
+              onGoToOrder={() => goToTab('order')}
+              onGoToReserve={() => goToTab('reserve')}
               initialSection={profileInitialTab === 'orders' ? 'orders' : 'overview'}
             />
           )}
@@ -1316,7 +1345,7 @@ const CustomerDashboard = () => {
           onClearCart={() => setCart([])}
           onOrderMore={() => {
             setIsCartOpen(false);
-            setActiveTab('order');
+            goToTab('order');
           }}
         />
 
@@ -1436,7 +1465,7 @@ const CustomerDashboard = () => {
             onClose={() => setTrackingOrderId(null)}
             onGoHome={() => {
               setTrackingOrderId(null);
-              setActiveTab('home');
+              goToTab('home');
             }}
           />
         )}
@@ -1453,7 +1482,7 @@ const CustomerDashboard = () => {
             if (notif.orderId && notif.type?.startsWith('order_')) {
               setTrackingOrderId(notif.orderId);
             } else if (notif.type === 'reservation') {
-              setActiveTab('reserve');
+              goToTab('reserve');
             }
           }}
         />
@@ -1461,69 +1490,66 @@ const CustomerDashboard = () => {
         {/* ── PWA Install Banner ── */}
         <CustomerPwaInstallModal />
 
-        {/* ── Complete Profile Modal (New Patron or Post-Deletion) ── */}
+        {/* ── Complete Profile Sheet (New Patron or Post-Deletion) ── */}
         {showCompleteProfile && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in">
-            <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-amber-200/60 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-400/10 rounded-full blur-xl pointer-events-none" />
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 animate-in fade-in duration-200">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="pd-complete-profile-title"
+              className="w-full max-w-md bg-white rounded-t-[24px] sm:rounded-[24px] px-5 pt-6 animate-in slide-in-from-bottom duration-300 ease-pd-out"
+              style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 20px)' }}
+            >
+              <h3 id="pd-complete-profile-title" className="text-[22px] font-bold text-pd-ink tracking-[-0.01em]">Complete your profile</h3>
+              <p className="mt-1 text-[15px] text-pd-ink-2">Add your number so we can reach you about your orders.</p>
 
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 rounded-2xl bg-amber-500/15 text-amber-800 flex items-center justify-center text-xl shrink-0">
-                  👑
-                </div>
-                <div>
-                  <h3 className="text-lg font-black text-neutral-900 tracking-tight">Complete Your Profile</h3>
-                  <p className="text-xs text-neutral-500 font-medium">Welcome to Persian Darbar! Enter your details to enable delivery tracking.</p>
-                </div>
-              </div>
-
-              <form onSubmit={handleSaveInitialProfile} className="space-y-4 pt-1">
-                <div>
-                  <label className="block text-xs font-black text-neutral-600 uppercase tracking-wider mb-1.5">
-                    10-Digit Mobile Number *
-                  </label>
-                  <div className="flex items-center rounded-2xl border-2 border-neutral-200 focus-within:border-amber-500 px-3 py-2.5 bg-neutral-50 focus-within:bg-white transition-all">
-                    <span className="text-sm font-bold text-neutral-500 mr-2">+91</span>
+              <form onSubmit={handleSaveInitialProfile} className="mt-5 space-y-4">
+                <label className="block">
+                  <span className="block text-[13px] font-medium text-pd-ink-2 mb-1.5">Mobile number</span>
+                  <span className="flex items-center h-12 rounded-[12px] bg-pd-surface px-3.5 focus-within:ring-2 focus-within:ring-pd-action/30">
+                    <span className="text-[16px] text-pd-ink-2 mr-2 pd-tabular">+91</span>
                     <input
                       type="tel"
                       inputMode="numeric"
+                      autoComplete="tel-national"
                       maxLength={10}
                       value={completePhone}
                       onChange={(e) => setCompletePhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                      placeholder="9820144782"
+                      placeholder="10-digit number"
                       required
-                      className="w-full bg-transparent text-sm font-bold text-neutral-900 outline-none placeholder:text-neutral-400"
+                      className="flex-1 min-w-0 bg-transparent text-[16px] text-pd-ink outline-none placeholder:text-pd-ink-3 pd-tabular"
                     />
-                  </div>
-                </div>
+                  </span>
+                </label>
 
-                <div>
-                  <label className="block text-xs font-black text-neutral-600 uppercase tracking-wider mb-1.5">
-                    Delivery Address <span className="font-normal text-neutral-400 lowercase">(optional for now)</span>
-                  </label>
+                <label className="block">
+                  <span className="block text-[13px] font-medium text-pd-ink-2 mb-1.5">
+                    Delivery address <span className="text-pd-ink-3">(optional)</span>
+                  </span>
                   <textarea
                     rows={2}
                     value={completeAddress}
                     onChange={(e) => setCompleteAddress(e.target.value)}
-                    placeholder="e.g. Flat 302, Diamond Towers, Camp, Pune"
-                    className="w-full rounded-2xl border-2 border-neutral-200 focus:border-amber-500 p-3 text-xs font-medium text-neutral-900 bg-neutral-50 focus:bg-white outline-none resize-none transition-all placeholder:text-neutral-400"
+                    autoComplete="street-address"
+                    placeholder="Flat, building, street, area"
+                    className="w-full rounded-[12px] bg-pd-surface px-3.5 py-3 text-[16px] text-pd-ink outline-none resize-none placeholder:text-pd-ink-3 focus:ring-2 focus:ring-pd-action/30"
                   />
-                </div>
+                </label>
 
-                <div className="pt-2 flex items-center space-x-2">
+                <div className="pt-1 grid grid-cols-2 gap-3">
                   <button
                     type="button"
                     onClick={() => setShowCompleteProfile(false)}
-                    className="flex-1 py-3 px-4 rounded-xl text-xs font-bold text-neutral-500 hover:text-neutral-700 bg-neutral-100 hover:bg-neutral-200 transition-colors cursor-pointer"
+                    className="h-12 rounded-[12px] bg-pd-surface text-pd-ink text-[15px] font-semibold pd-press"
                   >
-                    I'll add later
+                    Later
                   </button>
                   <button
                     type="submit"
                     disabled={savingProfileDetails}
-                    className="flex-1 py-3 px-4 rounded-xl text-xs font-black text-white bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 shadow-md transition-all cursor-pointer disabled:opacity-50"
+                    className="h-12 rounded-[12px] bg-pd-action text-white text-[15px] font-semibold pd-press disabled:opacity-60"
                   >
-                    {savingProfileDetails ? 'Saving...' : 'Save & Continue ›'}
+                    {savingProfileDetails ? 'Saving…' : 'Save'}
                   </button>
                 </div>
               </form>

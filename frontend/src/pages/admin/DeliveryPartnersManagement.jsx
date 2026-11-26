@@ -3,6 +3,7 @@ import { UserPlus, Trash2, Edit2, Check, X, Bike } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
 import API_BASE from "../../lib/config";
+import { Page, PageHeader, Card, List, ListRow, Button, IconButton, StatusPill, Sheet, FormField, FormGroup, FormRow, Input, Select, Switch, EmptyState, LoadingState } from "./ui";
 
 const DeliveryPartnersManagement = () => {
   const { toast } = useToast();
@@ -103,177 +104,93 @@ const DeliveryPartnersManagement = () => {
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-3xl text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
-            Delivery Partners
-          </h2>
-          <p className="text-gray-500 text-xs uppercase tracking-widest mt-0.5">Rider fleet management</p>
-        </div>
-        <button
-          onClick={() => { resetForm(); setShowForm(true); }}
-          className="flex items-center gap-2 bg-[#3b82f6] text-white px-4 py-2.5 rounded-xl font-bold text-sm hover:bg-blue-500 transition-colors"
-        >
-          <UserPlus className="h-4 w-4" />
-          <span className="hidden sm:inline">Add Partner</span>
-        </button>
-      </div>
-
-      {showForm && (
-        <div className="bg-[#1a4855] border border-[#3b82f6]/20 rounded-xl p-5 mb-6">
-          <h3 className="text-white font-bold text-base mb-4">
-            {editingId ? "Edit Partner" : "New Delivery Partner"}
-          </h3>
-          <form onSubmit={handleSave} className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-gray-400 uppercase tracking-wider mb-1 block">Full Name *</label>
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={e => setForm({ ...form, name: e.target.value })}
-                  placeholder="Rider name"
-                  className="w-full bg-[#0f2933] border border-[#3b82f6]/20 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#3b82f6]/50 placeholder-gray-600"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-gray-400 uppercase tracking-wider mb-1 block">Phone Number *</label>
-                <input
-                  type="tel"
-                  value={form.phone}
-                  onChange={e => setForm({ ...form, phone: e.target.value })}
-                  placeholder="Login phone number"
-                  className="w-full bg-[#0f2933] border border-[#3b82f6]/20 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#3b82f6]/50 placeholder-gray-600"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-gray-400 uppercase tracking-wider mb-1 block">Vehicle Type</label>
-                <select
-                  value={form.vehicle_type}
-                  onChange={e => setForm({ ...form, vehicle_type: e.target.value })}
-                  className="w-full bg-[#0f2933] border border-[#3b82f6]/20 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#3b82f6]/50"
-                >
-                  <option value="Bike">Bike</option>
-                  <option value="Scooter">Scooter</option>
-                  <option value="Cycle">Cycle</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-gray-400 uppercase tracking-wider mb-1 block">Vehicle Number</label>
-                <input
-                  type="text"
-                  value={form.vehicle_number}
-                  onChange={e => setForm({ ...form, vehicle_number: e.target.value })}
-                  placeholder="e.g. MH12 AB 1234"
-                  className="w-full bg-[#0f2933] border border-[#3b82f6]/20 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#3b82f6]/50 placeholder-gray-600"
-                />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="text-xs text-gray-400 uppercase tracking-wider mb-1 block">
-                  Password {editingId && <span className="text-gray-600">(leave blank to keep)</span>}
-                </label>
-                <input
-                  type="password"
-                  value={form.password}
-                  onChange={e => setForm({ ...form, password: e.target.value })}
-                  placeholder={editingId ? "New password (optional)" : "Login Password *"}
-                  className="w-full bg-[#0f2933] border border-[#3b82f6]/20 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#3b82f6]/50 placeholder-gray-600"
-                />
-              </div>
-            </div>
-
-            {editingId && (
-              <label className="flex items-center gap-2 cursor-pointer mt-2">
-                <input
-                  type="checkbox"
-                  checked={form.active}
-                  onChange={e => setForm({ ...form, active: e.target.checked })}
-                  className="accent-[#3b82f6] w-4 h-4"
-                />
-                <span className="text-sm text-gray-300">Active (can receive orders)</span>
-              </label>
-            )}
-
-            <div className="flex gap-2 pt-2">
-              <button type="submit" disabled={saving}
-                className="flex items-center gap-1.5 bg-[#3b82f6] text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-500 transition-colors disabled:opacity-60">
-                <Check className="h-4 w-4" />
-                {saving ? "Saving..." : (editingId ? "Update" : "Create")}
-              </button>
-              <button type="button" onClick={resetForm}
-                className="flex items-center gap-1.5 bg-[#0f2933] border border-[#3b82f6]/20 text-gray-400 px-4 py-2 rounded-lg text-sm font-bold hover:text-white transition-colors">
-                <X className="h-4 w-4" />
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+    <Page>
+      <PageHeader
+        title="Delivery Partners"
+        subtitle="In-house rider accounts"
+        actions={<Button variant="primary" icon={UserPlus} onClick={() => { resetForm(); setShowForm(true); }}>Add Partner</Button>}
+      />
 
       {loading ? (
-        <div className="text-center py-16 text-gray-500">Loading delivery partners...</div>
+        <LoadingState rows={3} label="Loading delivery partners" />
       ) : partners.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-gray-600 gap-3">
-          <Bike className="h-14 w-14 opacity-25" />
-          <p className="text-sm">No delivery partners yet</p>
-          <p className="text-xs">Click "Add Partner" to create one</p>
-        </div>
+        <Card>
+          <EmptyState icon={Bike} title="No delivery partners yet" description='Use "Add Partner" to create a rider login.' />
+        </Card>
       ) : (
-        <div className="space-y-3">
+        <List>
           {partners.map(p => (
-            <div key={p.id}
-              className="flex items-center gap-3 bg-[#1a4855] border border-[#3b82f6]/15 rounded-xl px-4 py-3.5">
-              <div className="w-10 h-10 rounded-full bg-[#3b82f6]/15 border border-[#3b82f6]/20 flex items-center justify-center shrink-0">
-                <Bike className="h-5 w-5 text-[#3b82f6]" />
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-white font-semibold text-sm">{p.name}</p>
-                  <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#0f2933] text-[#3b82f6] border border-[#3b82f6]/20">
-                    {p.phone}
-                  </span>
-                  {p.active === false && (
-                    <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-900/30 text-red-400 border border-red-500/20">
-                      Inactive
-                    </span>
-                  )}
-                </div>
-                <p className="text-gray-500 text-xs mt-0.5">
-                  {p.vehicle_type} {p.vehicle_number ? `· ${p.vehicle_number}` : ''}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-1.5 shrink-0">
-                <button onClick={() => handleEdit(p)}
-                  className="p-2 rounded-lg bg-[#0f2933] text-gray-400 hover:text-white transition-colors">
-                  <Edit2 className="h-3.5 w-3.5" />
-                </button>
-                {deleteConfirm === p.id ? (
-                  <div className="flex items-center gap-1">
-                    <button onClick={() => handleDelete(p.id)}
-                      className="px-2 py-1.5 rounded-lg bg-red-600 text-white text-xs font-bold hover:bg-red-700 transition-colors">
-                      Confirm
-                    </button>
-                    <button onClick={() => setDeleteConfirm(null)}
-                      className="p-1.5 rounded-lg bg-[#0f2933] text-gray-400 hover:text-white transition-colors">
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+            <ListRow
+              key={p.id}
+              leading={
+                <span className="h-10 w-10 rounded-full bg-[var(--a-fill)] flex items-center justify-center">
+                  <Bike className="h-5 w-5 text-[var(--a-text-2)]" />
+                </span>
+              }
+              title={<span className="flex items-center gap-2">{p.name}{p.active === false && <StatusPill tone="error">Inactive</StatusPill>}</span>}
+              subtitle={<span className="pd-tabular">{p.phone} · {p.vehicle_type}{p.vehicle_number ? ` · ${p.vehicle_number}` : ""}</span>}
+              trailing={
+                deleteConfirm === p.id ? (
+                  <>
+                    <Button size="sm" variant="destructive" onClick={() => handleDelete(p.id)}>Confirm</Button>
+                    <IconButton icon={X} label="Keep" className="h-8 w-8" onClick={() => setDeleteConfirm(null)} />
+                  </>
                 ) : (
-                  <button onClick={() => setDeleteConfirm(p.id)}
-                    className="p-2 rounded-lg bg-[#0f2933] text-gray-400 hover:text-red-400 transition-colors">
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
-            </div>
+                  <>
+                    <IconButton icon={Edit2} label="Edit" variant="plain" className="!text-[var(--a-text-2)]" onClick={() => handleEdit(p)} />
+                    <IconButton icon={Trash2} label="Delete" variant="plain" className="!text-[var(--a-error)]" onClick={() => setDeleteConfirm(p.id)} />
+                  </>
+                )
+              }
+            />
           ))}
-        </div>
+        </List>
       )}
 
-    </div>
+      <Sheet
+        open={showForm}
+        onClose={resetForm}
+        size="sm"
+        title={editingId ? "Edit delivery partner" : "New delivery partner"}
+        footer={
+          <>
+            <Button variant="secondary" onClick={resetForm}>Cancel</Button>
+            <Button variant="primary" icon={Check} type="submit" form="partner-form" disabled={saving}>{saving ? "Saving…" : (editingId ? "Update" : "Create")}</Button>
+          </>
+        }
+      >
+        <form id="partner-form" onSubmit={handleSave} className="space-y-4">
+          <FormField label="Full name">
+            <Input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Rider name" />
+          </FormField>
+          <FormField label="Phone number">
+            <Input type="tel" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="Login phone number" />
+          </FormField>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Vehicle type">
+              <Select value={form.vehicle_type} onChange={e => setForm({ ...form, vehicle_type: e.target.value })}>
+                <option value="Bike">Bike</option>
+                <option value="Scooter">Scooter</option>
+                <option value="Cycle">Cycle</option>
+              </Select>
+            </FormField>
+            <FormField label="Vehicle number">
+              <Input type="text" value={form.vehicle_number} onChange={e => setForm({ ...form, vehicle_number: e.target.value })} placeholder="e.g. MH12 AB 1234" />
+            </FormField>
+          </div>
+          <FormField label="Password" hint={editingId ? "Leave blank to keep the current password" : undefined}>
+            <Input type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} placeholder={editingId ? "New password (optional)" : "Login password"} />
+          </FormField>
+          {editingId && (
+            <FormGroup>
+              <FormRow label="Active" hint="Can receive orders">
+                <Switch checked={form.active} onChange={(v) => setForm({ ...form, active: v })} label="Active" />
+              </FormRow>
+            </FormGroup>
+          )}
+        </form>
+      </Sheet>
+    </Page>
   );
 };
 

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { Trash2, Star, Check, Clock, Eye, EyeOff } from "lucide-react";
+import { Trash2, Star, Check, Clock, Plus } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import axios from "axios";
 import API_BASE from "../../lib/config";
+import { cx, Page, PageHeader, Card, List, Button, IconButton, Segmented, StatusPill, Sheet, FormField, Input, Textarea, EmptyState, LoadingState } from "./ui";
 
 const ReviewsManagement = () => {
   const { toast } = useToast();
@@ -39,7 +40,7 @@ const ReviewsManagement = () => {
         ...addForm,
         date: new Date(addForm.date).toISOString(),
       }, { headers: { Authorization: `Bearer ${token}` } });
-      toast({ title: "Review Added! ?", description: `${platformConfig[addForm.source]?.label} review by ${addForm.name} added � approve it below to make it live` });
+      toast({ title: "Review Added! ?", description: `${platformConfig[addForm.source]?.label} review by ${addForm.name} added — approve it below to make it live` });
       setAddForm({ name: "", text: "", rating: 5, source: "google", date: new Date().toISOString().split("T")[0] });
       setShowAddForm(false);
       fetchReviews();
@@ -91,7 +92,7 @@ const ReviewsManagement = () => {
     }
   };
 
-  if (loading) return <div className="text-center py-20 text-primary">Loading reviews...</div>;
+  if (loading) return <LoadingState rows={4} label="Loading reviews" />;
 
   const pendingCount = reviews.filter(r => r.pending).length;
   const approvedCount = reviews.filter(r => !r.pending).length;
@@ -106,235 +107,124 @@ const ReviewsManagement = () => {
     : "–";
 
   return (
-    <div>
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5">
-        <div>
-          <h2 className="text-2xl sm:text-4xl font-bold text-primary" style={{ fontFamily: "Playfair Display, serif" }}>
-            Reviews
-          </h2>
-        <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-400">
-          <span>⭐ Avg: <strong className="text-white">{avgRating}</strong></span>
-          <span>✅ Approved: <strong className="text-green-400">{approvedCount}</strong></span>
-          {pendingCount > 0 && (
-            <span className="flex items-center gap-1 text-yellow-400 font-bold animate-pulse">
-              <Clock className="h-3.5 w-3.5" />
-              {pendingCount} Pending Approval
-            </span>
-          )}
-          </div>
-        </div>
-        <button
-          onClick={() => setShowAddForm(v => !v)}
-          className="bg-primary hover:bg-[#CA8A04] text-black px-5 py-2.5 rounded-full font-bold flex items-center gap-2 transition-all text-sm self-start shrink-0"
-        >
-          {showAddForm ? "? Cancel" : "+ Add External Review"}
-        </button>
-      </div>
+    <Page>
+      <PageHeader
+        title="Reviews"
+        subtitle={
+          <span className="pd-tabular">
+            Average {avgRating} · {approvedCount} approved{pendingCount > 0 ? ` · ${pendingCount} pending approval` : ""}
+          </span>
+        }
+        actions={<Button variant="primary" icon={Plus} onClick={() => setShowAddForm(true)}>Add External Review</Button>}
+      />
 
-      {/* Add External Review Form */}
-      {showAddForm && (
-        <div className="bg-[#1a4855] border border-[#EAB308]/20 rounded-2xl p-5 mb-6 shadow-2xl">
-          <h3 className="text-lg font-bold text-primary mb-4" style={{ fontFamily: "Playfair Display, serif" }}>
-            Add Review from External Platform
-          </h3>
-          <form onSubmit={handleAddExternalReview} className="space-y-4">
-            {/* Platform selector */}
-            <div>
-              <label className="block text-primary font-semibold mb-2 text-sm">Platform Source *</label>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(platformConfig).map(([key, cfg]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setAddForm(f => ({ ...f, source: key }))}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-semibold transition-all ${
-                      addForm.source === key
-                        ? `${cfg.bg} ${cfg.border} ${cfg.color} scale-105`
-                        : "bg-[#0f2933] border-white/10 text-gray-400 hover:border-white/20"
-                    }`}
-                  >
-                    <span>{cfg.icon}</span> {cfg.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Name */}
-              <div>
-                <label className="block text-primary font-semibold mb-1 text-sm">Reviewer Name *</label>
-                <input
-                  required
-                  value={addForm.name}
-                  onChange={e => setAddForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="e.g. Rohit Sharma"
-                  className="w-full px-4 py-2.5 bg-[#0f2933] border border-[#EAB308]/20 rounded-xl text-white text-sm focus:outline-none focus:border-[#EAB308]/60 placeholder-gray-500"
-                />
-              </div>
-
-              {/* Date */}
-              <div>
-                <label className="block text-primary font-semibold mb-1 text-sm">Review Date</label>
-                <input
-                  type="date"
-                  value={addForm.date}
-                  onChange={e => setAddForm(f => ({ ...f, date: e.target.value }))}
-                  className="w-full px-4 py-2.5 bg-[#0f2933] border border-[#EAB308]/20 rounded-xl text-white text-sm focus:outline-none focus:border-[#EAB308]/60"
-                />
-              </div>
-            </div>
-
-            {/* Star Rating */}
-            <div>
-              <label className="block text-primary font-semibold mb-2 text-sm">Star Rating *</label>
-              <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map(star => (
-                  <button
-                    key={star}
-                    type="button"
-                    onMouseEnter={() => setHoverRating(star)}
-                    onMouseLeave={() => setHoverRating(0)}
-                    onClick={() => setAddForm(f => ({ ...f, rating: star }))}
-                    className="transition-transform hover:scale-110"
-                  >
-                    <Star className={`w-7 h-7 transition-colors ${
-                      star <= (hoverRating || addForm.rating)
-                        ? "fill-primary text-primary"
-                        : "text-gray-600"
-                    }`} />
-                  </button>
-                ))}
-                <span className="text-gray-400 text-sm ml-2 self-center">{addForm.rating}/5</span>
-              </div>
-            </div>
-
-            {/* Review Text */}
-            <div>
-              <label className="block text-primary font-semibold mb-1 text-sm">Review Text *</label>
-              <textarea
-                required
-                rows={4}
-                value={addForm.text}
-                onChange={e => setAddForm(f => ({ ...f, text: e.target.value }))}
-                placeholder="Paste the review text here..."
-                className="w-full px-4 py-2.5 bg-[#0f2933] border border-[#EAB308]/20 rounded-xl text-white text-sm focus:outline-none focus:border-[#EAB308]/60 placeholder-gray-500 resize-none"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={addingReview}
-              className="bg-primary hover:bg-[#CA8A04] disabled:opacity-60 text-black px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-colors text-sm"
-            >
-              {addingReview ? (
-                <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-              ) : "?"} 
-              {addingReview ? "Adding..." : "Add Review to Site"}
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* Filter Tabs */}
-      <div className="flex gap-2 mb-5 flex-wrap">
-        {[
-          { label: "All", value: "all", count: reviews.length },
+      <Segmented
+        value={filter}
+        onChange={setFilter}
+        options={[
+          { label: `All (${reviews.length})`, value: "all" },
           { label: "Pending", value: "pending", count: pendingCount },
-          { label: "Approved", value: "approved", count: approvedCount },
-        ].map(tab => (
-          <button
-            key={tab.value}
-            onClick={() => setFilter(tab.value)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
-              filter === tab.value
-                ? "bg-primary text-black"
-                : "bg-[#1a4855] text-gray-300 hover:bg-[#2a5865]"
-            }`}
-          >
-            {tab.label}
-            <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-              filter === tab.value ? "bg-black/20" : "bg-[#0f2933]"
-            }`}>{tab.count}</span>
-          </button>
-        ))}
-      </div>
+          { label: `Approved (${approvedCount})`, value: "approved" },
+        ]}
+      />
 
-      {/* Reviews Grid */}
       {displayed.length === 0 ? (
-        <div className="text-center py-16 text-gray-500">No reviews found</div>
+        <Card><EmptyState icon={Star} title="No reviews" description="No reviews match this filter." /></Card>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <List>
           {displayed.map((review) => {
             const isPending = review.pending;
             const name = review.name || review.customer_name || "Anonymous";
             const text = review.text || review.review_text || "";
+            const platform = review.source && platformConfig[review.source];
             return (
-              <div
-                key={review._id}
-                className={`rounded-2xl p-4 sm:p-6 border transition-all duration-300 ${
-                  isPending
-                    ? "bg-[#1a3a20] border-yellow-500/30"
-                    : "bg-[#1a4855] border-[#EAB308]/20"
-                }`}
-              >
-                {/* Status Badge */}
-                {isPending && (
-                  <div className="inline-flex items-center gap-1.5 bg-yellow-500/20 text-yellow-400 text-xs font-bold px-2.5 py-1 rounded-full mb-3">
-                    <Clock className="h-3 w-3" />
-                    Pending Approval
-                  </div>
-                )}
-
-                <div className="flex justify-between items-start gap-3">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-base font-bold text-white truncate">{name}</h3>
-                    <div className="flex gap-0.5 mt-1">
+              <div key={review._id} className="flex items-start gap-3 px-4 py-3.5">
+                <span className="h-9 w-9 rounded-full bg-[var(--a-fill-2)] text-[var(--a-text-2)] text-[14px] font-semibold flex items-center justify-center shrink-0">
+                  {name.charAt(0).toUpperCase()}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[15px] font-medium text-[var(--a-text)]">{name}</span>
+                    <span className="flex items-center gap-0.5" aria-label={`${review.rating} out of 5`}>
                       {[...Array(5)].map((_, i) => (
-                        <Star key={i} className={`h-3.5 w-3.5 ${i < review.rating ? "fill-primary text-primary" : "text-gray-700"}`} />
+                        <Star key={i} className={cx("h-3.5 w-3.5", i < review.rating ? "fill-[var(--a-gold)] text-[var(--a-gold)]" : "text-[var(--a-fill-2)]")} />
                       ))}
-                      <span className="text-gray-500 text-xs ml-1">{review.rating}/5</span>
-                    </div>
-                    <p className="text-gray-300 text-sm mt-2 leading-relaxed line-clamp-3">"{text}"</p>
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      <p className="text-gray-600 text-xs">
-                        {new Date(review.date || review.created_at).toLocaleDateString("en-IN", {
-                          day: "2-digit", month: "short", year: "numeric"
-                        })}
-                      </p>
-                      {review.source && platformConfig[review.source] && (
-                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${platformConfig[review.source].bg} ${platformConfig[review.source].border} ${platformConfig[review.source].color}`}>
-                          {platformConfig[review.source].icon} {platformConfig[review.source].label}
-                        </span>
-                      )}
-                    </div>
+                    </span>
+                    {isPending && <StatusPill tone="accent" icon={Clock}>Pending approval</StatusPill>}
                   </div>
-
-                  <div className="flex flex-col gap-2 flex-shrink-0">
-                    {isPending && (
-                      <button
-                        onClick={() => handleApprove(review._id)}
-                        className="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg transition-colors"
-                        title="Approve & Publish"
-                      >
-                        <Check className="h-4 w-4" />
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handleDelete(review._id)}
-                      className="bg-red-600/80 hover:bg-red-600 text-white p-2 rounded-lg transition-colors"
-                      title="Delete"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                  <p className="mt-1 text-[14px] leading-5 text-[var(--a-text)] line-clamp-3">{text}</p>
+                  <div className="mt-1 flex items-center gap-2 flex-wrap text-[12px] text-[var(--a-text-3)]">
+                    <span className="pd-tabular">
+                      {new Date(review.date || review.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                    </span>
+                    {platform && <StatusPill tone="neutral">{platform.label}</StatusPill>}
                   </div>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  {isPending && (
+                    <Button size="sm" variant="primary" icon={Check} onClick={() => handleApprove(review._id)} title="Approve & Publish">Approve</Button>
+                  )}
+                  <IconButton icon={Trash2} label="Delete" variant="plain" className="!text-[var(--a-error)]" onClick={() => handleDelete(review._id)} />
                 </div>
               </div>
             );
           })}
-        </div>
+        </List>
       )}
-    </div>
+
+      <Sheet
+        open={showAddForm}
+        onClose={() => setShowAddForm(false)}
+        title="Add external review"
+        subtitle="New reviews stay pending until approved"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowAddForm(false)}>Cancel</Button>
+            <Button variant="primary" type="submit" form="review-form" disabled={addingReview}>{addingReview ? "Adding…" : "Add Review to Site"}</Button>
+          </>
+        }
+      >
+        <form id="review-form" onSubmit={handleAddExternalReview} className="space-y-4">
+          <FormField label="Platform">
+            <Segmented
+              stretch
+              value={addForm.source}
+              onChange={(key) => setAddForm(f => ({ ...f, source: key }))}
+              options={Object.entries(platformConfig).map(([key, cfg]) => ({ value: key, label: cfg.label }))}
+            />
+          </FormField>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField label="Reviewer name">
+              <Input required value={addForm.name} onChange={e => setAddForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Rohit Sharma" />
+            </FormField>
+            <FormField label="Review date">
+              <Input type="date" value={addForm.date} onChange={e => setAddForm(f => ({ ...f, date: e.target.value }))} />
+            </FormField>
+          </div>
+          <FormField label="Rating">
+            <div className="flex items-center gap-1">
+              {[1, 2, 3, 4, 5].map(star => (
+                <button
+                  key={star}
+                  type="button"
+                  aria-label={`${star} star${star > 1 ? "s" : ""}`}
+                  onMouseEnter={() => setHoverRating(star)}
+                  onMouseLeave={() => setHoverRating(0)}
+                  onClick={() => setAddForm(f => ({ ...f, rating: star }))}
+                  className="p-0.5 cursor-pointer"
+                >
+                  <Star className={cx("h-7 w-7", star <= (hoverRating || addForm.rating) ? "fill-[var(--a-gold)] text-[var(--a-gold)]" : "text-[var(--a-fill-2)]")} />
+                </button>
+              ))}
+              <span className="ml-2 text-[14px] text-[var(--a-text-2)] pd-tabular">{addForm.rating}/5</span>
+            </div>
+          </FormField>
+          <FormField label="Review text">
+            <Textarea required rows={4} value={addForm.text} onChange={e => setAddForm(f => ({ ...f, text: e.target.value }))} placeholder="Paste the review text here" />
+          </FormField>
+        </form>
+      </Sheet>
+    </Page>
   );
 };
 

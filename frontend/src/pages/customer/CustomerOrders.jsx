@@ -158,7 +158,7 @@ const CustomerOrders = () => {
             </Link>
             <div>
               <h1 className="text-white font-bold text-sm leading-tight">My Orders</h1>
-              <p className="text-[#EAB308] text-[10px] font-semibold">{orders.length} total order{orders.length !== 1 ? 's' : ''}</p>
+              <p className="text-[#EAB308] text-[11px] font-semibold">{orders.length} total order{orders.length !== 1 ? 's' : ''}</p>
             </div>
           </div>
           <Link to="/order" className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-black bg-[#EAB308] hover:bg-[#CA8A04] transition-all">
@@ -178,7 +178,7 @@ const CustomerOrders = () => {
             <button
               key={tab.id}
               onClick={() => setFilter(tab.id)}
-              className={`px-3 py-1 rounded-full text-[10px] font-bold whitespace-nowrap transition-all shrink-0 ${
+              className={`px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap transition-all shrink-0 ${
                 filter === tab.id ? 'bg-[#EAB308] text-black' : 'bg-white/5 text-gray-300 border border-white/10'
               }`}
             >
@@ -192,7 +192,7 @@ const CustomerOrders = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search..."
-              className="w-full pl-7 pr-2 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] text-white placeholder-gray-500 focus:outline-none focus:border-[#EAB308]/50"
+              className="w-full pl-7 pr-2 py-1 bg-white/5 border border-white/10 rounded-full text-[11px] text-white placeholder-gray-500 focus:outline-none focus:border-[#EAB308]/50"
             />
           </div>
         </div>

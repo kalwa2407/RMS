@@ -67,6 +67,7 @@ import { isStandaloneApp } from "./lib/pwa";
 
 import { useLocation } from "react-router-dom";
 import { App as CapApp } from "@capacitor/app";
+import { handleBackPress } from "./lib/backStack";
 
 // Standalone / Native root redirect
 // Staff app (in.persiandarbar.staff): /staff-entry
@@ -150,6 +151,8 @@ const AndroidBackButtonHandler = () => {
     let removeListener;
     if (window.Capacitor && typeof window.Capacitor.isNativePlatform === "function" && window.Capacitor.isNativePlatform()) {
       CapApp.addListener("backButton", ({ canGoBack }) => {
+        // Open sheets/modals (and non-home customer tabs) consume back first.
+        if (handleBackPress()) return;
         const path = location.pathname;
         if (
           path === "/staff-entry" ||

@@ -322,7 +322,7 @@ const CustomerReservations = () => {
               </button>
               <div>
                 <div className="flex items-center space-x-1.5">
-                  <h1 className="text-base font-extrabold text-neutral-900 tracking-tight leading-none">
+                  <h1 className="text-base font-bold text-neutral-900 tracking-tight leading-none">
                     Table Reservations
                   </h1>
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -344,14 +344,14 @@ const CustomerReservations = () => {
                 className="w-9 h-9 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-600 transition-colors active:scale-95"
                 title="Refresh Reservations"
               >
-                <RotateCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-[#E40000]' : ''}`} />
+                <RotateCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-pd-action' : ''}`} />
               </button>
               <button
                 onClick={() => setActiveTab(activeTab === 'book' ? 'list' : 'book')}
-                className={`px-3 py-1.5 rounded-full text-xs font-black transition-all flex items-center space-x-1 ${
+                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center space-x-1 ${
                   activeTab === 'book'
                     ? 'bg-neutral-900 text-white shadow-xs'
-                    : 'bg-[#E40000] text-white shadow-sm hover:bg-[#CC0000]'
+                    : 'bg-pd-action text-white shadow-sm hover:bg-pd-action-press'
                 }`}
               >
                 {activeTab === 'book' ? (
@@ -373,7 +373,7 @@ const CustomerReservations = () => {
           <div className="mt-3 flex bg-neutral-100 p-1 rounded-2xl">
             <button
               onClick={() => setActiveTab('list')}
-              className={`flex-1 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1.5 ${
+              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
                 activeTab === 'list'
                   ? 'bg-white text-neutral-900 shadow-xs'
                   : 'text-neutral-500 hover:text-neutral-800'
@@ -382,8 +382,8 @@ const CustomerReservations = () => {
               <Calendar className="w-3.5 h-3.5" />
               <span>My Reservations</span>
               {reservations.length > 0 && (
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                  activeTab === 'list' ? 'bg-[#E40000] text-white' : 'bg-neutral-300 text-neutral-700'
+                <span className={`px-1.5 py-0.2 rounded-full text-[11px] font-bold ${
+                  activeTab === 'list' ? 'bg-pd-action text-white' : 'bg-neutral-300 text-neutral-700'
                 }`}>
                   {reservations.length}
                 </span>
@@ -391,7 +391,7 @@ const CustomerReservations = () => {
             </button>
             <button
               onClick={() => setActiveTab('book')}
-              className={`flex-1 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1.5 ${
+              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
                 activeTab === 'book'
                   ? 'bg-white text-neutral-900 shadow-xs'
                   : 'text-neutral-500 hover:text-neutral-800'
@@ -464,7 +464,7 @@ const CustomerReservations = () => {
             {/* Loading State */}
             {loading ? (
               <div className="py-20 text-center space-y-3">
-                <div className="w-8 h-8 border-3 border-[#E40000] border-t-transparent rounded-full animate-spin mx-auto" />
+                <div className="w-8 h-8 border-3 border-pd-action border-t-transparent rounded-full animate-spin mx-auto" />
                 <p className="text-xs font-bold text-neutral-500">
                   Retrieving your table bookings...
                 </p>
@@ -472,11 +472,11 @@ const CustomerReservations = () => {
             ) : filteredReservations.length === 0 ? (
               /* Empty State */
               <div className="bg-white rounded-3xl border border-neutral-200/80 p-8 text-center space-y-4 shadow-xs mt-2">
-                <div className="w-16 h-16 rounded-full bg-red-50 text-[#E40000] flex items-center justify-center mx-auto">
+                <div className="w-16 h-16 rounded-full bg-red-50 text-pd-action flex items-center justify-center mx-auto">
                   <Calendar className="w-8 h-8 stroke-[1.8]" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-neutral-900">
+                  <h3 className="text-base font-bold text-neutral-900">
                     {statusFilter === 'all'
                       ? 'No Table Reservations Yet'
                       : `No ${statusFilter} reservations`}
@@ -487,7 +487,7 @@ const CustomerReservations = () => {
                 </div>
                 <button
                   onClick={() => setActiveTab('book')}
-                  className="inline-flex items-center space-x-2 bg-[#E40000] hover:bg-[#CC0000] text-white font-black text-xs px-5 py-2.5 rounded-2xl shadow-sm active:scale-95 transition-all"
+                  className="inline-flex items-center space-x-2 bg-pd-action hover:bg-pd-action-press text-white font-bold text-xs px-5 py-2.5 rounded-2xl shadow-sm active:scale-95 transition-all"
                 >
                   <Plus className="w-4 h-4 stroke-[2.5]" />
                   <span>Reserve a Table Now</span>
@@ -519,10 +519,10 @@ const CustomerReservations = () => {
                             <UtensilsCrossed className="w-4 h-4" />
                           </div>
                           <div>
-                            <span className="text-[10px] font-black uppercase tracking-wider text-neutral-400">
+                            <span className="text-[11px] font-bold uppercase tracking-wide text-neutral-400">
                               Booking #{String(res.id || res._id).slice(-6).toUpperCase()}
                             </span>
-                            <h3 className="text-sm font-extrabold text-neutral-900 leading-tight">
+                            <h3 className="text-sm font-bold text-neutral-900 leading-tight">
                               Table for {res.guests} Guests
                             </h3>
                           </div>
@@ -531,19 +531,19 @@ const CustomerReservations = () => {
                         {/* Status Badge */}
                         <div className="flex items-center">
                           {isConfirmed && (
-                            <span className="px-2.5 py-1 rounded-full text-[11px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center space-x-1">
+                            <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center space-x-1">
                               <CheckCircle2 className="w-3.5 h-3.5 fill-emerald-600 text-white" />
                               <span>{res.table_number ? `Table ${res.table_number}` : 'Confirmed'}</span>
                             </span>
                           )}
                           {isPending && (
-                            <span className="px-2.5 py-1 rounded-full text-[11px] font-black bg-amber-50 text-amber-700 border border-amber-200 flex items-center space-x-1 animate-pulse">
+                            <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200 flex items-center space-x-1 animate-pulse">
                               <Clock3 className="w-3.5 h-3.5" />
                               <span>Awaiting Allocation</span>
                             </span>
                           )}
                           {isCancelled && (
-                            <span className="px-2.5 py-1 rounded-full text-[11px] font-black bg-rose-50 text-rose-700 border border-rose-200 flex items-center space-x-1">
+                            <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200 flex items-center space-x-1">
                               <XCircle className="w-3.5 h-3.5" />
                               <span>Unavailable</span>
                             </span>
@@ -554,23 +554,23 @@ const CustomerReservations = () => {
                       {/* Details Matrix */}
                       <div className="grid grid-cols-2 gap-2 bg-[#F8F9FA] p-3 rounded-2xl border border-neutral-100">
                         <div>
-                          <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                          <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wide block">
                             Date & Day
                           </span>
-                          <span className="text-xs font-black text-neutral-900 mt-0.5 block">
+                          <span className="text-xs font-bold text-neutral-900 mt-0.5 block">
                             {formatDateDisplay(res.date)}
                           </span>
                         </div>
                         <div>
-                          <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                          <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wide block">
                             Reserved Slot
                           </span>
-                          <span className="text-xs font-black text-[#E40000] mt-0.5 block">
+                          <span className="text-xs font-bold text-pd-action mt-0.5 block">
                             {res.time}
                           </span>
                         </div>
                         <div>
-                          <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                          <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wide block">
                             Guest Name
                           </span>
                           <span className="text-xs font-bold text-neutral-800 mt-0.5 block truncate">
@@ -578,11 +578,11 @@ const CustomerReservations = () => {
                           </span>
                         </div>
                         <div>
-                          <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                          <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wide block">
                             Seating Allocation
                           </span>
-                          <span className={`text-xs font-black mt-0.5 block ${
-                            res.table_number ? 'text-emerald-700 font-extrabold' : 'text-neutral-600'
+                          <span className={`text-xs font-bold mt-0.5 block ${
+                            res.table_number ? 'text-emerald-700 font-bold' : 'text-neutral-600'
                           }`}>
                             {res.table_number ? `Table ${res.table_number}` : 'Host Assigned on Arrival'}
                           </span>
@@ -622,7 +622,7 @@ const CustomerReservations = () => {
 
                         <button
                           onClick={() => setActiveTab('book')}
-                          className="text-xs font-extrabold text-[#E40000] hover:underline px-2 py-1"
+                          className="text-xs font-bold text-pd-action hover:underline px-2 py-1"
                         >
                           Book Another ›
                         </button>
@@ -643,10 +643,10 @@ const CustomerReservations = () => {
             <div className="bg-white rounded-3xl border border-neutral-200/80 p-4 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-xs font-black uppercase tracking-wider text-neutral-400">
+                  <h3 className="text-xs font-bold uppercase tracking-wide text-neutral-400">
                     Step 1 · Select Persian Darbar Branch
                   </h3>
-                  <p className="text-sm font-extrabold text-neutral-900 mt-0.5">
+                  <p className="text-sm font-bold text-neutral-900 mt-0.5">
                     Dining Room: {selectedBranch.name}
                   </p>
                 </div>
@@ -665,23 +665,23 @@ const CustomerReservations = () => {
                       onClick={() => setSelectedBranch(branch)}
                       className={`p-3 rounded-2xl border cursor-pointer active:scale-95 transition-all flex flex-col justify-between ${
                         isSelected
-                          ? 'border-[#E40000] bg-red-50/30 ring-2 ring-red-100'
+                          ? 'border-pd-action bg-red-50/30 ring-2 ring-red-100'
                           : 'border-neutral-200/80 bg-neutral-50/50 hover:bg-neutral-100'
                       }`}
                     >
                       <div className="flex items-start justify-between">
-                        <MapPin className={`w-4 h-4 shrink-0 ${isSelected ? 'text-[#E40000]' : 'text-neutral-400'}`} />
+                        <MapPin className={`w-4 h-4 shrink-0 ${isSelected ? 'text-pd-action' : 'text-neutral-400'}`} />
                         {isSelected && (
-                          <span className="w-4 h-4 rounded-full bg-[#E40000] text-white flex items-center justify-center text-[10px]">
+                          <span className="w-4 h-4 rounded-full bg-pd-action text-white flex items-center justify-center text-[11px]">
                             ✓
                           </span>
                         )}
                       </div>
                       <div className="mt-2">
-                        <h4 className="text-xs font-black text-neutral-900 leading-tight">
+                        <h4 className="text-xs font-bold text-neutral-900 leading-tight">
                           {branch.name}
                         </h4>
-                        <p className="text-[10px] text-neutral-500 mt-0.5 line-clamp-1">
+                        <p className="text-[11px] text-neutral-500 mt-0.5 line-clamp-1">
                           {branch.shortAddress}
                         </p>
                       </div>
@@ -693,7 +693,7 @@ const CustomerReservations = () => {
 
             {/* 2. Date Selection */}
             <div className="bg-white rounded-3xl border border-neutral-200/80 p-4 shadow-xs space-y-3">
-              <h3 className="text-xs font-black uppercase tracking-wider text-neutral-400">
+              <h3 className="text-xs font-bold uppercase tracking-wide text-neutral-400">
                 Step 2 · Dining Date
               </h3>
               <div className="flex space-x-2">
@@ -714,14 +714,14 @@ const CustomerReservations = () => {
                       onClick={() => setBookDate(dateStr)}
                       className={`flex-1 py-2 px-1 rounded-2xl border text-center transition-all ${
                         isSelected
-                          ? 'bg-[#E40000] text-white border-[#E40000] shadow-xs'
+                          ? 'bg-pd-action text-white border-pd-action shadow-xs'
                           : 'bg-neutral-50 text-neutral-700 border-neutral-200/80 hover:bg-neutral-100'
                       }`}
                     >
-                      <span className="text-[10px] block font-bold uppercase tracking-wider opacity-80">
+                      <span className="text-[11px] block font-bold uppercase tracking-wide opacity-80">
                         {label}
                       </span>
-                      <span className="text-xs font-black block mt-0.5">
+                      <span className="text-xs font-bold block mt-0.5">
                         {d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                       </span>
                     </button>
@@ -736,7 +736,7 @@ const CustomerReservations = () => {
                   min={new Date().toISOString().split('T')[0]}
                   value={bookDate}
                   onChange={(e) => setBookDate(e.target.value)}
-                  className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl px-4 py-2.5 text-xs font-bold text-neutral-800 outline-none focus:ring-2 focus:ring-red-100 focus:border-[#E40000]"
+                  className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl px-4 py-2.5 text-xs font-bold text-neutral-800 outline-none focus:ring-2 focus:ring-red-100 focus:border-pd-action"
                 />
               </div>
             </div>
@@ -744,17 +744,17 @@ const CustomerReservations = () => {
             {/* 3. Time Slot Chips */}
             <div className="bg-white rounded-3xl border border-neutral-200/80 p-4 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-black uppercase tracking-wider text-neutral-400">
+                <h3 className="text-xs font-bold uppercase tracking-wide text-neutral-400">
                   Step 3 · Time Slot
                 </h3>
-                <span className="text-xs font-extrabold text-[#E40000]">
+                <span className="text-xs font-bold text-pd-action">
                   {bookTime}
                 </span>
               </div>
 
               {/* Lunch Slots */}
               <div>
-                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-2">
+                <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wide block mb-2">
                   Lunch Feasts (12:00 PM – 03:00 PM)
                 </span>
                 <div className="grid grid-cols-4 gap-1.5">
@@ -765,7 +765,7 @@ const CustomerReservations = () => {
                       onClick={() => setBookTime(slot)}
                       className={`py-2 rounded-xl text-xs font-bold border transition-all ${
                         bookTime === slot
-                          ? 'bg-[#E40000] text-white border-[#E40000] shadow-xs font-black'
+                          ? 'bg-pd-action text-white border-pd-action shadow-xs font-bold'
                           : 'bg-neutral-50 text-neutral-700 border-neutral-200/80 hover:bg-neutral-100'
                       }`}
                     >
@@ -777,7 +777,7 @@ const CustomerReservations = () => {
 
               {/* Dinner Slots */}
               <div className="pt-2">
-                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-2">
+                <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wide block mb-2">
                   Dinner & Dastarkhwan (07:00 PM – 11:00 PM)
                 </span>
                 <div className="grid grid-cols-4 gap-1.5">
@@ -788,7 +788,7 @@ const CustomerReservations = () => {
                       onClick={() => setBookTime(slot)}
                       className={`py-2 rounded-xl text-xs font-bold border transition-all ${
                         bookTime === slot
-                          ? 'bg-[#E40000] text-white border-[#E40000] shadow-xs font-black'
+                          ? 'bg-pd-action text-white border-pd-action shadow-xs font-bold'
                           : 'bg-neutral-50 text-neutral-700 border-neutral-200/80 hover:bg-neutral-100'
                       }`}
                     >
@@ -802,10 +802,10 @@ const CustomerReservations = () => {
             {/* 4. Number of Guests */}
             <div className="bg-white rounded-3xl border border-neutral-200/80 p-4 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-black uppercase tracking-wider text-neutral-400">
+                <h3 className="text-xs font-bold uppercase tracking-wide text-neutral-400">
                   Step 4 · Number of Guests
                 </h3>
-                <span className="text-xs font-black text-neutral-900">
+                <span className="text-xs font-bold text-neutral-900">
                   {bookGuests} {bookGuests === 1 ? 'Guest' : 'Guests'}
                 </span>
               </div>
@@ -816,9 +816,9 @@ const CustomerReservations = () => {
                     key={num}
                     type="button"
                     onClick={() => setBookGuests(num)}
-                    className={`w-11 h-11 rounded-2xl border shrink-0 text-xs font-black flex items-center justify-center transition-all ${
+                    className={`w-11 h-11 rounded-2xl border shrink-0 text-xs font-bold flex items-center justify-center transition-all ${
                       bookGuests === num
-                        ? 'bg-[#E40000] text-white border-[#E40000] shadow-xs scale-105'
+                        ? 'bg-pd-action text-white border-pd-action shadow-xs scale-105'
                         : 'bg-neutral-50 text-neutral-800 border-neutral-200/80 hover:bg-neutral-100'
                     }`}
                   >
@@ -830,7 +830,7 @@ const CustomerReservations = () => {
 
             {/* 5. Dining Mood / Experience */}
             <div className="bg-white rounded-3xl border border-neutral-200/80 p-4 shadow-xs space-y-3">
-              <h3 className="text-xs font-black uppercase tracking-wider text-neutral-400">
+              <h3 className="text-xs font-bold uppercase tracking-wide text-neutral-400">
                 Step 5 · Dining Mood & Occasion
               </h3>
               <div className="grid grid-cols-2 gap-2">
@@ -847,14 +847,14 @@ const CustomerReservations = () => {
                       onClick={() => setBookMood(mood.name)}
                       className={`p-3 rounded-2xl border cursor-pointer active:scale-95 transition-all ${
                         isSelected
-                          ? 'border-[#E40000] bg-red-50/30 ring-2 ring-red-100'
+                          ? 'border-pd-action bg-red-50/30 ring-2 ring-red-100'
                           : 'border-neutral-200/80 bg-neutral-50/50 hover:bg-neutral-100'
                       }`}
                     >
-                      <h4 className="text-xs font-black text-neutral-900 leading-tight">
+                      <h4 className="text-xs font-bold text-neutral-900 leading-tight">
                         {mood.name}
                       </h4>
-                      <p className="text-[10px] text-neutral-500 mt-0.5 leading-snug">
+                      <p className="text-[11px] text-neutral-500 mt-0.5 leading-snug">
                         {mood.desc}
                       </p>
                     </div>
@@ -865,13 +865,13 @@ const CustomerReservations = () => {
 
             {/* 6. Contact Details & Notes */}
             <div className="bg-white rounded-3xl border border-neutral-200/80 p-4 shadow-xs space-y-3">
-              <h3 className="text-xs font-black uppercase tracking-wider text-neutral-400">
+              <h3 className="text-xs font-bold uppercase tracking-wide text-neutral-400">
                 Step 6 · Patron Details & Special Requests
               </h3>
 
               <div className="space-y-2.5">
                 <div>
-                  <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">
+                  <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wide block mb-1">
                     Your Name
                   </label>
                   <div className="relative">
@@ -882,13 +882,13 @@ const CustomerReservations = () => {
                       placeholder="e.g. Rahul Sharma"
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
-                      className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl pl-10 pr-4 py-2.5 text-xs font-bold text-neutral-800 outline-none focus:ring-2 focus:ring-red-100 focus:border-[#E40000]"
+                      className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl pl-10 pr-4 py-2.5 text-xs font-bold text-neutral-800 outline-none focus:ring-2 focus:ring-red-100 focus:border-pd-action"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">
+                  <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wide block mb-1">
                     Mobile Phone (WhatsApp Confirmation)
                   </label>
                   <div className="relative">
@@ -899,13 +899,13 @@ const CustomerReservations = () => {
                       placeholder="e.g. 9876543210"
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
-                      className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl pl-10 pr-4 py-2.5 text-xs font-bold text-neutral-800 outline-none focus:ring-2 focus:ring-red-100 focus:border-[#E40000]"
+                      className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl pl-10 pr-4 py-2.5 text-xs font-bold text-neutral-800 outline-none focus:ring-2 focus:ring-red-100 focus:border-pd-action"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">
+                  <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wide block mb-1">
                     Special Requests (Optional)
                   </label>
                   <textarea
@@ -913,7 +913,7 @@ const CustomerReservations = () => {
                     placeholder="e.g. High chair for toddler, window view, anniversary setup..."
                     value={specialRequests}
                     onChange={(e) => setSpecialRequests(e.target.value)}
-                    className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl p-3 text-xs font-medium text-neutral-800 outline-none focus:ring-2 focus:ring-red-100 focus:border-[#E40000] resize-none"
+                    className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl p-3 text-xs font-medium text-neutral-800 outline-none focus:ring-2 focus:ring-red-100 focus:border-pd-action resize-none"
                   />
                 </div>
               </div>
@@ -924,7 +924,7 @@ const CustomerReservations = () => {
               <button
                 type="submit"
                 disabled={isBookingSubmitting}
-                className="w-full bg-[#E40000] hover:bg-[#CC0000] text-white py-3.5 rounded-2xl font-black text-sm flex items-center justify-center space-x-2 shadow-lg shadow-red-500/25 active:scale-98 transition-all disabled:opacity-50"
+                className="w-full bg-pd-action hover:bg-pd-action-press text-white py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center space-x-2 shadow-lg shadow-red-500/25 active:scale-98 transition-all disabled:opacity-50"
               >
                 {isBookingSubmitting ? (
                   <>
@@ -938,7 +938,7 @@ const CustomerReservations = () => {
                   </>
                 )}
               </button>
-              <p className="text-center text-[10px] font-semibold text-neutral-400 mt-2">
+              <p className="text-center text-[11px] font-semibold text-neutral-400 mt-2">
                 Instant confirmation · No reservation fees · 100% Guaranteed Seating
               </p>
             </div>
@@ -955,16 +955,16 @@ const CustomerReservations = () => {
                   alt="Persian Darbar"
                   className="w-16 h-16 rounded-2xl shadow-lg border border-amber-400/60 object-contain mx-auto"
                 />
-                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] font-black border-2 border-white shadow-xs">
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[11px] font-bold border-2 border-white shadow-xs">
                   ✓
                 </div>
               </div>
 
               <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
+                <span className="text-[11px] font-bold uppercase tracking-wide text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
                   Guaranteed Seating
                 </span>
-                <h3 className="text-lg font-black text-neutral-900 mt-2">
+                <h3 className="text-lg font-bold text-neutral-900 mt-2">
                   Table Reserved Successfully!
                 </h3>
                 <p className="text-xs text-neutral-500 mt-1">
@@ -976,25 +976,25 @@ const CustomerReservations = () => {
               <div className="bg-[#F8F9FA] rounded-2xl p-4 border border-neutral-200/80 text-left space-y-2">
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-neutral-400 font-bold">Booking Ref:</span>
-                  <span className="font-mono font-black text-neutral-900">
+                  <span className="font-mono font-bold text-neutral-900">
                     {bookingSuccessModal.id}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-neutral-400 font-bold">Outlet:</span>
-                  <span className="font-black text-neutral-900">
+                  <span className="font-bold text-neutral-900">
                     {bookingSuccessModal.branch}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-neutral-400 font-bold">Date & Time:</span>
-                  <span className="font-black text-[#E40000]">
+                  <span className="font-bold text-pd-action">
                     {formatDateDisplay(bookingSuccessModal.date)} · {bookingSuccessModal.time}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-neutral-400 font-bold">Party Size:</span>
-                  <span className="font-black text-neutral-900">
+                  <span className="font-bold text-neutral-900">
                     {bookingSuccessModal.guests} Guests
                   </span>
                 </div>
@@ -1014,7 +1014,7 @@ const CustomerReservations = () => {
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full bg-[#24963F] hover:bg-[#1f8036] text-white py-3 rounded-2xl font-black text-xs flex items-center justify-center space-x-2 transition-colors"
+                  className="w-full bg-[#24963F] hover:bg-[#1f8036] text-white py-3 rounded-2xl font-bold text-xs flex items-center justify-center space-x-2 transition-colors"
                 >
                   <MessageSquare className="w-4 h-4 fill-current" />
                   <span>Send to WhatsApp Concierge</span>
@@ -1048,8 +1048,8 @@ const CustomerReservations = () => {
             <div className="w-[1px] h-4 bg-neutral-200" />
             <button
               onClick={() => setActiveTab('book')}
-              className={`flex items-center space-x-1 text-xs font-black transition-colors ${
-                activeTab === 'book' ? 'text-[#E40000]' : 'text-neutral-600'
+              className={`flex items-center space-x-1 text-xs font-bold transition-colors ${
+                activeTab === 'book' ? 'text-pd-action' : 'text-neutral-600'
               }`}
             >
               <UtensilsCrossed className="w-4 h-4" />
@@ -1058,8 +1058,8 @@ const CustomerReservations = () => {
             <div className="w-[1px] h-4 bg-neutral-200" />
             <button
               onClick={() => setActiveTab('list')}
-              className={`flex items-center space-x-1 text-xs font-black transition-colors ${
-                activeTab === 'list' ? 'text-[#E40000]' : 'text-neutral-600'
+              className={`flex items-center space-x-1 text-xs font-bold transition-colors ${
+                activeTab === 'list' ? 'text-pd-action' : 'text-neutral-600'
               }`}
             >
               <Calendar className="w-4 h-4" />

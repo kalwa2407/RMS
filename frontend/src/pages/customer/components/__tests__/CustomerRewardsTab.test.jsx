@@ -28,7 +28,10 @@ const render = (props) => {
 };
 
 const text = () => container.textContent;
-const byText = (t) => Array.from(container.querySelectorAll('button, div, h5')).find((el) => el.textContent.trim() === t);
+// Exact text first, then the first button whose text starts with it (list rows hold title + description)
+const byText = (t) =>
+  Array.from(container.querySelectorAll('button, div, h5')).find((el) => el.textContent.trim() === t) ||
+  Array.from(container.querySelectorAll('button')).find((el) => el.textContent.trim().toLowerCase().startsWith(t.toLowerCase()));
 const click = (el) => act(() => { el.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
 
 afterEach(() => {
@@ -46,7 +49,7 @@ describe('CustomerRewardsTab', () => {
 
   test('passbook lists real coins_history newest first, no hardcoded entries', () => {
     render({ customerProfile: profile, pdCoins: 42 });
-    click(byText('Passbook'));
+    click(byText('Activity'));
     const amounts = (text().match(/[+-]\d+ Coins/g) || []);
     expect(amounts).toEqual(['-20 Coins', '+12 Coins', '+50 Coins']);
     expect(text()).not.toMatch(/Mutton Biryani Order Cash Back/);
@@ -54,7 +57,7 @@ describe('CustomerRewardsTab', () => {
 
   test('empty passbook shows empty state', () => {
     render({ customerProfile: {}, pdCoins: 0 });
-    click(byText('Passbook'));
+    click(byText('Activity'));
     expect(text()).toMatch(/No coin activity yet/);
   });
 

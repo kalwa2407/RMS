@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from "react";
 import {
-  Tag, ToggleLeft, ToggleRight, Plus, Trash2, Edit2,
-  Save, X, Image as ImageIcon, Calendar, Sparkles,
-  Eye, EyeOff, AlertTriangle, ArrowUp, ArrowDown,
-  CheckCircle, Smartphone, ExternalLink, RefreshCw,
-  Percent, Check, Zap
+  Tag, Plus, Trash2, Edit2, Save, Image as ImageIcon, Calendar,
+  ArrowUp, ArrowDown, RefreshCw, Percent, Check, Zap
 } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import API_BASE from "../../lib/config";
+import { cx, Page, PageHeader, Card, SectionTitle, List, Button, IconButton, Segmented, StatusPill, Switch, Sheet, FormField, FormGroup, FormRow, Input, Select, EmptyState, LoadingState } from "./ui";
 
 const PRESET_BANNERS = [
   {
@@ -480,1013 +478,353 @@ const OffersManagement = () => {
   };
 
   const activeOffersCount = offers.filter((o) => o.active).length;
+  const topActive = offers.find((o) => o.active) || offers[0];
+  const newCoupon = () => {
+    setEditingCoupon(null);
+    setCouponFormData({
+      code: "",
+      discount_type: "flat",
+      discount_value: 199,
+      min_order_value: 500,
+      max_discount: "",
+      description: "",
+      active: true,
+    });
+    setShowCouponModal(true);
+  };
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <Tag className="w-8 h-8 text-[#EAB308]" />
-            <h1 className="text-3xl font-extrabold text-white tracking-wide">
-              Offers & Promotions
-            </h1>
-          </div>
-          <p className="text-gray-400 text-sm mt-1">
-            Manage promotional banners, discounts, and animated graffiti shown on the Customer App.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => {
-              if (activeSection === "coupons") fetchCoupons();
-              else fetchOffers();
-            }}
-            className="p-2.5 rounded-xl bg-[#0f2933] border border-white/10 text-gray-300 hover:text-white hover:bg-[#1a4855] transition"
-            title="Refresh"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
-          {activeSection === "coupons" ? (
-            <button
+    <Page>
+      <PageHeader
+        title="Offers"
+        subtitle="Promotional banners, coupons and discounts shown in the customer app."
+        actions={
+          <>
+            <IconButton
+              icon={RefreshCw}
+              label="Refresh"
               onClick={() => {
-                setEditingCoupon(null);
-                setCouponFormData({
-                  code: "",
-                  discount_type: "flat",
-                  discount_value: 199,
-                  min_order_value: 500,
-                  max_discount: "",
-                  description: "",
-                  active: true,
-                });
-                setShowCouponModal(true);
+                if (activeSection === "coupons") fetchCoupons();
+                else fetchOffers();
               }}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-lg shadow-emerald-950/40 transition"
-            >
-              <Plus className="w-4 h-4" /> Create Coupon Code
-            </button>
-          ) : (
-            <button
-              onClick={openCreateModal}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#EAB308] hover:bg-[#ca9a04] text-black font-bold text-sm shadow-lg shadow-[#EAB308]/20 transition"
-            >
-              <Plus className="w-4 h-4" /> Add New Offer
-            </button>
-          )}
-        </div>
-      </div>
+            />
+            {activeSection === "coupons"
+              ? <Button variant="primary" icon={Plus} onClick={newCoupon}>Create Coupon</Button>
+              : <Button variant="primary" icon={Plus} onClick={openCreateModal}>Add Offer</Button>}
+          </>
+        }
+      />
 
-      {/* ── SECTION TABS SWITCHER: COUPONS VS BANNERS ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-[#0d2229]/80 p-2 rounded-2xl border border-white/10">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setActiveSection("coupons")}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
-              activeSection === "coupons"
-                ? "bg-[#EAB308] text-black shadow-lg shadow-[#EAB308]/20 font-black"
-                : "text-gray-300 hover:text-white hover:bg-white/5"
-            }`}
-          >
-            <Tag className="w-4 h-4" />
-            <span>Discount Promo Codes & Coupons</span>
-            <span className={`text-xs px-2 py-0.5 rounded-full font-black ${
-              activeSection === "coupons" ? "bg-black/20 text-black" : "bg-[#EAB308]/20 text-[#EAB308]"
-            }`}>
-              {coupons.length}
-            </span>
-          </button>
+      <Segmented
+        value={activeSection}
+        onChange={setActiveSection}
+        options={[
+          { value: "coupons", label: `Coupons (${coupons.length})`, icon: Tag },
+          { value: "banners", label: `Home Banners (${offers.length})`, icon: ImageIcon },
+        ]}
+      />
 
-          <button
-            onClick={() => setActiveSection("banners")}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
-              activeSection === "banners"
-                ? "bg-[#EAB308] text-black shadow-lg shadow-[#EAB308]/20 font-black"
-                : "text-gray-300 hover:text-white hover:bg-white/5"
-            }`}
-          >
-            <ImageIcon className="w-4 h-4" />
-            <span>Home Carousel Banners</span>
-            <span className={`text-xs px-2 py-0.5 rounded-full font-black ${
-              activeSection === "banners" ? "bg-black/20 text-black" : "bg-white/10 text-gray-300"
-            }`}>
-              {offers.length}
-            </span>
-          </button>
-        </div>
-      </div>
-
-      {/* ═════════════════════════════════════════════════════════════════════════ */}
-      {/* ── TAB 1: PROMO COUPONS & CODES DASHBOARD ── */}
-      {/* ═════════════════════════════════════════════════════════════════════════ */}
+      {/* ── COUPONS ── */}
       {activeSection === "coupons" && (
-        <div className="space-y-6">
-          {/* Quick Presets Banner */}
-          <div className="bg-[#0d2229] border border-[#EAB308]/30 rounded-2xl p-4 space-y-2.5 shadow-xl shadow-black/30">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-black text-[#EAB308] uppercase tracking-wider flex items-center gap-1.5">
-                <Zap className="w-3.5 h-3.5" /> Quick Rule Presets (Click to Auto-Create)
-              </span>
-              <span className="text-[11px] text-gray-400">
-                Instantly generates active promo rules for checkout
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+        <>
+          <section className="space-y-2">
+            <SectionTitle title="Quick presets" subtitle="Opens a new coupon pre-filled with the rule" />
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
               {COUPON_PRESETS.map((p, idx) => (
                 <button
                   key={idx}
                   onClick={() => openCouponModalWithPreset(p)}
-                  className="p-3 rounded-xl bg-[#0a1e26] hover:bg-[#122e38] border border-white/10 hover:border-[#EAB308]/50 text-left transition-all group flex flex-col justify-between"
+                  className="text-left rounded-[12px] border border-[var(--a-line)] bg-[var(--a-card)] px-3 py-2.5 hover:bg-[var(--a-inset)] cursor-pointer pd-press"
                 >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-mono text-sm font-black text-[#EAB308] group-hover:scale-105 transition-transform">
-                      {p.code}
-                    </span>
-                    <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded-md font-bold">
-                      {p.discount_type === 'flat' ? `₹${p.discount_value} OFF` : `${p.discount_value}% OFF`}
-                    </span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[14px] font-semibold tracking-[0.02em] text-[var(--a-text)]">{p.code}</span>
+                    <Zap className="h-3.5 w-3.5 text-[var(--a-text-3)]" />
                   </div>
-                  <p className="text-[11px] text-gray-300 font-medium leading-tight">
-                    Min Order: ₹{p.min_order_value}
-                  </p>
+                  <div className="text-[13px] text-[var(--a-text-2)] pd-tabular">
+                    {p.discount_type === "flat" ? `₹${p.discount_value} off` : `${p.discount_value}% off`} · min ₹{p.min_order_value}
+                  </div>
                 </button>
               ))}
             </div>
-          </div>
+          </section>
 
-          {/* Coupons List Header */}
-          <div className="flex items-center justify-between pb-2 border-b border-white/10">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <span>Active Coupon Codes</span>
-              <span className="text-xs bg-[#EAB308]/20 text-[#EAB308] px-2.5 py-0.5 rounded-full font-bold">
-                {coupons.length} codes live
-              </span>
-            </h3>
-            <button
-              onClick={fetchCoupons}
-              className="text-xs text-gray-400 hover:text-[#EAB308] flex items-center gap-1"
-            >
-              <RefreshCw className="w-3 h-3" /> Refresh
-            </button>
-          </div>
-
-          {/* Coupons Grid */}
-          {couponsLoading ? (
-            <div className="p-12 text-center text-gray-400 bg-[#0f2933]/50 rounded-2xl border border-white/5">
-              <div className="w-8 h-8 border-2 border-[#EAB308] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-              Loading coupon codes...
-            </div>
-          ) : coupons.length === 0 ? (
-            <div className="p-12 text-center bg-[#0f2933]/40 rounded-2xl border border-dashed border-white/10 space-y-3">
-              <Tag className="w-10 h-10 text-gray-500 mx-auto" />
-              <p className="text-gray-300 font-medium">No coupon codes created yet</p>
-              <button
-                onClick={() => {
-                  setEditingCoupon(null);
-                  openCouponModalWithPreset(COUPON_PRESETS[0]);
-                }}
-                className="px-4 py-2 bg-[#EAB308] text-black font-bold rounded-xl text-sm"
-              >
-                Create Flat ₹199 OFF Code
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {coupons.map((coupon) => {
-                const cid = coupon.id || coupon._id;
-                const isFlat = coupon.discount_type === "flat";
-                return (
-                  <div
-                    key={cid}
-                    className={`rounded-2xl border p-5 transition-all space-y-3 relative overflow-hidden ${
-                      coupon.active
-                        ? "bg-[#0d2229] border-[#EAB308]/30 shadow-lg shadow-black/40 hover:border-[#EAB308]/60"
-                        : "bg-[#08151a] border-white/5 opacity-60 hover:opacity-90"
-                    }`}
-                  >
-                    {/* Header Row: Code & Status */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <span className="font-mono text-base font-black tracking-wider text-white bg-black/40 px-2.5 py-1 rounded-lg border border-amber-400/40">
-                          {coupon.code}
-                        </span>
-                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                          isFlat ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                        }`}>
-                          {isFlat ? 'FLAT OFF' : '% OFF'}
-                        </span>
+          <section className="space-y-2">
+            <SectionTitle title="Coupon codes" subtitle={`${coupons.filter(c => c.active).length} live of ${coupons.length}`} />
+            {couponsLoading ? (
+              <LoadingState rows={3} label="Loading coupons" />
+            ) : coupons.length === 0 ? (
+              <Card>
+                <EmptyState icon={Tag} title="No coupon codes yet" description="Create a code customers can apply at checkout."
+                  action={<Button variant="primary" onClick={() => { setEditingCoupon(null); openCouponModalWithPreset(COUPON_PRESETS[0]); }}>Create Flat ₹199 OFF Code</Button>} />
+              </Card>
+            ) : (
+              <List>
+                {coupons.map((coupon) => {
+                  const cid = coupon.id || coupon._id;
+                  const isFlat = coupon.discount_type === "flat";
+                  return (
+                    <div key={cid} className={cx("flex flex-col sm:flex-row sm:items-center gap-3 px-4 py-3", !coupon.active && "opacity-70")}>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[15px] font-semibold tracking-[0.02em] text-[var(--a-text)]">{coupon.code}</span>
+                          <StatusPill tone={coupon.active ? "success" : "neutral"} dot>{coupon.active ? "Live" : "Paused"}</StatusPill>
+                        </div>
+                        <div className="text-[13px] text-[var(--a-text)] pd-tabular">
+                          {isFlat ? `₹${coupon.discount_value} off` : `${coupon.discount_value}% off`}
+                          {coupon.max_discount ? ` (max ₹${coupon.max_discount})` : ""}
+                          <span className="text-[var(--a-text-3)]"> · min order ₹{coupon.min_order_value || 0}</span>
+                        </div>
+                        <div className="text-[12px] text-[var(--a-text-3)] truncate">
+                          {coupon.description || `Applicable on orders above ₹${coupon.min_order_value || 0}`}
+                        </div>
                       </div>
-
-                      <button
-                        onClick={() => handleToggleCoupon(coupon)}
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition ${
-                          coupon.active
-                            ? "bg-emerald-600/30 text-emerald-300 border-emerald-500/40"
-                            : "bg-gray-800 text-gray-400 border-white/10"
-                        }`}
-                      >
-                        {coupon.active ? "LIVE" : "PAUSED"}
-                      </button>
-                    </div>
-
-                    {/* Discount Summary Banner */}
-                    <div className="p-2.5 rounded-xl bg-black/30 border border-white/5 flex items-center justify-between">
-                      <div>
-                        <span className="text-xs text-gray-400 block font-medium">Discount</span>
-                        <span className="text-sm font-black text-[#EAB308]">
-                          {isFlat ? `₹${coupon.discount_value} OFF` : `${coupon.discount_value}% OFF`}
-                          {coupon.max_discount ? ` (Max ₹${coupon.max_discount})` : ''}
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-xs text-gray-400 block font-medium">Min Order</span>
-                        <span className="text-sm font-black text-white">
-                          ₹{coupon.min_order_value || 0}
-                        </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <Switch checked={!!coupon.active} onChange={() => handleToggleCoupon(coupon)} label={coupon.active ? "Pause coupon" : "Make coupon live"} />
+                        <IconButton icon={Edit2} label="Edit rule" variant="plain" className="!text-[var(--a-text-2)]" onClick={() => openEditCouponModal(coupon)} />
+                        <IconButton icon={Trash2} label="Delete" variant="plain" className="!text-[var(--a-error)]" onClick={() => handleDeleteCoupon(cid)} />
                       </div>
                     </div>
-
-                    {/* Description */}
-                    <p className="text-xs text-gray-300 leading-snug">
-                      {coupon.description || `Applicable on orders above ₹${coupon.min_order_value || 0}`}
-                    </p>
-
-                    {/* Card Actions */}
-                    <div className="flex items-center justify-between pt-2 border-t border-white/10 text-xs">
-                      <button
-                        onClick={() => openEditCouponModal(coupon)}
-                        className="text-gray-300 hover:text-[#EAB308] flex items-center gap-1 font-bold"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" /> Edit Rule
-                      </button>
-
-                      <button
-                        onClick={() => handleDeleteCoupon(cid)}
-                        className="text-red-400 hover:text-red-300 flex items-center gap-1 font-bold"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" /> Delete
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                  );
+                })}
+              </List>
+            )}
+          </section>
+        </>
       )}
 
-      {/* ═════════════════════════════════════════════════════════════════════════ */}
-      {/* ── TAB 2: HOME CAROUSEL BANNERS ── */}
-      {/* ═════════════════════════════════════════════════════════════════════════ */}
+      {/* ── HOME BANNERS ── */}
       {activeSection === "banners" && (
         <>
-      {/* ── MASTER TOGGLE HERO CARD ── */}
-      <div
-        className={`relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 ${
-          masterEnabled
-            ? "bg-gradient-to-r from-emerald-950/60 via-[#0d2229] to-[#0f2933] border-emerald-500/40 shadow-xl shadow-emerald-950/20"
-            : "bg-gradient-to-r from-red-950/40 via-[#0d2229] to-[#0f2933] border-red-500/30 shadow-xl shadow-red-950/20"
-        }`}
-      >
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-          <div className="flex items-start gap-4">
-            <div
-              className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border ${
-                masterEnabled
-                  ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400"
-                  : "bg-red-500/20 border-red-500/40 text-red-400"
-              }`}
-            >
-              <Sparkles className="w-7 h-7" />
-            </div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-3">
-                <h2 className="text-xl font-bold text-white">
-                  Customer App Offers Banner
-                </h2>
-                <span
-                  className={`px-3 py-0.5 rounded-full text-xs font-bold tracking-wider uppercase border ${
-                    masterEnabled
-                      ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
-                      : "bg-red-500/20 text-red-300 border-red-500/40"
-                  }`}
-                >
-                  {masterEnabled ? "● LIVE ON APP" : "○ DISABLED / DEFAULT SCREEN"}
-                </span>
-              </div>
-              <p className="text-sm text-gray-300 max-w-2xl leading-relaxed">
-                {masterEnabled ? (
-                  <>
-                    Offers carousel is <strong>ENABLED</strong> on the Customer App. Users will see animated Persian Darbar banners at the top of the home screen ({activeOffersCount} active).
-                  </>
-                ) : (
-                  <>
-                    Offers carousel is <strong>DISABLED</strong>. The Customer App will display the clean, classic welcome screen ("More than a meal, a tradition") with no banners.
-                  </>
-                )}
-              </p>
-            </div>
-          </div>
+          <FormGroup footer={masterEnabled
+            ? `Banners show at the top of the customer app home screen (${activeOffersCount} active).`
+            : "The customer app shows the classic welcome screen with no banners."}>
+            <FormRow label="Show offers in the customer app" hint={masterEnabled ? "Live on app" : "Off, default welcome screen"}>
+              <Switch checked={masterEnabled} onChange={handleMasterToggle} disabled={savingMaster} label="Show offers in the customer app" />
+            </FormRow>
+          </FormGroup>
 
-          {/* Big Master Switch */}
-          <div className="flex items-center gap-3 shrink-0">
-            <button
-              onClick={handleMasterToggle}
-              disabled={savingMaster}
-              className={`flex items-center gap-3 px-6 py-3 rounded-2xl font-bold text-sm transition-all shadow-lg border ${
-                masterEnabled
-                  ? "bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-400 shadow-emerald-900/40"
-                  : "bg-red-700/80 hover:bg-red-600 text-white border-red-400 shadow-red-900/40"
-              }`}
-            >
-              {masterEnabled ? (
-                <>
-                  <ToggleRight className="w-6 h-6 text-white" />
-                  <span>MASTER TOGGLE: ON</span>
-                </>
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <section className="xl:col-span-2 space-y-2">
+              <SectionTitle title="Banners" subtitle="Use the arrows to change the display order" />
+              {loading ? (
+                <LoadingState rows={3} label="Loading offers" />
+              ) : offers.length === 0 ? (
+                <Card><EmptyState icon={Tag} title="No offers yet" action={<Button variant="primary" onClick={openCreateModal}>Create First Offer</Button>} /></Card>
               ) : (
-                <>
-                  <ToggleLeft className="w-6 h-6 text-white/80" />
-                  <span>MASTER TOGGLE: OFF</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* ── OFFERS LIST SECTION ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: Offer Cards List (2 cols) */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-white/10">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <span>All Offers</span>
-              <span className="text-xs bg-[#EAB308]/20 text-[#EAB308] px-2.5 py-0.5 rounded-full font-bold">
-                {offers.length} total
-              </span>
-            </h3>
-            <span className="text-xs text-gray-400">
-              Drag or use arrows to reorder display sequence
-            </span>
-          </div>
-
-          {loading ? (
-            <div className="p-12 text-center text-gray-400 bg-[#0f2933]/50 rounded-2xl border border-white/5">
-              <div className="w-8 h-8 border-2 border-[#EAB308] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-              Loading offers...
-            </div>
-          ) : offers.length === 0 ? (
-            <div className="p-12 text-center bg-[#0f2933]/40 rounded-2xl border border-dashed border-white/10 space-y-3">
-              <Tag className="w-10 h-10 text-gray-500 mx-auto" />
-              <p className="text-gray-300 font-medium">No offers created yet</p>
-              <button
-                onClick={openCreateModal}
-                className="px-4 py-2 bg-[#EAB308] text-black font-bold rounded-xl text-sm"
-              >
-                Create First Offer
-              </button>
-            </div>
-          ) : (
-            offers.map((offer, index) => (
-              <div
-                key={offer.id || index}
-                className={`group rounded-2xl border transition-all duration-200 overflow-hidden ${
-                  offer.active
-                    ? "bg-[#0d2229] border-[#EAB308]/30 hover:border-[#EAB308]/60 shadow-lg shadow-black/40"
-                    : "bg-[#0a181d] border-white/5 opacity-70 hover:opacity-90"
-                }`}
-              >
-                <div className="p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  {/* Banner Image Preview */}
-                  <div className="relative w-full sm:w-44 h-28 rounded-xl overflow-hidden bg-black/60 shrink-0 border border-white/10">
-                    <img
-                      src={offer.image_url}
-                      alt={offer.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      onError={(e) => {
-                        e.target.src = "/dynamic_images/offer_royal_feast.jpg";
-                      }}
-                    />
-                    {offer.badge_text && (
-                      <span className="absolute top-2 left-2 bg-[#EAB308] text-black text-[10px] font-black px-2 py-0.5 rounded shadow">
-                        {offer.badge_text}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Details */}
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="text-white font-bold text-base truncate">
-                        {offer.title}
-                      </h4>
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                          offer.active
-                            ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
-                            : "bg-gray-500/15 text-gray-400 border-gray-500/30"
-                        }`}
-                      >
-                        {offer.active ? "Active" : "Inactive"}
-                      </span>
-                      <span className="text-[10px] uppercase font-semibold text-gray-400 bg-white/5 px-2 py-0.5 rounded">
-                        Action: {offer.action || "order"}
-                      </span>
-                    </div>
-
-                    <p className="text-sm text-gray-300 font-medium">
-                      {offer.subtitle}
-                    </p>
-
-                    <div className="flex items-center gap-4 text-xs text-gray-400 pt-1">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5 text-[#EAB308]" />
-                        {offer.start_date || "Anytime"} → {offer.end_date || "Forever"}
-                      </span>
-                      {offer.coupon_code && (
-                        <span className="font-mono text-[#EAB308] bg-[#EAB308]/10 px-2 py-0.5 rounded">
-                          CODE: {offer.coupon_code}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Right Actions */}
-                  <div className="flex sm:flex-col items-center gap-2 self-end sm:self-center shrink-0">
-                    {/* Active toggle */}
-                    <button
-                      onClick={() => handleToggleOfferActive(offer)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition border ${
-                        offer.active
-                          ? "bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-400"
-                          : "bg-gray-800 hover:bg-gray-700 text-gray-300 border-white/10"
-                      }`}
-                    >
-                      {offer.active ? (
-                        <>
-                          <Eye className="w-3.5 h-3.5" /> Active
-                        </>
-                      ) : (
-                        <>
-                          <EyeOff className="w-3.5 h-3.5" /> Inactive
-                        </>
-                      )}
-                    </button>
-
-                    {/* Order buttons + Edit + Delete */}
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleMoveOrder(index, -1)}
-                        disabled={index === 0}
-                        className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 disabled:opacity-20"
-                        title="Move Up"
-                      >
-                        <ArrowUp className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleMoveOrder(index, 1)}
-                        disabled={index === offers.length - 1}
-                        className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 disabled:opacity-20"
-                        title="Move Down"
-                      >
-                        <ArrowDown className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => openEditModal(offer)}
-                        className="p-1.5 rounded-lg bg-[#EAB308]/20 hover:bg-[#EAB308]/30 text-[#EAB308]"
-                        title="Edit Offer"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteOffer(offer.id)}
-                        className="p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400"
-                        title="Delete Offer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Right: Live Customer App Mobile Preview */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 pb-2 border-b border-white/10">
-            <Smartphone className="w-5 h-5 text-[#EAB308]" />
-            <h3 className="text-lg font-bold text-white">Live Customer App Preview</h3>
-          </div>
-
-          <div className="bg-[#050f13] border-4 border-gray-800 rounded-[36px] p-3 max-w-sm mx-auto shadow-2xl relative overflow-hidden">
-            {/* Phone Notch */}
-            <div className="w-28 h-4 bg-gray-800 rounded-b-xl mx-auto mb-2" />
-
-            {/* In-app Status */}
-            <div className="text-[10px] text-gray-400 flex justify-between px-2 mb-2 font-mono">
-              <span>9:41</span>
-              <span>Persian Darbar</span>
-              <span>100% 🔋</span>
-            </div>
-
-            {/* App Header */}
-            <div className="bg-[#0a1e24] p-3 rounded-2xl mb-3 flex items-center justify-between border border-white/5">
-              <div>
-                <p className="text-[11px] text-[#EAB308] font-bold">PERSIAN DARBAR</p>
-                <p className="text-[13px] text-white font-black">Royal Customer</p>
-              </div>
-              <div className="w-8 h-8 rounded-full bg-[#EAB308]/20 border border-[#EAB308]/40 flex items-center justify-center text-[#EAB308] text-xs font-bold">
-                👑
-              </div>
-            </div>
-
-            {/* Offer Banner Area */}
-            {masterEnabled && offers.filter((o) => o.active).length > 0 ? (
-              <div className="space-y-2 mb-3">
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-[#EAB308] font-bold flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" /> Special Offers
-                  </span>
-                  <span className="text-[10px] text-gray-400">
-                    {offers.filter((o) => o.active).length} offers live
-                  </span>
-                </div>
-
-                {/* Top active banner preview */}
-                {(() => {
-                  const top = offers.find((o) => o.active) || offers[0];
-                  return (
-                    <div className="relative rounded-2xl overflow-hidden border border-[#EAB308]/40 shadow-lg group">
+                <List>
+                  {offers.map((offer, index) => (
+                    <div key={offer.id || index} className={cx("flex flex-col sm:flex-row sm:items-center gap-3 px-3 sm:px-4 py-3", !offer.active && "opacity-70")}>
                       <img
-                        src={top.image_url}
-                        alt="Preview"
-                        className="w-full h-32 object-cover"
+                        src={offer.image_url}
+                        alt={offer.title}
+                        className="w-full sm:w-32 h-24 sm:h-20 rounded-[10px] object-cover border border-[var(--a-line)] shrink-0"
                         onError={(e) => {
                           e.target.src = "/dynamic_images/offer_royal_feast.jpg";
                         }}
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent p-3 flex flex-col justify-end">
-                        <span className="bg-[#EAB308] text-black text-[9px] font-black px-1.5 py-0.5 rounded w-max mb-1">
-                          {top.badge_text || "SPECIAL"}
-                        </span>
-                        <p className="text-white font-bold text-xs leading-tight">
-                          {top.title}
-                        </p>
-                        <p className="text-[#EAB308] text-[10px] font-semibold">
-                          {top.subtitle}
-                        </p>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[15px] font-medium text-[var(--a-text)] truncate">{offer.title}</span>
+                          {offer.badge_text && <StatusPill tone="gold">{offer.badge_text}</StatusPill>}
+                        </div>
+                        {offer.subtitle && <div className="text-[13px] text-[var(--a-text-2)] truncate">{offer.subtitle}</div>}
+                        <div className="text-[12px] text-[var(--a-text-3)] pd-tabular flex flex-wrap gap-x-2">
+                          <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{offer.start_date || "Anytime"} – {offer.end_date || "No end"}</span>
+                          <span className="capitalize">Tap: {offer.action || "order"}</span>
+                          {offer.coupon_code && <span>Code {offer.coupon_code}</span>}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Switch checked={!!offer.active} onChange={() => handleToggleOfferActive(offer)} label={offer.active ? "Deactivate offer" : "Activate offer"} />
+                        <IconButton icon={ArrowUp} label="Move Up" variant="plain" className="!text-[var(--a-text-2)]" onClick={() => handleMoveOrder(index, -1)} disabled={index === 0} />
+                        <IconButton icon={ArrowDown} label="Move Down" variant="plain" className="!text-[var(--a-text-2)]" onClick={() => handleMoveOrder(index, 1)} disabled={index === offers.length - 1} />
+                        <IconButton icon={Edit2} label="Edit Offer" variant="plain" className="!text-[var(--a-text-2)]" onClick={() => openEditModal(offer)} />
+                        <IconButton icon={Trash2} label="Delete Offer" variant="plain" className="!text-[var(--a-error)]" onClick={() => handleDeleteOffer(offer.id)} />
                       </div>
                     </div>
-                  );
-                })()}
-
-                {/* Dot indicators */}
-                <div className="flex justify-center gap-1 pt-1">
-                  {offers
-                    .filter((o) => o.active)
-                    .map((_, i) => (
-                      <div
-                        key={i}
-                        className={`h-1 rounded-full ${
-                          i === 0 ? "w-4 bg-[#EAB308]" : "w-1.5 bg-gray-600"
-                        }`}
-                      />
-                    ))}
-                </div>
-              </div>
-            ) : (
-              /* DEFAULT WELCOME SCREEN (Screenshot 3 style) */
-              <div className="bg-gradient-to-b from-[#0a1e24] to-[#061418] border border-white/5 rounded-2xl p-4 text-center mb-3 space-y-2">
-                <div className="w-10 h-10 rounded-full bg-[#EAB308]/15 border border-[#EAB308]/30 flex items-center justify-center text-lg mx-auto">
-                  🏛️
-                </div>
-                <h4 className="text-white font-black text-xs">
-                  More than a meal, a tradition
-                </h4>
-                <p className="text-[10px] text-gray-400">
-                  Welcome to Persian Darbar • Pune since 1976
-                </p>
-                <div className="text-[9px] text-[#EAB308] bg-[#EAB308]/10 py-1 px-2 rounded-full inline-block font-bold">
-                  Dine-In • Takeaway • In-House Delivery
-                </div>
-              </div>
-            )}
-
-            {/* Quick action buttons mockup */}
-            <div className="grid grid-cols-2 gap-2 text-center text-[10px]">
-              <div className="bg-[#0a1e24] border border-white/5 p-2 rounded-xl text-white font-bold">
-                🍽️ Order Food
-              </div>
-              <div className="bg-[#0a1e24] border border-white/5 p-2 rounded-xl text-white font-bold">
-                📅 Reserve Table
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      </>
-      )}
-
-      {/* ── CREATE / EDIT OFFER MODAL ── */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0d2229] border border-[#EAB308]/40 rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                <Tag className="w-5 h-5 text-[#EAB308]" />
-                {editingOffer ? "Edit Offer" : "Create New Offer"}
-              </h3>
-              <button
-                onClick={() => setShowModal(false)}
-                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveModal} className="space-y-4">
-              {/* Presets Row */}
-              <div>
-                <label className="text-xs text-gray-300 font-bold mb-2 block">
-                  Quick Presets (Persian Darbar AI Art)
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {PRESET_BANNERS.map((preset, idx) => (
-                    <button
-                      type="button"
-                      key={idx}
-                      onClick={() => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          title: preset.title,
-                          subtitle: preset.subtitle,
-                          badge_text: preset.badge,
-                          image_url: preset.url,
-                          action: preset.action,
-                          bg_gradient: preset.gradient,
-                        }));
-                      }}
-                      className={`p-2 rounded-xl border text-left text-xs transition ${
-                        formData.image_url === preset.url
-                          ? "bg-[#EAB308]/20 border-[#EAB308] text-white"
-                          : "bg-white/5 border-white/10 text-gray-300 hover:border-white/20"
-                      }`}
-                    >
-                      <img
-                        src={preset.url}
-                        alt={preset.name}
-                        className="w-full h-14 object-cover rounded-lg mb-1"
-                      />
-                      <p className="font-bold truncate text-[11px]">{preset.name}</p>
-                    </button>
                   ))}
-                </div>
-              </div>
-
-              {/* Title & Badge */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs text-gray-300 font-bold mb-1 block">
-                    Offer Title *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.title}
-                    onChange={(e) =>
-                      setFormData({ ...formData, title: e.target.value })
-                    }
-                    placeholder="e.g. Royal Feast Weekend"
-                    className="w-full bg-[#07171d] border border-white/15 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-[#EAB308] focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-300 font-bold mb-1 block">
-                    Badge Text
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.badge_text}
-                    onChange={(e) =>
-                      setFormData({ ...formData, badge_text: e.target.value })
-                    }
-                    placeholder="e.g. WEEKEND SPECIAL, 2X COINS"
-                    className="w-full bg-[#07171d] border border-white/15 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-[#EAB308] focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Subtitle */}
-              <div>
-                <label className="text-xs text-gray-300 font-bold mb-1 block">
-                  Subtitle / Promo Text
-                </label>
-                <input
-                  type="text"
-                  value={formData.subtitle}
-                  onChange={(e) =>
-                    setFormData({ ...formData, subtitle: e.target.value })
-                  }
-                  placeholder="e.g. UP TO 30% OFF + 2X PD Coins on Orders"
-                  className="w-full bg-[#07171d] border border-white/15 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-[#EAB308] focus:outline-none"
-                />
-              </div>
-
-              {/* Image URL */}
-              <div>
-                <label className="text-xs text-gray-300 font-bold mb-1 block">
-                  Banner Image URL
-                </label>
-                <input
-                  type="text"
-                  value={formData.image_url}
-                  onChange={(e) =>
-                    setFormData({ ...formData, image_url: e.target.value })
-                  }
-                  placeholder="/dynamic_images/offer_royal_feast.jpg"
-                  className="w-full bg-[#07171d] border border-white/15 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-[#EAB308] focus:outline-none"
-                />
-              </div>
-
-              {/* Action & Coupon Code */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs text-gray-300 font-bold mb-1 block">
-                    Action on Tap
-                  </label>
-                  <select
-                    value={formData.action}
-                    onChange={(e) =>
-                      setFormData({ ...formData, action: e.target.value })
-                    }
-                    className="w-full bg-[#07171d] border border-white/15 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-[#EAB308] focus:outline-none"
-                  >
-                    <option value="order">Order Food (Opens Delivery/Order tab)</option>
-                    <option value="reserve">Reserve Table (Opens Reservation)</option>
-                    <option value="coupon">Apply Coupon Code</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-300 font-bold mb-1 block">
-                    Coupon Code (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.coupon_code}
-                    onChange={(e) =>
-                      setFormData({ ...formData, coupon_code: e.target.value.toUpperCase() })
-                    }
-                    placeholder="e.g. ROYAL30"
-                    className="w-full bg-[#07171d] border border-white/15 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-[#EAB308] focus:outline-none font-mono"
-                  />
-                </div>
-              </div>
-
-              {/* Dates */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs text-gray-300 font-bold mb-1 block">
-                    Start Date
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.start_date}
-                    onChange={(e) =>
-                      setFormData({ ...formData, start_date: e.target.value })
-                    }
-                    className="w-full bg-[#07171d] border border-white/15 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-[#EAB308] focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-300 font-bold mb-1 block">
-                    End Date
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.end_date}
-                    onChange={(e) =>
-                      setFormData({ ...formData, end_date: e.target.value })
-                    }
-                    className="w-full bg-[#07171d] border border-white/15 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-[#EAB308] focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Active Toggle */}
-              <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
-                <div>
-                  <p className="text-sm font-bold text-white">Active Status</p>
-                  <p className="text-xs text-gray-400">
-                    Enable this offer immediately once saved
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, active: !formData.active })}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold border transition ${
-                    formData.active
-                      ? "bg-emerald-600 text-white border-emerald-400"
-                      : "bg-gray-800 text-gray-400 border-white/10"
-                  }`}
-                >
-                  {formData.active ? "Enabled" : "Disabled"}
-                </button>
-              </div>
-
-              {/* Modal Buttons */}
-              <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 font-medium text-sm transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-[#EAB308] hover:bg-[#ca9a04] text-black font-bold text-sm shadow-lg shadow-[#EAB308]/20 transition"
-                >
-                  {editingOffer ? "Save Changes" : "Create Offer"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ── CREATE / EDIT COUPON MODAL ── */}
-      {showCouponModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0d2229] border border-[#EAB308]/40 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                <Tag className="w-5 h-5 text-[#EAB308]" />
-                {editingCoupon ? "Edit Coupon Code" : "Create New Coupon Code"}
-              </h3>
-              <button
-                onClick={() => setShowCouponModal(false)}
-                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveCoupon} className="space-y-4">
-              {/* Code */}
-              <div>
-                <label className="text-xs text-gray-300 font-bold mb-1.5 block">
-                  Coupon Code (e.g. FLAT199, DARBAR50)
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={couponFormData.code}
-                  onChange={(e) => setCouponFormData({ ...couponFormData, code: e.target.value.toUpperCase().replace(/\s/g, "") })}
-                  placeholder="FLAT199"
-                  className="w-full bg-[#07171d] border border-white/15 rounded-xl px-3.5 py-2.5 text-white font-mono font-bold text-base uppercase focus:border-[#EAB308] focus:outline-none"
-                />
-              </div>
-
-              {/* Discount Type */}
-              <div>
-                <label className="text-xs text-gray-300 font-bold mb-1.5 block">
-                  Discount Type
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setCouponFormData({ ...couponFormData, discount_type: "flat" })}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition ${
-                      couponFormData.discount_type === "flat"
-                        ? "bg-[#EAB308] text-black border-[#EAB308]"
-                        : "bg-white/5 text-gray-300 border-white/10 hover:bg-white/10"
-                    }`}
-                  >
-                    Flat Discount (₹ Amount Off)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCouponFormData({ ...couponFormData, discount_type: "percentage" })}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition ${
-                      couponFormData.discount_type === "percentage"
-                        ? "bg-[#EAB308] text-black border-[#EAB308]"
-                        : "bg-white/5 text-gray-300 border-white/10 hover:bg-white/10"
-                    }`}
-                  >
-                    Percentage (% Off)
-                  </button>
-                </div>
-              </div>
-
-              {/* Discount Value & Min Order Value */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-gray-300 font-bold mb-1.5 block">
-                    {couponFormData.discount_type === "flat" ? "Discount Amount (₹)" : "Discount (%)"}
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    value={couponFormData.discount_value}
-                    onChange={(e) => setCouponFormData({ ...couponFormData, discount_value: e.target.value })}
-                    placeholder={couponFormData.discount_type === "flat" ? "199" : "20"}
-                    className="w-full bg-[#07171d] border border-white/15 rounded-xl px-3.5 py-2 text-white text-sm focus:border-[#EAB308] focus:outline-none font-bold"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs text-gray-300 font-bold mb-1.5 block">
-                    Min Order Value (₹)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={couponFormData.min_order_value}
-                    onChange={(e) => setCouponFormData({ ...couponFormData, min_order_value: e.target.value })}
-                    placeholder="500"
-                    className="w-full bg-[#07171d] border border-white/15 rounded-xl px-3.5 py-2 text-white text-sm focus:border-[#EAB308] focus:outline-none font-bold"
-                  />
-                  <p className="text-[10px] text-gray-400 mt-0.5">e.g. Order must be &gt; ₹500</p>
-                </div>
-              </div>
-
-              {/* Max Discount for Percentage */}
-              {couponFormData.discount_type === "percentage" && (
-                <div>
-                  <label className="text-xs text-gray-300 font-bold mb-1.5 block">
-                    Max Discount Cap (₹) - Optional
-                  </label>
-                  <input
-                    type="number"
-                    value={couponFormData.max_discount}
-                    onChange={(e) => setCouponFormData({ ...couponFormData, max_discount: e.target.value })}
-                    placeholder="150"
-                    className="w-full bg-[#07171d] border border-white/15 rounded-xl px-3.5 py-2 text-white text-sm focus:border-[#EAB308] focus:outline-none"
-                  />
-                </div>
+                </List>
               )}
+            </section>
 
-              {/* Description */}
-              <div>
-                <label className="text-xs text-gray-300 font-bold mb-1.5 block">
-                  Description / Subtitle for Customers
-                </label>
-                <input
-                  type="text"
-                  value={couponFormData.description}
-                  onChange={(e) => setCouponFormData({ ...couponFormData, description: e.target.value })}
-                  placeholder={`Flat ₹${couponFormData.discount_value || 199} OFF on orders above ₹${couponFormData.min_order_value || 500}`}
-                  className="w-full bg-[#07171d] border border-white/15 rounded-xl px-3.5 py-2 text-white text-sm focus:border-[#EAB308] focus:outline-none"
-                />
-              </div>
-
-              {/* Active Toggle */}
-              <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
-                <div>
-                  <p className="text-xs font-bold text-white">Active Status</p>
-                  <p className="text-[10px] text-gray-400">
-                    Customers can immediately apply this coupon at checkout
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setCouponFormData({ ...couponFormData, active: !couponFormData.active })}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold border transition ${
-                    couponFormData.active
-                      ? "bg-emerald-600 text-white border-emerald-400"
-                      : "bg-gray-800 text-gray-400 border-white/10"
-                  }`}
-                >
-                  {couponFormData.active ? "Enabled" : "Disabled"}
-                </button>
-              </div>
-
-              {/* Modal Buttons */}
-              <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
-                <button
-                  type="button"
-                  onClick={() => setShowCouponModal(false)}
-                  className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 font-medium text-xs transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#EAB308] hover:bg-[#ca9a04] text-black font-bold text-xs shadow-lg shadow-[#EAB308]/20 transition"
-                >
-                  {editingCoupon ? "Save Changes" : "Save Coupon"}
-                </button>
-              </div>
-            </form>
+            <section className="space-y-2 max-w-sm w-full">
+              <SectionTitle title="App preview" subtitle="What customers see first" />
+              <Card className="space-y-3">
+                {masterEnabled && activeOffersCount > 0 && topActive ? (
+                  <>
+                    <div className="relative overflow-hidden rounded-[12px]">
+                      <img
+                        src={topActive.image_url}
+                        alt="Preview"
+                        className="w-full h-40 object-cover"
+                        onError={(e) => {
+                          e.target.src = "/dynamic_images/offer_royal_feast.jpg";
+                        }}
+                      />
+                      <div className="absolute inset-x-0 bottom-0 bg-black/55 px-3 py-2">
+                        <div className="text-[14px] font-semibold text-[#FFFFFF] truncate">{topActive.title}</div>
+                        {topActive.subtitle && <div className="text-[12px] text-[#FFFFFF]/80 truncate">{topActive.subtitle}</div>}
+                      </div>
+                    </div>
+                    <div className="flex justify-center gap-1">
+                      {offers.filter((o) => o.active).map((_, i) => (
+                        <span key={i} className={cx("h-1.5 rounded-full", i === 0 ? "w-4 bg-[var(--a-text-2)]" : "w-1.5 bg-[var(--a-fill-2)]")} />
+                      ))}
+                    </div>
+                    <p className="text-[12px] text-[var(--a-text-3)] text-center pd-tabular">{activeOffersCount} offers live</p>
+                  </>
+                ) : (
+                  <div className="rounded-[12px] bg-[var(--a-inset)] px-4 py-6 text-center">
+                    <div className="text-[15px] font-semibold text-[var(--a-text)]">More than a meal, a tradition</div>
+                    <div className="text-[13px] text-[var(--a-text-2)]">Default welcome screen (no banners)</div>
+                  </div>
+                )}
+              </Card>
+            </section>
           </div>
-        </div>
+        </>
       )}
-    </div>
+
+      {/* Offer sheet */}
+      <Sheet
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        title={editingOffer ? "Edit offer" : "New offer"}
+        subtitle="Home carousel banner"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
+            <Button variant="primary" icon={Save} type="submit" form="offer-form">{editingOffer ? "Save Changes" : "Create Offer"}</Button>
+          </>
+        }
+      >
+        <form id="offer-form" onSubmit={handleSaveModal} className="space-y-4">
+          <FormField label="Start from a preset">
+            <div className="grid grid-cols-3 gap-2">
+              {PRESET_BANNERS.map((preset, idx) => (
+                <button
+                  type="button"
+                  key={idx}
+                  onClick={() => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      title: preset.title,
+                      subtitle: preset.subtitle,
+                      badge_text: preset.badge,
+                      image_url: preset.url,
+                      action: preset.action,
+                      bg_gradient: preset.gradient,
+                    }));
+                  }}
+                  className={cx(
+                    "rounded-[10px] border p-1.5 text-left cursor-pointer",
+                    formData.image_url === preset.url ? "border-[var(--a-accent)] ring-2 ring-[var(--a-accent)]/25" : "border-[var(--a-line)] hover:bg-[var(--a-fill)]"
+                  )}
+                >
+                  <img src={preset.url} alt={preset.name} className="w-full h-14 object-cover rounded-[7px]" />
+                  <div className="mt-1 text-[12px] font-medium truncate text-[var(--a-text)]">{preset.name}</div>
+                </button>
+              ))}
+            </div>
+          </FormField>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField label="Title">
+              <Input type="text" required value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="e.g. Royal Feast Weekend" />
+            </FormField>
+            <FormField label="Badge text">
+              <Input type="text" value={formData.badge_text} onChange={(e) => setFormData({ ...formData, badge_text: e.target.value })} placeholder="e.g. WEEKEND SPECIAL" />
+            </FormField>
+          </div>
+          <FormField label="Subtitle">
+            <Input type="text" value={formData.subtitle} onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })} placeholder="e.g. Up to 30% off + 2X PD Coins" />
+          </FormField>
+          <FormField label="Banner image URL">
+            <Input type="text" value={formData.image_url} onChange={(e) => setFormData({ ...formData, image_url: e.target.value })} placeholder="/dynamic_images/offer_royal_feast.jpg" />
+          </FormField>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField label="Action on tap">
+              <Select value={formData.action} onChange={(e) => setFormData({ ...formData, action: e.target.value })}>
+                <option value="order">Order food (opens order tab)</option>
+                <option value="reserve">Reserve table (opens reservation)</option>
+                <option value="coupon">Apply coupon code</option>
+              </Select>
+            </FormField>
+            <FormField label="Coupon code (optional)">
+              <Input type="text" value={formData.coupon_code} onChange={(e) => setFormData({ ...formData, coupon_code: e.target.value.toUpperCase() })} placeholder="e.g. ROYAL30" />
+            </FormField>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="Start date">
+              <Input type="date" value={formData.start_date} onChange={(e) => setFormData({ ...formData, start_date: e.target.value })} />
+            </FormField>
+            <FormField label="End date">
+              <Input type="date" value={formData.end_date} onChange={(e) => setFormData({ ...formData, end_date: e.target.value })} />
+            </FormField>
+          </div>
+          <FormGroup>
+            <FormRow label="Active" hint="Show this offer as soon as it is saved">
+              <Switch checked={!!formData.active} onChange={() => setFormData({ ...formData, active: !formData.active })} label="Active" />
+            </FormRow>
+          </FormGroup>
+        </form>
+      </Sheet>
+
+      {/* Coupon sheet */}
+      <Sheet
+        open={showCouponModal}
+        onClose={() => setShowCouponModal(false)}
+        size="sm"
+        title={editingCoupon ? "Edit coupon" : "New coupon"}
+        subtitle="Applied by customers at checkout"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowCouponModal(false)}>Cancel</Button>
+            <Button variant="primary" icon={Check} type="submit" form="coupon-form">{editingCoupon ? "Save Changes" : "Save Coupon"}</Button>
+          </>
+        }
+      >
+        <form id="coupon-form" onSubmit={handleSaveCoupon} className="space-y-4">
+          <FormField label="Coupon code" hint="e.g. FLAT199, DARBAR50">
+            <Input type="text" required value={couponFormData.code}
+              onChange={(e) => setCouponFormData({ ...couponFormData, code: e.target.value.toUpperCase().replace(/\s/g, "") })}
+              placeholder="FLAT199" className="font-semibold tracking-[0.04em] uppercase" />
+          </FormField>
+          <FormField label="Discount type">
+            <Segmented
+              stretch
+              value={couponFormData.discount_type}
+              onChange={(v) => setCouponFormData({ ...couponFormData, discount_type: v })}
+              options={[{ value: "flat", label: "Flat ₹ off" }, { value: "percentage", label: "Percentage off", icon: Percent }]}
+            />
+          </FormField>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label={couponFormData.discount_type === "flat" ? "Discount (₹)" : "Discount (%)"}>
+              <Input type="number" min="1" required value={couponFormData.discount_value}
+                onChange={(e) => setCouponFormData({ ...couponFormData, discount_value: e.target.value })}
+                placeholder={couponFormData.discount_type === "flat" ? "199" : "20"} className="pd-tabular" />
+            </FormField>
+            <FormField label="Min order (₹)" hint="Order must be above this">
+              <Input type="number" min="0" value={couponFormData.min_order_value}
+                onChange={(e) => setCouponFormData({ ...couponFormData, min_order_value: e.target.value })} placeholder="500" className="pd-tabular" />
+            </FormField>
+          </div>
+          {couponFormData.discount_type === "percentage" && (
+            <FormField label="Max discount cap (₹, optional)">
+              <Input type="number" value={couponFormData.max_discount} onChange={(e) => setCouponFormData({ ...couponFormData, max_discount: e.target.value })} placeholder="150" className="pd-tabular" />
+            </FormField>
+          )}
+          <FormField label="Description for customers">
+            <Input type="text" value={couponFormData.description} onChange={(e) => setCouponFormData({ ...couponFormData, description: e.target.value })}
+              placeholder={`Flat ₹${couponFormData.discount_value || 199} OFF on orders above ₹${couponFormData.min_order_value || 500}`} />
+          </FormField>
+          <FormGroup>
+            <FormRow label="Active" hint="Customers can apply this coupon at checkout">
+              <Switch checked={!!couponFormData.active} onChange={() => setCouponFormData({ ...couponFormData, active: !couponFormData.active })} label="Active" />
+            </FormRow>
+          </FormGroup>
+        </form>
+      </Sheet>
+    </Page>
   );
 };
 

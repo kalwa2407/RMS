@@ -1,22 +1,22 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  Bell, X, CheckCircle2, Bike, ChefHat, Package, Clock,
-  AlertCircle, Gift, Star, Sparkles, ChevronRight, Check, Volume2
+  Bell, X, CheckCircle2, Bike, ChefHat, Package,
+  AlertCircle, Gift, Star, Sparkles, ChevronRight, Check
 } from 'lucide-react';
 
-// ── Notification types and their styling ──────────────────────────────────
+// ── Notification types: icon + calm tone ──────────────────────────────────
 const NOTIF_STYLES = {
-  order_placed:     { bg: 'bg-blue-50',    border: 'border-blue-200',    icon: Package,      iconColor: 'text-blue-600',    dot: 'bg-blue-500' },
-  order_accepted:   { bg: 'bg-amber-50',   border: 'border-amber-200',   icon: ChefHat,      iconColor: 'text-amber-600',   dot: 'bg-amber-500' },
-  order_preparing:  { bg: 'bg-orange-50',  border: 'border-orange-200',  icon: ChefHat,      iconColor: 'text-orange-600',  dot: 'bg-orange-500' },
-  order_ready:      { bg: 'bg-purple-50',  border: 'border-purple-200',  icon: CheckCircle2, iconColor: 'text-purple-600',  dot: 'bg-purple-500' },
-  order_out:        { bg: 'bg-emerald-50', border: 'border-emerald-200', icon: Bike,         iconColor: 'text-emerald-600', dot: 'bg-emerald-500' },
-  order_delivered:  { bg: 'bg-green-50',   border: 'border-green-200',   icon: CheckCircle2, iconColor: 'text-green-600',   dot: 'bg-green-600' },
-  order_cancelled:  { bg: 'bg-red-50',     border: 'border-red-200',     icon: AlertCircle,  iconColor: 'text-red-600',     dot: 'bg-red-500' },
-  reservation:      { bg: 'bg-amber-50',   border: 'border-amber-200',   icon: Star,         iconColor: 'text-amber-600',   dot: 'bg-amber-500' },
-  offer:            { bg: 'bg-rose-50',    border: 'border-rose-200',    icon: Gift,         iconColor: 'text-rose-600',    dot: 'bg-rose-500' },
-  reward:           { bg: 'bg-yellow-50',  border: 'border-yellow-200',  icon: Sparkles,     iconColor: 'text-yellow-600',  dot: 'bg-yellow-500' },
-  default:          { bg: 'bg-neutral-50', border: 'border-neutral-200', icon: Bell,         iconColor: 'text-neutral-600', dot: 'bg-neutral-500' },
+  order_placed:     { icon: Package,      tone: 'text-pd-ink',     tint: 'bg-pd-surface' },
+  order_accepted:   { icon: ChefHat,      tone: 'text-pd-warn',    tint: 'bg-[#FFF5E5]' },
+  order_preparing:  { icon: ChefHat,      tone: 'text-pd-warn',    tint: 'bg-[#FFF5E5]' },
+  order_ready:      { icon: CheckCircle2, tone: 'text-[#1A5FB4]',  tint: 'bg-[#EAF2FD]' },
+  order_out:        { icon: Bike,         tone: 'text-[#1A5FB4]',  tint: 'bg-[#EAF2FD]' },
+  order_delivered:  { icon: CheckCircle2, tone: 'text-pd-success', tint: 'bg-[#EAF6EE]' },
+  order_cancelled:  { icon: AlertCircle,  tone: 'text-pd-error',   tint: 'bg-[#FDECEC]' },
+  reservation:      { icon: Star,         tone: 'text-pd-gold',    tint: 'bg-pd-gold-tint' },
+  offer:            { icon: Gift,         tone: 'text-pd-action',  tint: 'bg-pd-action-tint' },
+  reward:           { icon: Sparkles,     tone: 'text-pd-gold',    tint: 'bg-pd-gold-tint' },
+  default:          { icon: Bell,         tone: 'text-pd-ink',     tint: 'bg-pd-surface' },
 };
 
 // Map order statuses → notification type
@@ -33,17 +33,17 @@ const statusToNotifType = {
 
 // Human-readable status messages
 const statusMessages = {
-  placed:          { title: 'Order Placed', body: 'Your royal feast has been received by Persian Darbar.' },
-  accepted:        { title: 'Kitchen Accepted', body: 'Master chefs have accepted and begun preparing your order.' },
-  preparing:       { title: 'Preparing Your Feast', body: 'Fresh Mughlai delicacies are being crafted with royal care.' },
-  ready:           { title: 'Order Packed & Ready', body: 'Your order is packed hot and ready for rider dispatch.' },
-  out_for_delivery:{ title: 'Out for Delivery', body: 'Rider is on the way to your doorstep. Track live on map.' },
-  delivered:       { title: 'Order Delivered', body: 'Delivered to your doorstep! Enjoy your royal Persian meal.' },
-  cancelled:       { title: 'Order Cancelled', body: 'Your order has been cancelled. Contact support for help.' },
-  rejected:        { title: 'Order Rejected', body: 'Your order was declined. Contact restaurant for details.' },
+  placed:          { title: 'Order placed', body: 'Persian Darbar has received your order.' },
+  accepted:        { title: 'Order accepted', body: 'The kitchen has started on your order.' },
+  preparing:       { title: 'Being prepared', body: 'Your food is being cooked fresh.' },
+  ready:           { title: 'Packed and ready', body: 'Your order is packed and waiting for the rider.' },
+  out_for_delivery:{ title: 'On the way', body: 'Your rider is heading to you. Tap to track live.' },
+  delivered:       { title: 'Delivered', body: 'Your order has arrived. Enjoy your meal!' },
+  cancelled:       { title: 'Order cancelled', body: 'Your order was cancelled. Contact us if you need help.' },
+  rejected:        { title: 'Order declined', body: 'The restaurant could not take this order. Contact us for details.' },
 };
 
-// Play a pleasant double-tone notification chime (Web Audio API - no external file needed)
+// Play a short double-tone chime (Web Audio API - no external file needed)
 function playChime() {
   try {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -75,7 +75,6 @@ function playChime() {
     osc1.stop(now + 0.45);
     osc2.stop(now + 0.45);
 
-    // Subtle haptic vibration on mobile devices
     if (navigator.vibrate) {
       navigator.vibrate([80, 40, 80]);
     }
@@ -87,20 +86,21 @@ function playChime() {
 // ── Notification Bell Button ──────────────────────────────────────────────
 export const NotificationBell = ({ count = 0, onClick }) => (
   <button
+    type="button"
     onClick={onClick}
-    className="relative w-9 h-9 rounded-full bg-white/90 border border-neutral-200/90 flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-xs"
+    className="relative w-10 h-10 rounded-full flex items-center justify-center text-pd-ink pd-press"
     aria-label="Notifications"
   >
-    <Bell className="w-4 h-4 text-neutral-800" />
+    <Bell className="w-[22px] h-[22px]" strokeWidth={1.75} />
     {count > 0 && (
-      <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-[#E40000] text-white text-[9px] font-black rounded-full flex items-center justify-center px-1 border-2 border-white animate-in zoom-in duration-200 shadow-xs">
+      <span className="absolute top-1 right-1 min-w-[17px] h-[17px] px-1 rounded-full bg-pd-action text-white text-[11px] font-semibold leading-[17px] text-center border-2 border-white box-content">
         {count > 9 ? '9+' : count}
       </span>
     )}
   </button>
 );
 
-// ── Heads-Up Floating Banner (Zomato-style dropdown alert) ─────────────────
+// ── Heads-up banner (iOS notification style) ──────────────────────────────
 export const HeadsUpNotificationBanner = ({ alert, onClose, onTap }) => {
   if (!alert) return null;
   const style = NOTIF_STYLES[alert.type] || NOTIF_STYLES.default;
@@ -108,41 +108,39 @@ export const HeadsUpNotificationBanner = ({ alert, onClose, onTap }) => {
 
   return (
     <div
-      onClick={onTap}
-      className="fixed top-4 left-1/2 -translate-x-1/2 w-[92%] max-w-[400px] md:max-w-md z-[999] pointer-events-auto cursor-pointer animate-in slide-in-from-top-4 duration-300 select-none"
+      className="fixed left-1/2 -translate-x-1/2 w-[calc(100%-16px)] max-w-[414px] z-[999] animate-in slide-in-from-top-6 fade-in duration-300 ease-pd-out select-none"
+      style={{ top: 'calc(env(safe-area-inset-top, 0px) + 8px)' }}
+      role="status"
+      aria-live="polite"
     >
-      <div className="bg-neutral-900/95 backdrop-blur-md text-white p-3.5 rounded-3xl shadow-2xl border border-white/20 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 border border-white/10">
-            <IconComp className="w-5 h-5 text-amber-300" />
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <h4 className="text-xs font-black text-white truncate">
-                {alert.title}
-              </h4>
-            </div>
-            <p className="text-[11px] text-neutral-300 truncate mt-0.5">
-              {alert.body}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1 shrink-0">
-          <span className="text-[10px] font-black text-amber-300 bg-white/10 px-2 py-1 rounded-lg">
-            Track
+      <div className="relative rounded-[22px] bg-white/90 backdrop-blur-2xl shadow-[0_10px_40px_rgba(14,26,32,0.18)] border border-black/[0.04]">
+        <button
+          type="button"
+          onClick={onTap}
+          className="w-full flex items-center gap-3 pl-3.5 pr-11 py-3 text-left"
+        >
+          <span className={`w-10 h-10 rounded-[11px] flex items-center justify-center shrink-0 ${style.tint}`}>
+            <IconComp className={`w-5 h-5 ${style.tone}`} strokeWidth={2} />
           </span>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onClose();
-            }}
-            className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white/60 hover:text-white"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
+          <span className="flex-1 min-w-0">
+            <span className="flex items-center justify-between gap-2">
+              <span className="text-[15px] font-semibold text-pd-ink truncate">{alert.title}</span>
+              <span className="text-[12px] text-pd-ink-3 shrink-0">now</span>
+            </span>
+            <span className="block text-[14px] leading-[19px] text-pd-ink-2 line-clamp-2">{alert.body}</span>
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
+          aria-label="Dismiss"
+          className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/[0.06] flex items-center justify-center text-pd-ink-2"
+        >
+          <X className="w-3.5 h-3.5" strokeWidth={2.5} />
+        </button>
       </div>
     </div>
   );
@@ -163,106 +161,97 @@ export const CustomerNotificationDrawer = ({
 
   return (
     <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-[90] bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 z-[90] bg-black/50 animate-in fade-in duration-200" onClick={onClose} />
 
-      {/* Drawer */}
       <div className="fixed inset-0 z-[91] flex flex-col items-center pointer-events-none">
         <div
-          className="w-full max-w-[430px] md:max-w-lg lg:max-w-xl h-full flex flex-col pointer-events-auto"
-          style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 60px)' }}
+          className="w-full max-w-[430px] md:max-w-xl h-full flex flex-col pointer-events-auto"
+          style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 48px)' }}
         >
-          <div className="flex-1 bg-white rounded-t-3xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300">
+          <div className="flex-1 bg-white rounded-t-[24px] flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300 ease-pd-out">
+            <div className="w-10 h-1.5 rounded-full bg-black/15 mx-auto mt-2" />
 
             {/* Header */}
-            <div className="px-5 pt-5 pb-3 border-b border-neutral-100 flex items-center justify-between shrink-0">
+            <div className="px-5 pt-3 pb-3 flex items-center justify-between shrink-0">
               <div>
-                <h2 className="text-base font-black text-neutral-900">Notifications</h2>
-                {unreadCount > 0 && (
-                  <p className="text-[11px] text-neutral-500">{unreadCount} unread updates</p>
-                )}
+                <h2 className="text-[24px] font-bold text-pd-ink tracking-[-0.015em]">Notifications</h2>
+                {unreadCount > 0 && <p className="text-[13px] text-pd-ink-2">{unreadCount} unread</p>}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 {unreadCount > 0 && (
                   <button
+                    type="button"
                     onClick={onMarkAllRead}
-                    className="text-[11px] font-bold text-[#E40000] flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-100 transition-colors cursor-pointer"
+                    className="h-9 px-3 rounded-full text-[14px] font-semibold text-pd-action flex items-center gap-1 pd-press"
                   >
-                    <Check className="w-3 h-3" />
-                    Mark all read
+                    <Check className="w-4 h-4" strokeWidth={2.5} />
+                    Read all
                   </button>
                 )}
                 <button
+                  type="button"
                   onClick={onClose}
-                  className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center active:scale-90 cursor-pointer"
+                  aria-label="Close"
+                  className="w-9 h-9 rounded-full bg-pd-surface flex items-center justify-center pd-press"
                 >
-                  <X className="w-4 h-4 text-neutral-700" />
+                  <X className="w-[18px] h-[18px] text-pd-ink-2" />
                 </button>
               </div>
             </div>
 
-            {/* Notification List */}
-            <div className="flex-1 overflow-y-auto no-scrollbar">
+            {/* List */}
+            <div className="flex-1 overflow-y-auto no-scrollbar" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}>
               {notifications.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full p-8 text-center gap-3">
-                  <div className="w-16 h-16 rounded-3xl bg-neutral-100 flex items-center justify-center">
-                    <Bell className="w-8 h-8 text-neutral-400" />
-                  </div>
-                  <h3 className="font-bold text-neutral-600 text-sm">All Caught Up!</h3>
-                  <p className="text-xs text-neutral-400 max-w-xs">
-                    Your live order and reservation updates will appear here.
-                  </p>
+                <div className="flex flex-col items-center justify-center h-full px-8 text-center">
+                  <span className="w-14 h-14 rounded-full bg-pd-surface flex items-center justify-center">
+                    <Bell className="w-6 h-6 text-pd-ink-2" strokeWidth={1.75} />
+                  </span>
+                  <h3 className="mt-4 text-[17px] font-semibold text-pd-ink">You're all caught up</h3>
+                  <p className="mt-1 text-[14px] text-pd-ink-2 max-w-xs">Order and reservation updates will show up here.</p>
                 </div>
               ) : (
-                <div className="px-4 py-3 space-y-2">
+                <ul className="divide-y divide-[color:var(--pd-line)]">
                   {notifications.map((notif) => {
                     const style = NOTIF_STYLES[notif.type] || NOTIF_STYLES.default;
                     const IconComp = style.icon;
                     return (
-                      <div
-                        key={notif.id}
-                        onClick={() => {
-                          onMarkRead(notif.id);
-                          if (notif.onTap) notif.onTap();
-                          else if (onTapNotification) onTapNotification(notif);
-                        }}
-                        className={`flex items-start gap-3 p-3.5 rounded-2xl border cursor-pointer active:scale-[0.98] transition-all ${style.bg} ${style.border} ${!notif.read ? 'shadow-xs' : 'opacity-80'}`}
-                      >
-                        {/* Icon */}
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-white shadow-xs ${style.iconColor}`}>
-                          <IconComp className="w-4.5 h-4.5" />
-                        </div>
-
-                        {/* Content */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-1">
-                            <p className={`text-xs font-black text-neutral-900 leading-tight ${!notif.read ? '' : 'font-bold'}`}>
-                              {notif.title}
-                            </p>
-                            <div className="flex items-center gap-1 shrink-0">
-                              {!notif.read && (
-                                <span className={`w-2 h-2 rounded-full ${style.dot} shrink-0`} />
-                              )}
-                              <span className="text-[9px] text-neutral-400 whitespace-nowrap">{notif.time}</span>
-                            </div>
-                          </div>
-                          <p className="text-[11px] text-neutral-600 mt-1 leading-relaxed">{notif.body}</p>
-                          {notif.actionLabel && (
-                            <div className="flex items-center gap-1 mt-2">
-                              <span className={`text-[10px] font-black ${style.iconColor}`}>{notif.actionLabel}</span>
-                              <ChevronRight className={`w-3 h-3 ${style.iconColor}`} />
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                      <li key={notif.id}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onMarkRead(notif.id);
+                            if (notif.onTap) notif.onTap();
+                            else if (onTapNotification) onTapNotification(notif);
+                          }}
+                          className="w-full flex items-start gap-3 px-5 py-4 text-left active:bg-pd-surface transition-colors"
+                        >
+                          <span className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${style.tint}`}>
+                            <IconComp className={`w-5 h-5 ${style.tone}`} strokeWidth={2} />
+                          </span>
+                          <span className="flex-1 min-w-0">
+                            <span className="flex items-start justify-between gap-2">
+                              <span className={`text-[15px] leading-5 text-pd-ink ${notif.read ? 'font-medium' : 'font-semibold'}`}>
+                                {notif.title}
+                              </span>
+                              <span className="flex items-center gap-1.5 shrink-0 pt-0.5">
+                                <span className="text-[12px] text-pd-ink-3 whitespace-nowrap">{notif.time}</span>
+                                {!notif.read && <span className="w-2 h-2 rounded-full bg-pd-action" aria-label="Unread" />}
+                              </span>
+                            </span>
+                            <span className="block mt-0.5 text-[14px] leading-[19px] text-pd-ink-2">{notif.body}</span>
+                            {notif.actionLabel && (
+                              <span className="mt-1.5 inline-flex items-center gap-0.5 text-[13px] font-semibold text-pd-action">
+                                {notif.actionLabel}
+                                <ChevronRight className="w-3.5 h-3.5" strokeWidth={2.5} />
+                              </span>
+                            )}
+                          </span>
+                        </button>
+                      </li>
                     );
                   })}
-                </div>
+                </ul>
               )}
-              <div className="h-6" />
             </div>
           </div>
         </div>
@@ -387,7 +376,7 @@ export const useNotifications = ({
             title: msg.title,
             body: msg.body,
             orderId: String(oid),
-            actionLabel: currStatus !== 'delivered' && currStatus !== 'cancelled' ? 'Track Live' : undefined,
+            actionLabel: currStatus !== 'delivered' && currStatus !== 'cancelled' ? 'Track order' : undefined,
             onTap: onOrderStatusChange ? () => onOrderStatusChange(order) : undefined,
           });
         }
@@ -407,7 +396,7 @@ export const useNotifications = ({
               timestamp: createdTime,
               time: formatTime(createdTime),
               read: false,
-              actionLabel: currStatus !== 'delivered' && currStatus !== 'cancelled' ? 'Track Live' : undefined,
+              actionLabel: currStatus !== 'delivered' && currStatus !== 'cancelled' ? 'Track order' : undefined,
             },
             ...existing,
           ].slice(0, 50);

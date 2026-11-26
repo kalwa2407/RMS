@@ -442,7 +442,7 @@ const Order = () => {
           <div className="mt-3 rounded-xl p-2.5 bg-[#0f2933] border border-[#EAB308]/20 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <img src="/pd_coin.png" alt="coin" className="w-4 h-4 object-contain" />
-              <span className="text-white/70 text-[11px]">Earn 10% cashback in PD Coins</span>
+              <span className="text-white/70 text-[11px]">Earn 5% back in PD Coins</span>
             </div>
             <button type="button" onClick={() => navigate('/customer/auth')} className="text-[10px] font-bold text-[#EAB308] hover:underline">Sign In</button>
           </div>

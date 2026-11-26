@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Grid3X3, Plus, Trash2, Users, Receipt, RefreshCw, Printer, X, Edit2, Minus } from "lucide-react";
+import { Grid3X3, Plus, Trash2, Users, Receipt, Printer, Edit2, Minus } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
 import API_BASE from "../../lib/config";
+import { Page, PageHeader, Card, StatCard, Button, IconButton, Segmented, StatusPill, Sheet, FormField, Input, Select, EmptyState, LoadingState } from "./ui";
 
 const TableManagement = () => {
   const { toast } = useToast();
@@ -182,14 +183,12 @@ const TableManagement = () => {
     printWindow.print();
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "free": return "bg-green-500";
-      case "occupied": return "bg-red-500";
-      case "reserved": return "bg-yellow-500";
-      default: return "bg-gray-500";
-    }
+  const STATUS = {
+    free: { label: "Free", tone: "success" },
+    occupied: { label: "Occupied", tone: "accent" },
+    reserved: { label: "Reserved", tone: "warn" },
   };
+  const statusOf = (s) => STATUS[s] || { label: s || "Unknown", tone: "neutral" };
 
   const stats = {
     total: tables.length,
@@ -198,100 +197,115 @@ const TableManagement = () => {
     reserved: tables.filter(t => t.status === "reserved").length,
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64"><RefreshCw className="h-8 w-8 text-primary animate-spin" /></div>;
+  if (loading) return <LoadingState rows={4} label="Loading tables" />;
+
+  const capacityControl = (value, setValue, presets) => (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <IconButton icon={Minus} label="Decrease seats" onClick={() => setValue(Math.max(1, (parseInt(value) || 1) - 1))} />
+        <Input type="number" min="1" value={value} onChange={(e) => setValue(parseInt(e.target.value) || "")} className="text-center font-semibold pd-tabular w-24" />
+        <IconButton icon={Plus} label="Increase seats" onClick={() => setValue((parseInt(value) || 0) + 1)} />
+      </div>
+      <Segmented
+        size="sm"
+        value={value}
+        onChange={(v) => setValue(v)}
+        options={presets.map(c => ({ value: c, label: `${c} seats` }))}
+      />
+    </div>
+  );
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center space-x-3">
-          <Grid3X3 className="h-8 w-8 text-primary" />
-          <div>
-            <h1 className="text-2xl font-bold text-primary">Table Management</h1>
-            <p className="text-gray-400 text-sm">Manage tables & view KOT tickets</p>
-          </div>
-        </div>
-        <div className="flex space-x-2">
-          <button onClick={() => setShowBulkModal(true)} className="bg-[#1a4855] px-4 py-2 rounded-lg text-primary hover:bg-[#254a58]">Bulk Create</button>
-          <button onClick={() => { setNewTable({ table_number: tables.length + 1, capacity: 4 }); setShowAddModal(true); }}
-            className="flex items-center space-x-2 bg-primary px-4 py-2 rounded-lg text-black font-bold hover:bg-white">
-            <Plus className="h-4 w-4" /><span>Add Table</span>
-          </button>
-        </div>
+    <Page>
+      <PageHeader
+        title="Tables"
+        subtitle="Manage tables and view KOT tickets"
+        actions={
+          <>
+            <Button onClick={() => setShowBulkModal(true)}>Bulk Create</Button>
+            <Button variant="primary" icon={Plus} onClick={() => { setNewTable({ table_number: tables.length + 1, capacity: 4 }); setShowAddModal(true); }}>
+              Add Table
+            </Button>
+          </>
+        }
+      />
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard label="Total" value={stats.total} icon={Grid3X3} />
+        <StatCard label="Free" value={stats.free} tone="success" />
+        <StatCard label="Occupied" value={stats.occupied} tone="accent" />
+        <StatCard label="Reserved" value={stats.reserved} tone="warn" />
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        <div className="bg-[#1a4855] rounded-xl p-4 text-center"><p className="text-gray-400 text-sm">Total</p><p className="text-3xl font-bold text-white">{stats.total}</p></div>
-        <div className="bg-[#1a4855] rounded-xl p-4 text-center"><p className="text-gray-400 text-sm">Free</p><p className="text-3xl font-bold text-green-500">{stats.free}</p></div>
-        <div className="bg-[#1a4855] rounded-xl p-4 text-center"><p className="text-gray-400 text-sm">Occupied</p><p className="text-3xl font-bold text-red-500">{stats.occupied}</p></div>
-        <div className="bg-[#1a4855] rounded-xl p-4 text-center"><p className="text-gray-400 text-sm">Reserved</p><p className="text-3xl font-bold text-yellow-500">{stats.reserved}</p></div>
-      </div>
-
-      {/* Tables Grid */}
       {tables.length === 0 ? (
-        <div className="bg-[#1a4855] rounded-xl p-12 text-center">
-          <Grid3X3 className="h-16 w-16 text-gray-500 mx-auto mb-4" />
-          <h2 className="text-xl text-white mb-2">No Tables Yet</h2>
-          <button onClick={() => setShowBulkModal(true)} className="bg-primary text-black px-6 py-2 rounded-lg font-bold">Create Tables</button>
-        </div>
+        <Card>
+          <EmptyState icon={Grid3X3} title="No tables yet" description="Create your floor's tables to start taking dine-in orders."
+            action={<Button variant="primary" onClick={() => setShowBulkModal(true)}>Create Tables</Button>} />
+        </Card>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {tables.map((table) => (
-            <div key={table.table_number} className={`bg-[#1a4855] rounded-xl p-4 border-2 ${table.status === "occupied" ? "border-red-500" : table.status === "reserved" ? "border-yellow-500" : "border-green-500/30"}`}>
-              <div className="flex justify-between items-start mb-3">
-                <span className="text-2xl font-bold text-white">T{table.table_number}</span>
-                <span className={`w-3 h-3 rounded-full ${getStatusColor(table.status)}`}></span>
-              </div>
-              <div className="flex items-center justify-between text-gray-400 text-sm mb-3">
-                <div className="flex items-center">
-                  <Users className="h-4 w-4 mr-1 text-primary" />
-                  <span className="font-semibold text-white/90">{table.capacity} seats</span>
-                </div>
-                <button
-                  onClick={() => openEditModal(table)}
-                  className="text-xs bg-[#245866] hover:bg-primary hover:text-black text-primary px-2 py-0.5 rounded flex items-center gap-1 transition-colors"
-                  title="Edit Table Capacity"
-                >
-                  <Edit2 className="h-3 w-3" />
-                  <span>Edit</span>
-                </button>
-              </div>
-
-              {table.current_order && (
-                <div className="bg-[#0f2933] rounded-lg p-2 mb-3">
-                  <div className="flex items-center justify-between text-primary text-sm">
-                    <div className="flex items-center"><Receipt className="h-3 w-3 mr-1" /><span>{table.current_order.order_id}</span></div>
-                    <button onClick={() => fetchTicket(table.current_order.order_id)} className="bg-primary text-black px-2 py-1 rounded text-xs font-bold flex items-center">
-                      <Printer className="h-3 w-3 mr-1" />KOT
-                    </button>
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
+          {tables.map((table) => {
+            const st = statusOf(table.status);
+            return (
+              <Card key={table.table_number} padded={false} className="p-3.5 flex flex-col gap-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="text-[22px] leading-7 font-semibold text-[var(--a-text)] pd-tabular">T{table.table_number}</div>
+                    <div className="flex items-center gap-1 text-[13px] text-[var(--a-text-2)]">
+                      <Users className="h-3.5 w-3.5" /><span className="pd-tabular">{table.capacity} seats</span>
+                    </div>
                   </div>
-                  <p className="text-white font-bold">₹{table.current_order.total}</p>
+                  <StatusPill tone={st.tone} dot>{st.label}</StatusPill>
                 </div>
-              )}
 
-              <div className="flex flex-wrap gap-1">
-                {table.status !== "free" && <button onClick={() => updateTableStatus(table.table_number, "free")} className="text-xs bg-green-500/20 text-green-500 px-2 py-1 rounded">Free</button>}
-                {table.status !== "occupied" && <button onClick={() => updateTableStatus(table.table_number, "occupied")} className="text-xs bg-red-500/20 text-red-500 px-2 py-1 rounded">Occupied</button>}
-                {table.status !== "reserved" && <button onClick={() => updateTableStatus(table.table_number, "reserved")} className="text-xs bg-yellow-500/20 text-yellow-500 px-2 py-1 rounded">Reserve</button>}
-                <button onClick={() => openEditModal(table)} className="text-xs bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 px-2 py-1 rounded flex items-center gap-1"><Edit2 className="h-3 w-3" /><span>Edit</span></button>
-                <button onClick={() => deleteTable(table.table_number)} className="text-xs bg-gray-500/20 text-gray-400 px-2 py-1 rounded hover:bg-red-500/20 hover:text-red-400" title="Delete Table"><Trash2 className="h-3 w-3" /></button>
-              </div>
-            </div>
-          ))}
+                {table.current_order && (
+                  <div className="rounded-[10px] bg-[var(--a-inset)] px-2.5 py-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-1 text-[12px] text-[var(--a-text-2)] truncate"><Receipt className="h-3 w-3 shrink-0" />{table.current_order.order_id}</span>
+                      <Button size="sm" variant="tinted" icon={Printer} className="h-7 px-2" onClick={() => fetchTicket(table.current_order.order_id)}>KOT</Button>
+                    </div>
+                    <div className="text-[15px] font-semibold text-[var(--a-text)] pd-tabular">₹{table.current_order.total}</div>
+                  </div>
+                )}
+
+                <div className="mt-auto flex items-center gap-1">
+                  <Select
+                    aria-label="Table status"
+                    value={table.status}
+                    onChange={(e) => e.target.value !== table.status && updateTableStatus(table.table_number, e.target.value)}
+                    className="h-8 text-[13px] px-2 pr-6 flex-1 min-w-0"
+                  >
+                    <option value="free">Free</option>
+                    <option value="occupied">Occupied</option>
+                    <option value="reserved">Reserved</option>
+                    {!STATUS[table.status] && <option value={table.status}>{st.label}</option>}
+                  </Select>
+                  <IconButton icon={Edit2} label="Edit Table" className="h-8 w-8" onClick={() => openEditModal(table)} />
+                  <IconButton icon={Trash2} label="Delete Table" variant="destructive" className="h-8 w-8" onClick={() => deleteTable(table.table_number)} />
+                </div>
+              </Card>
+            );
+          })}
         </div>
       )}
 
-      {/* KOT Ticket Modal */}
-      {showTicket && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-sm">
-            <div className="flex justify-between items-center p-4 border-b">
-              <h2 className="font-bold text-lg">Kitchen Order Ticket</h2>
-              <button onClick={() => setShowTicket(null)} className="text-gray-500 hover:text-black"><X className="h-5 w-5" /></button>
-            </div>
+      {/* KOT ticket */}
+      <Sheet
+        open={!!showTicket}
+        onClose={() => setShowTicket(null)}
+        title="Kitchen order ticket"
+        size="sm"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowTicket(null)}>Close</Button>
+            <Button variant="primary" icon={Printer} onClick={handlePrint}>Print KOT</Button>
+          </>
+        }
+      >
+        {showTicket && (
+          <div className="rounded-[12px] border border-[var(--a-line)] overflow-hidden" style={{ background: "#FFFFFF", color: "#0E1A20" }}>
             <div ref={printRef} className="p-4">
-              <h1 style={{textAlign:'center',fontSize:'20px',fontWeight:'bold',borderBottom:'2px dashed #000',paddingBottom:'10px'}}>
+              <h1 style={{textAlign:'center',fontSize:'20px',fontWeight:'bold',borderBottom:'2px dashed #000',paddingBottom:'10px',color:'#0E1A20'}}>
                 {showTicket.kot_number}<br/><span style={{fontSize:'14px'}}>Table {showTicket.table_number}</span>
               </h1>
               <p style={{textAlign:'center',fontSize:'12px',color:'#666',margin:'10px 0'}}>{new Date(showTicket.created_at).toLocaleString('en-IN')}</p>
@@ -307,213 +321,88 @@ const TableManagement = () => {
               <div className="total" style={{fontWeight:'bold',fontSize:'18px',marginTop:'10px',textAlign:'right'}}>Total: ₹{showTicket.total}</div>
               <p className="footer" style={{textAlign:'center',marginTop:'20px',fontSize:'12px',color:'#666'}}>--- Thank You ---</p>
             </div>
-            <div className="p-4 border-t flex space-x-2">
-              <button onClick={() => setShowTicket(null)} className="flex-1 bg-gray-200 py-2 rounded-lg font-medium">Close</button>
-              <button onClick={handlePrint} className="flex-1 bg-primary py-2 rounded-lg font-bold flex items-center justify-center"><Printer className="h-4 w-4 mr-2" />Print KOT</button>
-            </div>
           </div>
-        </div>
-      )}
+        )}
+      </Sheet>
 
-      {/* Add Table Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1a4855] rounded-xl p-6 w-full max-w-md border border-primary/20 shadow-2xl">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-primary flex items-center gap-2">
-                <Plus className="h-5 w-5" /> Add New Table
-              </h2>
-              <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-white">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="text-gray-300 text-sm font-medium">Table Number</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={newTable.table_number}
-                  onChange={(e) => setNewTable({ ...newTable, table_number: parseInt(e.target.value) || "" })}
-                  className="w-full bg-[#0f2933] text-white px-4 py-2.5 rounded-lg mt-1 border border-white/10 focus:border-primary outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-gray-300 text-sm font-medium">Capacity (Seats)</label>
-                <div className="flex items-center gap-2 mt-1">
-                  <button
-                    type="button"
-                    onClick={() => setNewTable(p => ({ ...p, capacity: Math.max(1, (parseInt(p.capacity) || 1) - 1) }))}
-                    className="w-10 h-10 rounded-lg bg-[#0f2933] border border-white/10 text-white font-bold text-lg flex items-center justify-center hover:bg-primary hover:text-black transition-colors"
-                    title="Decrease Seats"
-                  >
-                    <Minus className="h-4 w-4" />
-                  </button>
-                  <input
-                    type="number"
-                    min="1"
-                    value={newTable.capacity}
-                    onChange={(e) => setNewTable({ ...newTable, capacity: parseInt(e.target.value) || "" })}
-                    className="flex-1 bg-[#0f2933] text-white text-center font-bold px-4 py-2 rounded-lg border border-white/10 focus:border-primary outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setNewTable(p => ({ ...p, capacity: (parseInt(p.capacity) || 0) + 1 }))}
-                    className="w-10 h-10 rounded-lg bg-[#0f2933] border border-white/10 text-white font-bold text-lg flex items-center justify-center hover:bg-primary hover:text-black transition-colors"
-                    title="Increase Seats"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                </div>
-                <div className="flex gap-2 mt-2">
-                  {[2, 4, 6, 8].map(cap => (
-                    <button
-                      key={cap}
-                      type="button"
-                      onClick={() => setNewTable({ ...newTable, capacity: cap })}
-                      className={`text-xs px-2.5 py-1 rounded border transition-colors ${newTable.capacity === cap ? 'bg-primary text-black font-bold border-primary' : 'bg-[#0f2933] text-gray-300 border-white/10 hover:border-white/30'}`}
-                    >
-                      {cap} seats
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="flex space-x-3 mt-6">
-              <button onClick={() => setShowAddModal(false)} className="flex-1 bg-gray-600 text-white py-2 rounded-lg hover:bg-gray-500">Cancel</button>
-              <button onClick={createTable} className="flex-1 bg-primary text-black py-2 rounded-lg font-bold hover:bg-yellow-400">Create Table</button>
-            </div>
+      {/* Add table */}
+      <Sheet
+        open={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title="New table"
+        size="sm"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowAddModal(false)}>Cancel</Button>
+            <Button variant="primary" onClick={createTable}>Create Table</Button>
+          </>
+        }
+      >
+        <div className="space-y-5">
+          <FormField label="Table number">
+            <Input type="number" min="1" value={newTable.table_number}
+              onChange={(e) => setNewTable({ ...newTable, table_number: parseInt(e.target.value) || "" })} className="pd-tabular w-32" />
+          </FormField>
+          <FormField label="Capacity (seats)">
+            {capacityControl(newTable.capacity, (v) => setNewTable(p => ({ ...p, capacity: v })), [2, 4, 6, 8])}
+          </FormField>
+        </div>
+      </Sheet>
+
+      {/* Edit table */}
+      <Sheet
+        open={showEditModal && !!editingTable}
+        onClose={() => { setShowEditModal(false); setEditingTable(null); }}
+        title={editingTable ? `Edit table T${editingTable.table_number}` : "Edit table"}
+        size="sm"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => { setShowEditModal(false); setEditingTable(null); }}>Cancel</Button>
+            <Button variant="primary" onClick={saveTableEdit}>Save Changes</Button>
+          </>
+        }
+      >
+        {editingTable && (
+          <div className="space-y-5">
+            <FormField label="Seat capacity">
+              {capacityControl(editingTable.capacity, (v) => setEditingTable(p => ({ ...p, capacity: v })), [2, 4, 6, 8, 10])}
+            </FormField>
+            <FormField label="Status">
+              <Segmented
+                stretch
+                value={editingTable.status}
+                onChange={(v) => setEditingTable(p => ({ ...p, status: v }))}
+                options={[{ value: "free", label: "Free" }, { value: "occupied", label: "Occupied" }, { value: "reserved", label: "Reserved" }]}
+              />
+            </FormField>
           </div>
+        )}
+      </Sheet>
+
+      {/* Bulk create */}
+      <Sheet
+        open={showBulkModal}
+        onClose={() => setShowBulkModal(false)}
+        title="Bulk create tables"
+        size="sm"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowBulkModal(false)}>Cancel</Button>
+            <Button variant="primary" onClick={bulkCreateTables}>Create {bulkCreate.count} Tables</Button>
+          </>
+        }
+      >
+        <div className="grid grid-cols-2 gap-4">
+          <FormField label="Number of tables">
+            <Input type="number" value={bulkCreate.count} onChange={(e) => setBulkCreate({ ...bulkCreate, count: parseInt(e.target.value) })} className="pd-tabular" />
+          </FormField>
+          <FormField label="Capacity per table">
+            <Input type="number" value={bulkCreate.capacity} onChange={(e) => setBulkCreate({ ...bulkCreate, capacity: parseInt(e.target.value) })} className="pd-tabular" />
+          </FormField>
         </div>
-      )}
-
-      {/* Edit Table Modal */}
-      {showEditModal && editingTable && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1a4855] rounded-xl p-6 w-full max-w-md border border-primary/20 shadow-2xl">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-primary flex items-center gap-2">
-                <Edit2 className="h-5 w-5" /> Edit Table T{editingTable.table_number}
-              </h2>
-              <button onClick={() => { setShowEditModal(false); setEditingTable(null); }} className="text-gray-400 hover:text-white">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="text-gray-300 text-sm font-medium">Table Number</label>
-                <div className="bg-[#0f2933] text-white px-4 py-2.5 rounded-lg mt-1 font-bold">
-                  Table {editingTable.table_number}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-gray-300 text-sm font-medium">Seat Capacity</label>
-                <div className="flex items-center gap-2 mt-1">
-                  <button
-                    type="button"
-                    onClick={() => setEditingTable(p => ({ ...p, capacity: Math.max(1, (parseInt(p.capacity) || 1) - 1) }))}
-                    className="w-10 h-10 rounded-lg bg-[#0f2933] border border-white/10 text-white font-bold text-lg flex items-center justify-center hover:bg-primary hover:text-black transition-colors"
-                    title="Decrease Capacity (-1)"
-                  >
-                    <Minus className="h-4 w-4" />
-                  </button>
-                  <input
-                    type="number"
-                    min="1"
-                    value={editingTable.capacity}
-                    onChange={(e) => setEditingTable({ ...editingTable, capacity: parseInt(e.target.value) || "" })}
-                    className="flex-1 bg-[#0f2933] text-white text-center font-bold px-4 py-2 rounded-lg border border-white/10 focus:border-primary outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setEditingTable(p => ({ ...p, capacity: (parseInt(p.capacity) || 0) + 1 }))}
-                    className="w-10 h-10 rounded-lg bg-[#0f2933] border border-white/10 text-white font-bold text-lg flex items-center justify-center hover:bg-primary hover:text-black transition-colors"
-                    title="Increase Capacity (+1)"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                </div>
-                <div className="flex gap-2 mt-2">
-                  {[2, 4, 6, 8, 10].map(cap => (
-                    <button
-                      key={cap}
-                      type="button"
-                      onClick={() => setEditingTable({ ...editingTable, capacity: cap })}
-                      className={`text-xs px-2.5 py-1 rounded border transition-colors ${editingTable.capacity === cap ? 'bg-primary text-black font-bold border-primary' : 'bg-[#0f2933] text-gray-300 border-white/10 hover:border-white/30'}`}
-                    >
-                      {cap} seats
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-gray-300 text-sm font-medium">Status</label>
-                <div className="grid grid-cols-3 gap-2 mt-1">
-                  {[
-                    { id: "free", label: "Free", color: "text-green-400 border-green-500/40 bg-green-500/10" },
-                    { id: "occupied", label: "Occupied", color: "text-red-400 border-red-500/40 bg-red-500/10" },
-                    { id: "reserved", label: "Reserved", color: "text-yellow-400 border-yellow-500/40 bg-yellow-500/10" },
-                  ].map(st => (
-                    <button
-                      key={st.id}
-                      type="button"
-                      onClick={() => setEditingTable(p => ({ ...p, status: st.id }))}
-                      className={`py-2 px-3 rounded-lg border text-xs font-bold transition-all ${
-                        editingTable.status === st.id
-                          ? `${st.color} ring-2 ring-primary`
-                          : "border-white/10 bg-[#0f2933] text-gray-400 hover:text-white"
-                      }`}
-                    >
-                      {st.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex space-x-3 mt-6">
-              <button
-                type="button"
-                onClick={() => { setShowEditModal(false); setEditingTable(null); }}
-                className="flex-1 bg-gray-600 text-white py-2 rounded-lg hover:bg-gray-500 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={saveTableEdit}
-                className="flex-1 bg-primary text-black py-2 rounded-lg font-bold hover:bg-yellow-400 transition-colors"
-              >
-                Save Changes
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Bulk Create Modal */}
-      {showBulkModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-[#1a4855] rounded-xl p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold text-primary mb-4">Bulk Create Tables</h2>
-            <div className="space-y-4">
-              <div><label className="text-gray-300 text-sm">Number of Tables</label><input type="number" value={bulkCreate.count} onChange={(e) => setBulkCreate({ ...bulkCreate, count: parseInt(e.target.value) })} className="w-full bg-[#0f2933] text-white px-4 py-2 rounded-lg mt-1" /></div>
-              <div><label className="text-gray-300 text-sm">Capacity per Table</label><input type="number" value={bulkCreate.capacity} onChange={(e) => setBulkCreate({ ...bulkCreate, capacity: parseInt(e.target.value) })} className="w-full bg-[#0f2933] text-white px-4 py-2 rounded-lg mt-1" /></div>
-            </div>
-            <div className="flex space-x-3 mt-6">
-              <button onClick={() => setShowBulkModal(false)} className="flex-1 bg-gray-600 text-white py-2 rounded-lg">Cancel</button>
-              <button onClick={bulkCreateTables} className="flex-1 bg-primary text-black py-2 rounded-lg font-bold">Create {bulkCreate.count} Tables</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      </Sheet>
+    </Page>
   );
 };
 
 export default TableManagement;
-
-
