@@ -1765,6 +1765,12 @@ async def admin_get_orders(
         elif "andheri" in admin_sub: admin_branch = "andheri"
         else: admin_branch = "all"
 
+    # Resolve expired rider offers (book Porter / flag manual) before listing
+    try:
+        from dispatch_service import sweep_expired
+        await sweep_expired(manager)
+    except Exception as sweep_err:
+        logger.warning(f"[Dispatch] sweep on admin list failed: {sweep_err}")
     all_orders = await manager.get_all_orders(status_filter)
 
     # Super Admin (all branches)
@@ -1917,9 +1923,17 @@ async def admin_update_order_status(
     history = order.get("status_history", [])
     history.append(status_entry)
     update_data["status_history"] = history
-    
+
     await manager.update_order(order_id, update_data)
-    
+
+    # Auto-dispatch: > 5 km -> Porter now; else offer to in-house riders for 30 s, then Porter
+    if status_update.status == "accepted":
+        try:
+            from dispatch_service import start_dispatch
+            await start_dispatch(manager, order_id)
+        except Exception as dispatch_err:
+            logger.warning(f"[Dispatch] start failed for {order_id}: {dispatch_err}")
+
     return await manager.get_order_by_id(order_id)
 
 @admin_router.post("/orders/{order_id}/send-whatsapp")
@@ -1995,6 +2009,7 @@ async def admin_assign_delivery_partner(
         "delivery_partner_phone": partner.get("phone"),
         "delivery_partner_vehicle": vehicle_info,
         "delivery_fleet": "Persian Darbar Private Fleet",
+        "dispatch_status": "manual_assigned",  # closes any open auto-dispatch offer
         "status_history": history
     })
     
@@ -2172,6 +2187,7 @@ async def admin_porter_book(
     })
 
     porter_update = {
+        "dispatch_status":     "manual_porter",  # closes any open auto-dispatch offer
         "porter_order_id":     result["porter_order_id"],
         "porter_status":       result.get("status", "open"),
         "porter_tracking_url": result.get("tracking_url", ""),
@@ -2442,9 +2458,14 @@ async def perform_auto_accept_order(order_id: str, manager: BaseDataManager) -> 
         except Exception as inv_err:
             logger.warning(f"Auto-accept invoice generation warning for {order_id}: {inv_err}")
 
-    # Porter Rider Auto-Assignment for Delivery orders
+    # Porter Rider Auto-Assignment for Delivery orders (legacy path).
+    # Skipped when the new auto-dispatch is on (it runs after this update), and never books a MOCK
+    # Porter rider for a real customer unless explicitly allowed for testing.
+    from dispatch_service import dispatch_enabled, porter_auto_booking_allowed
+    auto_assign_setting = (await manager.get_setting("auto_assign_porter") or "true").lower() in ("true", "1", "yes")
     is_delivery = order.get("order_type") in ("DELIVERY", "online", "ONLINE") or not order.get("order_type")
-    if is_delivery and not order.get("porter_order_id") and not order.get("delivery_partner_id"):
+    if (is_delivery and not dispatch_enabled() and auto_assign_setting and porter_auto_booking_allowed()
+            and not order.get("porter_order_id") and not order.get("delivery_partner_id")):
         try:
             from porter_service import create_porter_order
             customer_name = order.get("customer_name") or order.get("name") or "Guest"
@@ -2505,6 +2526,13 @@ async def perform_auto_accept_order(order_id: str, manager: BaseDataManager) -> 
     update_data["status_history"] = history
     await manager.update_order(order_id, update_data)
     logger.info(f"Order {order_id} successfully auto-accepted with KOT#{kot_num}")
+
+    if dispatch_enabled():
+        try:
+            from dispatch_service import start_dispatch
+            await start_dispatch(manager, order_id)
+        except Exception as dispatch_err:
+            logger.warning(f"[Dispatch] start failed for {order_id}: {dispatch_err}")
     return await manager.get_order_by_id(order_id)
 
 
@@ -4184,6 +4212,70 @@ async def delivery_get_assigned_orders(
         key=lambda x: x.get("created_at", ""),
         reverse=True
     )
+
+# ── Auto-dispatch: in-house rider offers (30 s window, then Porter) ──
+@delivery_router.get("/offers")
+async def delivery_get_offers(
+    phone: str = Depends(verify_delivery_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Open delivery offers this rider can accept, with seconds left. Also resolves expired offers."""
+    from dispatch_service import offers_for_rider, dispatch_enabled, rider_window_seconds
+    partner = await manager.get_delivery_partner_by_phone(phone)
+    if not partner:
+        raise HTTPException(status_code=404, detail="Delivery partner not found")
+    if not dispatch_enabled():
+        return {"enabled": False, "window_seconds": rider_window_seconds(), "offers": []}
+    return {"enabled": True, "window_seconds": rider_window_seconds(), "offers": await offers_for_rider(manager, partner)}
+
+
+@delivery_router.post("/orders/{order_id}/accept")
+async def delivery_accept_offer(
+    order_id: str,
+    phone: str = Depends(verify_delivery_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """First rider to accept within the window gets the delivery."""
+    from dispatch_service import rider_accept
+    partner = await manager.get_delivery_partner_by_phone(phone)
+    if not partner:
+        raise HTTPException(status_code=404, detail="Delivery partner not found")
+    order = await rider_accept(manager, order_id, partner)
+    if not order:
+        raise HTTPException(status_code=409, detail="This delivery is no longer available.")
+    return {"success": True, "order": await manager.get_order_by_id(order_id)}
+
+
+@delivery_router.post("/orders/{order_id}/decline")
+async def delivery_decline_offer(
+    order_id: str,
+    phone: str = Depends(verify_delivery_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Decline an offer. If every offered rider declines, Porter is booked right away."""
+    from dispatch_service import rider_decline
+    partner = await manager.get_delivery_partner_by_phone(phone)
+    if not partner:
+        raise HTTPException(status_code=404, detail="Delivery partner not found")
+    await rider_decline(manager, order_id, partner)
+    return {"success": True}
+
+
+@api_router.post("/internal/dispatch/sweep")
+async def internal_dispatch_sweep(
+    request: Request,
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Backstop for Cloud Scheduler (every minute): resolve expired rider offers.
+    Requires header X-Dispatch-Secret == DISPATCH_CRON_SECRET."""
+    import hmac
+    secret = os.environ.get("DISPATCH_CRON_SECRET", "")
+    given = request.headers.get("X-Dispatch-Secret", "")
+    if not secret or not hmac.compare_digest(secret, given):
+        raise HTTPException(status_code=403, detail="Forbidden")
+    from dispatch_service import sweep_expired
+    return {"resolved": await sweep_expired(manager)}
+
 
 @delivery_router.put("/orders/{order_id}/status")
 async def delivery_update_order_status(
