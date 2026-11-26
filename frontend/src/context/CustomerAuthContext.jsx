@@ -20,10 +20,34 @@ import { auth, googleProvider, appleProvider } from '../firebase';
 import { Capacitor } from '@capacitor/core';
 import API_BASE from '../lib/config';
 
-// Ensure Firebase Auth session is persisted across all app restarts
-try {
-  setPersistence(auth, browserLocalPersistence).catch(() => { });
-} catch (e) { }
+// Ensure Firebase Auth session is persisted across all app restarts.
+// Web only: the native app initializes Auth with IndexedDB persistence (see firebase.js).
+if (!Capacitor.isNativePlatform()) {
+  try {
+    setPersistence(auth, browserLocalPersistence).catch(() => { });
+  } catch (e) { }
+}
+
+// In the native app the Firebase JS SDK step that mirrors the native sign-in must never block
+// login: if it stalls, give up after a few seconds and continue with the native user + token.
+const withTimeout = (promise, ms, label) =>
+  Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} timed out`)), ms)),
+  ]);
+
+// Sign the Firebase JS SDK in with a credential the native layer already verified.
+// Returns { user, token } only when BOTH steps finish in time, otherwise null.
+const mirrorNativeSignIn = async (credential, label) => {
+  try {
+    const result = await withTimeout(signInWithCredential(auth, credential), 8000, `${label} signInWithCredential`);
+    const token = await withTimeout(result.user.getIdToken(), 5000, `${label} getIdToken`);
+    return { user: result.user, token };
+  } catch (err) {
+    console.warn(`[Auth] ${label} JS sign-in skipped, using native session:`, err?.message || err);
+    return null;
+  }
+};
 
 const CustomerAuthContext = createContext(null);
 
@@ -259,13 +283,10 @@ export const CustomerAuthProvider = ({ children }) => {
         let token = null;
 
         if (result.credential?.idToken) {
-          try {
-            const credential = GoogleAuthProvider.credential(result.credential.idToken);
-            const firebaseResult = await signInWithCredential(auth, credential);
-            user = firebaseResult.user;
-            token = await user.getIdToken();
-          } catch (credErr) {
-            console.warn('Firebase JS signInWithCredential notice:', credErr);
+          const mirrored = await mirrorNativeSignIn(GoogleAuthProvider.credential(result.credential.idToken), 'Google');
+          if (mirrored) {
+            user = mirrored.user;
+            token = mirrored.token;
           }
         }
 
@@ -421,16 +442,14 @@ export const CustomerAuthProvider = ({ children }) => {
         let token = null;
 
         if (result.credential?.idToken) {
-          try {
-            const credential = new OAuthProvider('apple.com').credential({
-              idToken: result.credential.idToken,
-              rawNonce: result.credential?.nonce,
-            });
-            const firebaseResult = await signInWithCredential(auth, credential);
-            user = firebaseResult.user;
-            token = await user.getIdToken();
-          } catch (credErr) {
-            console.warn('Apple signInWithCredential notice:', credErr);
+          const credential = new OAuthProvider('apple.com').credential({
+            idToken: result.credential.idToken,
+            rawNonce: result.credential?.nonce,
+          });
+          const mirrored = await mirrorNativeSignIn(credential, 'Apple');
+          if (mirrored) {
+            user = mirrored.user;
+            token = mirrored.token;
           }
         }
 
@@ -690,13 +709,13 @@ export const CustomerAuthProvider = ({ children }) => {
         let user = null;
         let token = null;
 
-        try {
-          const credential = PhoneAuthProvider.credential(nativeVerificationIdRef.current, otp.trim());
-          const userCredential = await signInWithCredential(auth, credential);
-          user = userCredential.user;
-          token = await user.getIdToken();
-        } catch (credSyncErr) {
-          console.warn('PhoneAuthProvider JS sync notice:', credSyncErr);
+        const mirrored = await mirrorNativeSignIn(
+          PhoneAuthProvider.credential(nativeVerificationIdRef.current, otp.trim()),
+          'Phone'
+        );
+        if (mirrored) {
+          user = mirrored.user;
+          token = mirrored.token;
         }
 
         if (!user) {

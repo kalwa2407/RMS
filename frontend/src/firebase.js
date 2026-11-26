@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics, isSupported } from "firebase/analytics";
-import { getAuth, GoogleAuthProvider, OAuthProvider } from "firebase/auth";
+import { getAuth, initializeAuth, indexedDBLocalPersistence, GoogleAuthProvider, OAuthProvider } from "firebase/auth";
+import { Capacitor } from "@capacitor/core";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBNWnChrD5s0Ky5rnKdtm9HQP2_179hmUQ",
@@ -16,7 +17,21 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 // Initialize Auth
-const auth = getAuth(app);
+// In the native iOS/Android app (Capacitor WKWebView / WebView) getAuth() also loads the web
+// popup/redirect resolver, which can stall auth initialization; signInWithCredential and
+// getIdToken then never resolve and login gets stuck after the native sign-in succeeded.
+// Native apps don't use popups, so initialize Auth with plain IndexedDB persistence there.
+// The website keeps getAuth() (needed for the Google/Apple popup sign-in).
+let auth;
+if (Capacitor.isNativePlatform()) {
+  try {
+    auth = initializeAuth(app, { persistence: indexedDBLocalPersistence });
+  } catch (e) {
+    auth = getAuth(app); // already initialized (e.g. hot reload)
+  }
+} else {
+  auth = getAuth(app);
+}
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
