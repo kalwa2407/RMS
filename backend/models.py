@@ -200,7 +200,9 @@ class OrderCreate(BaseModel):
     email: Optional[str] = None
     customer_email: Optional[str] = None
     address: str = ""  # Optional for dine-in
-    distance_km: Optional[float] = None  # Distance from restaurant in km
+    distance_km: Optional[float] = None  # Distance from restaurant in km (client hint; server recomputes from lat/lng)
+    latitude: Optional[float] = None   # Delivery location (used to compute distance server-side)
+    longitude: Optional[float] = None
     items: List[OrderItem]
     subtotal: float
     discount: float = 0.0

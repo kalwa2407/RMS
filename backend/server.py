@@ -174,6 +174,45 @@ def get_ist_now():
     return datetime.now(timezone(timedelta(hours=5, minutes=30)))
 
 
+# Delivery rules: FREE up to 10 km, Rs 60 for 10-20 km, no delivery beyond 20 km
+DELIVERY_FREE_KM = 10.0
+DELIVERY_MAX_KM = 20.0
+DELIVERY_FEE_BEYOND_FREE = 60.0
+
+# Outlet coordinates (must match frontend/src/pages/customer/customerAssets.js PERSIAN_DARBAR_BRANCHES)
+BRANCH_COORDINATES = {
+    "bandra": (19.0550, 72.8360),
+    "andheri": (19.1130, 72.8796),
+    "kurla": (19.0700, 72.8800),
+    "pune": (18.5204, 73.8767),
+}
+
+
+def _haversine_km(lat1, lon1, lat2, lon2) -> float:
+    import math
+    r = 6371.0
+    d_lat = math.radians(lat2 - lat1)
+    d_lon = math.radians(lon2 - lon1)
+    a = math.sin(d_lat / 2) ** 2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(d_lon / 2) ** 2
+    return round(r * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a)), 1)
+
+
+def delivery_distance_km(branch_id, lat, lng):
+    """Straight-line km from the outlet to the delivery point, or None if it cannot be computed."""
+    coords = BRANCH_COORDINATES.get(str(branch_id or "").lower())
+    try:
+        lat_f, lng_f = float(lat), float(lng)
+    except (TypeError, ValueError):
+        return None
+    if not coords or not (-90 <= lat_f <= 90 and -180 <= lng_f <= 180) or (lat_f == 0 and lng_f == 0):
+        return None
+    return _haversine_km(lat_f, lng_f, coords[0], coords[1])
+
+
+def delivery_fee_for_km(km: float) -> float:
+    return 0.0 if km <= DELIVERY_FREE_KM else DELIVERY_FEE_BEYOND_FREE
+
+
 # PD Coins loyalty rules
 WELCOME_BONUS_COINS = 50      # one-time joining bonus for every new customer
 ORDER_CASHBACK_RATE = 0.05    # 5% of the bill credited as PD Coins on every order
@@ -715,18 +754,29 @@ async def create_order(
             detail="Minimum order value is â‚¹250 for delivery"
         )
 
-    # â”€â”€ Delivery range enforcement â”€â”€
+    # ── Delivery range + fee (server is the source of truth) ──
+    # FREE up to 10 km, Rs 60 for 10-20 km, not deliverable beyond 20 km.
     if order.order_type == "DELIVERY":
-        km = order.distance_km or 0
-        if km > 20:
+        server_km = delivery_distance_km(order.branch_id or order.branch, order.latitude, order.longitude)
+        if server_km is not None:
+            km = server_km
+        else:
+            # Legacy app builds send only distance_km (no coordinates). Accept it, but a missing or
+            # zero distance can no longer pass as "free delivery next door".
+            km = order.distance_km
+            if not km or km <= 0:
+                raise HTTPException(status_code=400, detail="Please set your delivery location to place a delivery order.")
+            logger.warning(f"[Delivery] Order without coordinates; using client distance {km} km")
+        order.distance_km = km
+        if km > DELIVERY_MAX_KM:
             raise HTTPException(
                 status_code=400,
-                detail="Out of delivery range. We only deliver within 20km."
+                detail=f"Out of delivery range ({km:.1f} km). We deliver within {DELIVERY_MAX_KM:.0f} km - please choose Takeaway."
             )
-        elif km > 10:
-            order.delivery_fee = 60.0
-        else:
-            order.delivery_fee = 0.0
+        client_fee = float(order.delivery_fee or 0.0)
+        order.delivery_fee = delivery_fee_for_km(km)
+        # Keep the charged total consistent with the server-decided fee
+        order.total = max(0.0, round(float(order.total or 0.0) - client_fee + order.delivery_fee, 2))
 
     now = get_ist_now()
     order_dict = order.dict()
@@ -1412,7 +1462,7 @@ Restaurant Details:
 
 App Features (Persian Darbar RMS):
 - Online Ordering at /order â€” minimum order Rs.250
-- Delivery: FREE within 5 km. Rs.60 flat fee for 5-20 km. Not available beyond 20 km
+- Delivery: FREE within 10 km. Rs.60 flat fee for 10-20 km. Not available beyond 20 km
 - Table Booking at /reservation â€” book by date, time, and party size
 - Full digital Menu at /menu with all categories including Mocktails
 - Reviews page at /reviews â€” write and read customer reviews
@@ -1434,7 +1484,7 @@ Guidelines:
 - If asked about the menu, guide them to /menu
 - If asked about events, guide them to /events
 - If asked about loyalty/coins, explain the PD Coins program
-- Delivery charges: FREE within 5 km, Rs.60 for 5-20 km, not available beyond 20 km
+- Delivery charges: FREE within 10 km, Rs.60 for 10-20 km, not available beyond 20 km
 - Don't make up prices or dishes â€” stick to what you know about Persian Darbar
 - If you don't know something, politely say you'll connect them with the team
 - Refer to yourself as "Vijay" â€” the virtual manager
