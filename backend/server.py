@@ -5624,27 +5624,32 @@ async def delete_customer_account(
     uid_q: Optional[str] = Query(None, alias="uid"),
     email_q: Optional[str] = Query(None, alias="email"),
     phone_q: Optional[str] = Query(None, alias="phone"),
-    user: Optional[dict] = Depends(get_optional_customer),
+    user: dict = Depends(verify_customer_token),
     manager: BaseDataManager = Depends(get_data_manager)
 ):
     """
     App Store Guideline 5.1.1(v) Compliance: In-App Account Deletion.
     Permanently deletes customer profile, saved addresses, and loyalty balance from the system.
-    Purges by UID, Email, and Phone.
+
+    SECURITY: the account to delete comes ONLY from the verified bearer token (uid + the email/phone
+    the token itself proves). uid/email/phone sent in the body or query string are ignored — they used
+    to let anyone delete any customer's account without logging in.
     """
-    user_dict = user or {}
-    uid = (req.uid if req and req.uid else None) or uid_q or user_dict.get("uid")
-    raw_phone = (req.phone if req and req.phone else None) or phone_q or user_dict.get("phone", "")
-    email = ((req.email if req and req.email else None) or email_q or user_dict.get("email") or "").lower().strip()
+    uid = str(user.get("uid") or "")
+    email = (user.get("email") or "").lower().strip()
+    raw_phone = user.get("phone") or ""
+    if not uid:
+        raise HTTPException(status_code=401, detail="Customer authentication required")
 
     clean_phone = "".join(ch for ch in str(raw_phone) if ch.isdigit())
     if clean_phone.startswith("91") and len(clean_phone) == 12:
         clean_phone = clean_phone[2:]
 
-    logger.info(f"[Account Deletion] Request to permanently purge: uid={uid}, email={email}, phone={clean_phone}")
+    logger.info(f"[Account Deletion] Request to permanently purge uid={uid} (email={'yes' if email else 'no'}, phone={'yes' if clean_phone else 'no'})")
 
     customers = await manager._read("customers")
     remaining_customers = []
+    removed_uids = set()
 
     for c in customers:
         c_uid = str(c.get("uid") or c.get("_id") or "")
@@ -5655,13 +5660,16 @@ async def delete_customer_account(
 
         match_uid = uid and (c_uid == str(uid) or c.get("uid") == str(uid))
         match_email = email and c_email and (c_email == email)
-        match_phone = clean_phone and c_phone and (c_phone == clean_phone or c_phone.endswith(clean_phone[-10:]))
+        # Phone match only for phone-OTP records (wa_<phone>): a profile phone typed by another
+        # (e.g. Google) user is unverified and must not pull their account into this deletion.
+        match_phone = clean_phone and c_phone and c_uid.startswith("wa_") and (c_phone == clean_phone or c_phone.endswith(clean_phone[-10:]))
 
         if match_uid or match_email or match_phone:
-            logger.info(f"[Account Deletion] Removing customer: uid={c.get('uid')}, email={c.get('email')}, phone={c.get('phone')}")
+            logger.info(f"[Account Deletion] Removing customer record uid={c.get('uid')}")
             # Track deleted identifiers to prevent resurrection on re-login
             if c.get("uid"):
                 DELETED_CUSTOMER_UIDS.add(str(c["uid"]))
+                removed_uids.add(str(c["uid"]))
             if c_email:
                 DELETED_CUSTOMER_EMAILS.add(c_email)
             if c_phone:
@@ -5696,6 +5704,11 @@ async def delete_customer_account(
             }
             if uid:
                 manager.db.collection("deleted_customers").document(str(uid)).set(del_doc_data)
+            # Persist every removed record's uid too, so the block is identical on every Cloud Run instance
+            # (it used to live only in this instance's memory, so re-login failed randomly).
+            for r_uid in removed_uids:
+                if r_uid != str(uid):
+                    manager.db.collection("deleted_customers").document(r_uid).set({**del_doc_data, "uid": r_uid})
             if email and email != uid:
                 manager.db.collection("deleted_customers").document(email).set(del_doc_data)
             # Also store by phone so phone-based re-login is blocked too
@@ -5728,13 +5741,10 @@ async def delete_customer_account(
             if email:
                 for doc in manager.db.collection("customers").where("email", "==", email).stream():
                     doc.reference.delete()
-            if clean_phone:
-                for doc in manager.db.collection("customers").stream():
-                    d = doc.to_dict()
-                    dp = "".join(ch for ch in str(d.get("phone") or "") if ch.isdigit())
-                    de = (d.get("email") or "").lower().strip()
-                    if (clean_phone and dp and (dp == clean_phone or dp.endswith(clean_phone[-10:]))) or (email and de == email):
-                        doc.reference.delete()
+            # Same records as removed above (uid / verified email / wa_ phone record) — nothing else
+            for r_uid in removed_uids:
+                for doc in manager.db.collection("customers").where("uid", "==", r_uid).stream():
+                    doc.reference.delete()
     except Exception as db_e:
         logger.warning(f"[Account Deletion] Firestore direct delete error: {db_e}")
 
@@ -5743,10 +5753,15 @@ async def delete_customer_account(
         import firebase_admin
         from firebase_admin import auth as fb_auth
         if firebase_admin._apps:
-            if uid and not str(uid).startswith("wa_") and not str(uid).startswith("apple_reviewer"):
+            # Delete the Firebase user of EVERY removed record (not just the requester). A removed record
+            # whose Firebase user survived would be blocked forever by its tombstone: signing in again
+            # returned the same uid -> 403 account_deleted -> stuck on the login screen.
+            for r_uid in {str(uid)} | removed_uids:
+                if not r_uid or r_uid.startswith("wa_"):
+                    continue
                 try:
-                    fb_auth.delete_user(uid)
-                    logger.info(f"[Account Deletion] Deleted Firebase user by UID: {uid}")
+                    fb_auth.delete_user(r_uid)
+                    logger.info(f"[Account Deletion] Deleted Firebase user by UID: {r_uid}")
                 except Exception as fb_e:
                     logger.debug(f"Firebase delete_user uid notice: {fb_e}")
             if email:
@@ -5754,7 +5769,7 @@ async def delete_customer_account(
                     fb_u = fb_auth.get_user_by_email(email)
                     if fb_u:
                         fb_auth.delete_user(fb_u.uid)
-                        logger.info(f"[Account Deletion] Deleted Firebase user by email: {email}")
+                        logger.info(f"[Account Deletion] Deleted Firebase user by verified email for uid={fb_u.uid}")
                 except Exception as fb_e:
                     logger.debug(f"Firebase delete_user email notice: {fb_e}")
     except Exception as fb_err:
