@@ -8,6 +8,7 @@ import {
 import { Capacitor } from '@capacitor/core';
 import API_BASE from '../../../lib/config';
 import CustomerDeliveryMap from './CustomerDeliveryMap';
+import { useCustomerAuth } from '../../../context/CustomerAuthContext';
 
 // ── Calculation Constants (Internal only - never shown to user) ──────────
 const PREP_TIME_MINS = 15;
@@ -205,6 +206,7 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
   const [cancelReason, setCancelReason] = useState('Ordered by mistake');
   const [customReason, setCustomReason] = useState('');
   const [cancelling, setCancelling] = useState(false);
+  const { fetchWithAuth } = useCustomerAuth();
   const pollingRef = useRef(null);
   const autoCloseTimerRef = useRef(null);
 
@@ -272,7 +274,8 @@ const CustomerTrackOrder = ({ orderId: propOrderId, onClose, onGoHome }) => {
     setCancelling(true);
     const finalReason = cancelReason === 'Other reason' && customReason.trim() ? customReason.trim() : cancelReason;
     try {
-      const res = await fetch(`${API_BASE}/api/orders/${order.order_id}/cancel`, {
+      // Authenticated: the server only lets the customer who placed the order cancel it
+      const res = await fetchWithAuth(`${API_BASE}/api/orders/${order.order_id}/cancel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason: finalReason || 'Cancelled by customer' })

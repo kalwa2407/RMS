@@ -54,7 +54,8 @@ const CustomerOrders = () => {
     if (!window.confirm('Are you sure you want to cancel this order?')) return;
     setCancellingId(orderId);
     try {
-      const res = await fetch(`${API_BASE}/api/orders/${orderId}/cancel`, {
+      // Authenticated: the server only lets the customer who placed the order cancel it
+      const res = await fetchWithAuth(`${API_BASE}/api/orders/${orderId}/cancel`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

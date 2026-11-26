@@ -255,6 +255,23 @@ const OrdersManagement = () => {
     } catch {}
   };
 
+  // Alert (sound + toast) when an order newly needs a rider assigned by hand
+  const needsRiderSeenRef = useRef(null);
+  useEffect(() => {
+    const ids = orders
+      .filter(o => o.dispatch_status === "needs_manual" && !o.delivery_partner_id && !o.porter_order_id &&
+        !["delivered", "cancelled", "rejected"].includes(o.status))
+      .map(o => o.order_id);
+    const seen = needsRiderSeenRef.current;
+    needsRiderSeenRef.current = new Set(ids);
+    if (seen === null) return; // first load: no alert for orders already waiting
+    const fresh = ids.filter(id => !seen.has(id));
+    if (fresh.length > 0) {
+      playNotificationSound();
+      toast({ title: "Rider needed", description: `${fresh.length} delivery order(s) need a rider assigned`, variant: "destructive" });
+    }
+  }, [orders]);
+
   useEffect(() => {
     fetchOrders();
     fetchPartners();
@@ -614,6 +631,11 @@ const OrdersManagement = () => {
   });
 
   const newOrdersCount = orders.filter(o => o.status === "placed").length;
+  // Auto-dispatch could not find a rider (Porter not live / booking failed): admin must assign by hand
+  const needsRiderOrders = orders.filter(o =>
+    o.dispatch_status === "needs_manual" && !o.delivery_partner_id && !o.porter_order_id &&
+    !["delivered", "cancelled", "rejected"].includes(o.status)
+  );
   const newOnlineCount = orders.filter(o => o.status === "placed" && (o.order_type === "DELIVERY" || o.order_type === "TAKEAWAY")).length;
   const newDineCount = orders.filter(o => o.status === "placed" && o.order_type === "DINE_IN").length;
 
@@ -641,6 +663,11 @@ const OrdersManagement = () => {
             {newOrdersCount > 0 && (
               <span className="inline-flex items-center gap-1 bg-red-600 text-white px-3 py-1 rounded-full text-xs font-black animate-pulse shadow-sm">
                 <Bell className="w-3 h-3" /> {newOrdersCount} New
+              </span>
+            )}
+            {needsRiderOrders.length > 0 && (
+              <span className="inline-flex items-center gap-1 bg-amber-500 text-black px-3 py-1 rounded-full text-xs font-black shadow-sm">
+                <AlertTriangle className="w-3 h-3" /> {needsRiderOrders.length} need a rider
               </span>
             )}
           </div>
@@ -1101,6 +1128,43 @@ const OrdersManagement = () => {
                         <span>WhatsApp</span>
                       </button>
                     )}
+
+                    {/* ── Auto-dispatch status (offer window / rider needed) ── */}
+                    {order.order_type === "DELIVERY" && !["delivered","cancelled","rejected"].includes(order.status) && (() => {
+                      const ds = order.dispatch_status;
+                      const hasRider = order.delivery_partner_id || order.porter_order_id;
+                      if (ds === "needs_manual" && !hasRider) {
+                        return (
+                          <div className="w-full mt-2 rounded-xl border border-amber-400 bg-amber-50 dark:bg-amber-500/10 px-3 py-2 flex items-start gap-2">
+                            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                            <div className="text-xs">
+                              <p className="font-black text-amber-800 dark:text-amber-300">Rider needed — assign an in-house rider or book Porter</p>
+                              {order.dispatch_reason && <p className="text-amber-700/90 dark:text-amber-200/80 mt-0.5">{order.dispatch_reason}</p>}
+                            </div>
+                          </div>
+                        );
+                      }
+                      if (ds === "offered" && !hasRider) {
+                        const left = order.dispatch_expires_at ? Math.max(0, Math.round((new Date(order.dispatch_expires_at) - Date.now()) / 1000)) : null;
+                        return (
+                          <div className="w-full mt-2 rounded-xl border border-sky-300 bg-sky-50 dark:bg-sky-500/10 px-3 py-2 flex items-center gap-2 text-xs">
+                            <Bike className="w-4 h-4 text-sky-600 shrink-0" />
+                            <span className="font-bold text-sky-800 dark:text-sky-300">
+                              Finding an in-house rider{left != null && left > 0 ? ` · ${left}s left` : "…"} — Porter next if nobody accepts
+                            </span>
+                          </div>
+                        );
+                      }
+                      if (ds === "rider_assigned" && order.delivery_partner_name) {
+                        return (
+                          <div className="w-full mt-2 rounded-xl border border-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-2 flex items-center gap-2 text-xs">
+                            <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <span className="font-bold text-emerald-800 dark:text-emerald-300">{order.delivery_partner_name} accepted from the rider app</span>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
 
                     {/* ── Delivery Assignment (In-House Fleet OR Porter) ── */}
                     {order.order_type === "DELIVERY" && ["accepted","preparing","ready","out_for_delivery"].includes(order.status) && (

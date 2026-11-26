@@ -1180,14 +1180,37 @@ async def get_order(order_id: str, manager: BaseDataManager = Depends(get_data_m
         raise HTTPException(status_code=404, detail="Order not found")
     return order
 
+def _customer_owns_order(user: dict, order: dict) -> bool:
+    """The signed-in customer placed this order: same uid, or the verified phone/email on their token."""
+    uid = str(user.get("uid") or "")
+    if uid and uid == str(order.get("customer_uid") or ""):
+        return True
+    tok_phone = "".join(ch for ch in str(user.get("phone") or "") if ch.isdigit())[-10:]
+    ord_phone = "".join(ch for ch in str(order.get("phone") or "") if ch.isdigit())[-10:]
+    if len(tok_phone) == 10 and tok_phone == ord_phone:
+        return True
+    tok_email = (user.get("email") or "").strip().lower()
+    ord_email = (order.get("customer_email") or order.get("email") or "").strip().lower()
+    return bool(tok_email) and tok_email == ord_email
+
+
 @api_router.post("/orders/{order_id}/cancel")
-async def request_order_cancellation(order_id: str, cancellation: OrderCancellationRequest, manager: BaseDataManager = Depends(get_data_manager)):
-    """Request order cancellation"""
+async def request_order_cancellation(
+    order_id: str,
+    cancellation: OrderCancellationRequest,
+    user: dict = Depends(verify_customer_token),
+    manager: BaseDataManager = Depends(get_data_manager)
+):
+    """Customer cancels their own order. Requires login (previously anyone with the order id could
+    cancel any order — and with auto-dispatch that also cancels the Porter booking)."""
     order = await manager.get_order_by_id(order_id)
-    
+
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
-    
+    if not _customer_owns_order(user, order):
+        # Same response as a missing order: don't confirm that someone else's order id exists
+        raise HTTPException(status_code=404, detail="Order not found")
+
     if order.get("status") in ["delivered", "cancelled"]:
         raise HTTPException(status_code=400, detail="Cannot cancel order in current status")
     
@@ -2117,11 +2140,13 @@ async def admin_porter_quote(
     if order.get("porter_order_id"):
         raise HTTPException(status_code=400, detail="Porter already booked for this order")
 
+    from branches import pickup_for_order
     result = await get_porter_quote(
         drop_lat=body.drop_lat,
         drop_lng=body.drop_lng,
         drop_address=order.get("address", ""),
         vehicle_type=body.vehicle_type,
+        pickup=pickup_for_order(order),
     )
 
     if not result.get("success"):
@@ -2180,6 +2205,7 @@ async def admin_porter_book(
             detail="An in-house rider is already assigned. Remove them first."
         )
 
+    from branches import pickup_for_order
     base_url = str(request.base_url).rstrip("/")
     webhook_url = f"{base_url}/api/porter/webhook"
     pm = "cash" if order.get("payment_method") == "cod" else "prepaid"
@@ -2195,6 +2221,7 @@ async def admin_porter_book(
         payment_method=pm,
         vehicle_type=body.vehicle_type,
         webhook_url=webhook_url,
+        pickup=pickup_for_order(order),
     )
 
     if not result.get("success"):
@@ -2490,6 +2517,7 @@ async def perform_auto_accept_order(order_id: str, manager: BaseDataManager) -> 
             and not order.get("porter_order_id") and not order.get("delivery_partner_id")):
         try:
             from porter_service import create_porter_order
+            from branches import pickup_for_order
             customer_name = order.get("customer_name") or order.get("name") or "Guest"
             customer_phone = order.get("phone") or "+919999999999"
             drop_lat = float(order.get("drop_lat") or order.get("latitude") or 18.5204)
@@ -2507,7 +2535,8 @@ async def perform_auto_accept_order(order_id: str, manager: BaseDataManager) -> 
                 drop_address=drop_address,
                 amount=amount,
                 payment_method=payment_method,
-                vehicle_type="2-wheeler"
+                vehicle_type="2-wheeler",
+                pickup=pickup_for_order(order),
             )
 
             if porter_res.get("success"):
