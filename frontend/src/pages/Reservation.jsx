@@ -5,10 +5,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "../hooks/use-toast";
 import API_BASE from "../lib/config";
 import { useCustomerAuth } from "../context/CustomerAuthContext";
+import { Capacitor } from "@capacitor/core";
+
+// Google sign-in is hidden in the native iOS app (see CustomerLogin); send those users to the login screen
+const IS_NATIVE_IOS = Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios";
 
 const Reservation = () => {
   const { toast } = useToast();
   const { currentUser, customerProfile, idToken, signInWithGoogle } = useCustomerAuth();
+  const navigate = useNavigate();
   const topRef = useRef(null);
   const location = useLocation();
 
@@ -464,6 +469,10 @@ const Reservation = () => {
                   {!currentUser ? (
                     <button 
                       onClick={async () => {
+                        if (IS_NATIVE_IOS) {
+                          navigate("/customer/login", { state: { from: location } });
+                          return;
+                        }
                         const result = await signInWithGoogle();
                         if (result?.success && !result?.redirecting) {
                           // Auto-submit after sign-in

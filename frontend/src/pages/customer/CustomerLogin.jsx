@@ -18,6 +18,10 @@ import {
 
 const CustomerLogin = () => {
   const isAndroid = Capacitor.getPlatform() === 'android';
+  // Google sign-in is hidden in the native iOS app for now: it completes in Firebase but the app
+  // does not continue past the login screen (under investigation). iOS keeps Apple + phone login;
+  // Android and the website keep Google.
+  const showGoogle = !(Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios');
   const { currentUser, signInWithGoogle, signInWithApple, sendWhatsAppOtp, verifyWhatsAppOtp, loading } = useCustomerAuth();
 
   // Step: 'phone' or 'otp'
@@ -387,7 +391,8 @@ const CustomerLogin = () => {
                 <div className="h-px bg-neutral-200 flex-1" />
               </div>
 
-              {/* ── GOOGLE 1-CLICK SIGN-IN ── */}
+              {/* ── GOOGLE 1-CLICK SIGN-IN (not on native iOS, see showGoogle) ── */}
+              {showGoogle && (
               <button
                 type="button"
                 id="google-signin-btn"
@@ -407,6 +412,7 @@ const CustomerLogin = () => {
                 )}
                 <span>{signingInGoogle ? 'Signing in...' : 'Continue with Google'}</span>
               </button>
+              )}
 
               {/* ── SIGN IN WITH APPLE (Guideline 4.8 Compliance - Apple iOS & Web only) ── */}
               {!isAndroid && (
