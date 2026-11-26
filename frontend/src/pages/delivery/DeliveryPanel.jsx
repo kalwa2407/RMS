@@ -36,6 +36,47 @@ const STATUS_FLOW = {
 
 const GOLD = "#EAB308";
 
+// ── Incoming delivery offer (auto-dispatch): first rider to accept within the window gets it ──
+const OfferCard = ({ offer, secondsLeft, windowSeconds, busy, onAccept, onDecline }) => {
+  const pct = Math.max(0, Math.min(100, (secondsLeft / Math.max(1, windowSeconds)) * 100));
+  const urgent = secondsLeft <= 10;
+  return (
+    <div className="rounded-3xl overflow-hidden" style={{ background:"linear-gradient(160deg,rgba(22,163,74,0.16),rgba(6,8,16,0.95))", border:"1px solid rgba(74,222,128,0.45)", boxShadow:"0 12px 40px -12px rgba(22,163,74,0.45)" }}>
+      <div className="h-1.5 w-full" style={{ background:"rgba(255,255,255,0.06)" }}>
+        <div className="h-full transition-[width] duration-1000 ease-linear" style={{ width:`${pct}%`, background: urgent ? "#f87171" : "#4ade80" }}/>
+      </div>
+      <div className="p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-black uppercase tracking-[0.18em]" style={{ color:"#4ade80" }}>New delivery request</span>
+          <span className="font-black text-lg tabular-nums" style={{ color: urgent ? "#f87171" : "#fff" }}>{secondsLeft}s</span>
+        </div>
+        <div className="flex items-start gap-2">
+          <MapPin className="h-4 w-4 shrink-0 mt-0.5 text-gray-400"/>
+          <p className="text-white text-sm font-semibold leading-snug">{offer.address || "Address on pickup"}</p>
+        </div>
+        <div className="flex items-center gap-3 text-xs text-gray-400">
+          {offer.distance_km != null && <span className="flex items-center gap-1"><Navigation className="h-3.5 w-3.5"/>{Number(offer.distance_km).toFixed(1)} km</span>}
+          <span className="flex items-center gap-1"><Package className="h-3.5 w-3.5"/>{offer.items_count} item{offer.items_count === 1 ? "" : "s"}</span>
+          <span className="flex items-center gap-1"><CreditCard className="h-3.5 w-3.5"/>{offer.payment_method === "cod" ? `Collect ${fmt(offer.total)}` : "Prepaid"}</span>
+        </div>
+        {offer.branch_name && <p className="text-[11px] text-gray-500">Pickup: {offer.branch_name}</p>}
+        <div className="flex gap-2.5 pt-1">
+          <button disabled={busy} onClick={onDecline}
+            className="flex-1 py-3 rounded-2xl text-sm font-bold active:scale-95 transition-transform disabled:opacity-50"
+            style={{ background:"rgba(255,255,255,0.06)", color:"#d1d5db", border:"1px solid rgba(255,255,255,0.1)" }}>
+            Decline
+          </button>
+          <button disabled={busy} onClick={onAccept}
+            className="flex-[2] py-3 rounded-2xl text-sm font-black active:scale-95 transition-transform disabled:opacity-60"
+            style={{ background:"#16a34a", color:"#fff", boxShadow:"0 8px 24px -8px rgba(22,163,74,0.8)" }}>
+            {busy ? "Please wait…" : "Accept delivery"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const DeliveryPanel = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("delivery_token");
@@ -160,6 +201,60 @@ const DeliveryPanel = () => {
 
   useEffect(() => { fetchProfile(); fetchOrders(); const i=setInterval(fetchOrders,12000); return ()=>clearInterval(i); }, [fetchProfile,fetchOrders]);
 
+  // ── Auto-dispatch offers: poll every 4 s, count down locally every second ──
+  const [offers, setOffers] = useState([]);           // [{...offer, deadline: ms}]
+  const [offerWindow, setOfferWindow] = useState(30);
+  const [offerBusy, setOfferBusy] = useState(null);
+  const [offerNotice, setOfferNotice] = useState(null);
+  const [tick, setTick] = useState(Date.now());
+
+  const fetchOffers = useCallback(async () => {
+    if (!token) return;
+    try {
+      const { data } = await axios.get(`${API_BASE}/api/delivery/offers`, { headers:{ Authorization:`Bearer ${token}` } });
+      if (!data?.enabled) { setOffers([]); return; }
+      setOfferWindow(data.window_seconds || 30);
+      const now = Date.now();
+      setOffers(prev => {
+        const next = (data.offers || []).map(o => ({ ...o, deadline: now + (o.seconds_left || 0) * 1000 }));
+        const isNew = next.some(o => !prev.find(p => p.order_id === o.order_id));
+        if (isNew && navigator.vibrate) { try { navigator.vibrate([300, 150, 300]); } catch (e) { /* not supported */ } }
+        return next;
+      });
+    } catch (e) { /* keep last known offers; next poll retries */ }
+  }, [token]);
+
+  useEffect(() => { fetchOffers(); const i = setInterval(fetchOffers, 4000); return () => clearInterval(i); }, [fetchOffers]);
+  useEffect(() => {
+    if (offers.length === 0) return undefined;
+    const i = setInterval(() => setTick(Date.now()), 1000);
+    return () => clearInterval(i);
+  }, [offers.length]);
+
+  const visibleOffers = offers
+    .map(o => ({ ...o, secondsLeft: Math.max(0, Math.ceil((o.deadline - tick) / 1000)) }))
+    .filter(o => o.secondsLeft > 0);
+
+  const respondToOffer = async (orderId, action) => {
+    setOfferBusy(orderId);
+    setOfferNotice(null);
+    try {
+      await axios.post(`${API_BASE}/api/delivery/orders/${orderId}/${action}`, {}, { headers:{ Authorization:`Bearer ${token}` } });
+      setOffers(prev => prev.filter(o => o.order_id !== orderId));
+      if (action === "accept") {
+        setTab("active");
+        await fetchOrders();
+        setOfferNotice({ ok: true, text: "Delivery accepted — it's in your Active list." });
+      }
+    } catch (err) {
+      setOffers(prev => prev.filter(o => o.order_id !== orderId));
+      setOfferNotice({ ok: false, text: err.response?.status === 409 ? "Too late — this delivery was already assigned." : (err.response?.data?.detail || "Could not respond. Please try again.") });
+    } finally {
+      setOfferBusy(null);
+      setTimeout(() => setOfferNotice(null), 4000);
+    }
+  };
+
   const updateStatus = async (orderId, newStatus) => {
     setUpdating(orderId);
     try {
@@ -277,6 +372,23 @@ const DeliveryPanel = () => {
 
       {/* CONTENT */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 relative z-10">
+        {offerNotice && (
+          <div className="rounded-2xl px-4 py-3 text-sm font-semibold"
+            style={{ background: offerNotice.ok ? "rgba(22,163,74,0.15)" : "rgba(239,68,68,0.12)", color: offerNotice.ok ? "#4ade80" : "#f87171", border:`1px solid ${offerNotice.ok ? "rgba(74,222,128,0.35)" : "rgba(248,113,113,0.35)"}` }}>
+            {offerNotice.text}
+          </div>
+        )}
+        {visibleOffers.map(offer => (
+          <OfferCard
+            key={offer.order_id}
+            offer={offer}
+            secondsLeft={offer.secondsLeft}
+            windowSeconds={offerWindow}
+            busy={offerBusy === offer.order_id}
+            onAccept={() => respondToOffer(offer.order_id, "accept")}
+            onDecline={() => respondToOffer(offer.order_id, "decline")}
+          />
+        ))}
         {loading ? (
           <div className="flex items-center justify-center h-48 gap-2 text-sm text-gray-600">
             <RotateCw className="h-4 w-4 animate-spin"/> Loading...
