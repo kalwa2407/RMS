@@ -1172,16 +1172,17 @@ const CustomerDashboard = () => {
                 navigate('/customer/login', { replace: true });
               }}
               onDeleteAccount={async () => {
-                // Await server-side purge and credential revocation
+                // Await server-side purge. On failure keep the user signed in and say so —
+                // never claim the account was deleted when it was not.
+                let result = { success: false, error: 'We could not delete your account right now. Please try again.' };
                 try {
-                  await deleteCustomerAccount({
-                    uid: currentUser?.uid || customerProfile?.uid,
-                    phone: customerProfile?.phone || currentUser?.phone,
-                    email: currentUser?.email || customerProfile?.email,
-                    token: idToken
-                  });
+                  result = await deleteCustomerAccount();
                 } catch (e) {
                   console.warn('Delete account error:', e);
+                }
+                if (!result?.success) {
+                  toast({ title: 'Account not deleted', description: result?.error, variant: 'destructive' });
+                  return;
                 }
                 // Navigate only after backend deletion is done
                 navigate('/customer/login', { replace: true });
@@ -1350,16 +1351,17 @@ const CustomerDashboard = () => {
           }}
           onDeleteAccount={async () => {
             setIsProfileOpen(false);
-            // Await server-side purge and credential revocation
+            // Await server-side purge. On failure keep the user signed in and say so —
+            // never claim the account was deleted when it was not.
+            let result = { success: false, error: 'We could not delete your account right now. Please try again.' };
             try {
-              await deleteCustomerAccount({
-                uid: currentUser?.uid || customerProfile?.uid,
-                phone: customerProfile?.phone || currentUser?.phone,
-                email: currentUser?.email || customerProfile?.email,
-                token: idToken
-              });
+              result = await deleteCustomerAccount();
             } catch (e) {
               console.warn('Delete account error:', e);
+            }
+            if (!result?.success) {
+              toast({ title: 'Account not deleted', description: result?.error, variant: 'destructive' });
+              return;
             }
             // Navigate only after backend deletion is done
             navigate('/customer/login', { replace: true });

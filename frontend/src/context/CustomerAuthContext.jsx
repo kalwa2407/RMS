@@ -876,39 +876,56 @@ export const CustomerAuthProvider = ({ children }) => {
   // ── Delete Customer Account (App Store Guideline 5.1.1(v) Compliance) ──
   // This ACTUALLY deletes the Firebase Auth user account + backend data permanently.
   const deleteCustomerAccount = async (overrideData = {}) => {
-    // 1. Capture ALL credentials FIRST before touching any state or storage
+    // 1. Get a FRESH token. The server deletes exactly the account this token proves (it ignores any
+    //    uid/email/phone we send), so an expired 1-hour Firebase token would make deletion fail.
     const firebaseUser = auth.currentUser;
-    const uid = overrideData.uid || firebaseUser?.uid || currentUser?.uid || localStorage.getItem('customer_uid') || '';
-    const email = (overrideData.email || firebaseUser?.email || currentUser?.email || localStorage.getItem('customer_email') || '').toLowerCase().trim();
-    let rawPhone = overrideData.phone || customerProfile?.phone || currentUser?.phone || localStorage.getItem('customer_phone') || '';
-    let phone = rawPhone ? String(rawPhone).replace(/\D/g, '') : '';
-    if (phone.startsWith('91') && phone.length === 12) phone = phone.slice(2);
-    const activeToken = overrideData.token || idToken || localStorage.getItem('customer_jwt') || '';
-
-    try {
-      // 2. Delete backend database record (by UID, Email, and Phone)
-      const deleteUrl = `${API_BASE}/api/customer/account?uid=${encodeURIComponent(uid)}&email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`;
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
+    let activeToken = '';
+    if (firebaseUser) {
+      try { activeToken = await firebaseUser.getIdToken(true); } catch (e) { /* fall through */ }
+    }
+    if (!activeToken && Capacitor.isNativePlatform()) {
       try {
-        const res = await fetch(deleteUrl, {
+        const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
+        const res = await FirebaseAuthentication.getIdToken({ forceRefresh: true });
+        activeToken = res?.token || '';
+      } catch (e) { /* fall through */ }
+    }
+    if (!activeToken) {
+      activeToken = overrideData.token || idToken || localStorage.getItem('customer_jwt') || '';
+    }
+    if (!activeToken) {
+      return { success: false, error: 'Please sign in again, then delete your account.' };
+    }
+
+    // 2. Server-side deletion. No personal data in the URL (it ends up in server access logs).
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      let res;
+      try {
+        res = await fetch(`${API_BASE}/api/customer/account`, {
           method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(activeToken ? { 'Authorization': `Bearer ${activeToken}` } : {})
-          },
-          body: JSON.stringify({ uid, email, phone }),
+          headers: { 'Authorization': `Bearer ${activeToken}` },
           signal: controller.signal
         });
-        if (!res.ok) {
-          console.warn('Account deletion server response status:', res.status);
-        }
-      } catch (err) {
-        console.warn('Account deletion network notice:', err);
       } finally {
         clearTimeout(timeoutId);
       }
+      if (!res.ok) {
+        console.warn('Account deletion server response status:', res.status);
+        return {
+          success: false,
+          error: res.status === 401
+            ? 'Your session has expired. Please sign in again, then delete your account.'
+            : 'We could not delete your account right now. Please try again.'
+        };
+      }
+    } catch (err) {
+      console.warn('Account deletion network notice:', err);
+      return { success: false, error: 'No internet connection. Please try again.' };
+    }
 
+    try {
       // 3. Delete Firebase Auth account if linked
       if (firebaseUser) {
         try {
@@ -927,7 +944,7 @@ export const CustomerAuthProvider = ({ children }) => {
                 new Promise((_, reject) => setTimeout(() => reject(new Error('native deleteUser timeout')), 4000))
               ]);
             } catch (nativeDelErr) {
-              // ignore — backend already purged the record
+              // ignore — backend already purged the record and deleted the Firebase user
             }
           }
         }
