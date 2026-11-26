@@ -49,6 +49,19 @@ RESTAURANT_ADDRESS  = os.environ.get(
 )
 
 
+def _resolve_pickup(pickup: Optional[dict]) -> dict:
+    """Pickup point for this booking: the order's branch (see branches.py), else the default restaurant."""
+    p = pickup or {}
+    phone = str(p.get("phone") or RESTAURANT_PHONE).replace("+91", "").replace(" ", "").replace("-", "")
+    return {
+        "lat": float(p.get("lat", RESTAURANT_LAT)),
+        "lng": float(p.get("lng", RESTAURANT_LNG)),
+        "name": p.get("name") or RESTAURANT_NAME,
+        "phone": phone[-10:],
+        "address": p.get("address") or RESTAURANT_ADDRESS,
+    }
+
+
 def _headers() -> dict:
     """Return standard Porter API request headers."""
     return {
@@ -80,7 +93,8 @@ async def get_porter_quote(
     drop_lat: float,
     drop_lng: float,
     drop_address: str = "",
-    vehicle_type: str = "2-wheeler"
+    vehicle_type: str = "2-wheeler",
+    pickup: Optional[dict] = None,
 ) -> dict:
     """
     Get a Porter delivery quote (ETA + fare estimate) before booking.
@@ -117,18 +131,19 @@ async def get_porter_quote(
             "error": "Porter API key not configured. Please set PORTER_API_KEY in .env"
         }
 
+    pk = _resolve_pickup(pickup)
     payload = {
         "pickup_details": {
-            "lat": RESTAURANT_LAT,
-            "lng": RESTAURANT_LNG,
+            "lat": pk["lat"],
+            "lng": pk["lng"],
         },
         "drop_details": {
             "lat": drop_lat,
             "lng": drop_lng,
         },
         "customer": {
-            "name":   RESTAURANT_NAME,
-            "mobile": {"country_code": "+91", "number": RESTAURANT_PHONE.replace("+91", "").replace(" ", "")},
+            "name":   pk["name"],
+            "mobile": {"country_code": "+91", "number": pk["phone"]},
         },
         "vehicle_type": vehicle_type,
     }
@@ -195,6 +210,7 @@ async def create_porter_order(
     payment_method: str = "cash",   # 'cash' or 'prepaid'
     vehicle_type:   str = "2-wheeler",
     webhook_url:    Optional[str] = None,
+    pickup:         Optional[dict] = None,   # branch pickup point (branches.pickup_for_order)
 ) -> dict:
     """
     Book a Porter rider for delivery.
@@ -252,19 +268,20 @@ async def create_porter_order(
     if len(phone_clean) > 10:
         phone_clean = phone_clean[-10:]
 
+    pk = _resolve_pickup(pickup)
     payload = {
         "merchant_order_id": rms_order_id,
         "pickup_details": {
-            "lat":     RESTAURANT_LAT,
-            "lng":     RESTAURANT_LNG,
+            "lat":     pk["lat"],
+            "lng":     pk["lng"],
             "contact_details": {
-                "name":   RESTAURANT_NAME,
+                "name":   pk["name"],
                 "mobile": {
                     "country_code": "+91",
-                    "number":       RESTAURANT_PHONE.replace("+91", "").replace(" ", "")
+                    "number":       pk["phone"]
                 }
             },
-            "address": RESTAURANT_ADDRESS,
+            "address": pk["address"],
         },
         "drop_details": {
             "lat": drop_lat,

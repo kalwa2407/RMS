@@ -53,6 +53,14 @@ def rider_window_seconds() -> int:
     return int(_env_float("DISPATCH_RIDER_WINDOW_SECONDS", 30))
 
 
+def porter_webhook_url() -> str:
+    """Where Porter posts rider status updates (no request context in background dispatch)."""
+    return os.environ.get(
+        "PORTER_WEBHOOK_URL",
+        "https://tasteofhindustan-api-63332283509.asia-south1.run.app/api/porter/webhook",
+    )
+
+
 def porter_auto_booking_allowed() -> bool:
     """Auto-book Porter only when Porter is live, or mock bookings were explicitly allowed (testing)."""
     from porter_service import is_porter_mock_enabled
@@ -441,6 +449,10 @@ async def book_porter(manager, order_id: str, reason: str, from_offer: bool = Fa
         if lat is None or lng is None:
             raise ValueError("order has no delivery coordinates")
         from porter_service import create_porter_order
+        from branches import pickup_for_order
+        pickup = pickup_for_order(claimed)
+        if pickup is None:
+            raise ValueError(f"unknown branch '{claimed.get('branch_id') or claimed.get('branch')}' - no pickup point")
         res = await create_porter_order(
             rms_order_id=order_id,
             customer_name=claimed.get("customer_name") or "Customer",
@@ -451,6 +463,8 @@ async def book_porter(manager, order_id: str, reason: str, from_offer: bool = Fa
             amount=float(claimed.get("total") or 0.0),
             payment_method="cash" if claimed.get("payment_method") == "cod" else "prepaid",
             vehicle_type="2-wheeler",
+            webhook_url=porter_webhook_url(),
+            pickup=pickup,
         )
     except Exception as e:
         res = {"success": False, "error": str(e)}
