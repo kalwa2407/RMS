@@ -53,9 +53,10 @@ const CustomerCartSheet = ({
   const COOKING_OPTIONS = ['Less spicy', 'Extra gravy', 'Well cooked', 'No onion/garlic'];
   const DELIVERY_OPTIONS = ['Leave at door', "Don't ring bell", 'Call upon arrival', 'Avoid calling'];
 
-  const freeDeliveryDiff = Math.max(0, freeDeliveryThreshold - cartSubtotal);
-  const numDist = parseFloat(distanceKm || 0);
-  const isBeyondDeliveryRange = orderType === 'DELIVERY' && numDist > 20;
+  const hasDistance = distanceKm != null && distanceKm !== '' && Number.isFinite(Number(distanceKm));
+  const numDist = hasDistance ? Number(distanceKm) : 0;
+  const isBeyondDeliveryRange = orderType === 'DELIVERY' && hasDistance && numDist > 20;
+  const needsLocation = orderType === 'DELIVERY' && !hasDistance;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60 backdrop-blur-xs transition-opacity p-0 md:p-6">
@@ -158,7 +159,7 @@ const CustomerCartSheet = ({
                 placeholder="Enter complete flat, street, landmark address..."
                 className="w-full bg-white border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-[#E40000]"
               />
-              {distanceKm && (
+              {hasDistance && (
                 <div className="flex items-center justify-between text-[11px] text-neutral-600 font-medium pt-0.5">
                   <span className="flex items-center space-x-1">
                     <MapPin className="w-3 h-3 text-[#E40000]" />
@@ -183,20 +184,24 @@ const CustomerCartSheet = ({
             </div>
           )}
 
-          {/* Free Delivery Bar */}
-          {orderType === 'DELIVERY' && (
-            <div className="bg-amber-50 border border-amber-200/80 rounded-xl p-2.5 flex items-center justify-between">
-              <div className="flex items-center space-x-1.5 text-xs text-amber-900 font-bold">
-                <Bike className="w-4 h-4 text-amber-700 shrink-0" />
+          {/* Delivery fee rule: FREE up to 10 km, Rs 60 for 10-20 km (same as the server) */}
+          {orderType === 'DELIVERY' && !isBeyondDeliveryRange && (
+            <div className={`rounded-xl p-2.5 flex items-center justify-between border ${
+              needsLocation ? 'bg-neutral-50 border-neutral-200' : 'bg-amber-50 border-amber-200/80'
+            }`}>
+              <div className={`flex items-center space-x-1.5 text-xs font-bold ${needsLocation ? 'text-neutral-700' : 'text-amber-900'}`}>
+                <Bike className={`w-4 h-4 shrink-0 ${needsLocation ? 'text-neutral-500' : 'text-amber-700'}`} />
                 <span>
-                  {freeDeliveryDiff === 0
-                    ? 'FREE Delivery Unlocked on this order!'
-                    : `Add ₹${freeDeliveryDiff} more for FREE Delivery`}
+                  {needsLocation
+                    ? 'Set your delivery location to see the delivery fee'
+                    : numDist <= 10
+                    ? 'FREE delivery within 10 km'
+                    : '₹60 delivery fee for 10–20 km'}
                 </span>
               </div>
-              <span className="text-[10px] font-bold text-amber-800">
-                Above ₹{freeDeliveryThreshold}
-              </span>
+              {!needsLocation && (
+                <span className="text-[10px] font-bold text-amber-800 tabular-nums">{numDist.toFixed(1)} km</span>
+              )}
             </div>
           )}
 
@@ -458,7 +463,7 @@ const CustomerCartSheet = ({
             </div>
             <div className="flex items-center justify-between text-neutral-600">
               <span>Delivery Partner Fee</span>
-              <span>{cartDeliveryFee === 0 ? 'FREE' : `₹${cartDeliveryFee}`}</span>
+              <span>{needsLocation ? 'Set location' : cartDeliveryFee === 0 ? 'FREE' : `₹${cartDeliveryFee}`}</span>
             </div>
             <div className="flex items-center justify-between text-neutral-600">
               <span>GST &amp; Restaurant Taxes (5%)</span>
@@ -539,6 +544,8 @@ const CustomerCartSheet = ({
             <span>
               {isBeyondDeliveryRange
                 ? `Delivery Unavailable Beyond 20 km (${numDist.toFixed(1)} km)`
+                : needsLocation
+                ? 'Set Delivery Location to Continue'
                 : placingOrder
                 ? 'Confirming Feast...'
                 : currentUser

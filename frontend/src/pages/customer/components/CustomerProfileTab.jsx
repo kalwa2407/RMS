@@ -327,7 +327,7 @@ const CustomerProfileTab = ({
             </div>
 
             <p className="text-sm font-black text-white mt-3 relative z-10">
-              5% Instant PD Coins on every order + Free Delivery above ₹199
+              5% Instant PD Coins on every order + Free Delivery within 10 km
             </p>
             <p className="text-[11px] text-neutral-300 mt-1 relative z-10 font-medium">
               Priority table reservation across Bandra, Andheri, Kurla &amp; Camp Pune outlets.

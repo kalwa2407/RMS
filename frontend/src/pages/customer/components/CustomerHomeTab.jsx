@@ -93,7 +93,7 @@ const CustomerHomeTab = ({
                   {currentOffer.title}
                 </h2>
                 <p className="text-xs font-bold text-amber-800 mt-1 flex items-center space-x-1">
-                  <span className="flex items-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5 text-amber-700" /><span>{currentOffer.highlight_text || 'FREE DELIVERY ON ORDERS ABOVE ₹99'}</span></span>
+                  <span className="flex items-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5 text-amber-700" /><span>{currentOffer.highlight_text || 'FREE DELIVERY WITHIN 10 KM'}</span></span>
                 </p>
 
               </div>

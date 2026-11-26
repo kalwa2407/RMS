@@ -82,11 +82,11 @@ const PorterConfigPanel = () => {
         <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-3">Delivery Fee Policy</p>
         <div className="space-y-2">
           <div className="flex justify-between items-center text-sm">
-            <span className="text-gray-400">0 – 5 km</span>
+            <span className="text-gray-400">0 – 10 km</span>
             <span className="text-green-400 font-bold">FREE (customer pays ₹0)</span>
           </div>
           <div className="flex justify-between items-center text-sm">
-            <span className="text-gray-400">5 – 20 km</span>
+            <span className="text-gray-400">10 – 20 km</span>
             <span className="text-[#EAB308] font-bold">₹60 from customer</span>
           </div>
           <div className="flex justify-between items-center text-sm">

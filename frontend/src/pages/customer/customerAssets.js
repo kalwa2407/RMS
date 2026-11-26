@@ -377,7 +377,7 @@ export const DEFAULT_PERSIAN_DARBAR_OFFERS = [
     id: 'offer_weekend_feast',
     title: 'Royal Feast Weekend',
     subtitle: 'FLAT 30% OFF on all Biryanis & Kebabs',
-    highlight_text: 'FREE DELIVERY ABOVE ₹99',
+    highlight_text: 'FREE DELIVERY WITHIN 10 KM',
     coupon_code: 'DARBAR30',
     badge_text: 'WEEKEND SPECIAL',
     image_url: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?crop=entropy&cs=srgb&fm=jpg&w=600&q=80',
@@ -419,8 +419,8 @@ export const ROYAL_MEMBERSHIP_PRIVILEGES = [
     icon: 'Coins'
   },
   {
-    title: 'Free Delivery on Orders above ₹199',
-    desc: 'No delivery fee from any of our 4 Persian Darbar hubs.',
+    title: 'Free Delivery within 10 km',
+    desc: 'No delivery fee within 10 km of your Persian Darbar outlet (₹60 for 10–20 km).',
     icon: 'Bike'
   },
   {

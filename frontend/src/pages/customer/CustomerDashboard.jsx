@@ -92,8 +92,17 @@ const CustomerDashboard = () => {
     return PERSIAN_DARBAR_BRANCHES[3]; // Camp, Pune
   });
 
-  const [userCoords, setUserCoords] = useState(null);
-  const [distanceKm, setDistanceKm] = useState(5.8);
+  // Restore the last known delivery location (saved on GPS detect / address pick)
+  const [userCoords, setUserCoords] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('customer_user_coords') || 'null');
+      return saved && Number.isFinite(saved.lat) && Number.isFinite(saved.lng) ? saved : null;
+    } catch (e) {
+      return null;
+    }
+  });
+  // null = location unknown. Never a made-up distance: delivery fee and the 20 km rule depend on it.
+  const [distanceKm, setDistanceKm] = useState(null);
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [detectingLoc, setDetectingLoc] = useState(false);
 
@@ -112,17 +121,20 @@ const CustomerDashboard = () => {
   };
 
   // Recalculate true distance when branch or coords change
-  const updateDistanceForBranch = useCallback((branch, coords = userCoords, addr = deliveryAddress) => {
-    let activeCoords = coords;
-    if (!activeCoords && addr) {
+  // Delivery point: live/saved GPS or picked address first, else a known locality named in the address
+  const resolveDeliveryCoords = useCallback((coords = userCoords, addr = deliveryAddress) => {
+    if (coords && coords.lat && coords.lng) return coords;
+    if (addr) {
       const lower = addr.toLowerCase();
       for (const [key, val] of Object.entries(KNOWN_LOCALITIES)) {
-        if (lower.includes(key)) {
-          activeCoords = val;
-          break;
-        }
+        if (lower.includes(key)) return val;
       }
     }
+    return null;
+  }, [userCoords, deliveryAddress]);
+
+  const updateDistanceForBranch = useCallback((branch, coords = userCoords, addr = deliveryAddress) => {
+    const activeCoords = resolveDeliveryCoords(coords, addr);
     if (activeCoords && activeCoords.lat && activeCoords.lng && branch?.coordinates) {
       const dist = calculateHaversine(
         activeCoords.lat,
@@ -133,10 +145,14 @@ const CustomerDashboard = () => {
       setDistanceKm(dist);
       return dist;
     }
-    const fallbackDist = branch?.city === 'Pune' ? 4.8 : 2.5;
-    setDistanceKm(fallbackDist);
-    return fallbackDist;
-  }, [userCoords, deliveryAddress]);
+    setDistanceKm(null);
+    return null;
+  }, [userCoords, deliveryAddress, resolveDeliveryCoords]);
+
+  // Keep the distance in sync whenever the outlet or delivery location changes (incl. restored location on launch)
+  useEffect(() => {
+    updateDistanceForBranch(selectedBranch);
+  }, [selectedBranch, updateDistanceForBranch]);
 
   // Handle GPS detection with reliable Reverse Geocoding
   const handleDetectGPS = () => {
@@ -260,7 +276,7 @@ const CustomerDashboard = () => {
         updateDistanceForBranch(selectedBranch);
         toast({
           title: 'GPS Access Notice',
-          description: 'Calculated distance based on your Persian Darbar outlet.'
+          description: 'Could not get your location. Search your address to see the delivery distance.'
         });
       },
       { timeout: 10000, enableHighAccuracy: true, maximumAge: 60000 }
@@ -615,11 +631,9 @@ const CustomerDashboard = () => {
   }, [cart]);
 
   const cartDeliveryFee = useMemo(() => {
-    if (orderType === 'TAKEAWAY' || cartSubtotal === 0) return 0;
-    if (cartSubtotal >= 499) return 0;
-    const baseFee = 35;
-    const extraKm = Math.max(0, (distanceKm || 2.0) - 4);
-    return Math.round(baseFee + extraKm * 10);
+    // Same rule as the server: FREE up to 10 km, Rs 60 for 10-20 km (beyond 20 km delivery is blocked)
+    if (orderType !== 'DELIVERY' || cartSubtotal === 0 || distanceKm == null) return 0;
+    return Number(distanceKm) <= 10 ? 0 : 60;
   }, [orderType, cartSubtotal, distanceKm]);
 
   const cartTaxes = useMemo(() => {
@@ -780,6 +794,15 @@ const CustomerDashboard = () => {
       alert('Please enter a delivery address');
       return;
     }
+    if (orderType === 'DELIVERY' && distanceKm == null) {
+      toast({
+        title: 'Set your delivery location',
+        description: 'Use current location or search your address so we can check delivery distance.',
+      });
+      setIsCartOpen(false);
+      setIsLocationModalOpen(true);
+      return;
+    }
     if (orderType === 'DELIVERY' && parseFloat(distanceKm || 0) > 20) {
       toast({
         title: 'Delivery Beyond 20 km',
@@ -798,6 +821,8 @@ const CustomerDashboard = () => {
 
     const combinedDeliveryNotes = deliveryTags.join(' | ');
 
+    const deliveryCoords = orderType === 'DELIVERY' ? resolveDeliveryCoords(userCoords, finalAddress) : null;
+
     const orderData = {
       customer_uid: currentUser?.uid || null,
       customer_name: currentUser?.displayName || customerProfile?.name || 'Valued Guest',
@@ -809,10 +834,11 @@ const CustomerDashboard = () => {
       branch: selectedBranch?.id || 'pune',
       branch_id: selectedBranch?.id || 'pune',
       branch_name: selectedBranch?.name || 'Camp, Pune',
-      distance_km: distanceKm || 3.5,
-      coordinates: userCoords ? { lat: userCoords.lat, lng: userCoords.lng } : null,
-      latitude: userCoords?.lat || null,
-      longitude: userCoords?.lng || null,
+      distance_km: distanceKm,
+      coordinates: deliveryCoords ? { lat: deliveryCoords.lat, lng: deliveryCoords.lng } : null,
+      // The server recomputes distance and fee from these coordinates
+      latitude: deliveryCoords?.lat ?? null,
+      longitude: deliveryCoords?.lng ?? null,
       payment_method: payMethod,
       items: cart.map(i => ({
         item_id: String(i._id),
